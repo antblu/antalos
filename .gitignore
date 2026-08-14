@@ -1,0 +1,10 @@
+# Talos secrets — never commit these
+infrastructure/talos/talosconfig
+infrastructure/talos/kubeconfig
+infrastructure/talos/controlplane.yaml
+infrastructure/talos/worker.yaml
+*.secret.yaml
+.env
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
