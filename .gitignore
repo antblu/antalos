@@ -1,11 +1,10 @@
-# Talos secrets — never commit these
+# Talos secrets
 infrastructure/talos/talosconfig
 infrastructure/talos/kubeconfig
 infrastructure/talos/controlplane.yaml
 infrastructure/talos/worker.yaml
 *.secret.yaml
 .env
-infrastructure/opentofu/
 *.tfstate
 *.tfstate.*
 *.tfplan
