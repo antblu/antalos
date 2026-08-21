@@ -40,7 +40,7 @@ resource "proxmox_virtual_environment_vm" "talos_control" {
   }
 
   # --- SCSI Controller ---
-  scsi_hardware = "virtio-scsi-single"
+  scsi_hardware = "virtio-scsi-pci"
 
   # --- Disk (SSD emulation, discard enabled) ---
   disk {
@@ -115,7 +115,7 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
   }
 
   # --- SCSI Controller ---
-  scsi_hardware = "virtio-scsi-single"
+  scsi_hardware = "virtio-scsi-pci"
 
   # --- Disk (SSD emulation, discard enabled) ---
   disk {
