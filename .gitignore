@@ -5,6 +5,13 @@ infrastructure/talos/controlplane.yaml
 infrastructure/talos/worker.yaml
 *.secret.yaml
 .env
-terraform.tfstate
-terraform.tfstate.backup
+infrastructure/opentofu/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
 .terraform/
+*.tfvars.local
+*.pem
+*.key
