@@ -99,7 +99,7 @@ variable "worker_vm_memory" {
 variable "worker_vm_cores" {
   type        = number
   description = "Number of vCPUs for worker VMs"
-  default     = 6
+  default     = 8
 }
 
 variable "worker_vm_disk_size" {
