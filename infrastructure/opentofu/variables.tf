@@ -1,4 +1,44 @@
 # ============================================================
+# Talos Cluster Variables
+# ============================================================
+
+variable "cluster_name" {
+  type        = string
+  description = "Name of the Talos Kubernetes cluster"
+  default     = "talos-cluster"
+}
+
+variable "cluster_endpoint" {
+  type        = string
+  description = "Kubernetes API endpoint for the cluster (control plane VIP or first CP node)"
+  default     = "https://10.30.0.6:6443"
+}
+
+variable "talos_version" {
+  type        = string
+  description = "Talos version contract used to generate machine configs"
+  default     = "v1.13"
+}
+
+variable "kubernetes_version" {
+  type        = string
+  description = "Kubernetes version for the cluster"
+  default     = "v1.36.2"
+}
+
+variable "talos_installer_image" {
+  type        = string
+  description = "Talos installer image used for OS install/upgrade"
+  default     = "ghcr.io/siderolabs/installer:v1.13.7"
+}
+
+variable "talos_install_disk" {
+  type        = string
+  description = "Disk device Talos installs to on each node"
+  default     = "/dev/sda"
+}
+
+# ============================================================
 # Proxmox Connection Variables
 # ============================================================
 
@@ -99,7 +139,7 @@ variable "worker_vm_memory" {
 variable "worker_vm_cores" {
   type        = number
   description = "Number of vCPUs for worker VMs"
-  default     = 6
+  default     = 8
 }
 
 variable "worker_vm_disk_size" {
@@ -114,30 +154,34 @@ variable "worker_vm_disk_size" {
 
 variable "talos_control_vms" {
   type = map(object({
-    name        = string
-    node        = string
-    vmid        = number
-    mac_address = string
+    name          = string
+    node          = string
+    vmid          = number
+    mac_address   = string
+    talos_node_ip = string
   }))
   description = "Map of Talos control plane VM configurations"
   default = {
     rtx = {
-      name        = "rtx-talos-control"
-      node        = "rtx"
-      vmid        = 106
-      mac_address = "BC:24:11:37:F3:40"
+      name          = "rtx-talos-control"
+      node          = "rtx"
+      vmid          = 106
+      mac_address   = "BC:24:11:37:F3:40"
+      talos_node_ip = "10.30.0.6"
     }
     left = {
-      name        = "left-talos-control"
-      node        = "se350-left"
-      vmid        = 108
-      mac_address = "BC:24:11:9E:3D:91"
+      name          = "left-talos-control"
+      node          = "se350-left"
+      vmid          = 108
+      mac_address   = "BC:24:11:9E:3D:91"
+      talos_node_ip = "10.30.0.7"
     }
     right = {
-      name        = "right-talos-control"
-      node        = "se350-right"
-      vmid        = 107
-      mac_address = "BC:24:11:2A:6E:67"
+      name          = "right-talos-control"
+      node          = "se350-right"
+      vmid          = 107
+      mac_address   = "BC:24:11:2A:6E:67"
+      talos_node_ip = "10.30.0.8"
     }
   }
 }
@@ -152,6 +196,7 @@ variable "talos_worker_vms" {
     node         = string
     vmid         = number
     internal_mac = string
+    talos_node_ip = string
     external_mac = string
   }))
   description = "Map of Talos worker VM configurations"
@@ -161,6 +206,7 @@ variable "talos_worker_vms" {
       node         = "se350-right"
       vmid         = 118
       internal_mac = "BC:24:11:81:F8:C9"
+      talos_node_ip = "10.30.0.17"
       external_mac = "BC:24:11:C4:44:0B"
     }
     left = {
@@ -168,6 +214,7 @@ variable "talos_worker_vms" {
       node         = "se350-left"
       vmid         = 117
       internal_mac = "BC:24:11:5B:88:F9"
+      talos_node_ip = "10.30.0.18"
       external_mac = "BC:24:11:40:0B:01"
     }
   }

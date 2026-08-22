@@ -1,4 +1,50 @@
 # ============================================================
+# Talos Machine Secrets (generated once, stored in state)
+# ============================================================
+resource "talos_machine_secrets" "this" {}
+
+# ============================================================
+# Generate machine configurations
+# ============================================================
+data "talos_machine_configuration" "controlplane" {
+  cluster_name       = var.cluster_name
+  cluster_endpoint   = var.cluster_endpoint
+  machine_type       = "controlplane"
+  machine_secrets    = talos_machine_secrets.this.machine_secrets
+  talos_version      = var.talos_version
+  kubernetes_version = var.kubernetes_version
+  config_patches = [
+    yamlencode({
+      machine = {
+        install = {
+          disk  = var.talos_install_disk
+          image = var.talos_installer_image
+        }
+      }
+    })
+  ]
+}
+
+data "talos_machine_configuration" "worker" {
+  cluster_name       = var.cluster_name
+  cluster_endpoint   = var.cluster_endpoint
+  machine_type       = "worker"
+  machine_secrets    = talos_machine_secrets.this.machine_secrets
+  talos_version      = var.talos_version
+  kubernetes_version = var.kubernetes_version
+  config_patches = [
+    yamlencode({
+      machine = {
+        install = {
+          disk  = var.talos_install_disk
+          image = var.talos_installer_image
+        }
+      }
+    })
+  ]
+}
+
+# ============================================================
 # Talos Linux Control Plane VMs (3 nodes)
 # ============================================================
 
@@ -40,7 +86,7 @@ resource "proxmox_virtual_environment_vm" "talos_control" {
   }
 
   # --- SCSI Controller ---
-  scsi_hardware = "virtio-scsi-single"
+  scsi_hardware = "virtio-scsi-pci"
 
   # --- Disk (SSD emulation, discard enabled) ---
   disk {
@@ -115,7 +161,7 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
   }
 
   # --- SCSI Controller ---
-  scsi_hardware = "virtio-scsi-single"
+  scsi_hardware = "virtio-scsi-pci"
 
   # --- Disk (SSD emulation, discard enabled) ---
   disk {
@@ -154,4 +200,50 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
   operating_system {
     type = "l26"
   }
+}
+
+# ============================================================
+# Apply Talos machine configs to each node
+# ============================================================
+resource "talos_machine_configuration_apply" "controlplane" {
+  for_each = var.talos_control_vms
+
+  client_configuration        = talos_machine_secrets.this.client_configuration
+  machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
+  node                        = each.value.talos_node_ip
+  depends_on                  = [proxmox_virtual_environment_vm.talos_control]
+}
+
+resource "talos_machine_configuration_apply" "worker" {
+  for_each = var.talos_worker_vms
+
+  client_configuration        = talos_machine_secrets.this.client_configuration
+  machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
+  node                        = each.value.talos_node_ip
+  depends_on                  = [proxmox_virtual_environment_vm.talos_worker]
+}
+
+# ============================================================
+# Bootstrap the cluster (etcd) on the first control plane node
+# ============================================================
+resource "talos_machine_bootstrap" "this" {
+  depends_on = [
+    talos_machine_configuration_apply.controlplane,
+  ]
+
+  node                 = var.talos_control_vms["rtx"].talos_node_ip
+  client_configuration = talos_machine_secrets.this.client_configuration
+}
+# ============================================================
+# Generate kubeconfig
+# ============================================================
+resource "talos_cluster_kubeconfig" "this" {
+  client_configuration = talos_machine_secrets.this.client_configuration
+  node                 = var.talos_control_vms["rtx"].talos_node_ip
+  depends_on           = [talos_machine_bootstrap.this]
+}
+
+output "kubeconfig" {
+  value     = talos_cluster_kubeconfig.this.kubeconfig_raw
+  sensitive = true
 }
