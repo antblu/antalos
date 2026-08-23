@@ -3,12 +3,8 @@ provider "proxmox" {
   api_token = var.proxmox_api_token
   insecure  = var.proxmox_insecure
 
-  # SSH is optional — uncomment and configure if you need
-  # snippet uploads, disk imports via source_file.path,
-  # or idmap entries on containers.
-  #
-  # ssh {
-  #   agent    = true
-  #   username = var.proxmox_ssh_username
-  # }
+  ssh {
+    username = var.proxmox_ssh_username
+    password = var.proxmox_ssh_password
+  }
 }

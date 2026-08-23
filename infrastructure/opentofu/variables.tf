@@ -26,12 +26,6 @@ variable "kubernetes_version" {
   default     = "v1.36.2"
 }
 
-variable "talos_installer_image" {
-  type        = string
-  description = "Talos installer image used for OS install/upgrade"
-  default     = "ghcr.io/siderolabs/installer:v1.13.7"
-}
-
 variable "talos_install_disk" {
   type        = string
   description = "Disk device Talos installs to on each node"
@@ -59,11 +53,16 @@ variable "proxmox_insecure" {
   default     = true
 }
 
-# --- SSH (optional, only if needed) ---
+# --- SSH
 variable "proxmox_ssh_username" {
   type        = string
   description = "SSH username for Proxmox node access (required when using API token + SSH)"
   default     = "terraform"
+}
+variable "proxmox_ssh_password" {
+  type        = string
+  description = "SSH password for Proxmox node access"
+  sensitive   = true
 }
 
 # ============================================================
@@ -79,7 +78,7 @@ variable "iso_storage" {
 variable "iso_file_name" {
   type        = string
   description = "Talos Linux ISO filename on the Proxmox ISO storage"
-  default     = "v1-13-7qemu-agent-nocloud-amd64.iso"
+  default     = "nocloud-amd64.raw"
 }
 
 # ============================================================
@@ -172,14 +171,14 @@ variable "talos_control_vms" {
     left = {
       name          = "left-talos-control"
       node          = "se350-left"
-      vmid          = 108
+      vmid          = 107
       mac_address   = "BC:24:11:9E:3D:91"
       talos_node_ip = "10.30.0.7"
     }
     right = {
       name          = "right-talos-control"
       node          = "se350-right"
-      vmid          = 107
+      vmid          = 108
       mac_address   = "BC:24:11:2A:6E:67"
       talos_node_ip = "10.30.0.8"
     }
@@ -198,6 +197,7 @@ variable "talos_worker_vms" {
     internal_mac = string
     talos_node_ip = string
     external_mac = string
+    external_ignore_dhcp_route = bool
   }))
   description = "Map of Talos worker VM configurations"
   default = {
@@ -208,6 +208,7 @@ variable "talos_worker_vms" {
       internal_mac = "BC:24:11:5B:88:F9"
       talos_node_ip = "10.30.0.17"
       external_mac = "BC:24:11:40:0B:01"
+      external_ignore_dhcp_route = true
     }
     right = {
       name         = "right-talos-worker"
@@ -216,6 +217,7 @@ variable "talos_worker_vms" {
       internal_mac = "BC:24:11:81:F8:C9"
       talos_node_ip = "10.30.0.18"
       external_mac = "BC:24:11:C4:44:0B"
+      external_ignore_dhcp_route = true
     }
   }
 }
