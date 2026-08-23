@@ -201,21 +201,21 @@ variable "talos_worker_vms" {
   }))
   description = "Map of Talos worker VM configurations"
   default = {
-    right = {
-      name         = "right-talos-worker"
-      node         = "se350-right"
-      vmid         = 118
-      internal_mac = "BC:24:11:81:F8:C9"
-      talos_node_ip = "10.30.0.17"
-      external_mac = "BC:24:11:C4:44:0B"
-    }
     left = {
       name         = "left-talos-worker"
       node         = "se350-left"
       vmid         = 117
       internal_mac = "BC:24:11:5B:88:F9"
-      talos_node_ip = "10.30.0.18"
+      talos_node_ip = "10.30.0.17"
       external_mac = "BC:24:11:40:0B:01"
+    }
+    right = {
+      name         = "right-talos-worker"
+      node         = "se350-right"
+      vmid         = 118
+      internal_mac = "BC:24:11:81:F8:C9"
+      talos_node_ip = "10.30.0.18"
+      external_mac = "BC:24:11:C4:44:0B"
     }
   }
 }
