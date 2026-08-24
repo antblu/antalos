@@ -20,12 +20,6 @@ provider "kubectl" {
   config_path = "${path.module}/../talostofu/kubeconfig"
 }
 
-provider "argocd" {
-  server_addr = "argocd-server.argocd.svc.cluster.local:443"
-  auth_token  = var.argocd_auth_token
-  insecure    = true
-}
-
 # --- Install ArgoCD via the official Helm chart ---
 resource "helm_release" "argocd" {
   name             = "argocd"
@@ -41,8 +35,4 @@ resource "helm_release" "argocd" {
 resource "kubectl_manifest" "argocd_bootstrap" {
   depends_on = [helm_release.argocd]
   yaml_body  = file("${path.module}/../argocd/argocd-self.yaml")
-}
-
-resource "argocd_repository" "gitops" {
-  repo = "https://github.com/antblu/antalos.git"
 }
