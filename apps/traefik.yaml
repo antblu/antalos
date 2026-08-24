@@ -16,6 +16,12 @@ spec:
         ingressClass:
           enabled: true
           isDefaultClass: true
+        ingressRoute:
+          dashboard:
+            enabled: true
+            matchRule: Host(`traefik.antblu.net`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
+            entryPoints:
+              - web        # switch to websecure and add TLS later
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: traefik

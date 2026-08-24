@@ -1,20 +1,12 @@
-# ArgoCD Helm chart values
-
-# Access the UI via: kubectl port-forward -n argocd svc/argocd-server 8080:443
 server:
   service:
     type: ClusterIP
-
-# Uncomment once you've deployed an ingress controller (e.g. Traefik):
-# ingress:
-#   enabled: true
-#   ingressClassName: traefik
-#   hosts:
-#     - argocd.example.com
-#   tls:
-#     - hosts:
-#         - argocd.example.com
-#       secretName: argocd-tls
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hostname: argocd.antblu.net
+    tls: true
+    tlsSecretName: argocd-tls
 
 configs:
   params:
