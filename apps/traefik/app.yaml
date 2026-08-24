@@ -11,6 +11,11 @@ spec:
     targetRevision: 41.3.0 # Use the latest stable chart version
     helm:
       valuesObject:
+        deployment:
+          replicas: 2
+        podDisruptionBudget:
+            enabled: true
+            minAvailable: 1
         service:
           type: LoadBalancer
           annotations:
