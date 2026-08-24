@@ -1,7 +1,7 @@
 # ArgoCD
 
 This directory defines and configures ArgoCD itself (GitOps config only).
-The Terraform that installs ArgoCD lives in `../opentofu/` (Option A — shared state).
+The Terraform that installs ArgoCD lives in `../argotofu/` (Option A — shared state).
 
 ## Layout
 - `argocd-values.yaml` — Helm values for the `argo-cd` chart
