@@ -24,8 +24,9 @@ spec:
             enabled: true
             matchRule: Host(`traefik.antblu.net`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
             entryPoints:
-              - web        # switch to websecure and add TLS later
-  destination:
+              - websecure
+            tls:
+              secretName: traefik-dashboard-tls
     server: 'https://kubernetes.default.svc'
     namespace: traefik
   syncPolicy:

@@ -4,9 +4,12 @@ server:
   ingress:
     enabled: true
     ingressClassName: traefik
-    hostname: argocd.antblu.net
-    tls: true
-    tlsSecretName: argocd-tls
+    hosts:
+      - argocd.antblu.net
+    tls:
+      - hosts:
+          - argocd.antblu.net
+        secretName: argocd-tls
 
 configs:
   params:
