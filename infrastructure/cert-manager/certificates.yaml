@@ -1,0 +1,25 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: argocd-tls
+  namespace: argocd
+spec:
+  secretName: argocd-tls        # matches the secretName in your values template [4]
+  issuerRef:
+    name: letsencrypt-staging   # later: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - argocd.antblu.net
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: traefik-dashboard-tls
+  namespace: traefik
+spec:
+  secretName: traefik-dashboard-tls
+  issuerRef:
+    name: letsencrypt-staging
+    kind: ClusterIssuer
+  dnsNames:
+    - traefik.antblu.net
