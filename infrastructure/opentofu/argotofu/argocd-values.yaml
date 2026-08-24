@@ -4,7 +4,6 @@ server:
     ingressClassName: traefik
     hostname: argocd.antblu.net
     tls: true
-    tlsSecretName: argocd-server-tls # Hardcoded name into helm chart
 configs:
   params:
     server.insecure: true
