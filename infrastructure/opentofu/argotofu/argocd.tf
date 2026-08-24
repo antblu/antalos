@@ -34,5 +34,5 @@ resource "helm_release" "argocd" {
 # --- Bootstrap "App of Apps" Application pointing at the apps repo ---
 resource "kubectl_manifest" "argocd_bootstrap" {
   depends_on = [helm_release.argocd]
-  yaml_body  = file("${path.module}/../argocd/argocd-self.yaml")
+  yaml_body  = file("${path.module}/../../argocd/argocd-self.yaml")
 }
