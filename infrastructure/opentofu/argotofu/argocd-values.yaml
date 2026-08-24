@@ -1,13 +1,10 @@
 server:
-  service:
-    type: ClusterIP
   ingress:
     enabled: true
     ingressClassName: traefik
     hostname: argocd.antblu.net
     tls: true
     tlsSecretName: argocd-tls
-
 configs:
   params:
     server.insecure: true

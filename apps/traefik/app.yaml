@@ -27,6 +27,7 @@ spec:
               - websecure
             tls:
               secretName: traefik-dashboard-tls
+  destination:
     server: 'https://kubernetes.default.svc'
     namespace: traefik
   syncPolicy:
