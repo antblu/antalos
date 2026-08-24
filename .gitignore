@@ -14,3 +14,4 @@ infrastructure/talos/worker.yaml
 *.tfvars.local
 *.pem
 *.key
+*.crt
