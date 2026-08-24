@@ -16,13 +16,14 @@ provider "helm" {
   }
 }
 
-# kubectl provider: used only for the ArgoCD bootstrap Application below.
-# kubernetes_manifest has to fetch the CRD's OpenAPI schema from a live
-# cluster at PLAN time, so it can't plan on a from-scratch run. kubectl_manifest
-# treats the body as an opaque YAML string, so it only needs the cluster at
-# apply time -- by which point helm_release.argocd has installed the CRD.
 provider "kubectl" {
   config_path = "${path.module}/../talostofu/kubeconfig"
+}
+
+provider "argocd" {
+  server_addr = "argocd-server.argocd.svc.cluster.local:443"
+  auth_token  = var.argocd_auth_token
+  insecure    = true
 }
 
 # --- Install ArgoCD via the official Helm chart ---
@@ -40,4 +41,8 @@ resource "helm_release" "argocd" {
 resource "kubectl_manifest" "argocd_bootstrap" {
   depends_on = [helm_release.argocd]
   yaml_body  = file("${path.module}/../argocd/argocd-self.yaml")
+}
+
+resource "argocd_repository" "gitops" {
+  repo = "https://github.com/antblu/antalos.git"
 }
