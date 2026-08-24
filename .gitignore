@@ -13,3 +13,4 @@ kubeconfig
 *.pem
 *.key
 *.crt
+.terraform.lock.*
