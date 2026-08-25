@@ -20,6 +20,11 @@ spec:
         # cert-manager controller
         # =========================
         replicaCount: 2
+        strategy:
+          type: RollingUpdate
+          rollingUpdate:
+            maxSurge: 0
+            maxUnavailable: 1
         affinity:
           podAntiAffinity:
             preferredDuringSchedulingIgnoredDuringExecution:
@@ -35,6 +40,11 @@ spec:
         # =========================
         webhook:
           replicaCount: 2
+          strategy:
+            type: RollingUpdate
+            rollingUpdate:
+              maxSurge: 0
+              maxUnavailable: 1
           affinity:
             podAntiAffinity:
               preferredDuringSchedulingIgnoredDuringExecution:
@@ -50,6 +60,11 @@ spec:
         # =========================
         cainjector:
           replicaCount: 2
+          strategy:
+            type: RollingUpdate
+            rollingUpdate:
+              maxSurge: 0
+              maxUnavailable: 1
           affinity:
             podAntiAffinity:
               preferredDuringSchedulingIgnoredDuringExecution:
