@@ -19,11 +19,6 @@ spec:
         # cert-manager controller
         # =========================
         replicaCount: 2
-
-        podDisruptionBudget:
-          enabled: true
-          minAvailable: 1
-
         affinity:
           podAntiAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
@@ -38,11 +33,6 @@ spec:
         # =========================
         webhook:
           replicaCount: 2
-
-          podDisruptionBudget:
-            enabled: true
-            minAvailable: 1
-
           affinity:
             podAntiAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
@@ -57,11 +47,6 @@ spec:
         # =========================
         cainjector:
           replicaCount: 2
-
-          podDisruptionBudget:
-            enabled: true
-            minAvailable: 1
-
           affinity:
             podAntiAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
