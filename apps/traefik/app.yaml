@@ -13,9 +13,15 @@ spec:
       valuesObject:
         deployment:
           replicas: 2
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: traefik
         podDisruptionBudget:
-            enabled: true
-            minAvailable: 1
+          enabled: true
+          minAvailable: 1
         service:
           type: LoadBalancer
           annotations:
