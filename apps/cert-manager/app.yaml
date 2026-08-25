@@ -11,7 +11,8 @@ spec:
     targetRevision: v1.18.2
     helm:
       valuesObject:
-        # Install cert-manager CRDs.
+
+        # Install cert-manager CRDs
         crds:
           enabled: true
           keep: true
@@ -29,38 +30,36 @@ spec:
                       app.kubernetes.io/instance: cert-manager
                       app.kubernetes.io/component: controller
                   topologyKey: kubernetes.io/hostname
-
         # =========================
         # cert-manager webhook
         # =========================
         webhook:
           replicaCount: 2
           affinity:
-          podAntiAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-              - weight: 100
-                podAffinityTerm:
-                  labelSelector:
-                    matchLabels:
-                      app.kubernetes.io/instance: cert-manager
-                      app.kubernetes.io/component: webhook
-                  topologyKey: kubernetes.io/hostname
-
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchLabels:
+                        app.kubernetes.io/instance: cert-manager
+                        app.kubernetes.io/component: webhook
+                    topologyKey: kubernetes.io/hostname
         # =========================
         # cert-manager cainjector
         # =========================
         cainjector:
           replicaCount: 2
           affinity:
-          podAntiAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-              - weight: 100
-                podAffinityTerm:
-                  labelSelector:
-                    matchLabels:
-                      app.kubernetes.io/instance: cert-manager
-                      app.kubernetes.io/component: cainjector
-                  topologyKey: kubernetes.io/hostname
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchLabels:
+                        app.kubernetes.io/instance: cert-manager
+                        app.kubernetes.io/component: cainjector
+                    topologyKey: kubernetes.io/hostname
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
@@ -68,6 +67,5 @@ spec:
     automated:
       prune: true
       selfHeal: true
-
     syncOptions:
       - CreateNamespace=true
