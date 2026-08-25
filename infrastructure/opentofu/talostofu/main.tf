@@ -40,6 +40,12 @@ data "talos_machine_configuration" "worker" {
           disk  = var.talos_install_disk
           image = "https://factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515/v1.13.9/nocloud-amd64.raw.xz"
         }
+        # Taint specifically for the rtx worker node
+        kubelet = each.key == "rtx" ? {
+          nodeTaints = {
+            "workload/type=gpu:NoSchedule" = ""
+          }
+        } : {}
         network = {
           interfaces = [
             {
