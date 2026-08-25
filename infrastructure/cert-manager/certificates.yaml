@@ -23,3 +23,18 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - traefik.antblu.net
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: rancher-tls
+  namespace: cattle-system
+spec:
+  secretName: rancher-tls
+
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+
+  dnsNames:
+    - rancher.antblu.net
