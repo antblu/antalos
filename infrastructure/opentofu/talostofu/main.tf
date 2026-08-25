@@ -43,7 +43,7 @@ data "talos_machine_configuration" "worker" {
         # Taint for rtx worker node to ensure quorum workloads are scheduled on it
         kubelet = each.key == "rtx" ? {
           extraArgs = {
-            "register-with-taints" = "dedicated=quorum:NoSchedule"
+            "register-with-taints" = "quorum:NoSchedule"
           }
         } : null
         nodeTaints = each.key == "rtx" ? {
