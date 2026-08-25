@@ -21,12 +21,14 @@ spec:
         replicaCount: 2
         affinity:
           podAntiAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/instance: cert-manager
-                    app.kubernetes.io/component: controller
-                topologyKey: kubernetes.io/hostname
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/instance: cert-manager
+                      app.kubernetes.io/component: controller
+                  topologyKey: kubernetes.io/hostname
 
         # =========================
         # cert-manager webhook
@@ -34,9 +36,11 @@ spec:
         webhook:
           replicaCount: 2
           affinity:
-            podAntiAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
                     matchLabels:
                       app.kubernetes.io/instance: cert-manager
                       app.kubernetes.io/component: webhook
@@ -48,9 +52,11 @@ spec:
         cainjector:
           replicaCount: 2
           affinity:
-            podAntiAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
                     matchLabels:
                       app.kubernetes.io/instance: cert-manager
                       app.kubernetes.io/component: cainjector
