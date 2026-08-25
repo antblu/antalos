@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: apps
+  name: authentik-db
   namespace: argocd
 spec:
   project: default
@@ -9,16 +9,16 @@ spec:
   source:
     repoURL: https://github.com/antblu/antalos.git
     targetRevision: main
-    path: apps
-    directory:
-      recurse: true
-      include: '**/app.yaml'
+    path: apps/authentik-db
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: authentik
 
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true
