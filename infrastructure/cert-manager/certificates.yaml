@@ -50,107 +50,107 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - router.antblu.net
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: xcc-left-tls
-  namespace: cert-manager
-spec:
-  secretName: xcc-left-tls
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-  dnsNames:
-    - xcc-left.antblu.net
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: xcc-right-tls
-  namespace: cert-manager
-spec:
-  secretName: xcc-right-tls
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-  dnsNames:
-    - xcc-right.antblu.net
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: nas-tls
-  namespace: cert-manager
-spec:
-  secretName: nas-tls
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-  dnsNames:
-    - nas.antblu.net
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: rtx-tls
-  namespace: cert-manager
-spec:
-  secretName: rtx-tls
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-  dnsNames:
-    - prox-rtx.antblu.net
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: left-tls
-  namespace: cert-manager
-spec:
-  secretName: left-tls
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-  dnsNames:
-    - prox-left.antblu.net
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: right-tls
-  namespace: cert-manager
-spec:
-  secretName: right-tls
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-  dnsNames:
-    - prox-right.antblu.net
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: ups-tls
-  namespace: cert-manager
-spec:
-  secretName: ups-tls
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-  dnsNames:
-    - ups.antblu.net
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: archer-tls
-  namespace: cert-manager
-spec:
-  secretName: archer-tls
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-  dnsNames:
-    - archer.antblu.net
+# ---
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: xcc-left-tls
+#   namespace: cert-manager
+# spec:
+#   secretName: xcc-left-tls
+#   issuerRef:
+#     name: letsencrypt-prod
+#     kind: ClusterIssuer
+#   dnsNames:
+#     - xcc-left.antblu.net
+# ---
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: xcc-right-tls
+#   namespace: cert-manager
+# spec:
+#   secretName: xcc-right-tls
+#   issuerRef:
+#     name: letsencrypt-prod
+#     kind: ClusterIssuer
+#   dnsNames:
+#     - xcc-right.antblu.net
+# ---
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: nas-tls
+#   namespace: cert-manager
+# spec:
+#   secretName: nas-tls
+#   issuerRef:
+#     name: letsencrypt-prod
+#     kind: ClusterIssuer
+#   dnsNames:
+#     - nas.antblu.net
+# ---
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: rtx-tls
+#   namespace: cert-manager
+# spec:
+#   secretName: rtx-tls
+#   issuerRef:
+#     name: letsencrypt-prod
+#     kind: ClusterIssuer
+#   dnsNames:
+#     - prox-rtx.antblu.net
+# ---
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: left-tls
+#   namespace: cert-manager
+# spec:
+#   secretName: left-tls
+#   issuerRef:
+#     name: letsencrypt-prod
+#     kind: ClusterIssuer
+#   dnsNames:
+#     - prox-left.antblu.net
+# ---
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: right-tls
+#   namespace: cert-manager
+# spec:
+#   secretName: right-tls
+#   issuerRef:
+#     name: letsencrypt-prod
+#     kind: ClusterIssuer
+#   dnsNames:
+#     - prox-right.antblu.net
+# ---
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: ups-tls
+#   namespace: cert-manager
+# spec:
+#   secretName: ups-tls
+#   issuerRef:
+#     name: letsencrypt-prod
+#     kind: ClusterIssuer
+#   dnsNames:
+#     - ups.antblu.net
+# ---
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: archer-tls
+#   namespace: cert-manager
+# spec:
+#   secretName: archer-tls
+#   issuerRef:
+#     name: letsencrypt-prod
+#     kind: ClusterIssuer
+#   dnsNames:
+#     - archer.antblu.net
