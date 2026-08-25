@@ -47,7 +47,7 @@ data "talos_machine_configuration" "worker" {
           }
         } : null
         nodeTaints = each.key == "rtx" ? {
-          "workload/type" = "quorum:NoSchedule"
+          "quorum" = "NoSchedule"
         } : null
         network = {
           interfaces = [
