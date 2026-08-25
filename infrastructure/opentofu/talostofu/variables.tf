@@ -110,7 +110,7 @@ variable "external_bridge" {
 variable "control_vm_memory" {
   type        = number
   description = "Memory in MiB for control plane VMs"
-  default     = 4096
+  default     = 3584
 }
 
 variable "control_vm_cores" {
@@ -129,22 +129,40 @@ variable "control_vm_disk_size" {
 # Worker VM Specs
 # ============================================================
 
-variable "worker_vm_memory" {
+variable "se350_worker_vm_memory" {
   type        = number
   description = "Memory in MiB for worker VMs (28 GiB = 28672 MiB)"
   default     = 28672
 }
 
-variable "worker_vm_cores" {
+variable "se350_worker_vm_cores" {
   type        = number
   description = "Number of vCPUs for worker VMs"
   default     = 8
 }
 
-variable "worker_vm_disk_size" {
+variable "se350_worker_vm_disk_size" {
   type        = number
   description = "Disk size in GB for worker VMs"
   default     = 300
+}
+
+variable "rtx_worker_vm_memory" {
+  type        = number
+  description = "Memory in MiB for worker VMs (28 GiB = 28672 MiB)"
+  default     = 1536
+}
+
+variable "rtx_worker_vm_cores" {
+  type        = number
+  description = "Number of vCPUs for worker VMs"
+  default     = 1
+}
+
+variable "rtx_worker_vm_disk_size" {
+  type        = number
+  description = "Disk size in GB for worker VMs"
+  default     = 20
 }
 
 # ============================================================
@@ -201,6 +219,15 @@ variable "talos_worker_vms" {
   }))
   description = "Map of Talos worker VM configurations"
   default = {
+    rtx = {
+      name          = "rtx-talos-worker"
+      node          = "rtx"
+      vmid          = 119
+      internal_mac  = "BC:24:11:81:F8:B9"
+      talos_node_ip = "10.30.0.16"
+      external_mac  = "BC:24:11:C4:44:1B"
+      external_ignore_dhcp_route = true
+    }
     left = {
       name         = "left-talos-worker"
       node         = "se350-left"

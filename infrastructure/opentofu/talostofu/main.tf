@@ -157,13 +157,13 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
 
   # --- CPU ---
   cpu {
-    cores = var.worker_vm_cores
+    cores = each.key == "rtx" ? var.rtx_worker_vm_cores : var.se350_worker_vm_cores
     type  = "host"
   }
 
   # --- Memory (ballooning disabled) ---
   memory {
-    dedicated = var.worker_vm_memory
+    dedicated = each.key == "rtx" ? var.rtx_worker_vm_memory : var.se350_worker_vm_memory
     floating  = 0
   }
 
@@ -175,7 +175,7 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
     datastore_id = var.vm_storage
     interface    = "scsi0"
     import_from  = "${var.iso_storage}:import/${var.iso_file_name}"
-    size         = var.worker_vm_disk_size
+    size         = each.key == "rtx" ? var.rtx_worker_vm_disk_size : var.se350_worker_vm_disk_size
     ssd          = true
     discard      = "on"
   }
