@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rancher
+  namespace: argocd
+
+spec:
+  project: default
+
+  source:
+    repoURL: https://releases.rancher.com/server-charts/stable
+    chart: rancher
+    targetRevision: 2.15.0
+
+    helm:
+      valuesObject:
+        # Public URL for Rancher
+        hostname: rancher.antblu.net
+
+        # HA: run three Rancher server replicas
+        replicas: 2
+
+        # Require replicas to run on different Kubernetes nodes
+        antiAffinity: required
+        topologyKey: kubernetes.io/hostname
+
+        # Rancher is behind your existing Traefik ingress controller
+        ingress:
+          enabled: true
+          ingressClassName: traefik
+
+          tls:
+            source: secret
+            secretName: rancher-tls
+
+        # TLS terminates at Traefik / the Ingress
+        tls: ingress
+
+        # Keep Rancher internal service as ClusterIP.
+        # Traefik is the externally exposed LoadBalancer.
+        service:
+          type: ClusterIP
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cattle-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true
