@@ -1,3 +1,6 @@
+global:
+  podAntiAffinity: hard
+
 server:
   replicas: 2
   env:
@@ -8,6 +11,39 @@ server:
     ingressClassName: traefik
     hostname: argocd.antblu.net
     tls: true
+
+controller:
+  replicas: 2
+  sharding:
+    enabled: true
+  extraEnv:
+    - name: ARGOCD_CONTROLLER_HEARTBEAT_TIME
+      value: "5s"
+
+repoServer:
+  replicas: 2
+
+redis:
+  enabled: false
+  
+redis-ha:
+  enabled: true
+  # 3 gives a proper quorum
+  replicas: 3
+  tolerations:
+    - key: quorum
+      operator: Exists
+      effect: NoSchedule
+  sentinel:
+    enabled: true
+
+# --- Base params (keep existing) ---
 configs:
   params:
     server.insecure: true
+    # Make the controller/repo-server use the HA Redis service + sentinels
+    redis.server: "argocd-redis-ha:6379"
+    redis.sentinel: "argocd-redis-ha-announce-0:26379,argocd-redis-ha-announce-1:26379,argocd-redis-ha-announce-2:26379"
+    redis.sentinelmaster: "master"
+    # Optional: use a more balanced sharding method than legacy
+    controller.sharding.method: "round-robin"
