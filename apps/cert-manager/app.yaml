@@ -11,12 +11,72 @@ spec:
     targetRevision: v1.18.2
     helm:
       valuesObject:
+        # Install cert-manager CRDs.
         crds:
           enabled: true
+          keep: true
+        # =========================
+        # cert-manager controller
+        # =========================
+        replicaCount: 2
+
+        podDisruptionBudget:
+          enabled: true
+          minAvailable: 1
+
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: cert-manager
+                    app.kubernetes.io/component: controller
+                topologyKey: kubernetes.io/hostname
+
+        # =========================
+        # cert-manager webhook
+        # =========================
+        webhook:
+          replicaCount: 2
+
+          podDisruptionBudget:
+            enabled: true
+            minAvailable: 1
+
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/instance: cert-manager
+                      app.kubernetes.io/component: webhook
+                  topologyKey: kubernetes.io/hostname
+
+        # =========================
+        # cert-manager cainjector
+        # =========================
+        cainjector:
+          replicaCount: 2
+
+          podDisruptionBudget:
+            enabled: true
+            minAvailable: 1
+
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/instance: cert-manager
+                      app.kubernetes.io/component: cainjector
+                  topologyKey: kubernetes.io/hostname
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
   syncPolicy:
-    automated: { prune: true, selfHeal: true }
+    automated:
+      prune: true
+      selfHeal: true
+
     syncOptions:
       - CreateNamespace=true
