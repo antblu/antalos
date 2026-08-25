@@ -11,6 +11,17 @@ spec:
     chart: metallb
     targetRevision: 0.16.1
 
+    helm:
+      values: |
+        controller:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/component: controller
+                  topologyKey: kubernetes.io/hostname
+
   destination:
     server: https://kubernetes.default.svc
     namespace: metallb-system
