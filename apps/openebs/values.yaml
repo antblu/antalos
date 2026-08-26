@@ -7,6 +7,11 @@ localpv-provisioner:
 
     basePath: /var/mnt/openebs-local
 
+    # Provision volumes from a node-local DaemonSet instead of creating
+    # privileged helper pods in application namespaces.
+    nodeDeployment:
+      enabled: true
+
     # Do not allow PVCs to override BasePath.
     allowInsecurePvcBasePathOverride: false
 

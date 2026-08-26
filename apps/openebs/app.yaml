@@ -29,5 +29,14 @@ spec:
       prune: true
       selfHeal: true
 
+    # Node-deployment mode requires host filesystem access, but keeping this
+    # exception on the storage namespace prevents application namespaces from
+    # admitting privileged OpenEBS helper pods.
+    managedNamespaceMetadata:
+      labels:
+        pod-security.kubernetes.io/enforce: privileged
+        pod-security.kubernetes.io/audit: baseline
+        pod-security.kubernetes.io/warn: baseline
+
     syncOptions:
       - CreateNamespace=true
