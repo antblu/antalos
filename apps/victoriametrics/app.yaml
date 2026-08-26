@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: victoriametrics
+  namespace: argocd
+spec:
+  project: default
+
+  sources:
+    - repoURL: https://victoriametrics.github.io/helm-charts/
+      chart: victoria-metrics-k8s-stack
+      targetRevision: 0.91.2
+      helm:
+        valueFiles:
+          - $values/apps/victoriametrics/values.yaml
+
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      ref: values
+      path: apps/victoriametrics
+      directory:
+        include: 'certificate.yaml'
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+
+  # Argo CD cannot retain Helm-generated Grafana passwords across renders.
+  ignoreDifferences:
+    - group: ''
+      kind: Secret
+      name: grafana
+      namespace: monitoring
+      jsonPointers:
+        - /data/admin-password
+    - group: apps
+      kind: Deployment
+      name: grafana
+      namespace: monitoring
+      jsonPointers:
+        - /spec/template/metadata/annotations/checksum~1secret
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
