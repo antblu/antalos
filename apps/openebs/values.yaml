@@ -2,9 +2,6 @@
 localpv-provisioner:
   localpv:
     enabled: true
-    replicas: 2
-    enableLeaderElection: true
-
     basePath: /var/mnt/openebs-local
 
     # Provision volumes from a node-local DaemonSet instead of creating
