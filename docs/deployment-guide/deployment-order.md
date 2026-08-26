@@ -8,10 +8,10 @@ When rebuilding the cluster from scratch, deploy the components in this general 
 	- `opentofu`
 	- `kubeseal`
 2. Terraform/OpenTofu to deploy VMs and bootstrap k8s
-	```bash
+```bash
 cd ../antalos/infrastructure/opentofu/talostofu 
 tofu apply
-	```
+```
 3. Deploy ArgoCD
 ```bash
 cd ../antalos/infrastructure/opentofu/argotofu 
