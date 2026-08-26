@@ -12,15 +12,14 @@ spec:
       targetRevision: 2026.8.0
       helm:
         values: |
+          global:
+            env:
+              - name: AUTHENTIK_POSTGRESQL__HOST
+                value: authentik-db-rw.authentik.svc.cluster.local
+
           authentik:
             existingSecret:
               secretName: authentik-secrets
-            error_reporting:
-              enabled: false
-            postgresql:
-              host: authentik-db-rw.authentik.svc.cluster.local
-              name: authentik
-              user: authentik
 
           server:
             replicas: 2

@@ -167,11 +167,11 @@ metadata:
   namespace: authentik
 type: Opaque
 stringData:
-  secret_key: "REPLACE_WITH_GENERATED_AUTHENTIK_SECRET_KEY"
-  postgresql__password: "REPLACE_WITH_GENERATED_POSTGRES_PASSWORD"
+  AUTHENTIK_SECRET_KEY: "REPLACE_WITH_GENERATED_AUTHENTIK_SECRET_KEY"
+  AUTHENTIK_POSTGRESQL__PASSWORD: "REPLACE_WITH_GENERATED_POSTGRES_PASSWORD"
 ```
 
-The `postgresql__password` value must exactly match the password used in the CNPG Secret.
+The `AUTHENTIK_POSTGRESQL__PASSWORD` value must exactly match the password used in the CNPG Secret.
 ## Seal the Authentik Secret
 Run:
 ```bash
@@ -179,7 +179,7 @@ kubeseal \
   --cert ~/sealed-secrets-cert.pem \
   --format yaml \
   < ~/.kubernetes-secrets/authentik-secrets.yaml \
-  > apps/authentik/secret.yaml
+  > apps/authentik/secrets.yaml
 ```
 ## Exporting Backup Secrets
 
