@@ -14,17 +14,10 @@ spec:
 
     helm:
       valuesObject:
-        # Public URL for Rancher
         hostname: rancher.antblu.net
-
-        # HA: run three Rancher server replicas
         replicas: 2
-
-        # Require replicas to run on different Kubernetes nodes
         antiAffinity: required
         topologyKey: kubernetes.io/hostname
-
-        # Rancher is behind your existing Traefik ingress controller
         ingress:
           enabled: true
           ingressClassName: traefik
@@ -35,9 +28,6 @@ spec:
 
         # TLS terminates at Traefik / the Ingress
         tls: ingress
-
-        # Keep Rancher internal service as ClusterIP.
-        # Traefik is the externally exposed LoadBalancer.
         service:
           type: ClusterIP
 
