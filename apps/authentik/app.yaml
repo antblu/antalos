@@ -6,40 +6,41 @@ metadata:
 spec:
   project: default
 
-  source:
-    repoURL: https://charts.goauthentik.io
-    chart: authentik
-    targetRevision: 2026.8.0
+  sources:
+    - repoURL: https://charts.goauthentik.io
+      chart: authentik
+      targetRevision: 2026.8.0
+      helm:
+        values: |
+          authentik:
+            existingSecret:
+              secretName: authentik-secrets
+            error_reporting:
+              enabled: false
+            postgresql:
+              host: authentik-db-rw.authentik.svc.cluster.local
+              name: authentik
+              user: authentik
 
-    helm:
-      values: |
-        authentik:
-          existingSecret:
-            secretName: authentik-secrets
+          server:
+            replicas: 2
 
-          error_reporting:
-            enabled: false
+            ingress:
+              enabled: true
+              ingressClassName: traefik
+              hosts:
+                - auth.antblu.net
+              tls:
+                - hosts:
+                    - auth.antblu.net
+                  secretName: authentik-tls
 
           postgresql:
-            host: authentik-db-rw.authentik.svc.cluster.local
-            name: authentik
-            user: authentik
+            enabled: false
 
-        server:
-          replicas: 2
-
-          ingress:
-            enabled: true
-            ingressClassName: traefik
-            hosts:
-              - auth.antblu.net
-            tls:
-              - hosts:
-                  - auth.antblu.net
-                secretName: authentik-tls
-
-        postgresql:
-          enabled: false
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      path: apps/authentik
 
   destination:
     server: https://kubernetes.default.svc
