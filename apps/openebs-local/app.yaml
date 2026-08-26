@@ -11,4 +11,5 @@ metadata:
         value: /var/mnt/openebs-local
 provisioner: openebs.io/local
 reclaimPolicy: Retain
+allowVolumeExpansion: true
 volumeBindingMode: WaitForFirstConsumer
