@@ -10,6 +10,9 @@ spec:
     repoURL: https://github.com/antblu/antalos.git
     targetRevision: main
     path: apps/authentik-db
+    directory:
+      include: '*.yaml'
+      exclude: 'app.yaml'
 
   destination:
     server: https://kubernetes.default.svc

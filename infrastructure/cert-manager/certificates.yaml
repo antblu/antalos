@@ -4,7 +4,7 @@ metadata:
   name: argocd-tls
   namespace: argocd
 spec:
-  secretName: argocd-server-tls
+  secretName: argocd-tls
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer

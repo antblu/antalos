@@ -4,76 +4,51 @@ metadata:
   name: cert-manager
   namespace: argocd
   annotations:
-       argocd.argoproj.io/sync-wave: "0" 
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
-  source:
-    repoURL: https://charts.jetstack.io
-    chart: cert-manager
-    targetRevision: v1.18.2
-    helm:
-      valuesObject:
-
-        # Install cert-manager CRDs
-        crds:
-          enabled: true
-          keep: true
-        # =========================
-        # cert-manager controller
-        # =========================
-        replicaCount: 2
-        strategy:
-          type: RollingUpdate
-          rollingUpdate:
-            maxSurge: 0
-            maxUnavailable: 1
-        affinity:
-          podAntiAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/instance: cert-manager
-                    app.kubernetes.io/component: controller
-                topologyKey: kubernetes.io/hostname
-        # =========================
-        # cert-manager webhook
-        # =========================
-        webhook:
-          replicaCount: 2
-          strategy:
-            type: RollingUpdate
-            rollingUpdate:
-              maxSurge: 0
-              maxUnavailable: 1
-          affinity:
-            podAntiAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchLabels:
-                      app.kubernetes.io/instance: cert-manager
-                      app.kubernetes.io/component: webhook
-                  topologyKey: kubernetes.io/hostname
-        # =========================
-        # cert-manager cainjector
-        # =========================
-        cainjector:
-          replicaCount: 2
-          strategy:
-            type: RollingUpdate
-            rollingUpdate:
-              maxSurge: 0
-              maxUnavailable: 1
-          affinity:
-            podAntiAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchLabels:
-                      app.kubernetes.io/instance: cert-manager
-                      app.kubernetes.io/component: cainjector
-                  topologyKey: kubernetes.io/hostname
+  sources:
+    - repoURL: https://charts.jetstack.io
+      chart: cert-manager
+      targetRevision: v1.18.2
+      helm:
+        valuesObject:
+          crds:
+            enabled: true
+            keep: true
+          webhook:
+            replicaCount: 2
+            strategy:
+              type: RollingUpdate
+              rollingUpdate:
+                maxSurge: 0
+                maxUnavailable: 1
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchLabels:
+                        app.kubernetes.io/instance: cert-manager
+                        app.kubernetes.io/component: webhook
+                    topologyKey: kubernetes.io/hostname
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      path: apps/cert-manager
+      directory:
+        include: '*.yaml'
+        exclude: 'app.yaml'
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/clientConfig/caBundle
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/clientConfig/caBundle
   syncPolicy:
     automated:
       prune: true

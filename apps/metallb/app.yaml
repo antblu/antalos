@@ -27,8 +27,8 @@ spec:
       targetRevision: main
       path: apps/metallb
       directory:
-        # only render the config file, don't re-apply app.yaml here
-        include: '{config.yaml,*.yaml}'
+        include: '*.yaml'
+        exclude: 'app.yaml'
 
   destination:
     server: https://kubernetes.default.svc

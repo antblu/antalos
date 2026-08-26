@@ -11,6 +11,7 @@ server:
     ingressClassName: traefik
     hostname: argocd.antblu.net
     tls: true
+    tlsSecretName: argocd-tls
 
 controller:
   replicas: 2
