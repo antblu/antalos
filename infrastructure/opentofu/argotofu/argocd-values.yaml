@@ -8,10 +8,6 @@ server:
     enabled: true
     ingressClassName: traefik
     hostname: argocd.antblu.net
-    extraTls:
-      - hosts:
-          - argocd.antblu.net
-        secretName: argocd-tls
 
 controller:
   replicas: 2
