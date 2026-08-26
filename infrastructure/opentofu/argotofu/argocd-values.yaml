@@ -1,27 +1,21 @@
 global:
   affinity:
     podAntiAffinity: hard
-
 server:
   replicas: 2
   ingress:
     enabled: true
     ingressClassName: traefik
     hostname: argocd.antblu.net
-
 controller:
   replicas: 2
   heartbeatTime: 5
-
 repoServer:
   replicas: 2
-
 redis:
   enabled: false
-
 redis-ha:
   enabled: true
-  # 3rd on tainted node rtx
   replicas: 3
   tolerations:
     - key: quorum
@@ -29,7 +23,6 @@ redis-ha:
       effect: NoSchedule
   sentinel:
     enabled: true
-
 configs:
   params:
     server.insecure: true

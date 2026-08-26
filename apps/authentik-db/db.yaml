@@ -6,8 +6,13 @@ metadata:
 spec:
   instances: 2
   imageName: ghcr.io/cloudnative-pg/postgresql:18.6-minimal-trixie
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: required
   storage:
-    size: 10Gi
+    storageClass: openebs-local
+    size: 20Gi
   bootstrap:
     initdb:
       database: authentik
