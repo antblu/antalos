@@ -12,14 +12,15 @@ When rebuilding the cluster from scratch, deploy the components in this general 
 cd ../antalos/infrastructure/opentofu/talostofu 
 tofu apply
 ```
-3. Deploy ArgoCD
+3. Initialize [[cli-variables]]
+4. Deploy ArgoCD
 ```bash
 cd ../antalos/infrastructure/opentofu/argotofu 
 tofu apply
 ```
-3. Initialize [[cli-variables]]
-4. Inject [[k8s-secrets-bootstrap|Authentik and PostgreSQL secrets]] in the cluster
-5. Add Cloudflare API token
+
+5. Inject [[k8s-secrets-bootstrap|Authentik and PostgreSQL secrets]] in the cluster
+6. Add Cloudflare API token
 ```bash
 kubectl create secret generic cloudflare-api-token \
 --namespace cert-manager \
