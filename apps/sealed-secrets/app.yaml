@@ -13,6 +13,7 @@ spec:
     helm:
       valuesObject:
         fullnameOverride: sealed-secrets-controller
+        keyRenewPeriod: "0"
 
   destination:
     server: https://kubernetes.default.svc
