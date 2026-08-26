@@ -1,0 +1,27 @@
+# LocalPV Hostpath provisioner.
+localpv-provisioner:
+  enabled: true
+
+  localpv:
+    enabled: true
+
+    replicas: 2
+    enableLeaderElection: true
+
+    basePath: /var/mnt/openebs-local
+
+    # Do not allow PVCs to override BasePath.
+    allowInsecurePvcBasePathOverride: false
+
+    # Do not have OpenEBS create its own default StorageClass.
+    hostpathClass:
+      enabled: false
+
+lvm-localpv:
+  enabled: false
+
+zfs-localpv:
+  enabled: false
+
+mayastor:
+  enabled: false

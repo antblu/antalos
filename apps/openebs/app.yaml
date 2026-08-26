@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: openebs
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://openebs.github.io/openebs
+      chart: openebs
+      targetRevision: 4.5.1
+      helm:
+        valueFiles:
+          - $values/apps/openebs/values.yaml
+
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      ref: values
+      path: apps/openebs
+      directory:
+        include: 'storageclass.yaml'
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openebs
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true
