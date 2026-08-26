@@ -41,6 +41,12 @@ Verify:
 ```bash
 kubeseal --version
 ```
+## Restoring with a Private Key
+
+```bash
+kubectl apply -f sealed-secrets-keys-backup.yaml
+kubectl -n sealed-secrets rollout restart deployment sealed-secrets-controller
+```
 
 ## Fetch the Sealed Secrets public certificate
 
@@ -175,7 +181,7 @@ kubeseal \
   < ~/.kubernetes-secrets/authentik-secrets.yaml \
   > apps/authentik/secret.yaml
 ```
-## Exporting Secrets
+## Exporting Backup Secrets
 
 ```bash
 kubectl -n sealed-secrets get secret \
