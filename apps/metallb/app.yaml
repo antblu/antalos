@@ -6,13 +6,14 @@ metadata:
 spec:
   project: default
 
-  source:
-    repoURL: https://metallb.github.io/metallb
-    chart: metallb
-    targetRevision: 0.16.1
-
-    helm:
-      values: |
+  sources:
+    # Source 1: the MetalLB operator (chart)
+    - repoURL: https://metallb.github.io/metallb
+      chart: metallb
+      targetRevision: 0.16.1
+      helm:
+        releaseName: metallb
+        values: |
         controller:
           affinity:
             podAntiAffinity:
@@ -21,6 +22,13 @@ spec:
                     matchLabels:
                       app.kubernetes.io/component: controller
                   topologyKey: kubernetes.io/hostname
+    # Source 2: the config (IPAddressPool + L2Advertisement)
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      path: apps/metallb
+      directory:
+        # only render the config file, don't re-apply app.yaml here
+        include: '{config.yaml,*.yaml}'
 
   destination:
     server: https://kubernetes.default.svc
