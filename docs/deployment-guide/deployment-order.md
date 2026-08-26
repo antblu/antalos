@@ -20,10 +20,10 @@ tofu apply
 3. Initialize [[cli-variables]]
 4. Inject [[k8s-secrets-bootstrap|Authentik and PostgreSQL secrets]] in the cluster
 5. Add Cloudflare API token
-	```bash
-	kubectl create secret generic cloudflare-api-token \
-  --namespace cert-manager \
-  --from-literal=api-token='<paste-token>'
+```bash
+kubectl create secret generic cloudflare-api-token \
+--namespace cert-manager \
+--from-literal=api-token='<paste-token>'
 # Check what secrets are in the cluster
 kubectl get secrets -A
-	```
+```
