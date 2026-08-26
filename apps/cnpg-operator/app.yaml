@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/cloudnative-pg/cloudnative-pg
     targetRevision: release-1.30
-    path: config/manager
+    path: config/default
   destination:
     server: https://kubernetes.default.svc
     namespace: cnpg-system
