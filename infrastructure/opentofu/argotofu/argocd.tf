@@ -29,6 +29,12 @@ resource "helm_release" "argocd" {
   create_namespace = true
   version          = "10.4.0" # Update to latest stable version when possible
   values           = [file("${path.module}/argocd-values.yaml")]
+
+  # This release only bootstraps Argo CD. Once argocd-self is running, Argo CD
+  # is the steady-state owner of its chart resources and configuration.
+  lifecycle {
+    ignore_changes = all
+  }
 }
 
 # --- Bootstrap "App of Apps" Application pointing at the apps repo ---

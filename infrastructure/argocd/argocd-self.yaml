@@ -5,10 +5,24 @@ metadata:
   namespace: argocd
 spec:
   project: default
-  source:
-    repoURL: https://github.com/antblu/antalos.git
-    path: infrastructure/argocd
-    targetRevision: main
+  sources:
+    - repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-cd
+      targetRevision: 10.4.0 # Make sure this is changed with argocd-values.yaml
+      helm:
+        releaseName: argocd
+        valueFiles:
+          - $values/infrastructure/opentofu/argotofu/argocd-values.yaml
+
+    # This source provides the Helm values above and renders the remaining
+    # Argo CD bootstrap manifests. Exclude this Application so it is not both
+    # the parent definition and one of its own generated resources.
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      ref: values
+      path: infrastructure/argocd
+      directory:
+        exclude: argocd-self.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
@@ -16,3 +30,5 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
