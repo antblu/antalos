@@ -1,35 +1,31 @@
 global:
-  podAntiAffinity: hard
+  affinity:
+    podAntiAffinity: hard
 
 server:
   replicas: 2
-  env:
-    - name: ARGOCD_API_SERVER_REPLICAS
-      value: "2"
   ingress:
     enabled: true
     ingressClassName: traefik
     hostname: argocd.antblu.net
-    tls: true
-    tlsSecretName: argocd-tls
+    extraTls:
+      - hosts:
+          - argocd.antblu.net
+        secretName: argocd-tls
 
 controller:
   replicas: 2
-  sharding:
-    enabled: true
-  extraEnv:
-    - name: ARGOCD_CONTROLLER_HEARTBEAT_TIME
-      value: "5s"
+  heartbeatTime: 5
 
 repoServer:
   replicas: 2
 
 redis:
   enabled: false
-  
+
 redis-ha:
   enabled: true
-  # 3 gives a proper quorum
+  # 3rd on tainted node rtx
   replicas: 3
   tolerations:
     - key: quorum
@@ -38,13 +34,7 @@ redis-ha:
   sentinel:
     enabled: true
 
-# --- Base params (keep existing) ---
 configs:
   params:
     server.insecure: true
-    # Make the controller/repo-server use the HA Redis service + sentinels
-    redis.server: "argocd-redis-ha:6379"
-    redis.sentinel: "argocd-redis-ha-announce-0:26379,argocd-redis-ha-announce-1:26379,argocd-redis-ha-announce-2:26379"
-    redis.sentinelmaster: "master"
-    # Optional: use a more balanced sharding method than legacy
-    controller.sharding.method: "round-robin"
+    controller.sharding.algorithm: "round-robin"
