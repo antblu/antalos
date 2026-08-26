@@ -1,6 +1,6 @@
 # Talos secrets
-*talosconfig*
-*kubeconfig*
+talosconfig
+kubeconfig
 *.secret.yaml
 .env
 *.tfstate
@@ -13,4 +13,4 @@
 *.pem
 *.key
 *.crt
-**/.terraform.lock.hcl
+*.lock.hcl

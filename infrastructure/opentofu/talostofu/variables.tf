@@ -165,6 +165,18 @@ variable "rtx_worker_vm_disk_size" {
   default     = 20
 }
 
+variable "talos_worker_ephemeral_disk_size" {
+  type        = string
+  description = "Ephemeral disk size in GB for worker VMs"
+  default     = "60GiB"
+}
+
+variable "talos_worker_openebs_disk_size" {
+  type        = string
+  description = "Minimum disk size in GB for OpenEBS local PVs on worker VMs"
+  default     = "100GiB"
+}
+
 # ============================================================
 # Control Plane VM Definitions
 # ============================================================

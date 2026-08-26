@@ -24,7 +24,35 @@ data "talos_machine_configuration" "controlplane" {
     })
   ]
 }
+# Common Talos worker configuration
+locals {
+  talos_worker_machine_config = {
+    machine = {
+      install = {
+        disk  = var.talos_install_disk
+        image = "https://factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515/v1.13.9/nocloud-amd64.raw.xz"
+      }
 
+      network = {
+        interfaces = [
+          {
+            interface = "eth0"
+            dhcp      = true
+          },
+          {
+            interface = "eth1"
+            dhcp      = true
+
+            dhcpOptions = {
+              routeMetric = 1024
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+# Generate worker machine configurations
 data "talos_machine_configuration" "worker" {
   for_each           = var.talos_worker_vms
   cluster_name       = var.cluster_name
@@ -33,40 +61,62 @@ data "talos_machine_configuration" "worker" {
   machine_secrets    = talos_machine_secrets.this.machine_secrets
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
-  config_patches = [
-    yamlencode({
-      machine = {
-        install = {
-          disk  = var.talos_install_disk
-          image = "https://factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515/v1.13.9/nocloud-amd64.raw.xz"
-        }
-        # Taint for rtx worker node to ensure quorum workloads are scheduled on it
-        kubelet = each.key == "rtx" ? {
-          extraArgs = {
-            "register-with-taints" = "quorum:NoSchedule"
-          }
-        } : null
-        nodeTaints = each.key == "rtx" ? {
-          "quorum" = "NoSchedule"
-        } : null
-        network = {
-          interfaces = [
-            {
-              interface = "eth0"
-              dhcp      = true
-            },
-            {
-              interface = "eth1"
-              dhcp      = true
-              dhcpOptions = {
-                routeMetric = 1024
+
+  config_patches = concat(
+    [
+      yamlencode({
+        machine = merge(
+          local.talos_worker_machine_config.machine,
+          {
+            kubelet = each.key == "rtx" ? {
+              extraArgs = {
+                "register-with-taints" = "quorum:NoSchedule"
               }
-            }
-          ]
+            } : null
+
+            nodeTaints = each.key == "rtx" ? {
+              "quorum" = "NoSchedule"
+            } : null
+          }
+        )
+      })
+    ],
+    each.key != "rtx" ? [
+      yamlencode({
+        apiVersion = "v1alpha1"
+        kind       = "VolumeConfig"
+        name       = "EPHEMERAL"
+
+        provisioning = {
+          diskSelector = {
+            match = "system_disk"
+          }
+
+          maxSize = var.talos_worker_ephemeral_disk_size
+          grow    = false
         }
-      }
-    })
-  ]
+      }),
+
+      yamlencode({
+        apiVersion = "v1alpha1"
+        kind       = "UserVolumeConfig"
+        name       = "openebs-local"
+
+        provisioning = {
+          diskSelector = {
+            match = "system_disk"
+          }
+
+          minSize = var.talos_worker_openebs_disk_size
+          grow    = true
+        }
+
+        filesystem = {
+          type = "xfs"
+        }
+      })
+    ] : []
+  )
 }
 
 # ============================================================
