@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-talos
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  talos-vms.json: |-
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 1,
+      "panels": [
+        {
+          "fieldConfig": {"defaults": {"mappings": [{"options": {"0": {"color": "red", "text": "DOWN"}, "1": {"color": "green", "text": "UP"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []},
+          "gridPos": {"h": 7, "w": 24, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "max by (instance) (up{job=~\".*node-exporter.*\",instance=~\"$instance\"})", "legendFormat": "{{instance}}", "refId": "A"}],
+          "title": "Talos VM availability",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {"defaults": {"max": 1, "min": 0, "unit": "percentunit"}, "overrides": []},
+          "gridPos": {"h": 9, "w": 12, "x": 0, "y": 7},
+          "id": 2,
+          "targets": [{"expr": "1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\",instance=~\"$instance\"}[5m]))", "legendFormat": "{{instance}}", "refId": "A"}],
+          "title": "CPU utilization",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {"defaults": {"max": 1, "min": 0, "unit": "percentunit"}, "overrides": []},
+          "gridPos": {"h": 9, "w": 12, "x": 12, "y": 7},
+          "id": 3,
+          "targets": [{"expr": "1 - (node_memory_MemAvailable_bytes{instance=~\"$instance\"} / node_memory_MemTotal_bytes{instance=~\"$instance\"})", "legendFormat": "{{instance}}", "refId": "A"}],
+          "title": "Memory utilization",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["talos", "node-exporter"],
+      "templating": {"list": [{"current": {"text": "All", "value": "$__all"}, "definition": "label_values(node_uname_info, instance)", "includeAll": true, "label": "VM", "multi": true, "name": "instance", "query": {"query": "label_values(node_uname_info, instance)", "refId": "StandardVariableQuery"}, "refresh": 1, "type": "query"}]},
+      "time": {"from": "now-6h", "to": "now"},
+      "timezone": "browser",
+      "title": "Talos VMs",
+      "uid": "talos-vms",
+      "version": 1
+    }
