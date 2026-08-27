@@ -1,5 +1,13 @@
 nameOverride: vmks
 
+prometheus-node-exporter:
+  namespaceOverride: node-exporter
+  vmScrape:
+    spec:
+      namespaceSelector:
+        matchNames:
+          - node-exporter
+
 victoria-metrics-operator:
   replicaCount: 1
   admissionWebhooks:

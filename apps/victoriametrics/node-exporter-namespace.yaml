@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: node-exporter
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+  labels:
+    # Node exporter requires host namespaces, host ports, and hostPath mounts.
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
