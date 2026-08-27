@@ -19,7 +19,7 @@ spec:
       ref: values
       path: apps/victoriametrics
       directory:
-        include: '{certificate.yaml,node-exporter-namespace.yaml}'
+        include: '{certificate.yaml,node-exporter-namespace.yaml,log-agent-namespace.yaml}'
 
   destination:
     server: https://kubernetes.default.svc

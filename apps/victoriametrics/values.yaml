@@ -164,6 +164,7 @@ vlcluster:
 
 vlagent:
   enabled: true
+  namespaceOverride: log-agent
   spec:
     k8sCollector:
       enabled: true
