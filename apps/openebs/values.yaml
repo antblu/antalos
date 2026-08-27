@@ -4,6 +4,13 @@ localpv-provisioner:
     enabled: true
     basePath: /var/mnt/openebs-local
 
+    # The lightweight quorum worker also hosts node-local Elasticsearch
+    # metadata, so its node provisioner must tolerate the worker taint.
+    tolerations:
+      - key: quorum
+        operator: Exists
+        effect: NoSchedule
+
     # Provision volumes from a node-local DaemonSet instead of creating
     # privileged helper pods in application namespaces.
     nodeDeployment:
