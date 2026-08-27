@@ -36,6 +36,8 @@ data:
   haproxy.cfg: |
     global
       log stdout format raw local0
+      nbthread 1
+      maxconn 1024
 
     defaults
       log global
