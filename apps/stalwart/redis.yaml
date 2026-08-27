@@ -224,6 +224,13 @@ spec:
           image: redis:8.10.1
           command:
             - /config/start-sentinel.sh
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
           env:
             - name: REDIS_PASSWORD
               valueFrom:
@@ -242,6 +249,13 @@ spec:
             - /bin/sh
             - -ec
             - escaped_password=$(printf '%s' "$REDIS_PASSWORD" | sed 's/[\/&]/\\&/g'); sed "s/__REDIS_PASSWORD__/$escaped_password/g" /config/haproxy.cfg > /tmp/haproxy.cfg; exec haproxy -W -db -f /tmp/haproxy.cfg
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
           env:
             - name: REDIS_PASSWORD
               valueFrom:
