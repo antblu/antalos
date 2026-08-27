@@ -3,6 +3,11 @@ global:
     podAntiAffinity: hard
 server:
   replicas: 2
+  deploymentStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   ingress:
     enabled: true
     ingressClassName: traefik
@@ -13,11 +18,22 @@ controller:
   heartbeatTime: 5
 repoServer:
   replicas: 2
+  deploymentStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
 redis:
   enabled: false
 redis-ha:
   enabled: true
   replicas: 3
+  haproxy:
+    deploymentStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
   tolerations:
     - key: quorum
       operator: Exists

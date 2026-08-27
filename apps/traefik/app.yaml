@@ -19,6 +19,11 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: traefik
+        updateStrategy:
+          type: RollingUpdate
+          rollingUpdate:
+            maxSurge: 0
+            maxUnavailable: 1
         podDisruptionBudget:
           enabled: true
           minAvailable: 1

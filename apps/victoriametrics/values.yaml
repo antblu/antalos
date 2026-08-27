@@ -61,6 +61,10 @@ vmcluster:
 
     vminsert:
       replicaCount: 2
+      updateStrategy: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -103,6 +107,10 @@ vlcluster:
   spec:
     vlinsert:
       replicaCount: 2
+      updateStrategy: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -113,6 +121,10 @@ vlcluster:
 
     vlselect:
       replicaCount: 2
+      updateStrategy: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
