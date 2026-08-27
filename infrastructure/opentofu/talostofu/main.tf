@@ -38,13 +38,17 @@ locals {
           {
             interface = "eth0"
             dhcp      = true
+
+            dhcpOptions = {
+              routeMetric = 1024
+            }
           },
           {
             interface = "eth1"
             dhcp      = true
 
             dhcpOptions = {
-              routeMetric = 1024
+              routeMetric = 2048
             }
           }
         ]
