@@ -63,6 +63,19 @@ spec:
   dnsNames:
     - grafana.antblu.net
 ---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mail-tls
+  namespace: stalwart
+spec:
+  secretName: mail-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - mail.antblu.net
+---
 # Homelab Certs
 apiVersion: cert-manager.io/v1
 kind: Certificate

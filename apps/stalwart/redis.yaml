@@ -1,0 +1,264 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-redis-config
+  namespace: stalwart
+data:
+  start-redis.sh: |
+    #!/bin/sh
+    set -eu
+    set -- redis-server \
+      --appendonly yes \
+      --appendfsync everysec \
+      --requirepass "$REDIS_PASSWORD" \
+      --masterauth "$REDIS_PASSWORD" \
+      --protected-mode no
+    if [ "$HOSTNAME" = redis-1 ]; then
+      set -- "$@" --replicaof redis-0.redis.stalwart.svc.cluster.local 6379
+    fi
+    exec "$@"
+  start-sentinel.sh: |
+    #!/bin/sh
+    set -eu
+    cat > /tmp/sentinel.conf <<EOF
+    port 26379
+    protected-mode no
+    requirepass $REDIS_PASSWORD
+    sentinel resolve-hostnames yes
+    sentinel announce-hostnames yes
+    sentinel monitor stalwart redis-0.redis.stalwart.svc.cluster.local 6379 2
+    sentinel auth-pass stalwart $REDIS_PASSWORD
+    sentinel down-after-milliseconds stalwart 5000
+    sentinel failover-timeout stalwart 60000
+    sentinel parallel-syncs stalwart 1
+    EOF
+    exec redis-sentinel /tmp/sentinel.conf
+  haproxy.cfg: |
+    global
+      log stdout format raw local0
+
+    defaults
+      log global
+      mode tcp
+      timeout connect 5s
+      timeout client 30s
+      timeout server 30s
+
+    frontend redis
+      bind :6379
+      default_backend redis-primary
+
+    backend redis-primary
+      option tcp-check
+      tcp-check send AUTH\ __REDIS_PASSWORD__\r\n
+      tcp-check expect string +OK
+      tcp-check send ROLE\r\n
+      tcp-check expect string master
+      server redis-0 redis-0.redis.stalwart.svc.cluster.local:6379 check inter 2s
+      server redis-1 redis-1.redis.stalwart.svc.cluster.local:6379 check inter 2s
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: stalwart
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: stalwart-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis
+    - name: sentinel
+      port: 26379
+      targetPort: sentinel
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: stalwart
+spec:
+  serviceName: redis
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stalwart-redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: stalwart-redis
+        stalwart.antblu.net/sentinel: "true"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - talos-b63-g32
+                      - talos-vu1-efl
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: stalwart-redis
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: redis
+          image: redis:8.10.2
+          command:
+            - /config/start-redis.sh
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-redis
+                  key: password
+          ports:
+            - name: redis
+              containerPort: 6379
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - redis-cli -a "$REDIS_PASSWORD" ping | grep PONG
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: data
+              mountPath: /data
+        - name: sentinel
+          image: redis:8.10.2
+          command:
+            - /config/start-sentinel.sh
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-redis
+                  key: password
+          ports:
+            - name: sentinel
+              containerPort: 26379
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: config
+          configMap:
+            name: stalwart-redis-config
+            defaultMode: 0555
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: openebs-local
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-sentinel-2
+  namespace: stalwart
+spec:
+  selector:
+    app.kubernetes.io/name: stalwart-redis-quorum
+  ports:
+    - name: sentinel
+      port: 26379
+      targetPort: sentinel
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-haproxy
+  namespace: stalwart
+spec:
+  selector:
+    app.kubernetes.io/name: stalwart-redis-quorum
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: haproxy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-quorum
+  namespace: stalwart
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stalwart-redis-quorum
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: stalwart-redis-quorum
+        stalwart.antblu.net/sentinel: "true"
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: talos-6cc-r0y
+      tolerations:
+        - key: quorum
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: sentinel
+          image: redis:8.10.2
+          command:
+            - /config/start-sentinel.sh
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-redis
+                  key: password
+          ports:
+            - name: sentinel
+              containerPort: 26379
+          volumeMounts:
+            - name: config
+              mountPath: /config
+        - name: haproxy
+          image: haproxy:3.2.4-alpine
+          command:
+            - /bin/sh
+            - -ec
+            - escaped_password=$(printf '%s' "$REDIS_PASSWORD" | sed 's/[\/&]/\\&/g'); sed "s/__REDIS_PASSWORD__/$escaped_password/g" /config/haproxy.cfg > /tmp/haproxy.cfg; exec haproxy -W -db -f /tmp/haproxy.cfg
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-redis
+                  key: password
+          ports:
+            - name: haproxy
+              containerPort: 6379
+          readinessProbe:
+            tcpSocket:
+              port: haproxy
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: config
+          configMap:
+            name: stalwart-redis-config
+            defaultMode: 0555

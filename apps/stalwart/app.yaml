@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: stalwart
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/antblu/antalos.git
+    targetRevision: main
+    path: apps/stalwart
+    directory:
+      include: '*.yaml'
+      exclude: 'app.yaml'
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: stalwart
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true
