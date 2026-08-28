@@ -10,12 +10,45 @@ spec:
       chart: openebs
       targetRevision: 4.5.1
       helm:
-        valueFiles:
-          - $values/apps/openebs/values.yaml
+        values: |
+          # LocalPV Hostpath provisioner.
+          localpv-provisioner:
+            localpv:
+              enabled: true
+              basePath: /var/mnt/openebs-local
+              tolerations:
+                - key: quorum
+                  operator: Exists
+                  effect: NoSchedule
+              nodeDeployment:
+                enabled: true
+              allowInsecurePvcBasePathOverride: false
+            hostpathClass:
+              enabled: false
+
+          engines:
+            local:
+              hostpath:
+                enabled: true
+              lvm:
+                enabled: false
+              zfs:
+                enabled: false
+              rawfile:
+                enabled: false
+            replicated:
+              mayastor:
+                enabled: false
+
+          preUpgradeHook:
+            enabled: false
+          loki:
+            enabled: false
+          alloy:
+            enabled: false
 
     - repoURL: https://github.com/antblu/antalos.git
       targetRevision: main
-      ref: values
       path: apps/openebs
       plugin:
         name: yaml-envsubst
