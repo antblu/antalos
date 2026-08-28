@@ -23,7 +23,7 @@ data:
     {"@type":"upsert","object":"Domain","matchOn":["name"],"value":{"domain":{"name":"${MAIL_DOMAIN}","aliases":{},"certificateManagement":{"@type":"Manual"},"dkimManagement":{"@type":"Automatic"},"dnsManagement":{"@type":"Manual"},"subAddressing":{"@type":"Enabled"}}}}
     {"@type":"upsert","object":"Certificate","matchOn":["certificate"],"value":{"mail":{"certificate":{"@type":"File","filePath":"/etc/stalwart/tls/tls.crt"},"privateKey":{"@type":"File","filePath":"/etc/stalwart/tls/tls.key"}}}}
     {"@type":"upsert","object":"ClusterRole","matchOn":["name"],"value":{"cluster-role-mail":{"name":"mail","description":"Runs all mail listeners and background tasks","tasks":{"@type":"EnableAll"},"listeners":{"@type":"EnableAll"}}}}
-    {"@type":"update","object":"SystemSettings","value":{"defaultHostname":"${MAIL_HOST}","defaultDomainId":"#domain","defaultCertificateId":"#mail"}}
+    {"@type":"update","object":"SystemSettings","value":{"defaultHostname":"${MAIL_HOST}","defaultDomainId":"#domain","defaultCertificateId":"#mail","mailExchangers":{"0":{"priority":10}}}}
     {"@type":"update","object":"Coordinator","value":{"@type":"Default"}}
 ---
 apiVersion: v1
