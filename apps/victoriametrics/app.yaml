@@ -9,7 +9,7 @@ spec:
   sources:
     - repoURL: https://victoriametrics.github.io/helm-charts/
       chart: victoria-metrics-k8s-stack
-      targetRevision: 0.91.2
+      targetRevision: ${VICTORIAMETRICS_CHART_VERSION}
       helm:
         # The parent app-of-apps plugin substitutes shared variables here before Helm runs.
         valuesObject:

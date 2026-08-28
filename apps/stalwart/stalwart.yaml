@@ -164,7 +164,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: stalwart
-          image: stalwartlabs/stalwart:v0.16.19
+          image: stalwartlabs/stalwart:${STALWART_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           args:
             - --config
@@ -307,7 +307,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: stalwart-cli
-          image: ghcr.io/stalwartlabs/cli:1.0.12
+          image: ghcr.io/stalwartlabs/cli:${STALWART_CLI_IMAGE_TAG}
           resources:
             requests:
               cpu: 25m

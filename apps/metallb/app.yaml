@@ -10,7 +10,7 @@ spec:
     # Source 1: the MetalLB operator (chart)
     - repoURL: https://metallb.github.io/metallb
       chart: metallb
-      targetRevision: 0.16.1
+      targetRevision: ${METALLB_CHART_VERSION}
       helm:
         releaseName: metallb
         valuesObject:

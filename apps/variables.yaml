@@ -1,7 +1,25 @@
-# Shared externally managed endpoints, network addresses, and Talos node names.
+# Shared externally managed endpoints, network addresses, Talos node names, and
+# application version tags.
 # Argo CD's yaml-envsubst config-management plugin expands these values into the
 # application manifests at render time. Do not add Kubernetes resources here.
 variables:
+  AUTHENTIK_CHART_VERSION: 2026.8.0
+  CERT_MANAGER_CHART_VERSION: v1.18.2
+  CNPG_OPERATOR_CHART_VERSION: 0.29.0
+  METALLB_CHART_VERSION: 0.16.1
+  OPENEBS_CHART_VERSION: 4.5.1
+  RANCHER_CHART_VERSION: 2.15.0
+  SEALED_SECRETS_CHART_VERSION: 2.19.3
+  TRAEFIK_CHART_VERSION: 41.3.0
+  VICTORIAMETRICS_CHART_VERSION: 0.91.2
+
+  POSTGRES_IMAGE_TAG: 18.6-minimal-trixie
+  STALWART_IMAGE_TAG: v0.16.19
+  STALWART_CLI_IMAGE_TAG: 1.0.12
+  ELASTICSEARCH_IMAGE_TAG: 9.5.1
+  REDIS_IMAGE_TAG: 8.10.1
+  HAPROXY_IMAGE_TAG: 3.2.4-alpine
+
   AUTHENTIK_HOST: auth.antblu.net
   RANCHER_HOST: rancher.antblu.net
   TRAEFIK_HOST: traefik.antblu.net

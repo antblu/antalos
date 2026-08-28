@@ -9,7 +9,7 @@ spec:
   source:
     repoURL: https://bitnami.github.io/sealed-secrets
     chart: sealed-secrets
-    targetRevision: 2.19.3
+    targetRevision: ${SEALED_SECRETS_CHART_VERSION}
     helm:
       valuesObject:
         fullnameOverride: sealed-secrets-controller

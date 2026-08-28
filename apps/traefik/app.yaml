@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: 'https://helm.traefik.io/traefik'
     chart: traefik
-    targetRevision: 41.3.0 # Use the latest stable chart version
+    targetRevision: ${TRAEFIK_CHART_VERSION} # Use the latest stable chart version
     helm:
       valuesObject:
         deployment:
