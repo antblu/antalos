@@ -11,4 +11,3 @@ root `argocd-self` Application as a recovery anchor.
 
 Keep the chart version in `argocd-self.yaml` aligned with the bootstrap version
 in `infrastructure/opentofu/argotofu/argocd.tf`.
-6b7dccd76571bf5b9e728eb1ed3f7433c07a938ff6ee17a8e52cee3d1ed2cb45
