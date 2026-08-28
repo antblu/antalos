@@ -44,8 +44,25 @@ kubeseal --version
 ## Restoring with a Private Key
 
 ```bash
-kubectl apply -f sealed-secrets-keys-backup.yaml
+kubectl apply -f sealed-secrets-priv-key.yaml
 kubectl -n sealed-secrets rollout restart deployment sealed-secrets-controller
+```
+
+`infrastructure/opentofu/argotofu` performs this restore automatically on every
+`tofu apply`. It restores the key before bootstrapping the app-of-apps and
+restarts the controller after its deployment becomes available. The apply stops
+with an error when the key backup is missing, rather than letting the controller
+silently create an ephemeral key.
+
+The backup must contain every controller key used to seal manifests in Git.
+Restoring a different valid key does not decrypt ciphertext produced by a lost
+key. After sealing any new manifest, refresh the backup and verify recovery:
+
+```bash
+kubeseal --recovery-unseal \
+  --recovery-private-key sealed-secrets-priv-key.yaml \
+  < apps/authentik-db/secret.yaml \
+  > /dev/null
 ```
 
 ## Fetch the Sealed Secrets public certificate
@@ -186,7 +203,7 @@ kubeseal \
 ```bash
 kubectl -n sealed-secrets get secret \
   -l sealedsecrets.bitnami.com/sealed-secrets-key \
-  -o yaml > sealed-secrets-keys-backup.yaml
+  -o yaml > sealed-secrets-priv-key.yaml
 ```
 
 **Never commit this file to Git.**

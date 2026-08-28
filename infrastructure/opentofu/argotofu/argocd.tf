@@ -20,6 +20,40 @@ provider "kubectl" {
   config_path = "${path.module}/../talostofu/kubeconfig"
 }
 
+# The Sealed Secrets private key must exist before Argo CD creates any
+# SealedSecret resources. Keeping this namespace in Terraform lets the key be
+# restored before the app-of-apps bootstrap starts.
+resource "kubernetes_namespace_v1" "sealed_secrets" {
+  metadata {
+    name = "sealed-secrets"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# kubectl is deliberately used instead of a Terraform Secret resource so the
+# private key is never copied into Terraform state. triggers_replace forces the
+# restore on every apply, including applies where no infrastructure changed.
+resource "terraform_data" "sealed_secrets_key_restore" {
+  triggers_replace = timestamp()
+
+  lifecycle {
+    precondition {
+      condition     = fileexists("${path.module}/../../../sealed-secrets-priv-key.yaml")
+      error_message = "Missing sealed-secrets-priv-key.yaml at the repository root; refusing to bootstrap workloads with an ephemeral encryption key."
+    }
+  }
+
+  provisioner "local-exec" {
+    working_dir = path.module
+    command     = "/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig ../talostofu/kubeconfig apply -f ../../../sealed-secrets-priv-key.yaml"
+  }
+
+  depends_on = [kubernetes_namespace_v1.sealed_secrets]
+}
+
 # --- Install ArgoCD via the official Helm chart ---
 resource "helm_release" "argocd" {
   name             = "argocd"
@@ -39,6 +73,29 @@ resource "helm_release" "argocd" {
 
 # --- Bootstrap "App of Apps" Application pointing at the apps repo ---
 resource "kubectl_manifest" "argocd_bootstrap" {
-  depends_on = [helm_release.argocd]
-  yaml_body  = file("${path.module}/../../argocd/argocd-self.yaml")
+  depends_on = [
+    helm_release.argocd,
+    terraform_data.sealed_secrets_key_restore,
+  ]
+  yaml_body = file("${path.module}/../../argocd/argocd-self.yaml")
+}
+
+# The controller is installed asynchronously by the app-of-apps. Wait for it,
+# reapply the key in case Argo reconciled concurrently, then restart so every
+# private key is loaded. This also runs on every apply.
+resource "terraform_data" "sealed_secrets_controller_restart" {
+  triggers_replace = timestamp()
+
+  provisioner "local-exec" {
+    working_dir = path.module
+    command     = <<-EOT
+      set -eu
+      /home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig ../talostofu/kubeconfig -n sealed-secrets rollout status deployment/sealed-secrets-controller --timeout=10m
+      /home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig ../talostofu/kubeconfig apply -f ../../../sealed-secrets-priv-key.yaml
+      /home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig ../talostofu/kubeconfig -n sealed-secrets rollout restart deployment sealed-secrets-controller
+      /home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig ../talostofu/kubeconfig -n sealed-secrets rollout status deployment/sealed-secrets-controller --timeout=10m
+    EOT
+  }
+
+  depends_on = [kubectl_manifest.argocd_bootstrap]
 }

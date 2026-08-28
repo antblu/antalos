@@ -295,7 +295,7 @@ metadata:
   name: stalwart-bootstrap
   namespace: stalwart
   annotations:
-    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
 spec:
   backoffLimit: 12
@@ -323,7 +323,8 @@ spec:
           env:
             - name: STALWART_URL
               value: http://stalwart-web.stalwart.svc.cluster.local:8080
-            - name: admin
+            - name: STALWART_USER
+              value: admin
             - name: STALWART_PASSWORD
               valueFrom:
                 secretKeyRef:

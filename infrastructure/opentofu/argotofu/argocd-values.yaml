@@ -30,11 +30,17 @@ extraObjects:
                 done
                 : "${variables_file:?Unable to locate apps/variables.yaml}"
 
+                substitution_expression='.'
                 while IFS='=' read -r name value; do
                   export "$name=$value"
+                  substitution_expression="$substitution_expression | (.. | select(tag == \"!!str\")) |= sub(\"[$][{]$name[}]\"; strenv($name))"
                 done <<EOF
                 $(yq -r '.variables | to_entries[] | "\(.key)=\(.value)"' "$variables_file")
                 EOF
+
+                # Only replace placeholders declared in variables.yaml. Broad
+                # envsubst also erases Argo's reserved $values reference and
+                # runtime variables such as $REDIS_PASSWORD.
 
                 if [ "${ARGOCD_ENV_RENDER_MODE:-manifests}" = "applications" ]; then
                   find . -type f -name app.yaml -print | sort
@@ -43,7 +49,7 @@ extraObjects:
                     ! -name app.yaml ! -name values.yaml ! -name variables.yaml -print | sort
                 fi | while IFS= read -r manifest; do
                   printf '%s\n' '---'
-                  yq '(.. | select(tag == "!!str")) |= envsubst' "$manifest"
+                  yq "$substitution_expression" "$manifest"
                 done
 server:
   replicas: 2
