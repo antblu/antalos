@@ -79,22 +79,19 @@ antalos/
 │
 ├── infrastructure/
 │   ├── argocd/
-│   │   ├── app-of-apps.yaml
-│   │   ├── argocd-self.yaml
-│   │   └── default-project.yaml
 │   │
 │   ├── cert-manager/
+│   │   ├── certificates.yaml/
+│   │   └── issuer.yaml/
 │   ├── metallb/
 │   │
 │   └── opentofu/
 │       ├── argotofu/
 │       └── talostofu/
+│           └── terraform.tfvars
 │
 ├── kubeconfig/
-├── talosconfig/
-|
-├── LICENSE
-└── README.md
+└── talosconfig/
 ```
 
 ### `apps/`
@@ -216,46 +213,6 @@ This allows the Kubernetes environment to be recreated from Git while still pres
 See the full procedure:
 
 [`k8s-secrets-bootstrap.md`](https://chatgpt.com/c/docs/deployment-guide/k8s-secrets-bootstrap.md)
-
----
-## Applications
-
-### Platform
-
-**Argo CD**  
-Provides GitOps reconciliation and manages the desired state of the cluster.
-
-**Traefik**  
-Provides ingress routing for HTTP and HTTPS workloads.
-
-**MetalLB**  
-Provides `LoadBalancer` addresses to services on the local network.
-
-**cert-manager**  
-Automates TLS certificate issuance and renewal.
-
-**Sealed Secrets**  
-Allows encrypted Kubernetes secrets to be safely committed to Git.
-
-**OpenEBS**  
-Provides persistent local storage to Kubernetes workloads.
-
-### Services
-
-**Authentik**  
-Identity provider and authentication platform.
-
-**CloudNativePG**  
-Operates PostgreSQL clusters, including the database used by Authentik.
-
-**Rancher**  
-Provides a web-based Kubernetes management interface.
-
-**Stalwart**  
-Provides mail services.
-
-**VictoriaMetrics**  
-Provides monitoring and metrics storage.
 
 ---
 
