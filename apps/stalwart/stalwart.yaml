@@ -32,10 +32,11 @@ metadata:
   name: stalwart
   namespace: stalwart
   annotations:
-    metallb.io/loadBalancerIP: 10.30.0.200
+    metallb.io/loadBalancerIPs: 10.30.0.200
     metallb.io/allow-shared-ip: antblu-net
 spec:
   type: LoadBalancer
+  loadBalancerIP: 10.30.0.200
   selector:
     app.kubernetes.io/name: stalwart
   ports:
