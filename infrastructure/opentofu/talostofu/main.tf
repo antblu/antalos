@@ -359,7 +359,7 @@ resource "talos_cluster_kubeconfig" "this" {
 # ============================================================
 resource "local_file" "kubeconfig" {
   content         = talos_cluster_kubeconfig.this.kubeconfig_raw
-  filename        = "${path.module}/kubeconfig"
+  filename        = "${path.module}/../../../kubeconfig"
   file_permission = "0600"
 }
 

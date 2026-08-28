@@ -7,17 +7,17 @@
 # directory can talk to the cluster.
 
 provider "kubernetes" {
-  config_path = "${path.module}/../talostofu/kubeconfig"
+  config_path = "${path.module}/../../../kubeconfig"
 }
 
 provider "helm" {
   kubernetes = {
-    config_path = "${path.module}/../talostofu/kubeconfig"
+    config_path = "${path.module}/../../../kubeconfig"
   }
 }
 
 provider "kubectl" {
-  config_path = "${path.module}/../talostofu/kubeconfig"
+  config_path = "${path.module}/../../../kubeconfig"
 }
 
 # The Sealed Secrets private key must exist before Argo CD creates any
