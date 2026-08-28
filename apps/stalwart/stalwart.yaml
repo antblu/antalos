@@ -22,7 +22,7 @@ data:
     {"@type":"update","object":"InMemoryStore","value":{"@type":"RedisSentinel","urls":{"redis://redis-0.redis.stalwart.svc.cluster.local:26379":true,"redis://redis-1.redis.stalwart.svc.cluster.local:26379":true,"redis://redis-sentinel-2.stalwart.svc.cluster.local:26379":true},"serviceName":"stalwart","authUsername":"default","authSecret":{"@type":"EnvironmentVariable","variableName":"STALWART_REDIS_PASSWORD"},"sentinelUsername":"default","sentinelSecret":{"@type":"EnvironmentVariable","variableName":"STALWART_REDIS_PASSWORD"},"protocolVersion":"resp3"}}
     {"@type":"upsert","object":"Domain","matchOn":["name"],"value":{"domain":{"name":"antblu.net","aliases":{},"certificateManagement":{"@type":"Manual"},"dkimManagement":{"@type":"Automatic"},"dnsManagement":{"@type":"Manual"},"subAddressing":{"@type":"Enabled"}}}}
     {"@type":"upsert","object":"Certificate","matchOn":["certificate"],"value":{"mail":{"certificate":{"@type":"File","filePath":"/etc/stalwart/tls/tls.crt"},"privateKey":{"@type":"File","filePath":"/etc/stalwart/tls/tls.key"}}}}
-    {"@type":"upsert","object":"ClusterRole","matchOn":["name"],"value":{"mail":{"name":"mail","description":"Runs all mail listeners and background tasks","tasks":{"@type":"EnableAll"},"listeners":{"@type":"EnableAll"}}}}
+    {"@type":"upsert","object":"ClusterRole","matchOn":["name"],"value":{"cluster-role-mail":{"name":"mail","description":"Runs all mail listeners and background tasks","tasks":{"@type":"EnableAll"},"listeners":{"@type":"EnableAll"}}}}
     {"@type":"update","object":"SystemSettings","value":{"defaultHostname":"mail.antblu.net","defaultDomainId":"#domain","defaultCertificateId":"#mail"}}
     {"@type":"update","object":"Coordinator","value":{"@type":"Default"}}
 ---
@@ -261,6 +261,8 @@ spec:
               readOnly: true
             - name: tmp
               mountPath: /tmp
+            - name: logs
+              mountPath: /var/log/stalwart
             - name: tls
               mountPath: /etc/stalwart/tls
               readOnly: true
@@ -269,6 +271,8 @@ spec:
           configMap:
             name: stalwart-config
         - name: tmp
+          emptyDir: {}
+        - name: logs
           emptyDir: {}
         - name: tls
           secret:

@@ -23,11 +23,11 @@ data:
     cat > /tmp/sentinel.conf <<EOF
     port 26379
     protected-mode no
-    requirepass $REDIS_PASSWORD
+    requirepass "$REDIS_PASSWORD"
     sentinel resolve-hostnames yes
     sentinel announce-hostnames yes
     sentinel monitor stalwart redis-0.redis.stalwart.svc.cluster.local 6379 2
-    sentinel auth-pass stalwart $REDIS_PASSWORD
+    sentinel auth-pass stalwart "$REDIS_PASSWORD"
     sentinel down-after-milliseconds stalwart 5000
     sentinel failover-timeout stalwart 60000
     sentinel parallel-syncs stalwart 1
