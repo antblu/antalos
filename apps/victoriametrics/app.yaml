@@ -13,6 +13,15 @@ spec:
       helm:
         valueFiles:
           - $values/apps/victoriametrics/values.yaml
+        parameters:
+          # app.yaml is rendered by yaml-envsubst before this child Application
+          # invokes Helm; values.yaml itself is intentionally not env-substituted.
+          - name: 'grafana.nodeSelector.kubernetes\.io/hostname'
+            value: ${TALOS_WORKER_RIGHT}
+          - name: 'grafana.ingress.hosts[0]'
+            value: ${GRAFANA_HOST}
+          - name: 'grafana.ingress.tls[0].hosts[0]'
+            value: ${GRAFANA_HOST}
 
     - repoURL: https://github.com/antblu/antalos.git
       targetRevision: main
