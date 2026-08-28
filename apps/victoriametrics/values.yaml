@@ -173,6 +173,11 @@ grafana:
   enabled: true
   fullnameOverride: grafana
   replicas: 1
+  # Grafana uses a node-local ReadWriteOnce volume. Recreate the singleton
+  # instead of starting a replacement while the previous pod still owns the
+  # volume, which otherwise leaves the stack degraded after a cluster restart.
+  deploymentStrategy:
+    type: Recreate
   nodeSelector:
     kubernetes.io/hostname: ${TALOS_WORKER_RIGHT}
   plugins:
