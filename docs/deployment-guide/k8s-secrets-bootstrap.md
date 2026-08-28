@@ -61,7 +61,7 @@ key. After sealing any new manifest, refresh the backup and verify recovery:
 ```bash
 kubeseal --recovery-unseal \
   --recovery-private-key sealed-secrets-priv-key.yaml \
-  < apps/authentik-db/secret.yaml \
+  < apps/authentik/db-secret.yaml \
   > /dev/null
 ```
 
@@ -143,11 +143,11 @@ kubeseal \
   --cert ~/sealed-secrets-cert.pem \
   --format yaml \
   < ~/.kubernetes-secrets/authentik-db-app.yaml \
-  > ../antalos/apps/authentik-db/secret.yaml
+  > ../antalos/apps/authentik/db-secret.yaml
 ```
 The resulting file is safe to commit:
 ```text
-apps/authentik-db/secret.yaml
+apps/authentik/db-secret.yaml
 ```
 It should contain a `SealedSecret` similar to:
 ```yaml
