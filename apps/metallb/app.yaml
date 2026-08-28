@@ -25,12 +25,12 @@ spec:
     # Source 2: the config (IPAddressPool + L2Advertisement)
     - repoURL: https://github.com/antblu/antalos.git
       targetRevision: main
-      path: apps/metallb
+      path: apps/metallb/config
       plugin:
         name: yaml-envsubst
         env:
-          - name: METALLB_IP_RANGE
-            value: ${METALLB_IP_RANGE}
+          - name: METALLB_ADDRESS_POOL
+            value: ${METALLB_ADDRESS_POOL}
 
   destination:
     server: https://kubernetes.default.svc
