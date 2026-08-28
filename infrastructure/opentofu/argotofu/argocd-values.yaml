@@ -42,6 +42,7 @@ extraObjects:
                   find . -type f \( -name '*.yaml' -o -name '*.yml' \) \
                     ! -name app.yaml ! -name values.yaml ! -name variables.yaml -print | sort
                 fi | while IFS= read -r manifest; do
+                  printf '%s\n' '---'
                   yq '(.. | select(tag == "!!str")) |= envsubst' "$manifest"
                 done
 server:
