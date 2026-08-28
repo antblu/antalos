@@ -9,9 +9,7 @@ spec:
   source:
     repoURL: https://github.com/antblu/antalos.git
     targetRevision: main
-    path: apps/metallb
-    directory:
-        exclude: 'app.yaml,config.yaml'
+    path: apps/metallb/config
     plugin:
       name: yaml-envsubst
 
