@@ -10,7 +10,10 @@ spec:
   source:
     repoURL: https://github.com/antblu/antalos.git
     targetRevision: main
-    path: infrastructure/cert-manager
+    path: apps/cert-manager
+    directory:
+        include: 'certificates.yaml,issuer.yaml'
+        exclude: 'app.yaml,config.yaml'
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
