@@ -1,6 +1,49 @@
 global:
   affinity:
     podAntiAffinity: hard
+
+# The repo-server Deployment mounts this ConfigMap, so it must be part of the
+# Helm release itself. Managing it only through argocd-self creates a bootstrap
+# deadlock: Helm waits for repo-server while argocd-self cannot run yet.
+extraObjects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: yaml-envsubst-plugin
+      namespace: argocd
+    data:
+      plugin.yaml: |
+        apiVersion: argoproj.io/v1alpha1
+        kind: ConfigManagementPlugin
+        metadata:
+          name: yaml-envsubst
+        spec:
+          generate:
+            command: [sh, -ec]
+            args:
+              - |
+                for candidate in variables.yaml ../variables.yaml ../../apps/variables.yaml; do
+                  if [ -f "$candidate" ]; then
+                    variables_file="$candidate"
+                    break
+                  fi
+                done
+                : "${variables_file:?Unable to locate apps/variables.yaml}"
+
+                while IFS='=' read -r name value; do
+                  export "$name=$value"
+                done <<EOF
+                $(yq -r '.variables | to_entries[] | "\(.key)=\(.value)"' "$variables_file")
+                EOF
+
+                if [ "${ARGOCD_ENV_RENDER_MODE:-manifests}" = "applications" ]; then
+                  find . -type f -name app.yaml -print | sort
+                else
+                  find . -type f \( -name '*.yaml' -o -name '*.yml' \) \
+                    ! -name app.yaml ! -name values.yaml ! -name variables.yaml -print | sort
+                fi | while IFS= read -r manifest; do
+                  yq '(.. | select(tag == "!!str")) |= envsubst' "$manifest"
+                done
 server:
   replicas: 2
   deploymentStrategy:
