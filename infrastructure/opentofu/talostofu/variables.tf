@@ -8,10 +8,10 @@ variable "cluster_name" {
   default     = "talos-cluster"
 }
 
-variable "cluster_endpoint" {
-  type        = string
-  description = "Kubernetes API endpoint for the cluster (control plane VIP or first CP node)"
-  default     = "https://10.30.0.6:6443"
+variable "cluster_api_port" {
+  type        = number
+  description = "Kubernetes API server port"
+  default     = 6443
 }
 
 variable "talos_version" {
@@ -178,39 +178,87 @@ variable "talos_worker_openebs_disk_size" {
 }
 
 # ============================================================
+# Talos Node Names
+# ============================================================
+
+variable "talos_node_names" {
+  type = object({
+    control = map(string)
+    worker  = map(string)
+  })
+  description = "Hostnames for all Talos control plane and worker nodes"
+
+  default = {
+    control = {
+      left  = "talos-control-left"
+      right = "talos-control-right"
+      rtx   = "talos-control-rtx"
+    }
+    worker = {
+      left  = "talos-worker-left"
+      right = "talos-worker-right"
+      rtx   = "talos-worker-rtx"
+    }
+  }
+}
+
+# ============================================================
+# Talos Network & Node IPs
+# ============================================================
+
+variable "talos_internal_cidr" {
+  type        = string
+  description = "CIDR for the Talos internal cluster network"
+  default     = "10.30.0.0/24"
+}
+
+variable "talos_node_ips" {
+  type = object({
+    control = map(string)
+    worker  = map(string)
+  })
+  description = "IP addresses for all Talos control plane and worker nodes"
+
+  default = {
+    control = {
+      left  = "10.30.0.7"
+      right = "10.30.0.8"
+      rtx   = "10.30.0.6"
+    }
+    worker = {
+      left  = "10.30.0.17"
+      right = "10.30.0.18"
+      rtx   = "10.30.0.16"
+    }
+  }
+}
+
+# ============================================================
 # Control Plane VM Definitions
 # ============================================================
 
 variable "talos_control_vms" {
   type = map(object({
-    name          = string
-    node          = string
-    vmid          = number
-    mac_address   = string
-    talos_node_ip = string
+    node        = string
+    vmid        = number
+    mac_address = string
   }))
   description = "Map of Talos control plane VM configurations"
   default = {
     rtx = {
-      name          = "rtx-talos-control"
       node          = "rtx"
       vmid          = 106
       mac_address   = "BC:24:11:37:F3:40"
-      talos_node_ip = "10.30.0.6"
     }
     left = {
-      name          = "left-talos-control"
       node          = "se350-left"
       vmid          = 107
       mac_address   = "BC:24:11:9E:3D:91"
-      talos_node_ip = "10.30.0.7"
     }
     right = {
-      name          = "right-talos-control"
       node          = "se350-right"
       vmid          = 108
       mac_address   = "BC:24:11:2A:6E:67"
-      talos_node_ip = "10.30.0.8"
     }
   }
 }
@@ -221,40 +269,32 @@ variable "talos_control_vms" {
 
 variable "talos_worker_vms" {
   type = map(object({
-    name         = string
-    node         = string
-    vmid         = number
-    internal_mac = string
-    talos_node_ip = string
-    external_mac = string
+    node                       = string
+    vmid                       = number
+    internal_mac               = string
+    external_mac               = string
     external_ignore_dhcp_route = bool
   }))
   description = "Map of Talos worker VM configurations"
   default = {
     rtx = {
-      name          = "rtx-talos-worker"
       node          = "rtx"
       vmid          = 119
       internal_mac  = "BC:24:11:81:F8:B9"
-      talos_node_ip = "10.30.0.16"
       external_mac  = "BC:24:11:C4:44:1B"
       external_ignore_dhcp_route = true
     }
     left = {
-      name         = "left-talos-worker"
       node         = "se350-left"
       vmid         = 117
       internal_mac = "BC:24:11:5B:88:F9"
-      talos_node_ip = "10.30.0.17"
       external_mac = "BC:24:11:40:0B:01"
       external_ignore_dhcp_route = true
     }
     right = {
-      name         = "right-talos-worker"
       node         = "se350-right"
       vmid         = 118
       internal_mac = "BC:24:11:81:F8:C9"
-      talos_node_ip = "10.30.0.18"
       external_mac = "BC:24:11:C4:44:0B"
       external_ignore_dhcp_route = true
     }

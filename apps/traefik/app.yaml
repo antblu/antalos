@@ -31,7 +31,7 @@ spec:
           type: LoadBalancer
           annotations:
             # Pinned IP address
-            metallb.io/loadBalancerIPs: 10.30.0.200
+            metallb.io/loadBalancerIPs: ${INGRESS_LOAD_BALANCER_IP}
             metallb.io/allow-shared-ip: antblu-net
         ports:
           web:
@@ -43,7 +43,7 @@ spec:
         ingressRoute:
           dashboard:
             enabled: true
-            matchRule: Host(`traefik.antblu.net`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
+            matchRule: Host(`${TRAEFIK_HOST}`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
             entryPoints:
               - websecure
             tls:

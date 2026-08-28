@@ -10,6 +10,8 @@ spec:
     repoURL: https://github.com/antblu/antalos.git
     targetRevision: main
     path: infrastructure/metallb
+    plugin:
+      name: yaml-envsubst
 
   destination:
     server: https://kubernetes.default.svc

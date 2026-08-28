@@ -10,9 +10,11 @@ spec:
     repoURL: https://github.com/antblu/antalos.git
     targetRevision: main
     path: apps
-    directory:
-      recurse: true
-      include: '**/app.yaml'
+    plugin:
+      name: yaml-envsubst
+      env:
+        - name: RENDER_MODE
+          value: applications
 
   destination:
     server: https://kubernetes.default.svc

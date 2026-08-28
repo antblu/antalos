@@ -1,4 +1,29 @@
 # ============================================================
+# Shared Talos values
+# ============================================================
+locals {
+  cluster_endpoint = format(
+    "https://%s:%d",
+    var.talos_node_ips.control["rtx"],
+    var.cluster_api_port
+  )
+
+  talos_control_vms = {
+    for key, vm in var.talos_control_vms : key => merge(vm, {
+      name          = var.talos_node_names.control[key]
+      talos_node_ip = var.talos_node_ips.control[key]
+    })
+  }
+
+  talos_worker_vms = {
+    for key, vm in var.talos_worker_vms : key => merge(vm, {
+      name          = var.talos_node_names.worker[key]
+      talos_node_ip = var.talos_node_ips.worker[key]
+    })
+  }
+}
+
+# ============================================================
 # Talos Machine Secrets (generated once, stored in state)
 # ============================================================
 resource "talos_machine_secrets" "this" {}
@@ -7,12 +32,14 @@ resource "talos_machine_secrets" "this" {}
 # Generate machine configurations
 # ============================================================
 data "talos_machine_configuration" "controlplane" {
+  for_each           = local.talos_control_vms
   cluster_name       = var.cluster_name
-  cluster_endpoint   = var.cluster_endpoint
+  cluster_endpoint   = local.cluster_endpoint
   machine_type       = "controlplane"
   machine_secrets    = talos_machine_secrets.this.machine_secrets
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
+
   config_patches = [
     yamlencode({
       machine = {
@@ -21,6 +48,13 @@ data "talos_machine_configuration" "controlplane" {
           image = "https://factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515/v1.13.9/nocloud-amd64.raw.xz"
         }
       }
+    }),
+
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "HostnameConfig"
+      hostname   = each.value.name
+      auto       = "off"
     })
   ]
 }
@@ -58,9 +92,9 @@ locals {
 }
 # Generate worker machine configurations
 data "talos_machine_configuration" "worker" {
-  for_each           = var.talos_worker_vms
+  for_each           = local.talos_worker_vms
   cluster_name       = var.cluster_name
-  cluster_endpoint   = var.cluster_endpoint
+  cluster_endpoint   = local.cluster_endpoint
   machine_type       = "worker"
   machine_secrets    = talos_machine_secrets.this.machine_secrets
   talos_version      = var.talos_version
@@ -83,6 +117,13 @@ data "talos_machine_configuration" "worker" {
             } : null
           }
         )
+      }),
+
+      yamlencode({
+        apiVersion = "v1alpha1"
+        kind       = "HostnameConfig"
+        hostname   = each.value.name
+        auto       = "off"
       })
     ],
     each.key != "rtx" ? [
@@ -128,7 +169,7 @@ data "talos_machine_configuration" "worker" {
 # ============================================================
 
 resource "proxmox_virtual_environment_vm" "talos_control" {
-  for_each  = var.talos_control_vms
+  for_each  = local.talos_control_vms
   name      = each.value.name
   node_name = each.value.node
   vm_id     = each.value.vmid
@@ -199,7 +240,7 @@ resource "proxmox_virtual_environment_vm" "talos_control" {
 # ============================================================
 
 resource "proxmox_virtual_environment_vm" "talos_worker" {
-  for_each  = var.talos_worker_vms
+  for_each  = local.talos_worker_vms
   name      = each.value.name
   node_name = each.value.node
   vm_id     = each.value.vmid
@@ -277,15 +318,15 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
 # Apply Talos machine configs to each node
 # ============================================================
 resource "talos_machine_configuration_apply" "controlplane" {
-  for_each                    = var.talos_control_vms
+  for_each                    = local.talos_control_vms
   client_configuration        = talos_machine_secrets.this.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
+  machine_configuration_input = data.talos_machine_configuration.controlplane[each.key].machine_configuration
   node                        = each.value.talos_node_ip
   depends_on                  = [proxmox_virtual_environment_vm.talos_control]
 }
 
 resource "talos_machine_configuration_apply" "worker" {
-  for_each                    = var.talos_worker_vms
+  for_each                    = local.talos_worker_vms
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.worker[each.key].machine_configuration
   node                        = each.value.talos_node_ip
@@ -300,7 +341,7 @@ resource "talos_machine_bootstrap" "this" {
     talos_machine_configuration_apply.controlplane,
   ]
 
-  node                 = var.talos_control_vms["rtx"].talos_node_ip
+  node                 = local.talos_control_vms["rtx"].talos_node_ip
   client_configuration = talos_machine_secrets.this.client_configuration
 }
 # ============================================================
@@ -308,7 +349,7 @@ resource "talos_machine_bootstrap" "this" {
 # ============================================================
 resource "talos_cluster_kubeconfig" "this" {
   client_configuration = talos_machine_secrets.this.client_configuration
-  node                 = var.talos_control_vms["rtx"].talos_node_ip
+  node                 = local.talos_control_vms["rtx"].talos_node_ip
   depends_on           = [talos_machine_bootstrap.this]
 }
 

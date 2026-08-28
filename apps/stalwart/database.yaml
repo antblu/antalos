@@ -18,8 +18,8 @@ spec:
               - key: kubernetes.io/hostname
                 operator: In
                 values:
-                  - talos-b63-g32
-                  - talos-vu1-efl
+                  - ${TALOS_WORKER_RIGHT}
+                  - ${TALOS_WORKER_LEFT}
 
   storage:
     storageClass: openebs-local

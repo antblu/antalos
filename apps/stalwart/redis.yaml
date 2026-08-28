@@ -102,8 +102,8 @@ spec:
                   - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - talos-b63-g32
-                      - talos-vu1-efl
+                      - ${TALOS_WORKER_RIGHT}
+                      - ${TALOS_WORKER_LEFT}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
@@ -214,7 +214,7 @@ spec:
         stalwart.antblu.net/sentinel: "true"
     spec:
       nodeSelector:
-        kubernetes.io/hostname: talos-6cc-r0y
+        kubernetes.io/hostname: ${TALOS_WORKER_RTX}
       tolerations:
         - key: quorum
           operator: Exists

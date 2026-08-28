@@ -35,10 +35,10 @@ spec:
               enabled: true
               ingressClassName: traefik
               hosts:
-                - auth.antblu.net
+                - ${AUTHENTIK_HOST}
               tls:
                 - hosts:
-                    - auth.antblu.net
+                    - ${AUTHENTIK_HOST}
                   secretName: authentik-tls
 
           worker:

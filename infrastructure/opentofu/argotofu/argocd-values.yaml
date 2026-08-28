@@ -23,6 +23,50 @@ repoServer:
     rollingUpdate:
       maxSurge: 0
       maxUnavailable: 1
+  initContainers:
+    - name: install-yq
+      image: mikefarah/yq:4.45.4
+      command: [sh, -ec]
+      args:
+        - cp "$(command -v yq)" /custom-tools/yq
+      volumeMounts:
+        - name: custom-tools
+          mountPath: /custom-tools
+  extraContainers:
+    - name: yaml-envsubst
+      image: quay.io/argoproj/argocd:v3.5.1
+      command: [/var/run/argocd/argocd-cmp-server]
+      env:
+        - name: PATH
+          value: /custom-tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+      volumeMounts:
+        - name: var-files
+          mountPath: /var/run/argocd
+        - name: plugins
+          mountPath: /home/argocd/cmp-server/plugins
+        - name: yaml-envsubst-plugin
+          mountPath: /home/argocd/cmp-server/config/plugin.yaml
+          subPath: plugin.yaml
+        - name: custom-tools
+          mountPath: /custom-tools
+        - name: cmp-tmp
+          mountPath: /tmp
+  volumes:
+    - name: yaml-envsubst-plugin
+      configMap:
+        name: yaml-envsubst-plugin
+    - name: custom-tools
+      emptyDir: {}
+    - name: cmp-tmp
+      emptyDir: {}
 redis:
   enabled: false
 redis-ha:

@@ -14,7 +14,7 @@ spec:
 
     helm:
       valuesObject:
-        hostname: rancher.antblu.net
+        hostname: ${RANCHER_HOST}
         replicas: 2
         antiAffinity: required
         topologyKey: kubernetes.io/hostname

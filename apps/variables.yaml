@@ -1,0 +1,24 @@
+# Shared externally managed endpoints, network addresses, and Talos node names.
+# Argo CD's yaml-envsubst config-management plugin expands these values into the
+# application manifests at render time. Do not add Kubernetes resources here.
+variables:
+  AUTHENTIK_HOST: auth.antblu.net
+  RANCHER_HOST: rancher.antblu.net
+  TRAEFIK_HOST: traefik.antblu.net
+  GRAFANA_HOST: grafana.antblu.net
+  MAIL_HOST: mail.antblu.net
+  MAIL_DOMAIN: antblu.net
+
+  GARAGE_S3_IP: 10.30.0.5
+  GARAGE_S3_PORT: "30188"
+  GARAGE_S3_CUSTOM_REGION: garage
+  GARAGE_S3_BUCKET: mail
+  INGRESS_LOAD_BALANCER_IP: 10.30.0.200
+  METALLB_ADDRESS_POOL: 10.30.0.200-10.30.0.250
+
+  TALOS_CONTROL_LEFT: talos-control-left
+  TALOS_CONTROL_RIGHT: talos-control-right
+  TALOS_CONTROL_RTX: talos-control-rtx
+  TALOS_WORKER_LEFT: talos-worker-left
+  TALOS_WORKER_RIGHT: talos-worker-right
+  TALOS_WORKER_RTX: talos-worker-rtx

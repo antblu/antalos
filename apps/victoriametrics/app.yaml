@@ -17,9 +17,12 @@ spec:
     - repoURL: https://github.com/antblu/antalos.git
       targetRevision: main
       ref: values
+
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
       path: apps/victoriametrics
-      directory:
-        include: '{certificate.yaml,node-exporter-namespace.yaml,log-agent-namespace.yaml,talos-dashboard.yaml}'
+      plugin:
+        name: yaml-envsubst
 
   destination:
     server: https://kubernetes.default.svc

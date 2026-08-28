@@ -174,7 +174,7 @@ grafana:
   fullnameOverride: grafana
   replicas: 1
   nodeSelector:
-    kubernetes.io/hostname: talos-b63-g32
+    kubernetes.io/hostname: ${TALOS_WORKER_RIGHT}
   plugins:
     - victoriametrics-logs-datasource
   persistence:
@@ -188,11 +188,11 @@ grafana:
     enabled: true
     ingressClassName: traefik
     hosts:
-      - grafana.antblu.net
+      - ${GRAFANA_HOST}
     tls:
       - secretName: grafana-tls
         hosts:
-          - grafana.antblu.net
+          - ${GRAFANA_HOST}
 
 defaultDashboards:
   enabled: true
