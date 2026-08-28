@@ -16,9 +16,6 @@ spec:
     - repoURL: https://github.com/antblu/antalos.git
       targetRevision: main
       ref: values
-
-    - repoURL: https://github.com/antblu/antalos.git
-      targetRevision: main
       path: apps/openebs
       plugin:
         name: yaml-envsubst
