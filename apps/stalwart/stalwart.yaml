@@ -323,11 +323,7 @@ spec:
           env:
             - name: STALWART_URL
               value: http://stalwart-web.stalwart.svc.cluster.local:8080
-            - name: STALWART_USER
-              valueFrom:
-                secretKeyRef:
-                  name: stalwart-bootstrap-admin
-                  key: username
+            - name: admin
             - name: STALWART_PASSWORD
               valueFrom:
                 secretKeyRef:
