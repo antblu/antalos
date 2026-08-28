@@ -28,14 +28,20 @@ extraObjects:
                     break
                   fi
                 done
-                : "${variables_file:?Unable to locate apps/variables.yaml}"
 
                 substitution_expression='.'
+                if [ -n "${variables_file:-}" ]; then
+                  variable_entries=$(yq -r '.variables | to_entries[] | "\(.key)=\(.value)"' "$variables_file")
+                else
+                  variable_entries=$(env | sed -n 's/^ARGOCD_ENV_//p')
+                fi
+
                 while IFS='=' read -r name value; do
+                  [ -n "$name" ] || continue
                   export "$name=$value"
                   substitution_expression="$substitution_expression | (.. | select(tag == \"!!str\")) |= sub(\"[$][{]$name[}]\"; strenv($name))"
                 done <<EOF
-                $(yq -r '.variables | to_entries[] | "\(.key)=\(.value)"' "$variables_file")
+                $variable_entries
                 EOF
 
                 # Only replace placeholders declared in variables.yaml. Broad
