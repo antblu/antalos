@@ -17,7 +17,7 @@ spec:
               podAntiAffinity: hard
             volumeMounts:
               - name: media
-                mountPath: /media
+                mountPath: /data
             volumes:
               - name: media
                 persistentVolumeClaim:
