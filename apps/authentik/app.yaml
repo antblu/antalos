@@ -31,22 +31,22 @@ spec:
                     name: authentik-db-app
                     key: password
               - name: AUTHENTIK_EMAIL__HOST
-                value: ${AUTHENTIK_EMAIL_HOST}
+                value: "${AUTHENTIK_EMAIL_HOST}"
               - name: AUTHENTIK_EMAIL__PORT
-                value: ${AUTHENTIK_EMAIL_PORT}
+                value: "${AUTHENTIK_EMAIL_PORT}"
               - name: AUTHENTIK_EMAIL__USERNAME
-                value: ${AUTHENTIK_EMAIL_USERNAME}
+                value: "${AUTHENTIK_EMAIL_USERNAME}"
               - name: AUTHENTIK_EMAIL__PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: authentik-email
                     key: password
               - name: AUTHENTIK_EMAIL__USE_TLS
-                value: ${AUTHENTIK_EMAIL_USE_TLS}
+                value: "${AUTHENTIK_EMAIL_USE_TLS}"
               - name: AUTHENTIK_EMAIL__USE_SSL
-                value: ${AUTHENTIK_EMAIL_USE_SSL}
+                value: "${AUTHENTIK_EMAIL_USE_SSL}"
               - name: AUTHENTIK_EMAIL__FROM
-                value: ${AUTHENTIK_EMAIL_FROM}
+                value: "${AUTHENTIK_EMAIL_FROM}"
 
           authentik:
             existingSecret:
