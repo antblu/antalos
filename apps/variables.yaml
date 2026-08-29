@@ -22,6 +22,12 @@ variables:
   HAPROXY_IMAGE_TAG: 3.2.4-alpine
 
   LETSENCRYPT_EMAIL: antblue2014@gmail.com
+  AUTHENTIK_EMAIL_HOST: mail.antblu.net
+  AUTHENTIK_EMAIL_PORT: "465"
+  AUTHENTIK_EMAIL_USERNAME: postmaster@antblu.net
+  AUTHENTIK_EMAIL_USE_TLS: "true"
+  AUTHENTIK_EMAIL_USE_SSL: "false"
+  AUTHENTIK_EMAIL_FROM: "authentik <noreply@antblu.net>"
 
   ARGOCD_HOST: argocd.antblu.net
   AUTHENTIK_HOST: auth.antblu.net
