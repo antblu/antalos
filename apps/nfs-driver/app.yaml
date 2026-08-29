@@ -10,19 +10,6 @@ spec:
     repoURL: https://kubernetes-csi.github.io/csi-driver-nfs
     chart: csi-driver-nfs
     targetRevision: ${NFS_DRIVER_CHART_VERSION}
-    helm:
-      values: |
-        storageClasses:
-          - name: nfs-authentik-media
-            parameters:
-              server: ${NFS_SERVER}
-              share: ${AUTHENTIK_MEDIA_NFS_SHARE}
-            reclaimPolicy: Retain
-            volumeBindingMode: Immediate
-            mountOptions:
-              - nfsvers=3
-              - hard
-              - nolock
 
   destination:
     server: https://kubernetes.default.svc

@@ -32,6 +32,8 @@ variables:
   MAIL_DOMAIN: antblu.net
   ROUTER_HOST: router.antblu.net
 
+  AUTHENTIK_MEDIA_SIZE: 1Gi
+
   GARAGE_S3_IP: 10.30.0.5
   GARAGE_S3_PORT: "30188"
   GARAGE_S3_CUSTOM_REGION: garage

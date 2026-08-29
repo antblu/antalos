@@ -1,4 +1,26 @@
 apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: authentik-media
+spec:
+  capacity:
+    storage: ${AUTHENTIK_MEDIA_SIZE}
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-authentik-media
+  mountOptions:
+    - nfsvers=3
+    - hard
+    - nolock
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: authentik-media
+    volumeAttributes:
+      server: ${NFS_SERVER}
+      share: ${AUTHENTIK_MEDIA_NFS_SHARE}
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: authentik-media
@@ -7,6 +29,7 @@ spec:
   accessModes:
     - ReadWriteMany
   storageClassName: nfs-authentik-media
+  volumeName: authentik-media
   resources:
     requests:
-      storage: 1Gi
+      storage: ${AUTHENTIK_MEDIA_SIZE}
