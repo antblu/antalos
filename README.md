@@ -228,10 +228,10 @@ If you use it as a reference or fork it for your own environment, expect to chan
 - Make `infrastructure/opentofu/talostofu/terraform.tfvars` file with the following format
 ```yaml
 proxmox_endpoint  = "https://10.20.0.6:8006/"
-proxmox_api_token = "terraform@pam!provider=<api-token"
+proxmox_api_token = "terraform@pam!provider=<api-token>"
 proxmox_insecure  = true
 proxmox_ssh_username = "terraform"
-proxmox_ssh_password = "<account-password"
+proxmox_ssh_password = "<account-password>"
 ```
 >Ensure that the terraform account in Proxmox is pam, not pve. SSH access is required. Make sure API token privileges are permissive.
 
