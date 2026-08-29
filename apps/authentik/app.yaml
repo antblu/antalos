@@ -18,6 +18,11 @@ spec:
             env:
               - name: AUTHENTIK_POSTGRESQL__HOST
                 value: authentik-db-rw.authentik.svc.cluster.local
+              - name: AUTHENTIK_POSTGRESQL__PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: authentik-db-app
+                    key: password
 
           authentik:
             existingSecret:
