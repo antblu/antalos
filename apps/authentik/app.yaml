@@ -15,6 +15,13 @@ spec:
           global:
             affinity:
               podAntiAffinity: hard
+            volumeMounts:
+              - name: media
+                mountPath: /media
+            volumes:
+              - name: media
+                persistentVolumeClaim:
+                  claimName: authentik-media
             env:
               - name: AUTHENTIK_POSTGRESQL__HOST
                 value: authentik-db-rw.authentik.svc.cluster.local

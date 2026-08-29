@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nfs-driver
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://kubernetes-csi.github.io/csi-driver-nfs
+    chart: csi-driver-nfs
+    targetRevision: ${NFS_DRIVER_CHART_VERSION}
+    helm:
+      values: |
+        storageClasses:
+          - name: nfs-authentik-media
+            parameters:
+              server: ${NFS_SERVER}
+              share: ${AUTHENTIK_MEDIA_NFS_SHARE}
+            reclaimPolicy: Retain
+            volumeBindingMode: Immediate
+            mountOptions:
+              - nfsvers=3
+              - hard
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true
