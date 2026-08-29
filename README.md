@@ -80,11 +80,6 @@ antalos/
 ├── infrastructure/
 │   ├── argocd/
 │   │
-│   ├── cert-manager/
-│   │   ├── certificates.yaml/
-│   │   └── issuer.yaml/
-│   ├── metallb/
-│   │
 │   └── opentofu/
 │       ├── argotofu/
 │       └── talostofu/
@@ -226,8 +221,7 @@ If you use it as a reference or fork it for your own environment, expect to chan
     
 - `infrastructure/opentofu/talostofu/variables.tf`
     
-- `infrastructure/certmanager/certificates.yaml`
-- `infrastructure/certmanager/issuer.yaml`
+- `apps/certmanager/issuer.yaml`
     
 - Replace all mentions of `https://github.com/antblu/antalos.git` with your own repo
 	
@@ -240,12 +234,11 @@ proxmox_ssh_username = "terraform"
 proxmox_ssh_password = "<account-password"
 ```
 >Ensure that the terraform account in Proxmox is pam, not pve. SSH access is required. Make sure API token privileges are permissive.
----
 
 The architecture and GitOps patterns, however, are designed to be reusable.
 
 ---
-### Trademarks
+## Trademarks
 
 All product names, logos, and brands are property of their respective owners.
 Use of these names and logos does not imply endorsement.

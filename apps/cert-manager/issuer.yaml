@@ -5,7 +5,7 @@ metadata:
 spec:
   acme:
     # Change this email address to your own to receive important account notifications from Let's Encrypt
-    email: antblue2014@gmail.com
+    email: ${LETSENCRYPT_EMAIL}
     server: https://acme-staging-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-staging-account-key
@@ -22,7 +22,7 @@ metadata:
   name: letsencrypt-prod
 spec:
   acme:
-    email: antblue2014@gmail.com
+    email: ${LETSENCRYPT_EMAIL}
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-prod-account-key

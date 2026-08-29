@@ -20,6 +20,8 @@ variables:
   REDIS_IMAGE_TAG: 8.10.1
   HAPROXY_IMAGE_TAG: 3.2.4-alpine
 
+  LETSENCRYPT_EMAIL: antblue2014@gmail.com
+
   ARGOCD_HOST: argocd.antblu.net
   AUTHENTIK_HOST: auth.antblu.net
   RANCHER_HOST: rancher.antblu.net
@@ -27,6 +29,7 @@ variables:
   GRAFANA_HOST: grafana.antblu.net
   MAIL_HOST: mail.antblu.net
   MAIL_DOMAIN: antblu.net
+  ROUTER_HOST: router.antblu.net
 
   GARAGE_S3_IP: 10.30.0.5
   GARAGE_S3_PORT: "30188"
