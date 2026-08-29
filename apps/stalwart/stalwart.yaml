@@ -210,11 +210,11 @@ spec:
                   fieldPath: metadata.name
           resources:
             requests:
-              cpu: 500m
-              memory: 1Gi
+              cpu: ${STALWART_CPU_REQUEST}
+              memory: ${STALWART_MEMORY_REQUEST}
             limits:
-              cpu: "4"
-              memory: 4Gi
+              cpu: ${STALWART_CPU_LIMIT}
+              memory: ${STALWART_MEMORY_LIMIT}
           ports:
             - name: smtp
               containerPort: 25
@@ -313,11 +313,11 @@ spec:
           image: ghcr.io/stalwartlabs/cli:${STALWART_CLI_IMAGE_TAG}
           resources:
             requests:
-              cpu: 25m
-              memory: 64Mi
+              cpu: ${STALWART_BOOTSTRAP_CPU_REQUEST}
+              memory: ${STALWART_BOOTSTRAP_MEMORY_REQUEST}
             limits:
-              cpu: 250m
-              memory: 256Mi
+              cpu: ${STALWART_BOOTSTRAP_CPU_LIMIT}
+              memory: ${STALWART_BOOTSTRAP_MEMORY_LIMIT}
           args:
             - apply
             - --file

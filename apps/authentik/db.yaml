@@ -12,7 +12,7 @@ spec:
     podAntiAffinityType: required
   storage:
     storageClass: openebs-local
-    size: 20Gi
+    size: ${AUTHENTIK_DATABASE_STORAGE_SIZE}
   bootstrap:
     initdb:
       database: authentik

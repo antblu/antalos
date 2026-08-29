@@ -23,7 +23,7 @@ spec:
 
   storage:
     storageClass: openebs-local
-    size: 20Gi
+    size: ${STALWART_DATABASE_STORAGE_SIZE}
 
   bootstrap:
     initdb:

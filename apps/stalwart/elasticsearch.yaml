@@ -93,7 +93,7 @@ spec:
             - name: node.roles
               value: master,data,ingest
             - name: ES_JAVA_OPTS
-              value: -Xms1g -Xmx1g
+              value: -Xms${ELASTICSEARCH_DATA_HEAP_SIZE} -Xmx${ELASTICSEARCH_DATA_HEAP_SIZE}
           ports:
             - name: http
               containerPort: 9200
@@ -101,10 +101,10 @@ spec:
               containerPort: 9300
           resources:
             requests:
-              cpu: 500m
-              memory: 2Gi
+              cpu: ${ELASTICSEARCH_DATA_CPU_REQUEST}
+              memory: ${ELASTICSEARCH_DATA_MEMORY_REQUEST}
             limits:
-              memory: 2Gi
+              memory: ${ELASTICSEARCH_DATA_MEMORY_LIMIT}
           readinessProbe:
             httpGet:
               path: /_cluster/health?local=true
@@ -123,7 +123,7 @@ spec:
         storageClassName: openebs-local
         resources:
           requests:
-            storage: 20Gi
+            storage: ${ELASTICSEARCH_DATA_STORAGE_SIZE}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -194,17 +194,17 @@ spec:
             - name: node.roles
               value: master
             - name: ES_JAVA_OPTS
-              value: -Xms512m -Xmx512m
+              value: -Xms${ELASTICSEARCH_MASTER_HEAP_SIZE} -Xmx${ELASTICSEARCH_MASTER_HEAP_SIZE}
           ports:
             - name: transport
               containerPort: 9300
           resources:
             requests:
-              cpu: 100m
-              memory: 768Mi
+              cpu: ${ELASTICSEARCH_MASTER_CPU_REQUEST}
+              memory: ${ELASTICSEARCH_MASTER_MEMORY_REQUEST}
             limits:
-              cpu: 500m
-              memory: 1Gi
+              cpu: ${ELASTICSEARCH_MASTER_CPU_LIMIT}
+              memory: ${ELASTICSEARCH_MASTER_MEMORY_LIMIT}
           readinessProbe:
             tcpSocket:
               port: transport
@@ -222,4 +222,4 @@ spec:
         storageClassName: openebs-local
         resources:
           requests:
-            storage: 2Gi
+            storage: ${ELASTICSEARCH_MASTER_STORAGE_SIZE}
