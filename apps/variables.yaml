@@ -20,6 +20,7 @@ variables:
   REDIS_IMAGE_TAG: 8.10.1
   HAPROXY_IMAGE_TAG: 3.2.4-alpine
 
+  ARGOCD_HOST: argocd.antblu.net
   AUTHENTIK_HOST: auth.antblu.net
   RANCHER_HOST: rancher.antblu.net
   TRAEFIK_HOST: traefik.antblu.net

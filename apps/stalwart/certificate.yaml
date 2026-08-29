@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: stalwart-mail-tls
+  namespace: stalwart
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  secretName: stalwart-mail-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - ${MAIL_HOST}

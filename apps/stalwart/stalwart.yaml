@@ -91,7 +91,7 @@ spec:
   tls:
     - hosts:
         - ${MAIL_HOST}
-      secretName: mail-tls
+      secretName: stalwart-mail-tls
   rules:
     - host: ${MAIL_HOST}
       http:
@@ -139,6 +139,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: stalwart
+      annotations:
+        stalwart.antblu.net/tls-source: cert-manager-stalwart-mail-tls-v2
     spec:
       affinity:
         nodeAffinity:
@@ -277,7 +279,7 @@ spec:
           emptyDir: {}
         - name: tls
           secret:
-            secretName: mail-tls
+            secretName: stalwart-mail-tls
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
