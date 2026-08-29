@@ -242,7 +242,7 @@ The architecture and GitOps patterns, however, are designed to be reusable.
 
 All product names, logos, and brands are property of their respective owners.
 Use of these names and logos does not imply endorsement.
----
+
 ## License
 
 This project is licensed under the [MIT License](https://chatgpt.com/c/LICENSE).
