@@ -25,8 +25,8 @@ variables:
   AUTHENTIK_EMAIL_HOST: mail.antblu.net
   AUTHENTIK_EMAIL_PORT: "465"
   AUTHENTIK_EMAIL_USERNAME: postmaster@antblu.net
-  AUTHENTIK_EMAIL_USE_TLS: "true"
-  AUTHENTIK_EMAIL_USE_SSL: "false"
+  AUTHENTIK_EMAIL_USE_TLS: "false"
+  AUTHENTIK_EMAIL_USE_SSL: "true"
   AUTHENTIK_EMAIL_FROM: "authentik <noreply@antblu.net>"
 
   ARGOCD_HOST: argocd.antblu.net
