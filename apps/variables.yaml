@@ -28,6 +28,7 @@ variables:
   AUTHENTIK_EMAIL_USE_TLS: "false"
   AUTHENTIK_EMAIL_USE_SSL: "true"
   AUTHENTIK_EMAIL_FROM: "authentik <noreply@antblu.net>"
+  AUTHENTIK_EMAIL_SECRET_REVISION: "1"
 
   ARGOCD_HOST: argocd.antblu.net
   AUTHENTIK_HOST: auth.antblu.net

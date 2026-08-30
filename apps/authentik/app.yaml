@@ -47,6 +47,9 @@ spec:
                 value: "${AUTHENTIK_EMAIL_USE_SSL}"
               - name: AUTHENTIK_EMAIL__FROM
                 value: "${AUTHENTIK_EMAIL_FROM}"
+              # Increment when authentik-email changes so pods reload secret-backed env.
+              - name: EMAIL_SECRET_REVISION
+                value: "${AUTHENTIK_EMAIL_SECRET_REVISION}"
 
           authentik:
             existingSecret:
