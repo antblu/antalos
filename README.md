@@ -37,9 +37,6 @@ The repository is divided into two main responsibilities:
 1. **Infrastructure bootstrap** — OpenTofu creates the Talos VMs, bootstraps Kubernetes, and installs the initial Argo CD deployment.
     
 2. **GitOps reconciliation** — Argo CD takes over steady-state management and continuously reconciles Kubernetes resources from Git.
-    
-
----
 
 ## Stack as of 8/28/26
 
@@ -60,8 +57,6 @@ The repository is divided into two main responsibilities:
 |Management|**Rancher**|Kubernetes management interface|
 |Monitoring|**VictoriaMetrics**|Metrics and observability|
 |Mail|**Stalwart**|Mail services|
-
----
 
 ## Repository Structure
 
@@ -132,8 +127,6 @@ default-project.yaml
 
 `argocd-self` acts as the recovery anchor for the cluster and allows Argo CD to reconcile its own configuration.
 
----
-
 ## GitOps Model
 
 The cluster follows an **App of Apps** model.
@@ -164,12 +157,10 @@ git push
 
 Argo CD detects the desired-state change and synchronizes the cluster.
 
----
 ## Fresh Cluster Bootstrap
 
 ### Check out [`deployment-order.md`](https://chatgpt.com/c/docs/deployment-guide/deployment-order.md)
 
----
 ## Secrets
 
 Plaintext credentials are **not intended to be stored in this repository**.
@@ -205,8 +196,6 @@ See the full procedure:
 
 [`k8s-secrets-bootstrap.md`](https://chatgpt.com/c/docs/deployment-guide/k8s-secrets-bootstrap.md)
 
----
-
 ## Using This Repository
 
 This repository documents and manages **my specific homelab environment**. It is not intended to be a turnkey Kubernetes distribution.
@@ -233,7 +222,6 @@ proxmox_ssh_password = "<account-password>"
 
 The architecture and GitOps patterns, however, are designed to be reusable.
 
----
 ## Trademarks
 
 All product names, logos, and brands are property of their respective owners.
