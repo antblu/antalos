@@ -8,8 +8,6 @@ The cluster runs **Talos Linux** on **Proxmox VE**, with the underlying virtual 
 
 The goal is to keep as much of the environment as possible **declarative, reproducible, and recoverable from Git**.
 
----
-
 ## Architecture
 
 ```mermaid
