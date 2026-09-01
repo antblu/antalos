@@ -11,11 +11,6 @@ spec:
     targetRevision: ${TRAEFIK_CHART_VERSION} # Use the latest stable chart version
     helm:
       valuesObject:
-        experimental:
-          plugins:
-            traefik-oidc-auth:
-              moduleName: github.com/sevensolutions/traefik-oidc-auth
-              version: ${TRAEFIK_OIDC_AUTH_VERSION}
         deployment:
           replicas: 2
           podAntiAffinity:
@@ -52,7 +47,7 @@ spec:
             entryPoints:
               - websecure
             middlewares:
-              - name: traefik-oidc-auth
+              - name: authentik-forward-auth
             tls:
               secretName: traefik-dashboard-tls
   destination:

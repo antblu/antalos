@@ -12,7 +12,6 @@ variables:
   RANCHER_CHART_VERSION: 2.15.0
   SEALED_SECRETS_CHART_VERSION: 2.19.3
   TRAEFIK_CHART_VERSION: 41.3.0
-  TRAEFIK_OIDC_AUTH_VERSION: v0.21.0
   VICTORIAMETRICS_CHART_VERSION: 0.91.2
 
   POSTGRES_IMAGE_TAG: 18.6-minimal-trixie
@@ -35,7 +34,6 @@ variables:
   AUTHENTIK_HOST: auth.antblu.net
   RANCHER_HOST: rancher.antblu.net
   TRAEFIK_HOST: traefik.antblu.net
-  TRAEFIK_OIDC_CLIENT_ID: traefik-dashboard
   GRAFANA_HOST: grafana.antblu.net
   MAIL_HOST: mail.antblu.net
   MAIL_DOMAIN: antblu.net
