@@ -24,7 +24,7 @@ spec:
                 - config:
                     issuer: https://${AUTHENTIK_HOST}/application/o/argo-cd/
                     clientID: M1cYFNuKZE2pGDBMSUPHw8FCCjzIjL86jILMC1Sa
-                    clientSecret: $dex.authentik.clientSecret
+                    clientSecret: $$dex.authentik.clientSecret
                     insecureEnableGroups: true
                     scopes:
                       - openid

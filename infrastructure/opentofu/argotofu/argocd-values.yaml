@@ -140,6 +140,10 @@ redis-ha:
   sentinel:
     enabled: true
 configs:
+  secret:
+    annotations:
+      sealedsecrets.bitnami.com/patch: "true"
+      argocd.argoproj.io/sync-wave: "-1"
   rbac:
     policy.csv: |
       g, Argo CD Admins, role:admin
