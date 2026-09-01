@@ -1,0 +1,392 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-redis-config
+  namespace: nextcloud
+data:
+  start-redis.sh: |
+    #!/bin/sh
+    set -eu
+    set -- redis-server       --appendonly yes       --appendfsync everysec       --requirepass "$REDIS_PASSWORD"       --masterauth "$REDIS_PASSWORD"       --protected-mode no
+    if [ "$HOSTNAME" = nextcloud-redis-data-1 ]; then
+      set -- "$@" --replicaof nextcloud-redis-data-0.nextcloud-redis-data.nextcloud.svc.cluster.local 6379
+    fi
+    exec "$@"
+  start-sentinel.sh: |
+    #!/bin/sh
+    set -eu
+    cat > /tmp/sentinel.conf <<SENTINEL
+    port 26379
+    protected-mode no
+    requirepass "$REDIS_PASSWORD"
+    sentinel resolve-hostnames yes
+    sentinel announce-hostnames yes
+    sentinel monitor nextcloud nextcloud-redis-data-0.nextcloud-redis-data.nextcloud.svc.cluster.local 6379 2
+    sentinel auth-pass nextcloud "$REDIS_PASSWORD"
+    sentinel down-after-milliseconds nextcloud 5000
+    sentinel failover-timeout nextcloud 60000
+    sentinel parallel-syncs nextcloud 1
+    SENTINEL
+    exec redis-sentinel /tmp/sentinel.conf
+  haproxy.cfg: |
+    global
+      log stdout format raw local0
+      nbthread 1
+      maxconn 1024
+
+    defaults
+      log global
+      mode tcp
+      timeout connect 5s
+      timeout client 30s
+      timeout server 30s
+
+    frontend redis
+      bind :6379
+      default_backend redis-primary
+
+    backend redis-primary
+      option tcp-check
+      tcp-check send AUTH\ __REDIS_PASSWORD__\r\n
+      tcp-check expect string +OK
+      tcp-check send ROLE\r\n
+      tcp-check expect string master
+      server redis-0 nextcloud-redis-data-0.nextcloud-redis-data.nextcloud.svc.cluster.local:6379 check inter 2s
+      server redis-1 nextcloud-redis-data-1.nextcloud-redis-data.nextcloud.svc.cluster.local:6379 check inter 2s
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-redis-data
+  namespace: nextcloud
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: nextcloud-redis-data
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis
+    - name: sentinel
+      port: 26379
+      targetPort: sentinel
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nextcloud-redis-data
+  namespace: nextcloud
+spec:
+  serviceName: nextcloud-redis-data
+  replicas: 2
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-redis-data
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextcloud-redis-data
+        nextcloud.antblu.net/sentinel: "true"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ${TALOS_WORKER_LEFT}
+                      - ${TALOS_WORKER_RIGHT}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: nextcloud-redis-data
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: redis
+          image: redis:${REDIS_IMAGE_TAG}
+          command:
+            - /config/start-redis.sh
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-redis
+                  key: password
+          ports:
+            - name: redis
+              containerPort: 6379
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - redis-cli --no-auth-warning -a "$REDIS_PASSWORD" ping | grep PONG
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - redis-cli --no-auth-warning -a "$REDIS_PASSWORD" ping | grep PONG
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: data
+              mountPath: /data
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+        - name: sentinel
+          image: redis:${REDIS_IMAGE_TAG}
+          command:
+            - /config/start-sentinel.sh
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-redis
+                  key: password
+          ports:
+            - name: sentinel
+              containerPort: 26379
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - redis-cli --no-auth-warning -p 26379 -a "$REDIS_PASSWORD" ping | grep PONG
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: config
+          configMap:
+            name: nextcloud-redis-config
+            defaultMode: 0555
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: openebs-local
+        resources:
+          requests:
+            storage: ${NEXTCLOUD_REDIS_STORAGE_SIZE}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-redis-sentinel-2
+  namespace: nextcloud
+spec:
+  selector:
+    app.kubernetes.io/name: nextcloud-redis-quorum
+  ports:
+    - name: sentinel
+      port: 26379
+      targetPort: sentinel
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud-redis-quorum
+  namespace: nextcloud
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-redis-quorum
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextcloud-redis-quorum
+        nextcloud.antblu.net/sentinel: "true"
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${TALOS_WORKER_RTX}
+      tolerations:
+        - key: quorum
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: sentinel
+          image: redis:${REDIS_IMAGE_TAG}
+          command:
+            - /config/start-sentinel.sh
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-redis
+                  key: password
+          ports:
+            - name: sentinel
+              containerPort: 26379
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - redis-cli --no-auth-warning -p 26379 -a "$REDIS_PASSWORD" ping | grep PONG
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: ${NEXTCLOUD_REDIS_QUORUM_CPU_REQUEST}
+              memory: ${NEXTCLOUD_REDIS_QUORUM_MEMORY_REQUEST}
+            limits:
+              cpu: ${NEXTCLOUD_REDIS_QUORUM_CPU_LIMIT}
+              memory: ${NEXTCLOUD_REDIS_QUORUM_MEMORY_LIMIT}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: config
+          configMap:
+            name: nextcloud-redis-config
+            defaultMode: 0555
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-redis-haproxy
+  namespace: nextcloud
+spec:
+  selector:
+    app.kubernetes.io/name: nextcloud-redis-haproxy
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud-redis-haproxy
+  namespace: nextcloud
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-redis-haproxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextcloud-redis-haproxy
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: nextcloud-redis-haproxy
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: haproxy
+          image: haproxy:${HAPROXY_IMAGE_TAG}
+          command:
+            - /bin/sh
+            - -ec
+            - escaped_password=$(printf '%s' "$REDIS_PASSWORD" | sed 's/[\/&]/\\&/g'); sed "s/__REDIS_PASSWORD__/$escaped_password/g" /config/haproxy.cfg > /tmp/haproxy.cfg; exec haproxy -W -db -f /tmp/haproxy.cfg
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-redis
+                  key: password
+          ports:
+            - name: redis
+              containerPort: 6379
+          readinessProbe:
+            tcpSocket:
+              port: redis
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: redis
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: ${NEXTCLOUD_REDIS_QUORUM_CPU_REQUEST}
+              memory: ${NEXTCLOUD_REDIS_QUORUM_MEMORY_REQUEST}
+            limits:
+              cpu: ${NEXTCLOUD_REDIS_QUORUM_CPU_LIMIT}
+              memory: ${NEXTCLOUD_REDIS_QUORUM_MEMORY_LIMIT}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: config
+          configMap:
+            name: nextcloud-redis-config
+            defaultMode: 0555
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 99
+        runAsGroup: 99
+        seccompProfile:
+          type: RuntimeDefault

@@ -1,0 +1,21 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: ${NEXTCLOUD_DATABASE_CLUSTER}
+  namespace: nextcloud
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:${POSTGRES_IMAGE_TAG}
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: required
+  storage:
+    storageClass: openebs-local
+    size: ${NEXTCLOUD_DATABASE_STORAGE_SIZE}
+  bootstrap:
+    initdb:
+      database: nextcloud
+      owner: nextcloud
+      secret:
+        name: nextcloud-db-app

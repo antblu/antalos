@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-shared-config
+  namespace: nextcloud
+data:
+  config.php: |-
+    <?php
+    $CONFIG = array (
+      'instanceid' => getenv('NEXTCLOUD_INSTANCE_ID'),
+      'passwordsalt' => getenv('NEXTCLOUD_PASSWORD_SALT'),
+      'secret' => getenv('NEXTCLOUD_SECRET'),
+      'trusted_domains' => array(getenv('NEXTCLOUD_TRUSTED_DOMAINS')),
+      'trusted_proxies' => array(getenv('TRUSTED_PROXIES')),
+      'overwriteprotocol' => getenv('OVERWRITEPROTOCOL'),
+      'overwrite.cli.url' => getenv('OVERWRITECLIURL'),
+      'default_phone_region' => 'US',
+      'maintenance_window_start' => 9,
+      'log_type' => 'errorlog',
+      'loglevel' => 2,
+      'version' => getenv('NEXTCLOUD_SERVER_VERSION'),
+      'dbtype' => 'pgsql',
+      'dbname' => getenv('POSTGRES_DB'),
+      'dbhost' => getenv('POSTGRES_HOST'),
+      'dbuser' => getenv('POSTGRES_USER'),
+      'dbpassword' => getenv('POSTGRES_PASSWORD'),
+      'dbtableprefix' => 'oc_',
+      'datadirectory' => getenv('NEXTCLOUD_DATA_DIR'),
+      'installed' => true,
+      'config_is_read_only' => true,
+      'openmetrics_allowed_clients' => array_filter(array_map('trim', explode(',', getenv('OPENMETRICS_ALLOWED_CLIENTS')))),
+    );

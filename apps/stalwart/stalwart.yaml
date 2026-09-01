@@ -179,10 +179,7 @@ spec:
                   name: stalwart-db-app
                   key: password
             - name: STALWART_S3_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: stalwart-storage
-                  key: s3-access-key
+              value: ${STALWART_S3_ACCESS_KEY}
             - name: STALWART_S3_SECRET_KEY
               valueFrom:
                 secretKeyRef:

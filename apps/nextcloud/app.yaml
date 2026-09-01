@@ -1,0 +1,229 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nextcloud
+  namespace: argocd
+spec:
+  project: default
+
+  sources:
+    - repoURL: https://nextcloud.github.io/helm/
+      chart: nextcloud
+      targetRevision: ${NEXTCLOUD_CHART_VERSION}
+      helm:
+        values: |
+          image:
+            tag: ${NEXTCLOUD_IMAGE_TAG}
+            flavor: apache
+
+          replicaCount: 2
+          podAnnotations:
+            config.antblu.net/revision: "${NEXTCLOUD_CONFIG_REVISION}"
+
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: nextcloud
+                      app.kubernetes.io/instance: nextcloud
+                      app.kubernetes.io/component: app
+                  topologyKey: kubernetes.io/hostname
+
+          ingress:
+            enabled: true
+            className: traefik
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.tls: "true"
+            tls:
+              - secretName: nextcloud-tls
+                hosts:
+                  - ${NEXTCLOUD_HOST}
+
+          nextcloud:
+            host: ${NEXTCLOUD_HOST}
+            strategy:
+              type: RollingUpdate
+              rollingUpdate:
+                maxSurge: 0
+                maxUnavailable: 1
+            trustedDomains:
+              - ${NEXTCLOUD_HOST}
+            existingSecret:
+              enabled: true
+              secretName: nextcloud-admin
+              usernameKey: nextcloud-username
+              passwordKey: nextcloud-password
+            openmetrics:
+              allowedClients:
+                - 127.0.0.1
+                - ${KUBERNETES_POD_CIDR}
+            phpConfigs:
+              uploads.ini: |-
+                upload_max_filesize=16G
+                post_max_size=16G
+                memory_limit=1G
+                max_execution_time=3600
+                max_input_time=3600
+            extraVolumes:
+              - name: nextcloud-shared-config
+                configMap:
+                  name: nextcloud-shared-config
+            extraInitContainers:
+              - name: prepare-nextcloud-config
+                image: nextcloud:${NEXTCLOUD_IMAGE_TAG}
+                command:
+                  - sh
+                  - -ec
+                  - |-
+                    set -eu
+                    install -d -o 33 -g 33 /target /data /html
+                    cp -a /usr/src/nextcloud/. /html/
+                    chown -R 33:33 /html
+                    for config_file in /usr/src/nextcloud/config/*.config.php /usr/src/nextcloud/config/.htaccess; do
+                      install -o 33 -g 33 -m 0644 "$config_file" /target/
+                    done
+                    install -o 33 -g 33 -m 0440 /source/config.php /target/config.php
+                    printf '%s\n' '# Nextcloud data directory' > /data/.ncdata
+                    chown 33:33 /data/.ncdata
+                    chmod 0440 /data/.ncdata
+                volumeMounts:
+                  - name: nextcloud-main
+                    mountPath: /html
+                    subPath: html
+                  - name: nextcloud-main
+                    mountPath: /target
+                    subPath: config
+                  - name: nextcloud-main
+                    mountPath: /data
+                    subPath: data
+                  - name: nextcloud-shared-config
+                    mountPath: /source
+                    readOnly: true
+            hooks:
+              post-installation: |-
+                #!/bin/sh
+                set -eu
+                su -s /bin/sh www-data -c 'php /var/www/html/occ background:cron'
+            extraEnv:
+              - name: PGSSLMODE
+                value: disable
+              - name: APACHE_DISABLE_REWRITE_IP
+                value: "1"
+              - name: TRUSTED_PROXIES
+                value: ${KUBERNETES_POD_CIDR}
+              - name: OVERWRITEPROTOCOL
+                value: https
+              - name: OVERWRITECLIURL
+                value: https://${NEXTCLOUD_HOST}
+              - name: NEXTCLOUD_INIT_HTACCESS
+                value: "true"
+              - name: NEXTCLOUD_INSTANCE_ID
+                value: ${NEXTCLOUD_INSTANCE_ID}
+              - name: NEXTCLOUD_SERVER_VERSION
+                value: "${NEXTCLOUD_SERVER_VERSION}"
+              - name: NEXTCLOUD_PASSWORD_SALT
+                valueFrom:
+                  secretKeyRef:
+                    name: nextcloud-config
+                    key: password-salt
+              - name: NEXTCLOUD_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: nextcloud-config
+                    key: secret
+              - name: OBJECTSTORE_S3_BUCKET
+                value: ${NEXTCLOUD_S3_BUCKET}
+              - name: OBJECTSTORE_S3_REGION
+                value: ${GARAGE_S3_CUSTOM_REGION}
+              - name: OBJECTSTORE_S3_HOST
+                value: ${GARAGE_S3_IP}
+              - name: OBJECTSTORE_S3_PORT
+                value: "${GARAGE_S3_PORT}"
+              - name: OBJECTSTORE_S3_KEY
+                value: ${NEXTCLOUD_S3_ACCESS_KEY}
+              - name: OBJECTSTORE_S3_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: nextcloud-s3
+                    key: secret-key
+              - name: OBJECTSTORE_S3_SSL
+                value: "false"
+              - name: OBJECTSTORE_S3_USEPATH_STYLE
+                value: "true"
+              - name: OBJECTSTORE_S3_AUTOCREATE
+                value: "false"
+              - name: OBJECTSTORE_S3_STORAGE_CLASS
+                value: STANDARD
+
+          internalDatabase:
+            enabled: false
+
+          externalDatabase:
+            enabled: true
+            type: postgresql
+            host: ${NEXTCLOUD_DATABASE_CLUSTER}-rw.nextcloud.svc.cluster.local
+            database: nextcloud
+            existingSecret:
+              enabled: true
+              secretName: nextcloud-db-app
+              usernameKey: username
+              passwordKey: password
+
+          externalRedis:
+            enabled: true
+            host: nextcloud-redis-haproxy.nextcloud.svc.cluster.local
+            port: "6379"
+            existingSecret:
+              enabled: true
+              secretName: nextcloud-redis
+              passwordKey: password
+
+          cronjob:
+            enabled: true
+            type: sidecar
+            sidecar:
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+
+          persistence:
+            enabled: false
+
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+
+          startupProbe:
+            enabled: true
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      path: apps/nextcloud
+      plugin:
+        name: yaml-envsubst
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nextcloud
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true

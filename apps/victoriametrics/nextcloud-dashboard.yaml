@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-nextcloud
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  nextcloud.json: |-
+    {
+      "annotations": {"list": []},
+      "description": "Nextcloud application health, usage, Kubernetes resources, and VictoriaLogs.",
+      "editable": true,
+      "graphTooltip": 1,
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
+          "fieldConfig": {"defaults": {"mappings": [{"options": {"0": {"color": "red", "text": "DOWN"}, "1": {"color": "green", "text": "UP"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []},
+          "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "targets": [{"expr": "min(up{namespace=\"nextcloud\",service=\"nextcloud\"})", "refId": "A"}],
+          "title": "Nextcloud availability",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 5, "w": 6, "x": 6, "y": 0},
+          "id": 2,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "targets": [{"expr": "max(nextcloud_users)", "refId": "A"}],
+          "title": "Users",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 5, "w": 6, "x": 12, "y": 0},
+          "id": 3,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "targets": [{"expr": "max(sum(nextcloud_files) by (instance))", "refId": "A"}],
+          "title": "Files",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 5, "w": 6, "x": 18, "y": 0},
+          "id": 4,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "targets": [{"expr": "max(nextcloud_active_users{time=\"Last 5 minutes\"})", "refId": "A"}],
+          "title": "Active users (5m)",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
+          "fieldConfig": {"defaults": {"unit": "cores"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 5},
+          "id": 5,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"nextcloud\",container=\"nextcloud\"}[]))", "legendFormat": "{{pod}}", "refId": "A"}],
+          "title": "Application CPU",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
+          "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 5},
+          "id": 6,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"nextcloud\",container=\"nextcloud\"})", "legendFormat": "{{pod}}", "refId": "A"}],
+          "title": "Application memory",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 13},
+          "id": 7,
+          "options": {"legend": {"displayMode": "table", "placement": "right", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "max by (mimetype) (nextcloud_files)", "legendFormat": "{{mimetype}}", "refId": "A"}],
+          "title": "Files by MIME type",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 13},
+          "id": 8,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [
+            {"expr": "max(nextcloud_running_jobs)", "legendFormat": "running jobs", "refId": "A"},
+            {"expr": "max(nextcloud_shares)", "legendFormat": "shares", "refId": "B"},
+            {"expr": "max(nextcloud_maintenance)", "legendFormat": "maintenance mode", "refId": "C"}
+          ],
+          "title": "Application state",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs"},
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 21},
+          "id": 9,
+          "options": {"dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true},
+          "targets": [{"datasource": {"type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs"}, "expr": "kubernetes.namespace_name:=\"nextcloud\"", "queryType": "range", "refId": "A"}],
+          "title": "Nextcloud logs",
+          "type": "logs"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["nextcloud", "victoriametrics", "victorialogs"],
+      "time": {"from": "now-6h", "to": "now"},
+      "timezone": "browser",
+      "title": "Nextcloud",
+      "uid": "nextcloud-victoriametrics",
+      "version": 1
+    }
