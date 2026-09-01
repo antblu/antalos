@@ -50,6 +50,9 @@ spec:
               - name: authentik-forward-auth
             tls:
               secretName: traefik-dashboard-tls
+        providers:
+          kubernetesCRD:
+            allowExternalNameServices: true
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: traefik
