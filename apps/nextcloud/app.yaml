@@ -70,6 +70,13 @@ spec:
               - name: nextcloud-shared-config
                 configMap:
                   name: nextcloud-shared-config
+              - name: nextcloud-apps
+                persistentVolumeClaim:
+                  claimName: nextcloud-apps
+            extraVolumeMounts:
+              - name: nextcloud-apps
+                mountPath: /var/www/html/gitops_apps
+                readOnly: true
             extraInitContainers:
               - name: prepare-nextcloud-config
                 image: nextcloud:${NEXTCLOUD_IMAGE_TAG}
@@ -101,11 +108,38 @@ spec:
                   - name: nextcloud-shared-config
                     mountPath: /source
                     readOnly: true
+              - name: install-nextcloud-apps
+                image: nextcloud:${NEXTCLOUD_IMAGE_TAG}
+                securityContext:
+                  runAsNonRoot: true
+                  runAsUser: 33
+                  runAsGroup: 33
+                command:
+                  - sh
+                  - -ec
+                  - sh /source/install-apps.sh /apps
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 128Mi
+                  limits:
+                    cpu: 500m
+                    memory: 512Mi
+                volumeMounts:
+                  - name: nextcloud-apps
+                    mountPath: /apps
+                  - name: nextcloud-shared-config
+                    mountPath: /source
+                    readOnly: true
             hooks:
               post-installation: |-
                 #!/bin/sh
                 set -eu
                 su -s /bin/sh www-data -c 'php /var/www/html/occ background:cron'
+                su -s /bin/sh www-data -c 'php /var/www/html/occ app:enable --no-interaction \
+                  announcementcenter calendar notify_push contacts side_menu \
+                  deck external forms mail integration_openai assistant eurooffice \
+                  notes user_oidc spreed groupfolders whiteboard'
             extraEnv:
               - name: PGSSLMODE
                 value: disable

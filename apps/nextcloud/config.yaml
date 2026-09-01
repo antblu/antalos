@@ -14,6 +14,18 @@ data:
       'trusted_proxies' => array(getenv('TRUSTED_PROXIES')),
       'overwriteprotocol' => getenv('OVERWRITEPROTOCOL'),
       'overwrite.cli.url' => getenv('OVERWRITECLIURL'),
+      'apps_paths' => array(
+        0 => array(
+          'path' => '/var/www/html/apps',
+          'url' => '/apps',
+          'writable' => false,
+        ),
+        1 => array(
+          'path' => '/var/www/html/gitops_apps',
+          'url' => '/gitops_apps',
+          'writable' => false,
+        ),
+      ),
       'default_phone_region' => 'US',
       'maintenance_window_start' => 9,
       'log_type' => 'errorlog',
@@ -30,3 +42,51 @@ data:
       'config_is_read_only' => true,
       'openmetrics_allowed_clients' => array_filter(array_map('trim', explode(',', getenv('OPENMETRICS_ALLOWED_CLIENTS')))),
     );
+  install-apps.sh: |-
+    #!/bin/sh
+    set -eu
+
+    apps_dir=${1:-/var/www/html/custom_apps}
+    work_dir=$(mktemp -d)
+    trap 'rm -rf "$work_dir"' EXIT
+    install -d "$apps_dir"
+
+    install_app() {
+      app_id=$1
+      app_version=$2
+      app_sha512=$3
+      app_url=$4
+      archive="$work_dir/$app_id.tar.gz"
+
+      if [ -f "$apps_dir/$app_id/.gitops-sha512" ] &&
+         [ "$(cat "$apps_dir/$app_id/.gitops-sha512")" = "$app_sha512" ]; then
+        printf 'Keeping %s %s (verified GitOps revision)\n' "$app_id" "$app_version"
+        return
+      fi
+      printf 'Installing %s %s\n' "$app_id" "$app_version"
+      curl --fail --location --silent --show-error \
+        --retry 5 --retry-all-errors \
+        "$app_url" -o "$archive"
+      printf '%s  %s\n' "$app_sha512" "$archive" | sha512sum -c -
+      rm -rf "$apps_dir/$app_id"
+      tar -xzf "$archive" -C "$apps_dir"
+      printf '%s\n' "$app_sha512" > "$apps_dir/$app_id/.gitops-sha512"
+    }
+
+    install_app announcementcenter "${NEXTCLOUD_ANNOUNCEMENTCENTER_VERSION}" "${NEXTCLOUD_ANNOUNCEMENTCENTER_SHA512}" "${NEXTCLOUD_RELEASES_URL}/announcementcenter/releases/download/v${NEXTCLOUD_ANNOUNCEMENTCENTER_VERSION}/announcementcenter-v${NEXTCLOUD_ANNOUNCEMENTCENTER_VERSION}.tar.gz"
+    install_app calendar "${NEXTCLOUD_CALENDAR_VERSION}" "${NEXTCLOUD_CALENDAR_SHA512}" "${NEXTCLOUD_RELEASES_URL}/calendar/releases/download/v${NEXTCLOUD_CALENDAR_VERSION}/calendar-v${NEXTCLOUD_CALENDAR_VERSION}.tar.gz"
+    install_app notify_push "${NEXTCLOUD_NOTIFY_PUSH_VERSION}" "${NEXTCLOUD_NOTIFY_PUSH_SHA512}" "${NEXTCLOUD_RELEASES_URL}/notify_push/releases/download/v${NEXTCLOUD_NOTIFY_PUSH_VERSION}/notify_push-v${NEXTCLOUD_NOTIFY_PUSH_VERSION}.tar.gz"
+    install_app contacts "${NEXTCLOUD_CONTACTS_VERSION}" "${NEXTCLOUD_CONTACTS_SHA512}" "${NEXTCLOUD_RELEASES_URL}/contacts/releases/download/v${NEXTCLOUD_CONTACTS_VERSION}/contacts-v${NEXTCLOUD_CONTACTS_VERSION}.tar.gz"
+    install_app side_menu "${NEXTCLOUD_SIDE_MENU_VERSION}" "${NEXTCLOUD_SIDE_MENU_SHA512}" "${NEXTCLOUD_SIDE_MENU_RELEASES_URL}/v${NEXTCLOUD_SIDE_MENU_VERSION}/side_menu_v${NEXTCLOUD_SIDE_MENU_VERSION}.tar.gz"
+    install_app deck "${NEXTCLOUD_DECK_VERSION}" "${NEXTCLOUD_DECK_SHA512}" "${NEXTCLOUD_RELEASES_URL}/deck/releases/download/v${NEXTCLOUD_DECK_VERSION}/deck-v${NEXTCLOUD_DECK_VERSION}.tar.gz"
+    install_app external "${NEXTCLOUD_EXTERNAL_VERSION}" "${NEXTCLOUD_EXTERNAL_SHA512}" "${NEXTCLOUD_RELEASES_URL}/external/releases/download/v${NEXTCLOUD_EXTERNAL_VERSION}/external-v${NEXTCLOUD_EXTERNAL_VERSION}.tar.gz"
+    install_app forms "${NEXTCLOUD_FORMS_VERSION}" "${NEXTCLOUD_FORMS_SHA512}" "${NEXTCLOUD_RELEASES_URL}/forms/releases/download/v${NEXTCLOUD_FORMS_VERSION}/forms-v${NEXTCLOUD_FORMS_VERSION}.tar.gz"
+    install_app mail "${NEXTCLOUD_MAIL_VERSION}" "${NEXTCLOUD_MAIL_SHA512}" "${NEXTCLOUD_RELEASES_URL}/mail/releases/download/v${NEXTCLOUD_MAIL_VERSION}/mail-v${NEXTCLOUD_MAIL_VERSION}.tar.gz"
+    install_app integration_openai "${NEXTCLOUD_INTEGRATION_OPENAI_VERSION}" "${NEXTCLOUD_INTEGRATION_OPENAI_SHA512}" "${NEXTCLOUD_RELEASES_URL}/integration_openai/releases/download/v${NEXTCLOUD_INTEGRATION_OPENAI_VERSION}/integration_openai-v${NEXTCLOUD_INTEGRATION_OPENAI_VERSION}.tar.gz"
+    install_app assistant "${NEXTCLOUD_ASSISTANT_VERSION}" "${NEXTCLOUD_ASSISTANT_SHA512}" "${NEXTCLOUD_RELEASES_URL}/assistant/releases/download/v${NEXTCLOUD_ASSISTANT_VERSION}/assistant-v${NEXTCLOUD_ASSISTANT_VERSION}.tar.gz"
+    install_app eurooffice "${NEXTCLOUD_EUROOFFICE_VERSION}" "${NEXTCLOUD_EUROOFFICE_SHA512}" "${NEXTCLOUD_RELEASES_URL}/eurooffice/releases/download/v${NEXTCLOUD_EUROOFFICE_VERSION}/eurooffice-v${NEXTCLOUD_EUROOFFICE_VERSION}.tar.gz"
+    install_app notes "${NEXTCLOUD_NOTES_VERSION}" "${NEXTCLOUD_NOTES_SHA512}" "${NEXTCLOUD_RELEASES_URL}/notes/releases/download/v${NEXTCLOUD_NOTES_VERSION}/notes-v${NEXTCLOUD_NOTES_VERSION}.tar.gz"
+    install_app user_oidc "${NEXTCLOUD_USER_OIDC_VERSION}" "${NEXTCLOUD_USER_OIDC_SHA512}" "${NEXTCLOUD_RELEASES_URL}/user_oidc/releases/download/v${NEXTCLOUD_USER_OIDC_VERSION}/user_oidc-v${NEXTCLOUD_USER_OIDC_VERSION}.tar.gz"
+    install_app spreed "${NEXTCLOUD_SPREED_VERSION}" "${NEXTCLOUD_SPREED_SHA512}" "${NEXTCLOUD_RELEASES_URL}/spreed/releases/download/v${NEXTCLOUD_SPREED_VERSION}/spreed-v${NEXTCLOUD_SPREED_VERSION}.tar.gz"
+    install_app groupfolders "${NEXTCLOUD_GROUPFOLDERS_VERSION}" "${NEXTCLOUD_GROUPFOLDERS_SHA512}" "${NEXTCLOUD_RELEASES_URL}/groupfolders/releases/download/v${NEXTCLOUD_GROUPFOLDERS_VERSION}/groupfolders-v${NEXTCLOUD_GROUPFOLDERS_VERSION}.tar.gz"
+    install_app whiteboard "${NEXTCLOUD_WHITEBOARD_VERSION}" "${NEXTCLOUD_WHITEBOARD_SHA512}" "${NEXTCLOUD_RELEASES_URL}/whiteboard/releases/download/v${NEXTCLOUD_WHITEBOARD_VERSION}/whiteboard-v${NEXTCLOUD_WHITEBOARD_VERSION}.tar.gz"
