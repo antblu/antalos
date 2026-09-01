@@ -16,6 +16,18 @@ spec:
             tag: ${NEXTCLOUD_IMAGE_TAG}
             flavor: apache
 
+          lifecycle:
+            postStartCommand:
+              - sh
+              - -ec
+              - |-
+                cd /var/www/html
+                until php occ status >/dev/null 2>&1; do sleep 2; done
+                php occ app:enable --no-interaction \
+                  announcementcenter calendar notify_push contacts side_menu \
+                  deck external forms mail integration_openai assistant eurooffice \
+                  notes user_oidc spreed groupfolders whiteboard
+
           replicaCount: 2
           podAnnotations:
             config.antblu.net/revision: "${NEXTCLOUD_CONFIG_REVISION}"
@@ -43,6 +55,9 @@ spec:
 
           nextcloud:
             host: ${NEXTCLOUD_HOST}
+            podSecurityContext:
+              fsGroup: 33
+              fsGroupChangePolicy: OnRootMismatch
             strategy:
               type: RollingUpdate
               rollingUpdate:
@@ -91,6 +106,7 @@ spec:
                     for config_file in /usr/src/nextcloud/config/*.config.php /usr/src/nextcloud/config/.htaccess; do
                       install -o 33 -g 33 -m 0644 "$config_file" /target/
                     done
+                    install -o 33 -g 33 -m 0644 /source/apps.config.php /target/apps.config.php
                     install -o 33 -g 33 -m 0440 /source/config.php /target/config.php
                     printf '%s\n' '# Nextcloud data directory' > /data/.ncdata
                     chown 33:33 /data/.ncdata
@@ -136,10 +152,6 @@ spec:
                 #!/bin/sh
                 set -eu
                 su -s /bin/sh www-data -c 'php /var/www/html/occ background:cron'
-                su -s /bin/sh www-data -c 'php /var/www/html/occ app:enable --no-interaction \
-                  announcementcenter calendar notify_push contacts side_menu \
-                  deck external forms mail integration_openai assistant eurooffice \
-                  notes user_oidc spreed groupfolders whiteboard'
             extraEnv:
               - name: PGSSLMODE
                 value: disable

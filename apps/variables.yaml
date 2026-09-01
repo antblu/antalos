@@ -25,7 +25,7 @@ variables:
   NEXTCLOUD_IMAGE_TAG: 34.0.3-apache
   NEXTCLOUD_INSTANCE_ID: ocxyyr3nkdoj
   NEXTCLOUD_SERVER_VERSION: 34.0.3.2
-  NEXTCLOUD_CONFIG_REVISION: "2"
+  NEXTCLOUD_CONFIG_REVISION: "3"
   NEXTCLOUD_DATABASE_CLUSTER: nextcloud-db-s3
   # The app export must remain reachable from every worker and writable by
   # uid/gid 33 (www-data).

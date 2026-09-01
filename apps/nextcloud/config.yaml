@@ -14,18 +14,6 @@ data:
       'trusted_proxies' => array(getenv('TRUSTED_PROXIES')),
       'overwriteprotocol' => getenv('OVERWRITEPROTOCOL'),
       'overwrite.cli.url' => getenv('OVERWRITECLIURL'),
-      'apps_paths' => array(
-        0 => array(
-          'path' => '/var/www/html/apps',
-          'url' => '/apps',
-          'writable' => false,
-        ),
-        1 => array(
-          'path' => '/var/www/html/gitops_apps',
-          'url' => '/gitops_apps',
-          'writable' => false,
-        ),
-      ),
       'default_phone_region' => 'US',
       'maintenance_window_start' => 9,
       'log_type' => 'errorlog',
@@ -41,6 +29,22 @@ data:
       'installed' => true,
       'config_is_read_only' => true,
       'openmetrics_allowed_clients' => array_filter(array_map('trim', explode(',', getenv('OPENMETRICS_ALLOWED_CLIENTS')))),
+    );
+  apps.config.php: |-
+    <?php
+    $CONFIG = array (
+      'apps_paths' => array(
+        0 => array(
+          'path' => '/var/www/html/apps',
+          'url' => '/apps',
+          'writable' => false,
+        ),
+        1 => array(
+          'path' => '/var/www/html/gitops_apps',
+          'url' => '/gitops_apps',
+          'writable' => false,
+        ),
+      ),
     );
   install-apps.sh: |-
     #!/bin/sh
