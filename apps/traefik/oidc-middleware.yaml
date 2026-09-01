@@ -1,0 +1,23 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: traefik-oidc-auth
+  namespace: traefik
+spec:
+  plugin:
+    traefik-oidc-auth:
+      secret: urn:k8s:secret:traefik-oidc-auth:pluginSecret
+      provider:
+        url: https://${AUTHENTIK_HOST}/application/o/traefik-dashboard
+        clientId: ${TRAEFIK_OIDC_CLIENT_ID}
+        usePkce: true
+      scopes:
+        - openid
+        - profile
+        - email
+      callbackUri: https://${TRAEFIK_HOST}/oidc/callback
+      postLogoutRedirectUri: https://${TRAEFIK_HOST}/dashboard/
+      sessionCookie:
+        secure: true
+        httpOnly: true
+        sameSite: lax
