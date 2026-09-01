@@ -14,3 +14,6 @@ spec:
       path: /metrics
       interval: 30s
       scrapeTimeout: 10s
+      vm_scrape_params:
+        headers:
+          - "Host: nextcloud.antblu.net"
