@@ -188,6 +188,9 @@ spec:
             enabled: true
             fullnameOverride: grafana
             replicas: 1
+            grafana.ini:
+              server:
+                root_url: https://${GRAFANA_HOST}
             nodeSelector:
               kubernetes.io/hostname: ${TALOS_WORKER_RIGHT}
             plugins:
