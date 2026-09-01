@@ -65,10 +65,9 @@ spec:
 
             metrics:
               enabled: true
-              serviceMonitor:
-                enabled: true
-                interval: 30s
-                scrapeTimeout: 10s
+              service:
+                labels:
+                  metrics.antblu.net/scrape: authentik-server
 
             ingress:
               enabled: true
@@ -89,10 +88,9 @@ spec:
                 maxUnavailable: 1
             metrics:
               enabled: true
-              serviceMonitor:
-                enabled: true
-                interval: 30s
-                scrapeTimeout: 10s
+              service:
+                labels:
+                  metrics.antblu.net/scrape: authentik-worker
 
           postgresql:
             enabled: false

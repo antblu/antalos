@@ -1,0 +1,29 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: authentik-server
+  namespace: authentik
+spec:
+  selector:
+    matchLabels:
+      metrics.antblu.net/scrape: authentik-server
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: authentik-worker
+  namespace: authentik
+spec:
+  selector:
+    matchLabels:
+      metrics.antblu.net/scrape: authentik-worker
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
