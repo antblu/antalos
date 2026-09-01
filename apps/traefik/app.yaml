@@ -40,6 +40,17 @@ spec:
         ingressClass:
           enabled: true
           isDefaultClass: true
+        metrics:
+          prometheus:
+            addEntryPointsLabels: true
+            addRoutersLabels: true
+            addServicesLabels: true
+            service:
+              enabled: true
+            serviceMonitor:
+              enabled: true
+              interval: 30s
+              scrapeTimeout: 10s
         ingressRoute:
           dashboard:
             enabled: true

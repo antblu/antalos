@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-authentik
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  authentik.json: |-
+    {
+      "annotations": {"list": []},
+      "description": "Operational overview for Prometheus metrics exposed by authentik.",
+      "editable": true,
+      "graphTooltip": 1,
+      "panels": [
+        {
+          "fieldConfig": {"defaults": {"mappings": [{"options": {"0": {"color": "red", "text": "DOWN"}, "1": {"color": "green", "text": "UP"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []},
+          "gridPos": {"h": 5, "w": 8, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "min(up{namespace=\"authentik\"})", "refId": "A"}],
+          "title": "authentik availability",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 5, "w": 8, "x": 8, "y": 0},
+          "id": 2,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "max(authentik_admin_workers)", "refId": "A"}],
+          "title": "Connected workers",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 5, "w": 8, "x": 16, "y": 0},
+          "id": 3,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "sum(authentik_outposts_connected)", "refId": "A"}],
+          "title": "Connected outposts",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+          "gridPos": {"h": 9, "w": 12, "x": 0, "y": 5},
+          "id": 4,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [
+            {"expr": "sum(rate(authentik_tasks_total[$__rate_interval]))", "legendFormat": "completed", "refId": "A"},
+            {"expr": "sum(rate(authentik_tasks_errors_total[$__rate_interval]))", "legendFormat": "failed", "refId": "B"}
+          ],
+          "title": "Background task rate",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+          "gridPos": {"h": 9, "w": 12, "x": 12, "y": 5},
+          "id": 5,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "sum by (flow_slug) (rate(authentik_flows_plan_time_sum[$__rate_interval]))", "legendFormat": "{{flow_slug}}", "refId": "A"}],
+          "title": "Flow planning time",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+          "gridPos": {"h": 9, "w": 12, "x": 0, "y": 14},
+          "id": 6,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "topk(5, sum by (object_type, mode) (rate(authentik_policies_execution_time_sum[$__rate_interval])))", "legendFormat": "{{object_type}} {{mode}}", "refId": "A"}],
+          "title": "Policy execution time (top 5)",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 9, "w": 12, "x": 12, "y": 14},
+          "id": 7,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "sum by (outpost) (authentik_outposts_connected)", "legendFormat": "{{outpost}}", "refId": "A"}],
+          "title": "Outpost connections",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["authentik", "victoriametrics"],
+      "time": {"from": "now-6h", "to": "now"},
+      "timezone": "browser",
+      "title": "authentik",
+      "uid": "authentik-victoriametrics",
+      "version": 1
+    }
