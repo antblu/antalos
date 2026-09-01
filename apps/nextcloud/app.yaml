@@ -13,7 +13,7 @@ spec:
       helm:
         values: |
           image:
-            tag: ${NEXTCLOUD_IMAGE_TAG}
+            tag: ${NEXTCLOUD_VERSION}-apache
             flavor: apache
 
           replicaCount: 2
@@ -72,7 +72,7 @@ spec:
                   name: nextcloud-shared-config
             extraInitContainers:
               - name: prepare-nextcloud-config
-                image: nextcloud:${NEXTCLOUD_IMAGE_TAG}
+                image: nextcloud:${NEXTCLOUD_VERSION}-apache
                 command:
                   - sh
                   - -ec
@@ -122,7 +122,7 @@ spec:
               - name: NEXTCLOUD_INSTANCE_ID
                 value: ${NEXTCLOUD_INSTANCE_ID}
               - name: NEXTCLOUD_SERVER_VERSION
-                value: "${NEXTCLOUD_SERVER_VERSION}"
+                value: "${NEXTCLOUD_VERSION}"
               - name: NEXTCLOUD_PASSWORD_SALT
                 valueFrom:
                   secretKeyRef:
