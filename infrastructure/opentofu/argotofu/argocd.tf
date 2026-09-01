@@ -61,7 +61,7 @@ resource "helm_release" "argocd" {
   chart            = "argo-cd"
   namespace        = "argocd"
   create_namespace = true
-  version          = "10.4.0" # Update to latest stable version when possible
+  version          = yamldecode(file("${path.module}/../../../apps/variables.yaml")).variables.ARGOCD_CHART_VERSION
   values           = [file("${path.module}/argocd-values.yaml")]
 
   # This release only bootstraps Argo CD. Once argocd-self is running, Argo CD
@@ -77,7 +77,7 @@ resource "kubectl_manifest" "argocd_bootstrap" {
     helm_release.argocd,
     terraform_data.sealed_secrets_key_restore,
   ]
-  yaml_body = file("${path.module}/../../argocd/argocd-self.yaml")
+  yaml_body = templatefile("${path.module}/../../../apps/argocd/app.yaml", yamldecode(file("${path.module}/../../../apps/variables.yaml")).variables)
 }
 
 # The controller is installed asynchronously by the app-of-apps. Wait for it,

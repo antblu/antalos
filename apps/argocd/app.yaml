@@ -1,16 +1,49 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: argocd-config
+  name: argocd-self
   namespace: argocd
 spec:
   project: default
-  source:
-    repoURL: https://github.com/antblu/antalos.git
-    targetRevision: main
-    path: apps/argocd
-    plugin:
-      name: yaml-envsubst
+  sources:
+    - repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-cd
+      targetRevision: ${ARGOCD_CHART_VERSION}
+      helm:
+        releaseName: argocd
+        valueFiles:
+          - $values/infrastructure/opentofu/argotofu/argocd-values.yaml
+        parameters:
+          - name: server.ingress.hostname
+            value: ${ARGOCD_HOST}
+          - name: configs.cm.url
+            value: https://${ARGOCD_HOST}
+          - name: configs.cm.dex\.config
+            value: |
+              connectors:
+                - config:
+                    issuer: https://${AUTHENTIK_HOST}/application/o/argo-cd/
+                    clientID: M1cYFNuKZE2pGDBMSUPHw8FCCjzIjL86jILMC1Sa
+                    clientSecret: $dex.authentik.clientSecret
+                    insecureEnableGroups: true
+                    scopes:
+                      - openid
+                      - profile
+                      - email
+                  name: authentik
+                  type: oidc
+                  id: authentik
+
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      ref: values
+      path: infrastructure/argocd
+
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      path: apps/argocd
+      plugin:
+        name: yaml-envsubst
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
@@ -18,3 +51,5 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - ServerSideApply=true

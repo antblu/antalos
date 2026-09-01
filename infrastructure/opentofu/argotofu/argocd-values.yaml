@@ -67,7 +67,6 @@ server:
   ingress:
     enabled: true
     ingressClassName: traefik
-    hostname: argocd.antblu.net
     tls: true
 controller:
   replicas: 2
@@ -141,6 +140,10 @@ redis-ha:
   sentinel:
     enabled: true
 configs:
+  rbac:
+    policy.csv: |
+      g, Argo CD Admins, role:admin
+      g, Argo CD Viewers, role:readonly
   params:
     server.insecure: true
     controller.sharding.algorithm: "round-robin"

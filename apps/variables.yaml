@@ -3,6 +3,7 @@
 # Argo CD's yaml-envsubst config-management plugin expands these values into the
 # application manifests at render time. Do not add Kubernetes resources here.
 variables:
+  ARGOCD_CHART_VERSION: 10.4.0
   AUTHENTIK_CHART_VERSION: 2026.8.0
   CERT_MANAGER_CHART_VERSION: v1.18.2
   CNPG_OPERATOR_CHART_VERSION: 0.29.0
