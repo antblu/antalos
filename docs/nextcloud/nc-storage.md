@@ -1,4 +1,9 @@
-# Nextcloud Storage Architecture
+---
+title: Nextcloud storage architecture
+description: Understand which Nextcloud data is critical, reconstructable, or disposable.
+sidebar:
+  order: 1
+---
 
 Nextcloud is deployed with a mostly stateless application tier. Persistent state is separated by purpose:
 

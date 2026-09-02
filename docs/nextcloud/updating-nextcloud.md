@@ -1,3 +1,10 @@
+---
+title: Updating Nextcloud
+description: Safely upgrade Nextcloud while preserving read-only configuration and recoverable data.
+sidebar:
+  order: 2
+---
+
 ## 1. Confirm the upgrade path
 
 Check the currently healthy pod:

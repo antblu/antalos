@@ -16,3 +16,9 @@ kubeconfig
 *.lock.hcl
 sealed-secrets-priv-key.yaml
 AGENTS.md
+
+# Documentation site build artifacts
+site/node_modules/
+site/dist/
+site/.astro/
+pnpm-debug.log*

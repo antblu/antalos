@@ -1,4 +1,9 @@
-# CLI Variables
+---
+title: CLI variables
+description: Generate Talos and Kubernetes client configuration after bootstrap.
+sidebar:
+  order: 3
+---
 
 - This creates a talosconfig from a terraform.tfstate after the VMs have been deployed and bootstraped.
 ```bash

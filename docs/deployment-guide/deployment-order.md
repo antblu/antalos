@@ -1,6 +1,11 @@
-# Deployment Order
+---
+title: Deployment order
+description: Bootstrap Antalos from Proxmox infrastructure through Argo CD and cluster secrets.
+sidebar:
+  order: 2
+---
 
-### Fresh-cluster bootstrap order
+## Fresh-cluster bootstrap order
 When rebuilding the cluster from scratch, deploy the components in this general order:
 1. Install Prerequisites on client
 	- `talosctl`
@@ -12,14 +17,14 @@ When rebuilding the cluster from scratch, deploy the components in this general 
 cd ../antalos/infrastructure/opentofu/talostofu 
 tofu apply
 ```
-3. Initialize [[cli-variables]]
+3. Initialize [CLI variables](./cli-variables/)
 4. Deploy ArgoCD
 ```bash
 cd ../antalos/infrastructure/opentofu/argotofu 
 tofu apply
 ```
 
-5. Inject [[k8s-secrets-bootstrap|Authentik and PostgreSQL secrets]] in the cluster
+5. Inject [Authentik and PostgreSQL secrets](./k8s-secrets-bootstrap/) in the cluster
 6. Add Cloudflare API token
 ```bash
 kubectl create secret generic cloudflare-api-token \

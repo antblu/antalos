@@ -1,4 +1,9 @@
-# Kubernetes Secrets Bootstrap
+---
+title: Kubernetes secrets bootstrap
+description: Bootstrap and recover encrypted Kubernetes credentials with Sealed Secrets.
+sidebar:
+  order: 4
+---
 
 This document describes how to bootstrap and manage Kubernetes secrets for this cluster using **Sealed Secrets**.
 
