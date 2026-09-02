@@ -1,0 +1,437 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-context-chat-backend-env
+  namespace: nextcloud
+data:
+  AA_VERSION: "3.0.0"
+  APP_ID: context_chat_backend
+  APP_DISPLAY_NAME: Context Chat Backend
+  APP_VERSION: ${CONTEXT_CHAT_BACKEND_VERSION}
+  APP_HOST: 0.0.0.0
+  APP_PORT: "${CONTEXT_CHAT_BACKEND_PORT}"
+  APP_PERSISTENT_STORAGE: /nc_app_context_chat_backend_data
+  NEXTCLOUD_URL: https://${NEXTCLOUD_HOST}
+  CC_DOWNLOAD_MODELS_FROM_HF: "true"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-context-chat-backend-launcher
+  namespace: nextcloud
+data:
+  entrypoint.sh: |-
+    #!/bin/sh
+    set -eu
+    database_password="$(/opt/venv/bin/python -c 'import os, urllib.parse; print(urllib.parse.quote(os.environ["CONTEXT_CHAT_DATABASE_PASSWORD"], safe=""))')"
+    export EXTERNAL_DB="postgresql+psycopg://ccb:$database_password@${NEXTCLOUD_DATABASE_CLUSTER}-rw.nextcloud.svc.cluster.local:5432/ccb"
+    export CCB_DB_URL="$EXTERNAL_DB"
+    exec supervisord -c /opt/nextcloud-context-chat/supervisord.conf
+  supervisord.conf: |-
+    [supervisord]
+    nodaemon=true
+    logfile=/var/log/supervisor/supervisord.log
+    pidfile=/var/run/supervisord.pid
+    childlogdir=/var/log/supervisor
+    logfile_maxbytes=50MB
+    logfile_backups=10
+    loglevel=error
+    user=root
+
+    [program:app]
+    stdout_logfile=/dev/stdout
+    stdout_logfile_maxbytes=0
+    stderr_logfile=/dev/stderr
+    stderr_logfile_maxbytes=0
+    autostart=true
+    autorestart=true
+    startsecs=120
+    directory=/app
+    command=/opt/venv/bin/python -u /app/main.py
+
+    [program:embedding_server]
+    stdout_logfile=/dev/stdout
+    stdout_logfile_maxbytes=0
+    stderr_logfile=/dev/stderr
+    stderr_logfile_maxbytes=0
+    autostart=true
+    autorestart=unexpected
+    startsecs=120
+    directory=/app
+    command=/opt/venv/bin/python -u /app/main_em.py
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-context-chat-backend
+  namespace: nextcloud
+  labels:
+    app.kubernetes.io/name: nextcloud-context-chat-backend
+    app.kubernetes.io/component: requestproc
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: nextcloud-context-chat-backend
+    app.kubernetes.io/component: requestproc
+  ports:
+    - name: http
+      port: ${CONTEXT_CHAT_BACKEND_PORT}
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud-context-chat-requestproc
+  namespace: nextcloud
+  labels:
+    app.kubernetes.io/name: nextcloud-context-chat-backend
+    app.kubernetes.io/component: requestproc
+spec:
+  replicas: ${CONTEXT_CHAT_REQUESTPROC_REPLICAS}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-context-chat-backend
+      app.kubernetes.io/component: requestproc
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextcloud-context-chat-backend
+        app.kubernetes.io/component: requestproc
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: nextcloud-context-chat-backend
+                  app.kubernetes.io/component: requestproc
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: context-chat-backend
+          image: ghcr.io/nextcloud-releases/context_chat_backend:${CONTEXT_CHAT_BACKEND_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /opt/nextcloud-context-chat/entrypoint.sh
+          envFrom:
+            - configMapRef:
+                name: nextcloud-context-chat-backend-env
+          env:
+            - name: APP_ROLE
+              value: requestproc
+            - name: APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-context-chat
+                  key: app-secret
+            - name: CONTEXT_CHAT_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-context-chat
+                  key: password
+          ports:
+            - name: http
+              containerPort: ${CONTEXT_CHAT_BACKEND_PORT}
+              protocol: TCP
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 180
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: launcher
+              mountPath: /opt/nextcloud-context-chat
+              readOnly: true
+            - name: data
+              mountPath: /nc_app_context_chat_backend_data
+      volumes:
+        - name: launcher
+          configMap:
+            name: nextcloud-context-chat-backend-launcher
+            defaultMode: 0555
+        - name: data
+          emptyDir: {}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nextcloud-context-chat-requestproc
+  namespace: nextcloud
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-context-chat-backend
+      app.kubernetes.io/component: requestproc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud-context-chat-updatesproc
+  namespace: nextcloud
+  labels:
+    app.kubernetes.io/name: nextcloud-context-chat-backend
+    app.kubernetes.io/component: updatesproc
+spec:
+  replicas: ${CONTEXT_CHAT_UPDATESPROC_REPLICAS}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-context-chat-backend
+      app.kubernetes.io/component: updatesproc
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextcloud-context-chat-backend
+        app.kubernetes.io/component: updatesproc
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: nextcloud-context-chat-backend
+                  app.kubernetes.io/component: updatesproc
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: context-chat-backend
+          image: ghcr.io/nextcloud-releases/context_chat_backend:${CONTEXT_CHAT_BACKEND_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /opt/nextcloud-context-chat/entrypoint.sh
+          envFrom:
+            - configMapRef:
+                name: nextcloud-context-chat-backend-env
+          env:
+            - name: APP_ROLE
+              value: updatesproc
+            - name: APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-context-chat
+                  key: app-secret
+            - name: CONTEXT_CHAT_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-context-chat
+                  key: password
+          ports:
+            - name: http
+              containerPort: ${CONTEXT_CHAT_BACKEND_PORT}
+              protocol: TCP
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 180
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: launcher
+              mountPath: /opt/nextcloud-context-chat
+              readOnly: true
+            - name: data
+              mountPath: /nc_app_context_chat_backend_data
+      volumes:
+        - name: launcher
+          configMap:
+            name: nextcloud-context-chat-backend-launcher
+            defaultMode: 0555
+        - name: data
+          emptyDir: {}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nextcloud-context-chat-updatesproc
+  namespace: nextcloud
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-context-chat-backend
+      app.kubernetes.io/component: updatesproc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud-context-chat-indexing
+  namespace: nextcloud
+  labels:
+    app.kubernetes.io/name: nextcloud-context-chat-backend
+    app.kubernetes.io/component: indexing
+spec:
+  replicas: ${CONTEXT_CHAT_INDEXING_REPLICAS}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-context-chat-backend
+      app.kubernetes.io/component: indexing
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextcloud-context-chat-backend
+        app.kubernetes.io/component: indexing
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: nextcloud-context-chat-backend
+                  app.kubernetes.io/component: indexing
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: context-chat-backend
+          image: ghcr.io/nextcloud-releases/context_chat_backend:${CONTEXT_CHAT_BACKEND_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /opt/nextcloud-context-chat/entrypoint.sh
+          envFrom:
+            - configMapRef:
+                name: nextcloud-context-chat-backend-env
+          env:
+            - name: APP_ROLE
+              value: indexing
+            - name: APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-context-chat
+                  key: app-secret
+            - name: CONTEXT_CHAT_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-context-chat
+                  key: password
+          ports:
+            - name: http
+              containerPort: ${CONTEXT_CHAT_BACKEND_PORT}
+              protocol: TCP
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 180
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: launcher
+              mountPath: /opt/nextcloud-context-chat
+              readOnly: true
+            - name: data
+              mountPath: /nc_app_context_chat_backend_data
+      volumes:
+        - name: launcher
+          configMap:
+            name: nextcloud-context-chat-backend-launcher
+            defaultMode: 0555
+        - name: data
+          emptyDir: {}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nextcloud-context-chat-indexing
+  namespace: nextcloud
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-context-chat-backend
+      app.kubernetes.io/component: indexing

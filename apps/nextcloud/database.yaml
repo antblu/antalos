@@ -5,7 +5,15 @@ metadata:
   namespace: nextcloud
 spec:
   instances: 2
-  imageName: ghcr.io/cloudnative-pg/postgresql:${POSTGRES_IMAGE_TAG}
+  imageName: ghcr.io/cloudnative-pg/postgresql:${NEXTCLOUD_POSTGRES_IMAGE_TAG}
+  managed:
+    roles:
+      - name: ccb
+        ensure: present
+        login: true
+        superuser: false
+        passwordSecret:
+          name: nextcloud-context-chat
   affinity:
     enablePodAntiAffinity: true
     topologyKey: kubernetes.io/hostname
@@ -19,3 +27,18 @@ spec:
       owner: nextcloud
       secret:
         name: nextcloud-db-app
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: nextcloud-context-chat
+  namespace: nextcloud
+spec:
+  name: ccb
+  owner: ccb
+  cluster:
+    name: ${NEXTCLOUD_DATABASE_CLUSTER}
+  extensions:
+    - name: vector
+      ensure: present
+
