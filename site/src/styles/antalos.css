@@ -110,6 +110,10 @@ starlight-theme-select label:hover {
 
 .sidebar-content {
   padding-top: 1.25rem;
+  font-family: var(--sl-font-mono);
+  font-size: 0.82rem;
+  font-variant-ligatures: none;
+  letter-spacing: -0.015em;
 }
 
 .sidebar-content .top-level > li + li {
@@ -118,9 +122,9 @@ starlight-theme-select label:hover {
 
 .sidebar-content .large {
   color: var(--sl-color-white);
-  font-size: 0.72rem;
-  font-weight: 720;
-  letter-spacing: 0.095em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.075em;
   text-transform: uppercase;
 }
 

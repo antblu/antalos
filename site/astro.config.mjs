@@ -27,23 +27,37 @@ export default defineConfig({
         { label: 'Overview', link: '/' },
         {
           label: 'Deployment guide',
-          items: [{ autogenerate: { directory: 'deployment-guide' } }],
+          items: [
+            { label: 'Workstation prerequisites', link: '/deployment-guide/prerequisites/' },
+            { label: 'CLI variables', link: '/deployment-guide/cli-variables/' },
+            { label: 'Deployment order', link: '/deployment-guide/deployment-order/' },
+            { label: 'Kubernetes secrets bootstrap', link: '/deployment-guide/k8s-secrets-bootstrap/' },
+          ],
         },
         {
           label: 'Operations',
-          items: [{ autogenerate: { directory: 'operations' } }],
+          items: [
+            { label: 'Routine cluster operations', link: '/operations/routine-operations/' },
+          ],
         },
         {
           label: 'Recovery',
-          items: [{ autogenerate: { directory: 'recovery' } }],
+          items: [
+            { label: 'Disaster recovery', link: '/recovery/disaster-recovery/' },
+          ],
         },
         {
           label: 'Site guide',
-          items: [{ autogenerate: { directory: 'site' } }],
+          items: [
+            { label: 'Build and customize this site', link: '/site/build-and-customize/' },
+          ],
         },
         {
           label: 'Nextcloud',
-          items: [{ autogenerate: { directory: 'nextcloud' } }],
+          items: [
+            { label: 'Storage architecture', link: '/nextcloud/nc-storage/' },
+            { label: 'Updating Nextcloud', link: '/nextcloud/updating-nextcloud/' },
+          ],
         },
       ],
     }),
