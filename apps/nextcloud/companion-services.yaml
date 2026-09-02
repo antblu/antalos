@@ -1,0 +1,314 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: nextcloud-push-stripprefix
+  namespace: nextcloud
+spec:
+  stripPrefix:
+    prefixes:
+      - /push
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-notify-push
+  namespace: nextcloud
+spec:
+  selector:
+    app.kubernetes.io/name: nextcloud
+    app.kubernetes.io/instance: nextcloud
+    app.kubernetes.io/component: app
+  ports:
+    - name: notify-push
+      port: 7867
+      targetPort: notify-push
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextcloud-notify-push
+  namespace: nextcloud
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: nextcloud-nextcloud-push-stripprefix@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - secretName: nextcloud-tls
+      hosts:
+        - ${NEXTCLOUD_HOST}
+  rules:
+    - host: ${NEXTCLOUD_HOST}
+      http:
+        paths:
+          - path: /push
+            pathType: Prefix
+            backend:
+              service:
+                name: nextcloud-notify-push
+                port:
+                  name: notify-push
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eurooffice
+  namespace: nextcloud
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: eurooffice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: eurooffice
+        app.kubernetes.io/component: document-server
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: eurooffice
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: document-server
+          image: ghcr.io/euro-office/documentserver:${EUROOFFICE_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: JWT_ENABLED
+              value: "true"
+            - name: JWT_HEADER
+              value: AuthorizationJWT
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-companion-secrets
+                  key: eurooffice-jwt-secret
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: "2"
+              memory: 4Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eurooffice
+  namespace: nextcloud
+  annotations:
+    traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+spec:
+  selector:
+    app.kubernetes.io/name: eurooffice
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: eurooffice
+  namespace: nextcloud
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - secretName: eurooffice-tls
+      hosts:
+        - ${EUROOFFICE_HOST}
+  rules:
+    - host: ${EUROOFFICE_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: eurooffice
+                port:
+                  name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud-whiteboard
+  namespace: nextcloud
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-whiteboard
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextcloud-whiteboard
+        app.kubernetes.io/component: collaboration-server
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: nextcloud-whiteboard
+              topologyKey: kubernetes.io/hostname
+      initContainers:
+        - name: prepare-recordings-directory
+          image: ghcr.io/nextcloud-releases/whiteboard:${WHITEBOARD_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 33
+            runAsGroup: 33
+          command:
+            - sh
+            - -ec
+            - |-
+              mkdir -p /shared/whiteboard-recordings
+              chmod 0770 /shared/whiteboard-recordings
+          volumeMounts:
+            - name: nextcloud-apps
+              mountPath: /shared
+      containers:
+        - name: whiteboard
+          image: ghcr.io/nextcloud-releases/whiteboard:${WHITEBOARD_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 33
+            runAsGroup: 33
+          env:
+            - name: NEXTCLOUD_URL
+              value: https://${NEXTCLOUD_HOST}
+            - name: PORT
+              value: "${WHITEBOARD_PORT}"
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-companion-secrets
+                  key: whiteboard-jwt-secret
+            - name: STORAGE_STRATEGY
+              value: redis
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-companion-secrets
+                  key: whiteboard-redis-url
+            - name: RECORDINGS_DIR
+              value: /recordings
+            - name: CLEANUP_LOCAL_RECORDINGS
+              value: "false"
+            - name: MAX_UPLOAD_FILE_SIZE
+              value: "16"
+          ports:
+            - name: http
+              containerPort: 3002
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          volumeMounts:
+            - name: nextcloud-apps
+              mountPath: /recordings
+              subPath: whiteboard-recordings
+      volumes:
+        - name: nextcloud-apps
+          persistentVolumeClaim:
+            claimName: nextcloud-apps
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-whiteboard
+  namespace: nextcloud
+spec:
+  selector:
+    app.kubernetes.io/name: nextcloud-whiteboard
+  ports:
+    - name: http
+      port: 3002
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextcloud-whiteboard
+  namespace: nextcloud
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - secretName: whiteboard-tls
+      hosts:
+        - ${WHITEBOARD_HOST}
+  rules:
+    - host: ${WHITEBOARD_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nextcloud-whiteboard
+                port:
+                  name: http

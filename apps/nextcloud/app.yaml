@@ -27,6 +27,22 @@ spec:
                   announcementcenter calendar notify_push contacts side_menu \
                   deck external forms mail integration_openai assistant eurooffice \
                   notes user_oidc spreed groupfolders whiteboard
+                php occ config:app:set notify_push base_endpoint \
+                  --value="https://${NEXTCLOUD_HOST}/push"
+                php occ config:app:set eurooffice DocumentServerUrl \
+                  --value="https://${EUROOFFICE_HOST}/"
+                php occ config:app:set eurooffice DocumentServerInternalUrl \
+                  --value="http://eurooffice.nextcloud.svc.cluster.local/"
+                php occ config:app:set eurooffice StorageUrl \
+                  --value="https://${NEXTCLOUD_HOST}/"
+                php occ config:app:set eurooffice jwt_secret \
+                  --value="$EUROOFFICE_JWT_SECRET"
+                php occ config:app:set eurooffice jwt_header \
+                  --value="AuthorizationJWT"
+                php occ config:app:set whiteboard collabBackendUrl \
+                  --value="https://${WHITEBOARD_HOST}"
+                php occ config:app:set whiteboard jwt_secret_key \
+                  --value="$WHITEBOARD_JWT_SECRET"
 
           replicaCount: 2
           podAnnotations:
@@ -147,6 +163,73 @@ spec:
                   - name: nextcloud-shared-config
                     mountPath: /source
                     readOnly: true
+            extraSidecarContainers:
+              - name: notify-push
+                image: nextcloud:${NEXTCLOUD_IMAGE_TAG}
+                command:
+                  - sh
+                  - -ec
+                  - |-
+                    case "$(uname -m)" in
+                      x86_64) notify_arch=x86_64 ;;
+                      aarch64|arm64) notify_arch=aarch64 ;;
+                      *) echo "Unsupported notify_push architecture: $(uname -m)" >&2; exit 1 ;;
+                    esac
+                    database_password=$(php -r 'echo rawurlencode(getenv("NOTIFY_PUSH_DATABASE_PASSWORD"));')
+                    redis_password=$(php -r 'echo rawurlencode(getenv("NOTIFY_PUSH_REDIS_PASSWORD"));')
+                    export DATABASE_URL="postgres://nextcloud:${database_password}@${NEXTCLOUD_DATABASE_CLUSTER}-rw.nextcloud.svc.cluster.local/nextcloud"
+                    export REDIS_URL="redis://:${redis_password}@nextcloud-redis-haproxy.nextcloud.svc.cluster.local:6379"
+                    exec "/var/www/html/gitops_apps/notify_push/bin/${notify_arch}/notify_push"
+                ports:
+                  - name: notify-push
+                    containerPort: ${NOTIFY_PUSH_PORT}
+                    protocol: TCP
+                  - name: notify-metrics
+                    containerPort: ${NOTIFY_PUSH_METRICS_PORT}
+                    protocol: TCP
+                env:
+                  - name: PORT
+                    value: "${NOTIFY_PUSH_PORT}"
+                  - name: METRICS_PORT
+                    value: "${NOTIFY_PUSH_METRICS_PORT}"
+                  - name: NEXTCLOUD_URL
+                    value: https://${NEXTCLOUD_HOST}
+                  - name: DATABASE_PREFIX
+                    value: oc_
+                  - name: NOTIFY_PUSH_DATABASE_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        name: nextcloud-db-app
+                        key: password
+                  - name: NOTIFY_PUSH_REDIS_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        name: nextcloud-redis
+                        key: password
+                readinessProbe:
+                  tcpSocket:
+                    port: notify-push
+                  periodSeconds: 10
+                  timeoutSeconds: 3
+                  failureThreshold: 6
+                livenessProbe:
+                  tcpSocket:
+                    port: notify-push
+                  initialDelaySeconds: 20
+                  periodSeconds: 20
+                  timeoutSeconds: 3
+                  failureThreshold: 3
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 500m
+                    memory: 256Mi
+                volumeMounts:
+                  - name: nextcloud-apps
+                    mountPath: /var/www/html/gitops_apps
+                    readOnly: true
             hooks:
               post-installation: |-
                 #!/bin/sh
@@ -179,6 +262,16 @@ spec:
                   secretKeyRef:
                     name: nextcloud-config
                     key: secret
+              - name: EUROOFFICE_JWT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: nextcloud-companion-secrets
+                    key: eurooffice-jwt-secret
+              - name: WHITEBOARD_JWT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: nextcloud-companion-secrets
+                    key: whiteboard-jwt-secret
               - name: OBJECTSTORE_S3_BUCKET
                 value: ${NEXTCLOUD_S3_BUCKET}
               - name: OBJECTSTORE_S3_REGION

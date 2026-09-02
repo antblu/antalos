@@ -10,3 +10,29 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - ${NEXTCLOUD_HOST}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: eurooffice-tls
+  namespace: nextcloud
+spec:
+  secretName: eurooffice-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - ${EUROOFFICE_HOST}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: whiteboard-tls
+  namespace: nextcloud
+spec:
+  secretName: whiteboard-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - ${WHITEBOARD_HOST}
