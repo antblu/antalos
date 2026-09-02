@@ -1,18 +1,6 @@
 ---
 title: Antalos architecture
 description: A map of the Antalos homelab platform, its GitOps control loop, and the repository that defines it.
-template: splash
-hero:
-  title: Antalos documentation
-  tagline: Build, operate, and recover the Talos Kubernetes homelab from one Git source of truth.
-  actions:
-    - text: Bootstrap the cluster
-      link: /deployment-guide/deployment-order/
-      icon: right-arrow
-    - text: View on GitHub
-      link: https://github.com/antblu/antalos
-      variant: minimal
-      icon: external
 sidebar:
   order: 1
 ---

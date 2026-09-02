@@ -1,0 +1,96 @@
+<starlight-theme-toggle>
+  <button type="button" aria-label="Switch color theme" title="Switch color theme">
+    <svg class="theme-icon sun-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4"></circle>
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path>
+    </svg>
+    <svg class="theme-icon moon-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z"></path>
+    </svg>
+  </button>
+</starlight-theme-toggle>
+
+<script>
+  const storageKey = 'starlight-theme';
+
+  class StarlightThemeToggle extends HTMLElement {
+    connectedCallback() {
+      const button = this.querySelector('button');
+      if (!button || button.dataset.ready === 'true') return;
+
+      button.dataset.ready = 'true';
+
+      const updateButton = () => {
+        const theme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+        const nextTheme = theme === 'light' ? 'dark' : 'light';
+        button.setAttribute('aria-label', `Switch to ${nextTheme} theme`);
+        button.setAttribute('title', `Switch to ${nextTheme} theme`);
+        this.querySelector<SVGElement>('.sun-icon')?.toggleAttribute('hidden', theme !== 'light');
+        this.querySelector<SVGElement>('.moon-icon')?.toggleAttribute('hidden', theme !== 'dark');
+      };
+
+      updateButton();
+      button.addEventListener('click', () => {
+        const nextTheme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+        document.documentElement.dataset.theme = nextTheme;
+        localStorage.setItem(storageKey, nextTheme);
+        updateButton();
+      });
+    }
+  }
+
+  if (!customElements.get('starlight-theme-toggle')) {
+    customElements.define('starlight-theme-toggle', StarlightThemeToggle);
+  }
+</script>
+
+<style>
+  starlight-theme-toggle {
+    display: inline-flex;
+  }
+
+  button {
+    display: grid;
+    width: 2.35rem;
+    height: 2.35rem;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--sl-color-hairline-light);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sl-color-bg-sidebar) 84%, transparent);
+    color: var(--sl-color-text-accent);
+    cursor: pointer;
+    transition: border-color 140ms ease, background 140ms ease, color 140ms ease, transform 140ms ease;
+  }
+
+  button:hover {
+    border-color: color-mix(in srgb, var(--antalos-blue) 64%, var(--sl-color-hairline));
+    background: var(--antalos-blue-soft);
+    color: var(--sl-color-white);
+    transform: translateY(-1px);
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: 3px;
+  }
+
+  .theme-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .sun-icon circle {
+    fill: currentColor;
+    stroke: none;
+  }
+
+  [hidden] {
+    display: none;
+  }
+</style>

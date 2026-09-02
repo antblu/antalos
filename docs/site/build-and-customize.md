@@ -128,7 +128,7 @@ Layout tokens such as `--sl-nav-height`, `--sl-sidebar-width`, and `--sl-content
 
 ## Adjust the header and logo
 
-Starlight supports component overrides through its `components` configuration. This site maps the framework's `Header` component to `site/src/components/Header.astro`, which replaces Starlight's default title treatment with the Antalos logo at the top left while retaining search, social links, and the theme picker.
+Starlight supports component overrides through its `components` configuration. This site maps the framework's `Header` component to `site/src/components/Header.astro`, which replaces Starlight's default title treatment with the Antalos logo at the top left while retaining search, social links, and the two-state theme button.
 
 To replace the logo, overwrite `site/src/logoantalos.png` with a transparent PNG and keep a wide aspect ratio. The component constrains its rendered height, so a high-resolution source remains sharp without changing the navigation height.
 

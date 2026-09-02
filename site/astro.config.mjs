@@ -11,6 +11,7 @@ export default defineConfig({
       customCss: ['./src/styles/antalos.css'],
       components: {
         Header: './src/components/Header.astro',
+        ThemeSelect: './src/components/ThemeToggle.astro',
       },
       editLink: {
         baseUrl: 'https://github.com/antblu/antalos/edit/main/docs/',
