@@ -28,6 +28,7 @@ data:
       'datadirectory' => getenv('NEXTCLOUD_DATA_DIR'),
       'installed' => true,
       'config_is_read_only' => true,
+      'allow_local_remote_servers' => true,
       'openmetrics_allowed_clients' => array_filter(array_map('trim', explode(',', getenv('OPENMETRICS_ALLOWED_CLIENTS')))),
     );
   apps.config.php: |-
