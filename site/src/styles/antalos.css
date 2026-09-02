@@ -76,29 +76,6 @@ header.header {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
 }
 
-.site-title {
-  gap: 0.7rem;
-  color: var(--sl-color-white);
-  font-size: 1.02rem;
-  font-weight: 720;
-  letter-spacing: -0.025em;
-}
-
-.site-title::before {
-  content: '';
-  width: 1.55rem;
-  height: 1.55rem;
-  flex: 0 0 auto;
-  border: 1px solid rgba(98, 165, 255, 0.48);
-  border-radius: 7px;
-  background:
-    linear-gradient(135deg, rgba(87, 216, 255, 0.85), rgba(52, 136, 255, 0.9)) padding-box,
-    var(--sl-color-bg-nav);
-  box-shadow: 0 0 22px var(--antalos-glow), inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
-  transform: scale(0.82);
-}
-
 site-search button,
 .social-icons a,
 starlight-theme-select label {

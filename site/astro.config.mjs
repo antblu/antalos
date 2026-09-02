@@ -9,6 +9,9 @@ export default defineConfig({
       description: 'Operations and recovery documentation for the Antalos homelab Kubernetes platform.',
       favicon: '/favicon.svg',
       customCss: ['./src/styles/antalos.css'],
+      components: {
+        Header: './src/components/Header.astro',
+      },
       editLink: {
         baseUrl: 'https://github.com/antblu/antalos/edit/main/docs/',
       },
@@ -32,6 +35,10 @@ export default defineConfig({
         {
           label: 'Recovery',
           items: [{ autogenerate: { directory: 'recovery' } }],
+        },
+        {
+          label: 'Site guide',
+          items: [{ autogenerate: { directory: 'site' } }],
         },
         {
           label: 'Nextcloud',
