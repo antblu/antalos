@@ -1,0 +1,10 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: nextcloud-well-known
+  namespace: nextcloud
+spec:
+  redirectRegex:
+    regex: '^https://${NEXTCLOUD_HOST}/\.well-known/(card|cal)dav/?$'
+    replacement: 'https://${NEXTCLOUD_HOST}/remote.php/dav/'
+    permanent: true
