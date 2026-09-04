@@ -17,7 +17,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: nextcloud-context-chat-backend-launcher
+  name: nextcloud-context-chat-backend-launcher-${CONTEXT_CHAT_LAUNCHER_REVISION}
   namespace: nextcloud
 data:
   entrypoint.sh: |-
@@ -103,7 +103,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
-      maxSurge: 1
+      maxSurge: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: nextcloud-context-chat-backend
@@ -193,7 +193,7 @@ spec:
       volumes:
         - name: launcher
           configMap:
-            name: nextcloud-context-chat-backend-launcher
+            name: nextcloud-context-chat-backend-launcher-${CONTEXT_CHAT_LAUNCHER_REVISION}
             defaultMode: 0555
         - name: data
           emptyDir: {}
@@ -224,7 +224,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
-      maxSurge: 1
+      maxSurge: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: nextcloud-context-chat-backend
@@ -314,7 +314,7 @@ spec:
       volumes:
         - name: launcher
           configMap:
-            name: nextcloud-context-chat-backend-launcher
+            name: nextcloud-context-chat-backend-launcher-${CONTEXT_CHAT_LAUNCHER_REVISION}
             defaultMode: 0555
         - name: data
           emptyDir: {}
@@ -345,7 +345,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
-      maxSurge: 1
+      maxSurge: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: nextcloud-context-chat-backend
@@ -435,7 +435,7 @@ spec:
       volumes:
         - name: launcher
           configMap:
-            name: nextcloud-context-chat-backend-launcher
+            name: nextcloud-context-chat-backend-launcher-${CONTEXT_CHAT_LAUNCHER_REVISION}
             defaultMode: 0555
         - name: data
           emptyDir: {}
