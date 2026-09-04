@@ -324,18 +324,18 @@ NATS, gRPC peer discovery, and Janus' internal interfaces remain private to the 
 The recording backend follows the [official recording server installation guide](https://github.com/nextcloud/nextcloud-talk-recording/blob/main/docs/installation.md)
 and uses the [official AIO recording image](https://github.com/nextcloud/all-in-one/tree/main/Containers/talk-recording), pinned by digest in `apps/variables.yaml`.
 
-`apps/nextcloud/talk-recording.yaml` deploys two recording processes on separate
-workers. Each pod includes an HAProxy sidecar; both proxies use consistent hashing
-of the room URL so start and stop requests reach the same recording process.
+`apps/nextcloud/talk-recording.yaml` deploys one recording process in a StatefulSet.
+Traefik strips the `/recording` prefix and forwards requests directly to the
+recorder. No HAProxy sidecar or room-based load balancing is needed.
 Nextcloud uses `https://<NEXTCLOUD_TALK_HOST>/recording`, with the existing Talk
 certificate from `certificate.yaml`. No additional DNS or router rule is needed.
 
 The recording authentication secret is generated and sealed in
-`talk-recording-secrets.yaml`. The recording processes reuse the HPB's existing
+`talk-recording-secrets.yaml`. The recording process reuses the HPB's existing
 `internal-secret` separately. The Nextcloud lifecycle hook manages the recording
 URL and shared secret. TLS verification remains enabled for both Nextcloud and HPB.
 
-Each replica has a retained `openebs-local` PVC sized by
+The recorder has a retained `openebs-local` PVC sized by
 `NEXTCLOUD_RECORDING_STORAGE_SIZE`. The launcher stores recordings under
 `/recordings`; disposable browser state stays under `/tmp`. It bypasses the AIO
 entrypoint because that entrypoint clears temporary files on startup. Failed
@@ -344,17 +344,15 @@ stay attached to their original worker and are not replicated backups.
 
 ### Availability limits
 
-The service can accept new recordings with one worker unavailable. Upstream
-recording processes cannot transfer live browser/encoder state between replicas.
-A recording on a failed worker must be restarted; recovery of a backend also
-changes routing for some rooms. Schedule maintenance outside active recordings.
-Files on an unavailable worker remain inaccessible until that worker recovers.
-The disruption budget keeps at least one pod available during voluntary eviction;
-it does not guarantee completion of an active recording.
+Recording is unavailable while the single pod restarts or its worker is down.
+Active recordings cannot resume after a process failure. The retained local PVC
+stays on its original worker, including the former second replica's PVC, which
+is preserved for manual recovery. There is no disruption budget blocking node
+maintenance for this single-replica service.
 
 ### Verification
 
-Check both StatefulSet pods are ready and scheduled on different workers. The
+Check the single StatefulSet pod is ready. The
 HTTPS welcome endpoint is `/recording/api/v1/welcome`; a successful response alone
 does not verify the authentication secrets or media path.
 

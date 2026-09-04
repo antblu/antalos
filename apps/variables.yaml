@@ -198,9 +198,7 @@ variables:
   NEXTCLOUD_TALK_TURN_1_PORT: "3479"
   NEXTCLOUD_TALK_LOOPBACK_IP: 127.0.0.1
 
-  # Talk recording: immutable official AIO image, one spool per worker.
+  # Talk recording: immutable official AIO image, one persistent recording spool.
   NEXTCLOUD_RECORDING_IMAGE_TAG: latest@sha256:52148cbb557530ef0896cfa07388b8da67aba598f0ba21e763c07217dfc573d6
-  NEXTCLOUD_RECORDING_CONFIG_REVISION: "1"
+  NEXTCLOUD_RECORDING_CONFIG_REVISION: "2"
   NEXTCLOUD_RECORDING_STORAGE_SIZE: 20Gi
-  NEXTCLOUD_RECORDING_0_HOST: nextcloud-talk-recording-0.nextcloud-talk-recording-headless.nextcloud.svc.cluster.local
-  NEXTCLOUD_RECORDING_1_HOST: nextcloud-talk-recording-1.nextcloud-talk-recording-headless.nextcloud.svc.cluster.local

@@ -1,5 +1,4 @@
-# Room-affine routing is necessary: the upstream recording server is not clustered.
-# Existing recordings cannot migrate between processes after a worker failure.
+# A single recorder owns all recording sessions; Traefik handles path stripping.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -34,34 +33,7 @@ data:
         config.write(output)
     path.chmod(0o600)
     os.execvp('python', ['python', '-m', 'nextcloud.talk.recording', '--config', str(path)])
-  haproxy.cfg: |
-    global
-      log stdout format raw local0
-    defaults
-      mode http
-      log global
-      timeout connect 5s
-      timeout client 60s
-      timeout server 60s
-    resolvers kubernetes
-      parse-resolv-conf
-      resolve_retries 3
-      timeout resolve 1s
-      timeout retry 1s
-      hold valid 10s
-      hold nx 5s
-    frontend recording
-      bind :8080
-      http-request replace-path ^/recording/?(.*) /\1
-      default_backend recorders
-    backend recorders
-      # Both proxies use the same stable server IDs and full room path.
-      balance uri whole
-      hash-type consistent
-      option httpchk GET /api/v1/welcome
-      http-check expect status 200
-      server recorder0 ${NEXTCLOUD_RECORDING_0_HOST}:1234 id 1 check inter 3s fall 3 rise 2 resolvers kubernetes init-addr libc,none
-      server recorder1 ${NEXTCLOUD_RECORDING_1_HOST}:1234 id 2 check inter 3s fall 3 rise 2 resolvers kubernetes init-addr libc,none
+
 ---
 apiVersion: v1
 kind: Service
@@ -88,8 +60,8 @@ spec:
     app.kubernetes.io/name: nextcloud-talk-recording
   ports:
     - name: http
-      port: 8080
-      targetPort: proxy
+      port: 1234
+      targetPort: recording
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -98,7 +70,7 @@ metadata:
   namespace: nextcloud
 spec:
   serviceName: nextcloud-talk-recording-headless
-  replicas: 2
+  replicas: 1
   podManagementPolicy: Parallel
   selector:
     matchLabels:
@@ -110,13 +82,6 @@ spec:
       annotations:
         config.antblu.net/revision: "${NEXTCLOUD_RECORDING_CONFIG_REVISION}"
     spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: nextcloud-talk-recording
-              topologyKey: kubernetes.io/hostname
       terminationGracePeriodSeconds: 120
       securityContext:
         runAsNonRoot: true
@@ -179,30 +144,6 @@ spec:
               mountPath: /dev/shm
             - name: recordings
               mountPath: /recordings
-        - name: proxy
-          image: haproxy:${HAPROXY_IMAGE_TAG}
-          args: [haproxy, -W, -db, -f, /scripts/haproxy.cfg]
-          ports:
-            - name: proxy
-              containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: /api/v1/welcome
-              port: proxy
-          livenessProbe:
-            tcpSocket:
-              port: proxy
-          resources:
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            limits:
-              cpu: 250m
-              memory: 128Mi
-          volumeMounts:
-            - name: scripts
-              mountPath: /scripts
-              readOnly: true
       volumes:
         - name: scripts
           configMap:
@@ -226,16 +167,15 @@ spec:
           requests:
             storage: ${NEXTCLOUD_RECORDING_STORAGE_SIZE}
 ---
-apiVersion: policy/v1
-kind: PodDisruptionBudget
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
 metadata:
-  name: nextcloud-talk-recording
+  name: nextcloud-talk-recording-prefix
   namespace: nextcloud
 spec:
-  minAvailable: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: nextcloud-talk-recording
+  stripPrefix:
+    prefixes:
+      - /recording
 ---
 # Reuse the existing Talk hostname and its certificate.yaml-managed certificate.
 apiVersion: networking.k8s.io/v1
@@ -246,6 +186,7 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: nextcloud-nextcloud-talk-recording-prefix@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
@@ -279,13 +220,6 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: traefik
-      ports:
-        - port: 8080
-          protocol: TCP
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: nextcloud-talk-recording
       ports:
         - port: 1234
           protocol: TCP
