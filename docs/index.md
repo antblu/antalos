@@ -1,24 +1,13 @@
 ---
-title: Antalos architecture
-description: A map of the Antalos homelab platform, its GitOps control loop, and the repository that defines it.
+title: Welcome to antalos
+description: A map of the antalos homelab platform, its GitOps control loop, and the repository that defines it.
 sidebar:
   order: 1
 ---
 
-## Platform at a glance
+## What this is
 
-Antalos is a highly available homelab Kubernetes platform. OpenTofu provisions Talos Linux virtual machines and bootstraps Kubernetes. Argo CD then continuously reconciles applications and supporting infrastructure from this repository.
-
-```mermaid
-flowchart LR
-    Git[GitHub repository] --> Tofu[OpenTofu bootstrap]
-    Tofu --> Proxmox[Proxmox VE]
-    Proxmox --> Talos[Talos Linux nodes]
-    Talos --> Kubernetes[Kubernetes]
-    Git --> Argo[Argo CD]
-    Argo --> Kubernetes
-    Kubernetes --> Apps[Highly available applications]
-```
+This is a highly available homelab Kubernetes platform. OpenTofu provisions Talos Linux virtual machines and bootstraps Kubernetes. Argo CD then deploys applications and  infrastructure from this repository.
 
 ## Control boundaries
 
