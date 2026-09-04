@@ -54,6 +54,17 @@ spec:
                     php occ app:enable --no-interaction context_chat
                     php occ config:app:set context_chat request_timeout --value="${CONTEXT_CHAT_REQUEST_TIMEOUT}"
                   ) &
+                  # Replace the managed settings atomically; talk:signaling:add appends duplicates.
+                  php occ config:app:set spreed signaling_servers --value="$(php -r '
+                    echo json_encode(["servers" => [["server" => "https://${NEXTCLOUD_TALK_HOST}", "verify" => true]], "secret" => getenv("TALK_SIGNALING_SECRET")]);
+                  ')"
+                  php occ config:app:set spreed turn_servers --value="$(php -r '
+                    $servers = [];
+                    foreach (["${NEXTCLOUD_TALK_TURN_0_PORT}", "${NEXTCLOUD_TALK_TURN_1_PORT}"] as $port) {
+                      $servers[] = ["schemes" => "turn", "server" => "${NEXTCLOUD_TALK_TURN_HOST}:" . $port, "secret" => getenv("TALK_TURN_SECRET"), "protocols" => "udp,tcp"];
+                    }
+                    echo json_encode($servers);
+                  ')"
                   php occ config:app:set notify_push base_endpoint \
                     --value="https://${NEXTCLOUD_HOST}/push"
                   php occ config:app:set eurooffice DocumentServerUrl \
@@ -310,6 +321,16 @@ spec:
                   secretKeyRef:
                     name: nextcloud-companion-secrets
                     key: whiteboard-jwt-secret
+              - name: TALK_SIGNALING_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: nextcloud-talk
+                    key: signaling-secret
+              - name: TALK_TURN_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: nextcloud-talk
+                    key: turn-secret
               - name: CONTEXT_CHAT_APP_SECRET
                 valueFrom:
                   secretKeyRef:

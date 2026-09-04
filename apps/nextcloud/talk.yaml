@@ -1,0 +1,510 @@
+# Nextcloud Talk HPB with clustered signaling and per-replica TURN allocation.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-talk-nats
+  namespace: nextcloud
+data:
+  nats.conf: |
+    server_name: $POD_NAME
+    listen: ${NEXTCLOUD_TALK_LISTEN_IP}:4222
+    http_port: 8222
+    max_payload: 8MB
+    write_deadline: "10s"
+    authorization { token: $NATS_TOKEN }
+    cluster {
+      name: nextcloud-talk
+      listen: ${NEXTCLOUD_TALK_LISTEN_IP}:6222
+      authorization { user: route, password: $NATS_TOKEN }
+      routes: [
+        nats://route:REPLACE_NATS_TOKEN@${NEXTCLOUD_TALK_NATS_0_HOST}:6222,
+        nats://route:REPLACE_NATS_TOKEN@${NEXTCLOUD_TALK_NATS_1_HOST}:6222,
+        nats://route:REPLACE_NATS_TOKEN@${NEXTCLOUD_TALK_NATS_2_HOST}:6222
+      ]
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-talk-nats
+  namespace: nextcloud
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: nextcloud-talk-nats
+  ports:
+  - name: client
+    port: 4222
+    targetPort: client
+    protocol: TCP
+  - name: cluster
+    port: 6222
+    targetPort: cluster
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nextcloud-talk-nats
+  namespace: nextcloud
+spec:
+  serviceName: nextcloud-talk-nats
+  replicas: 3
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-talk-nats
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextcloud-talk-nats
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: nextcloud-talk-nats
+            topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: nats
+        image: nats:${NEXTCLOUD_TALK_NATS_IMAGE_TAG}
+        command:
+        - /bin/sh
+        - -ec
+        - |-
+          sed "s/REPLACE_NATS_TOKEN/$NATS_TOKEN/g" /source/nats.conf > /config/nats.conf
+          exec nats-server --config /config/nats.conf
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NATS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-talk
+              key: nats-token
+        ports:
+        - name: client
+          containerPort: 4222
+          protocol: TCP
+        - name: cluster
+          containerPort: 6222
+          protocol: TCP
+        - name: monitor
+          containerPort: 8222
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: monitor
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: monitor
+          initialDelaySeconds: 10
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        volumeMounts:
+        - name: source
+          mountPath: /source
+          readOnly: true
+        - name: config
+          mountPath: /config
+      volumes:
+      - name: source
+        configMap:
+          name: nextcloud-talk-nats
+      - name: config
+        emptyDir:
+          medium: Memory
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nextcloud-talk-nats
+  namespace: nextcloud
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-talk-nats
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-talk
+  namespace: nextcloud
+data:
+  start.sh: |
+    #!/bin/sh
+    set -eu
+    case "$POD_NAME" in
+      nextcloud-talk-0) export TALK_PORT=${NEXTCLOUD_TALK_TURN_0_PORT} ;;
+      nextcloud-talk-1) export TALK_PORT=${NEXTCLOUD_TALK_TURN_1_PORT} ;;
+      *) echo "No TURN port assigned to $POD_NAME" >&2; exit 1 ;;
+    esac
+    exec /start.sh /bin/sh /scripts/cluster.sh
+  cluster.sh: |
+    #!/bin/sh
+    set -eu
+    sed -i   -e "s|^hashkey = .*|hashkey = $HASH_KEY|"   -e "s|^blockkey = .*|blockkey = $BLOCK_KEY|"   -e "s|^url = nats://.*|url = nats://$NATS_TOKEN@${NEXTCLOUD_TALK_NATS_HOST}:4222|"   /conf/signaling.conf
+    cat >> /conf/signaling.conf <<'EOF'
+
+    [grpc]
+    listen = ${NEXTCLOUD_TALK_LISTEN_IP}:9090
+    targets = ${NEXTCLOUD_TALK_HEADLESS_HOST}:9090
+    dnsdiscovery = true
+    EOF
+    exec dinit --system --container --socket-path /tmp/dinitctl eturnal janus signaling
+  signaling: |
+    type = process
+    command = nextcloud-spreed-signaling -config /conf/signaling.conf
+    term-signal = TERM
+    restart = yes
+    options = shares-console
+    depends-on = janus
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-talk-headless
+  namespace: nextcloud
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: nextcloud-talk
+  ports:
+  - name: grpc
+    port: 9090
+    targetPort: grpc
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-talk
+  namespace: nextcloud
+spec:
+  selector:
+    app.kubernetes.io/name: nextcloud-talk
+  ports:
+  - name: http
+    port: 8081
+    targetPort: http
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nextcloud-talk
+  namespace: nextcloud
+spec:
+  serviceName: nextcloud-talk-headless
+  replicas: 2
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-talk
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextcloud-talk
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: nextcloud-talk
+            topologyKey: kubernetes.io/hostname
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: talk
+        image: ghcr.io/nextcloud-releases/aio-talk:${NEXTCLOUD_TALK_IMAGE_TAG}
+        command:
+        - /bin/sh
+        - /scripts/start.sh
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NC_DOMAIN
+          value: ${NEXTCLOUD_HOST}
+        - name: TALK_HOST
+          value: ${NEXTCLOUD_TALK_TURN_HOST}
+        - name: TURN_DOMAIN
+          value: ${NEXTCLOUD_TALK_TURN_HOST}
+        - name: SKIP_CERT_VERIFY
+          value: 'false'
+        - name: AIO_LOG_LEVEL
+          value: warn
+        - name: SIGNALING_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-talk
+              key: signaling-secret
+        - name: INTERNAL_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-talk
+              key: internal-secret
+        - name: TURN_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-talk
+              key: turn-secret
+        - name: HASH_KEY
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-talk
+              key: hash-key
+        - name: BLOCK_KEY
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-talk
+              key: block-key
+        - name: NATS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-talk
+              key: nats-token
+        ports:
+        - name: http
+          containerPort: 8081
+          protocol: TCP
+        - name: grpc
+          containerPort: 9090
+          protocol: TCP
+        - name: turn-0-tcp
+          containerPort: ${NEXTCLOUD_TALK_TURN_0_PORT}
+          protocol: TCP
+        - name: turn-0-udp
+          containerPort: ${NEXTCLOUD_TALK_TURN_0_PORT}
+          protocol: UDP
+        - name: turn-1-tcp
+          containerPort: ${NEXTCLOUD_TALK_TURN_1_PORT}
+          protocol: TCP
+        - name: turn-1-udp
+          containerPort: ${NEXTCLOUD_TALK_TURN_1_PORT}
+          protocol: UDP
+        startupProbe:
+          httpGet:
+            path: /api/v1/welcome
+            port: http
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -ec
+            - nc -z ${NEXTCLOUD_TALK_LOOPBACK_IP} 8188 && nc -z ${NEXTCLOUD_TALK_LOOPBACK_IP}
+              9090 && eturnalctl status
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /api/v1/welcome
+            port: http
+          periodSeconds: 20
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: '2'
+            memory: 1Gi
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+          readOnly: true
+        - name: conf
+          mountPath: /conf
+        - name: tmp
+          mountPath: /tmp
+        - name: scripts
+          mountPath: /etc/dinit.d/signaling
+          subPath: signaling
+          readOnly: true
+      volumes:
+      - name: scripts
+        configMap:
+          name: nextcloud-talk
+      - name: conf
+        emptyDir:
+          medium: Memory
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nextcloud-talk
+  namespace: nextcloud
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-talk
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-talk-turn-0
+  namespace: nextcloud
+  annotations:
+    metallb.io/allow-shared-ip: nextcloud-talk-turn
+    metallb.io/loadBalancerIPs: ${NEXTCLOUD_TALK_LOAD_BALANCER_IP}
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+  selector:
+    statefulset.kubernetes.io/pod-name: nextcloud-talk-0
+  ports:
+  - name: turn-tcp
+    port: ${NEXTCLOUD_TALK_TURN_0_PORT}
+    targetPort: turn-0-tcp
+    protocol: TCP
+  - name: turn-udp
+    port: ${NEXTCLOUD_TALK_TURN_0_PORT}
+    targetPort: turn-0-udp
+    protocol: UDP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-talk-turn-1
+  namespace: nextcloud
+  annotations:
+    metallb.io/allow-shared-ip: nextcloud-talk-turn
+    metallb.io/loadBalancerIPs: ${NEXTCLOUD_TALK_LOAD_BALANCER_IP}
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+  selector:
+    statefulset.kubernetes.io/pod-name: nextcloud-talk-1
+  ports:
+  - name: turn-tcp
+    port: ${NEXTCLOUD_TALK_TURN_1_PORT}
+    targetPort: turn-1-tcp
+    protocol: TCP
+  - name: turn-udp
+    port: ${NEXTCLOUD_TALK_TURN_1_PORT}
+    targetPort: turn-1-udp
+    protocol: UDP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextcloud-talk
+  namespace: nextcloud
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+spec:
+  ingressClassName: traefik
+  tls:
+  - secretName: nextcloud-talk-tls
+    hosts:
+    - ${NEXTCLOUD_TALK_HOST}
+  rules:
+  - host: ${NEXTCLOUD_TALK_HOST}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nextcloud-talk
+            port:
+              name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nextcloud-talk
+  namespace: nextcloud
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-talk
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: nextcloud-talk
+    ports:
+    - port: 9090
+      protocol: TCP
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: traefik
+    ports:
+    - port: 8081
+      protocol: TCP
+  - ports:
+    - port: 3478
+      protocol: TCP
+    - port: 3478
+      protocol: UDP
+    - port: 3479
+      protocol: TCP
+    - port: 3479
+      protocol: UDP
+    - port: 1024
+      endPort: 65535
+      protocol: UDP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nextcloud-talk-nats
+  namespace: nextcloud
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-talk-nats
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: nextcloud-talk
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: nextcloud-talk-nats
+    ports:
+    - port: 4222
+      protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: nextcloud-talk-nats
+    ports:
+    - port: 6222
+      protocol: TCP

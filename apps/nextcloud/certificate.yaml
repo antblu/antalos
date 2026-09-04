@@ -36,3 +36,16 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - ${WHITEBOARD_HOST}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nextcloud-talk-tls
+  namespace: nextcloud
+spec:
+  secretName: nextcloud-talk-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - ${NEXTCLOUD_TALK_HOST}
