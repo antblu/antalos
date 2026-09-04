@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-## What this is
+## About 
 
 This is a highly available homelab Kubernetes platform. OpenTofu provisions Talos Linux virtual machines and bootstraps Kubernetes. Argo CD then deploys applications and  infrastructure from this repository.
 
