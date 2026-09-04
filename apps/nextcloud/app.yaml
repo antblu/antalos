@@ -29,16 +29,20 @@ spec:
                     announcementcenter calendar notify_push contacts side_menu \
                     deck external forms mail integration_openai assistant app_api eurooffice \
                     notes user_oidc spreed groupfolders whiteboard
+                  # Kubernetes manages Context Chat directly; this registration
+                  # is not a Docker/HaRP endpoint for automatic ExApp deployment.
+                  if [ "$(php occ config:app:get app_api default_daemon_config)" = context_chat_kubernetes ]; then
+                    php occ config:app:delete app_api default_daemon_config
+                  fi
                   (
                     until php occ app_api:app:list | grep -q context_chat_backend; do
                       if ! php occ app_api:daemon:list | grep -q context_chat_kubernetes; then
                         php occ app_api:daemon:register \
                           context_chat_kubernetes "Context Chat Kubernetes" manual-install http \
-                          "nextcloud-context-chat-backend.nextcloud.svc.cluster.local" \
+                          "${CONTEXT_CHAT_BACKEND_HOST}" \
                           "https://${NEXTCLOUD_HOST}" \
                           --net host \
-                          --compute_device=${CONTEXT_CHAT_COMPUTE_DEVICE} \
-                          --set-default || true
+                          --compute_device=${CONTEXT_CHAT_COMPUTE_DEVICE} || true
                       fi
                       php occ app_api:app:register \
                         context_chat_backend context_chat_kubernetes \
@@ -91,7 +95,7 @@ spec:
             annotations:
               traefik.ingress.kubernetes.io/router.entrypoints: websecure
               traefik.ingress.kubernetes.io/router.tls: "true"
-              traefik.ingress.kubernetes.io/router.middlewares: nextcloud-nextcloud-well-known@kubernetescrd
+              traefik.ingress.kubernetes.io/router.middlewares: nextcloud-nextcloud-security-headers@kubernetescrd,nextcloud-nextcloud-well-known@kubernetescrd
             tls:
               - secretName: nextcloud-tls
                 hosts:
@@ -264,6 +268,12 @@ spec:
                 set -eu
                 su -s /bin/sh www-data -c 'php /var/www/html/occ background:cron'
             extraEnv:
+              - name: NEXTCLOUD_NODE_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: spec.nodeName
+              - name: PHP_OPCACHE_MEMORY_CONSUMPTION
+                value: "256"
               - name: PGSSLMODE
                 value: disable
               - name: APACHE_DISABLE_REWRITE_IP

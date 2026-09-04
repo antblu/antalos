@@ -6,7 +6,22 @@ metadata:
 data:
   config.php: |-
     <?php
+    // Stable IDs per node; required pod anti-affinity prevents PHP replicas
+    // from sharing an ID. Preserve these IDs when adding or replacing nodes.
+    $serverIds = array(
+      '${TALOS_CONTROL_LEFT}' => 0,
+      '${TALOS_CONTROL_RIGHT}' => 1,
+      '${TALOS_CONTROL_RTX}' => 2,
+      '${TALOS_WORKER_LEFT}' => 3,
+      '${TALOS_WORKER_RIGHT}' => 4,
+      '${TALOS_WORKER_RTX}' => 5,
+    );
+    $nodeName = getenv('NEXTCLOUD_NODE_NAME');
+    if (!array_key_exists($nodeName, $serverIds)) {
+      throw new \RuntimeException('No Nextcloud server ID configured for this Kubernetes node');
+    }
     $CONFIG = array (
+      'serverid' => $serverIds[$nodeName],
       'instanceid' => getenv('NEXTCLOUD_INSTANCE_ID'),
       'passwordsalt' => getenv('NEXTCLOUD_PASSWORD_SALT'),
       'secret' => getenv('NEXTCLOUD_SECRET'),
