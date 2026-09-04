@@ -110,7 +110,7 @@ variable "external_bridge" {
 variable "control_vm_memory" {
   type        = number
   description = "Memory in MiB for control plane VMs"
-  default     = 3584
+  default     = 4096
 }
 
 variable "control_vm_cores" {

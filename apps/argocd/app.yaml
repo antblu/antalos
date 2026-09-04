@@ -14,6 +14,9 @@ spec:
         valueFiles:
           - $values/infrastructure/opentofu/argotofu/argocd-values.yaml
         parameters:
+          - name: repoServer.podAnnotations.config\.antblu\.net/yaml-envsubst-revision
+            value: "${ARGOCD_PLUGIN_CONFIG_REVISION}"
+            forceString: true
           - name: server.ingress.hostname
             value: ${ARGOCD_HOST}
           - name: configs.cm.url
