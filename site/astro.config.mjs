@@ -57,6 +57,7 @@ export default defineConfig({
           items: [
             { label: 'Storage architecture', link: '/nextcloud/nc-storage/' },
             { label: 'Updating Nextcloud', link: '/nextcloud/updating-nextcloud/' },
+            { label: 'Talk backend', link: '/nextcloud/talk-backend/' },
           ],
         },
       ],

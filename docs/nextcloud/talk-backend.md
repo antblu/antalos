@@ -1,4 +1,9 @@
-# Nextcloud Talk Deployment Configuration
+---
+title: Nextcloud Talk deployment configuration
+description: Configure networking, TLS, secrets, and Nextcloud for the Talk high-performance backend.
+sidebar:
+  order: 3
+---
 
 The Nextcloud Talk high-performance backend requires several network, DNS, certificate, and Nextcloud configuration steps in addition to deploying the Kubernetes manifests.
 
