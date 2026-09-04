@@ -26,6 +26,16 @@ data:
     database_password="$(/opt/venv/bin/python -c 'import os, urllib.parse; print(urllib.parse.quote(os.environ["CONTEXT_CHAT_DATABASE_PASSWORD"], safe=""))')"
     export EXTERNAL_DB="postgresql+psycopg://ccb:$database_password@${NEXTCLOUD_DATABASE_CLUSTER}-rw.nextcloud.svc.cluster.local:5432/ccb"
     export CCB_DB_URL="$EXTERNAL_DB"
+    # Each replica has its own emptyDir, so worker roles cannot wait for
+    # requestproc to create their configuration on a shared volume.
+    cd /app
+    export COMPUTE_DEVICE="$(printf '%s' '${CONTEXT_CHAT_COMPUTE_DEVICE}' | tr '[:lower:]' '[:upper:]')"
+    ./hwdetect.sh config "$COMPUTE_DEVICE"
+    if [ "$APP_ROLE" = updatesproc ]; then
+      # This role does not use an embedding server. Run the API directly so
+      # an application exit also terminates the container.
+      exec /opt/venv/bin/python -u /app/main.py
+    fi
     exec supervisord -c /opt/nextcloud-context-chat/supervisord.conf
   supervisord.conf: |-
     [supervisord]
@@ -100,6 +110,8 @@ spec:
       app.kubernetes.io/component: requestproc
   template:
     metadata:
+      annotations:
+        config.antblu.net/context-chat-launcher-revision: "${CONTEXT_CHAT_LAUNCHER_REVISION}"
       labels:
         app.kubernetes.io/name: nextcloud-context-chat-backend
         app.kubernetes.io/component: requestproc
@@ -219,6 +231,8 @@ spec:
       app.kubernetes.io/component: updatesproc
   template:
     metadata:
+      annotations:
+        config.antblu.net/context-chat-launcher-revision: "${CONTEXT_CHAT_LAUNCHER_REVISION}"
       labels:
         app.kubernetes.io/name: nextcloud-context-chat-backend
         app.kubernetes.io/component: updatesproc
@@ -338,6 +352,8 @@ spec:
       app.kubernetes.io/component: indexing
   template:
     metadata:
+      annotations:
+        config.antblu.net/context-chat-launcher-revision: "${CONTEXT_CHAT_LAUNCHER_REVISION}"
       labels:
         app.kubernetes.io/name: nextcloud-context-chat-backend
         app.kubernetes.io/component: indexing
