@@ -21,51 +21,55 @@ spec:
               - sh
               - -ec
               - |-
-                cd /var/www/html
-                until php occ status >/dev/null 2>&1; do sleep 2; done
-                php occ app:enable --no-interaction \
-                  announcementcenter calendar notify_push contacts side_menu \
-                  deck external forms mail integration_openai assistant app_api eurooffice \
-                  notes user_oidc spreed groupfolders whiteboard
+                # Keep asynchronous registration and workers off the lifecycle exec streams.
                 (
-                  until php occ app_api:app:list | grep -q context_chat_backend; do
-                    if ! php occ app_api:daemon:list | grep -q context_chat_kubernetes; then
-                      php occ app_api:daemon:register \
-                        context_chat_kubernetes "Context Chat Kubernetes" manual-install http \
-                        "nextcloud-context-chat-backend.nextcloud.svc.cluster.local" \
-                        "https://${NEXTCLOUD_HOST}" \
-                        --compute_device=${CONTEXT_CHAT_COMPUTE_DEVICE} \
-                        --set-default || true
-                    fi
-                    php occ app_api:app:register \
-                      context_chat_backend context_chat_kubernetes \
-                      --json-info="{\"appid\":\"context_chat_backend\",\"name\":\"Context Chat Backend\",\"daemon_config_name\":\"context_chat_kubernetes\",\"version\":\"${CONTEXT_CHAT_BACKEND_VERSION}\",\"secret\":\"$CONTEXT_CHAT_APP_SECRET\",\"port\":${CONTEXT_CHAT_BACKEND_PORT}}" \
-                      --wait-finish && break
-                    sleep 15
+                  cd /var/www/html
+                  until php occ status >/dev/null 2>&1; do sleep 2; done
+                  php occ app:enable --no-interaction \
+                    announcementcenter calendar notify_push contacts side_menu \
+                    deck external forms mail integration_openai assistant app_api eurooffice \
+                    notes user_oidc spreed groupfolders whiteboard
+                  (
+                    until php occ app_api:app:list | grep -q context_chat_backend; do
+                      if ! php occ app_api:daemon:list | grep -q context_chat_kubernetes; then
+                        php occ app_api:daemon:register \
+                          context_chat_kubernetes "Context Chat Kubernetes" manual-install http \
+                          "nextcloud-context-chat-backend.nextcloud.svc.cluster.local" \
+                          "https://${NEXTCLOUD_HOST}" \
+                          --net host \
+                          --compute_device=${CONTEXT_CHAT_COMPUTE_DEVICE} \
+                          --set-default || true
+                      fi
+                      php occ app_api:app:register \
+                        context_chat_backend context_chat_kubernetes \
+                        --json-info="{\"appid\":\"context_chat_backend\",\"name\":\"Context Chat Backend\",\"daemon_config_name\":\"context_chat_kubernetes\",\"version\":\"${CONTEXT_CHAT_BACKEND_VERSION}\",\"secret\":\"$CONTEXT_CHAT_APP_SECRET\",\"port\":${CONTEXT_CHAT_BACKEND_PORT}}" \
+                        --wait-finish && break
+                      sleep 15
+                    done
+                    php occ app_api:app:enable context_chat_backend || true
+                    php occ app:enable --no-interaction context_chat
+                    php occ config:app:set context_chat request_timeout --value="${CONTEXT_CHAT_REQUEST_TIMEOUT}"
+                  ) &
+                  php occ config:app:set notify_push base_endpoint \
+                    --value="https://${NEXTCLOUD_HOST}/push"
+                  php occ config:app:set eurooffice DocumentServerUrl \
+                    --value="https://${EUROOFFICE_HOST}/"
+                  php occ config:app:set eurooffice DocumentServerInternalUrl \
+                    --value="http://eurooffice.nextcloud.svc.cluster.local/"
+                  php occ config:app:set eurooffice StorageUrl \
+                    --value="https://${NEXTCLOUD_HOST}/"
+                  php occ config:app:set eurooffice jwt_secret \
+                    --value="$EUROOFFICE_JWT_SECRET"
+                  php occ config:app:set eurooffice jwt_header \
+                    --value="AuthorizationJWT"
+                  php occ config:app:set whiteboard collabBackendUrl \
+                    --value="https://${WHITEBOARD_HOST}"
+                  php occ config:app:set whiteboard jwt_secret_key \
+                    --value="$WHITEBOARD_JWT_SECRET"
+                  for worker_id in 1 2; do
+                    sh -c 'set -e; while true; do php occ taskprocessing:worker -v -t 60; done' &
                   done
-                  php occ app_api:app:enable context_chat_backend || true
-                  php occ app:enable --no-interaction context_chat
-                  php occ config:app:set context_chat request_timeout --value="${CONTEXT_CHAT_REQUEST_TIMEOUT}"
-                ) &
-                php occ config:app:set notify_push base_endpoint \
-                  --value="https://${NEXTCLOUD_HOST}/push"
-                php occ config:app:set eurooffice DocumentServerUrl \
-                  --value="https://${EUROOFFICE_HOST}/"
-                php occ config:app:set eurooffice DocumentServerInternalUrl \
-                  --value="http://eurooffice.nextcloud.svc.cluster.local/"
-                php occ config:app:set eurooffice StorageUrl \
-                  --value="https://${NEXTCLOUD_HOST}/"
-                php occ config:app:set eurooffice jwt_secret \
-                  --value="$EUROOFFICE_JWT_SECRET"
-                php occ config:app:set eurooffice jwt_header \
-                  --value="AuthorizationJWT"
-                php occ config:app:set whiteboard collabBackendUrl \
-                  --value="https://${WHITEBOARD_HOST}"
-                php occ config:app:set whiteboard jwt_secret_key \
-                  --value="$WHITEBOARD_JWT_SECRET"
-                for worker_id in 1 2; do
-                  sh -c 'set -e; while true; do php occ taskprocessing:worker -v -t 60; done' &
-                done
+                ) </dev/null >/proc/1/fd/1 2>/proc/1/fd/2 &
 
           replicaCount: 2
           podAnnotations:

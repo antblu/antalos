@@ -44,6 +44,13 @@ extraObjects:
                 $variable_entries
                 EOF
 
+                # String substitution preserves YAML string tags. Restore the
+                # Kubernetes integer fields used by parameterized workloads and
+                # Services without coercing ConfigMap data or environment values.
+                substitution_expression="$substitution_expression"' | (select(.kind == "Deployment" or .kind == "StatefulSet" or .kind == "ReplicaSet") | .spec.replicas | select(tag == "!!str")) |= to_number'
+                substitution_expression="$substitution_expression"' | (select(.kind == "Service") | .spec.ports[] | .port | select(tag == "!!str")) |= to_number'
+                substitution_expression="$substitution_expression"' | (select(.kind == "Deployment" or .kind == "StatefulSet" or .kind == "DaemonSet" or .kind == "ReplicaSet") | .spec.template.spec | (.containers[], .initContainers[]) | .ports[] | .containerPort | select(tag == "!!str")) |= to_number'
+
                 # Only replace placeholders declared in variables.yaml. Broad
                 # envsubst also erases Argo's reserved $values reference and
                 # runtime variables such as $REDIS_PASSWORD.
