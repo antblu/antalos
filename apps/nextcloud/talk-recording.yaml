@@ -1,0 +1,296 @@
+# Room-affine routing is necessary: the upstream recording server is not clustered.
+# Existing recordings cannot migrate between processes after a worker failure.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-talk-recording
+  namespace: nextcloud
+data:
+  start.py: |
+    import configparser
+    import os
+    from pathlib import Path
+
+    # Bypass AIO's entrypoint, which deletes /tmp on every start. Keep failed
+    # uploads on the PVC, separate from disposable browser/PulseAudio state.
+    config = configparser.ConfigParser(interpolation=None)
+    config.read_dict({
+        'logs': {'level': '20'},
+        'http': {'listen': '${NEXTCLOUD_TALK_LISTEN_IP}:1234'},
+        'backend': {'allowall': 'false', 'backends': 'nextcloud',
+                    'skipverify': 'false', 'directory': '/recordings',
+                    'videowidth': '1920', 'videoheight': '1080'},
+        'nextcloud': {'url': 'https://${NEXTCLOUD_HOST}',
+                      'secret': os.environ['RECORDING_SECRET']},
+        'signaling': {'signalings': 'talk'},
+        'talk': {'url': 'https://${NEXTCLOUD_TALK_HOST}',
+                 'internalsecret': os.environ['INTERNAL_SECRET']},
+        'recording': {'browser': 'firefox', 'driverPath': '/usr/bin/geckodriver',
+                      'browserPath': '/usr/bin/firefox'},
+        'ffmpeg': {'extensionaudio': '.ogg', 'extensionvideo': '.webm'},
+    })
+    path = Path('/conf/recording.conf')
+    with path.open('w') as output:
+        config.write(output)
+    path.chmod(0o600)
+    os.execvp('python', ['python', '-m', 'nextcloud.talk.recording', '--config', str(path)])
+  haproxy.cfg: |
+    global
+      log stdout format raw local0
+    defaults
+      mode http
+      log global
+      timeout connect 5s
+      timeout client 60s
+      timeout server 60s
+    resolvers kubernetes
+      parse-resolv-conf
+      resolve_retries 3
+      timeout resolve 1s
+      timeout retry 1s
+      hold valid 10s
+      hold nx 5s
+    frontend recording
+      bind :8080
+      http-request replace-path ^/recording/?(.*) /\1
+      default_backend recorders
+    backend recorders
+      # Both proxies use the same stable server IDs and full room path.
+      balance uri whole
+      hash-type consistent
+      option httpchk GET /api/v1/welcome
+      http-check expect status 200
+      server recorder0 ${NEXTCLOUD_RECORDING_0_HOST}:1234 id 1 check inter 3s fall 3 rise 2 resolvers kubernetes init-addr libc,none
+      server recorder1 ${NEXTCLOUD_RECORDING_1_HOST}:1234 id 2 check inter 3s fall 3 rise 2 resolvers kubernetes init-addr libc,none
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-talk-recording-headless
+  namespace: nextcloud
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: nextcloud-talk-recording
+  ports:
+    - name: recording
+      port: 1234
+      targetPort: recording
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-talk-recording
+  namespace: nextcloud
+spec:
+  selector:
+    app.kubernetes.io/name: nextcloud-talk-recording
+  ports:
+    - name: http
+      port: 8080
+      targetPort: proxy
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nextcloud-talk-recording
+  namespace: nextcloud
+spec:
+  serviceName: nextcloud-talk-recording-headless
+  replicas: 2
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-talk-recording
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextcloud-talk-recording
+      annotations:
+        config.antblu.net/revision: "${NEXTCLOUD_RECORDING_CONFIG_REVISION}"
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: nextcloud-talk-recording
+              topologyKey: kubernetes.io/hostname
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 122
+        runAsGroup: 122
+        fsGroup: 122
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: recording
+          image: ghcr.io/nextcloud-releases/aio-talk-recording:${NEXTCLOUD_RECORDING_IMAGE_TAG}
+          command: [python, /scripts/start.py]
+          env:
+            - name: HOME
+              value: /tmp
+            - name: RECORDING_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-talk-recording
+                  key: recording-secret
+            - name: INTERNAL_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-talk
+                  key: internal-secret
+          ports:
+            - name: recording
+              containerPort: 1234
+          startupProbe:
+            httpGet:
+              path: /api/v1/welcome
+              port: recording
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /api/v1/welcome
+              port: recording
+          livenessProbe:
+            httpGet:
+              path: /api/v1/welcome
+              port: recording
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "3"
+              memory: 4Gi
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: conf
+              mountPath: /conf
+            - name: tmp
+              mountPath: /tmp
+            - name: shm
+              mountPath: /dev/shm
+            - name: recordings
+              mountPath: /recordings
+        - name: proxy
+          image: haproxy:${HAPROXY_IMAGE_TAG}
+          args: [haproxy, -W, -db, -f, /scripts/haproxy.cfg]
+          ports:
+            - name: proxy
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /api/v1/welcome
+              port: proxy
+          livenessProbe:
+            tcpSocket:
+              port: proxy
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: scripts
+          configMap:
+            name: nextcloud-talk-recording
+        - name: conf
+          emptyDir:
+            medium: Memory
+        - name: tmp
+          emptyDir: {}
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: recordings
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: openebs-local
+        resources:
+          requests:
+            storage: ${NEXTCLOUD_RECORDING_STORAGE_SIZE}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nextcloud-talk-recording
+  namespace: nextcloud
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-talk-recording
+---
+# Reuse the existing Talk hostname and its certificate.yaml-managed certificate.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextcloud-talk-recording
+  namespace: nextcloud
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - secretName: nextcloud-talk-tls
+      hosts:
+        - ${NEXTCLOUD_TALK_HOST}
+  rules:
+    - host: ${NEXTCLOUD_TALK_HOST}
+      http:
+        paths:
+          - path: /recording
+            pathType: Prefix
+            backend:
+              service:
+                name: nextcloud-talk-recording
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nextcloud-talk-recording
+  namespace: nextcloud
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud-talk-recording
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - port: 8080
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: nextcloud-talk-recording
+      ports:
+        - port: 1234
+          protocol: TCP
+    # The browser receives ICE/media directly from Janus or the TURN server.
+    - ports:
+        - port: 1024
+          endPort: 65535
+          protocol: UDP

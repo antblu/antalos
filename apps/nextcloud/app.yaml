@@ -58,6 +58,9 @@ spec:
                   php occ config:app:set spreed signaling_servers --value="$(php -r '
                     echo json_encode(["servers" => [["server" => "https://${NEXTCLOUD_TALK_HOST}", "verify" => true]], "secret" => getenv("TALK_SIGNALING_SECRET")]);
                   ')"
+                  php occ config:app:set spreed recording_servers --value="$(php -r '
+                    echo json_encode(["servers" => [["server" => "https://${NEXTCLOUD_TALK_HOST}/recording", "verify" => true]], "secret" => getenv("TALK_RECORDING_SECRET")]);
+                  ')"
                   php occ config:app:set spreed turn_servers --value="$(php -r '
                     $servers = [];
                     foreach (["${NEXTCLOUD_TALK_TURN_0_PORT}", "${NEXTCLOUD_TALK_TURN_1_PORT}"] as $port) {
@@ -330,6 +333,11 @@ spec:
                   secretKeyRef:
                     name: nextcloud-talk
                     key: signaling-secret
+              - name: TALK_RECORDING_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: nextcloud-talk-recording
+                    key: recording-secret
               - name: TALK_TURN_SECRET
                 valueFrom:
                   secretKeyRef:
