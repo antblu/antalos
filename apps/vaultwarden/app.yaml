@@ -1,0 +1,93 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vaultwarden
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://guerzon.github.io/vaultwarden
+      chart: vaultwarden
+      targetRevision: ${VAULTWARDEN_CHART_VERSION}
+      helm:
+        releaseName: vaultwarden
+        parameters:
+          - name: image.tag
+            value: ${VAULTWARDEN_IMAGE_TAG}
+          - name: domain
+            value: https://${VAULTWARDEN_HOST}
+          - name: ingress.hostname
+            value: ${VAULTWARDEN_HOST}
+          - name: database.host
+            value: ${VAULTWARDEN_DATABASE_HOST}
+        valuesObject:
+          fullnameOverride: vaultwarden
+          resourceType: Deployment
+          replicas: 1
+          strategy:
+            type: Recreate
+          podSecurityContext:
+            runAsUser: 1001
+            runAsGroup: 1001
+            fsGroup: 1001
+            fsGroupChangePolicy: OnRootMismatch
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          storage:
+            existingVolumeClaim:
+              claimName: vaultwarden-data
+              dataPath: /data
+          database:
+            type: postgresql
+            port: "5432"
+            dbName: vaultwarden
+            existingSecret: vaultwarden-db-app
+            existingSecretUserKey: username
+            existingSecretPasswordKey: password
+            connectionRetries: 60
+          adminToken:
+            existingSecret: vaultwarden-admin
+            existingSecretKey: token
+          # Invite the initial account through /admin; SMTP is not configured.
+          signupsAllowed: false
+          signupsVerify: "false"
+          timeZone: America/Denver
+          ingress:
+            enabled: true
+            class: traefik
+            nginxIngressAnnotations: false
+            additionalAnnotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.tls: "true"
+            tls: true
+            tlsSecret: vaultwarden-tls
+          startupProbe:
+            enabled: true
+            failureThreshold: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      path: apps/vaultwarden
+      plugin:
+        name: yaml-envsubst
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vaultwarden
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
