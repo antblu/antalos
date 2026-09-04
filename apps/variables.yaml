@@ -182,6 +182,7 @@ variables:
   TALOS_WORKER_RTX: talos-worker-rtx
 
   # Talk HPB: AIO supplies signaling, Janus and TURN; NATS is clustered separately.
+  NEXTCLOUD_TALK_CONFIG_REVISION: "2"
   NEXTCLOUD_TALK_IMAGE_TAG: latest
   NEXTCLOUD_TALK_NATS_IMAGE_TAG: 2.14.5-alpine
   NEXTCLOUD_TALK_HOST: talk.antblu.net

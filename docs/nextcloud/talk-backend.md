@@ -175,7 +175,10 @@ The three-replica NATS Core cluster does not require persistent storage.
 
 ## 7. Node Requirements
 
-The deployment requires at least **three schedulable Kubernetes nodes**.
+The deployment requires **three nodes eligible for NATS scheduling**. NATS tolerates
+the existing `quorum:NoSchedule` taint so that the third replica can use the
+quorum worker alongside the two ordinary workers. Required pod anti-affinity
+keeps one NATS replica per node; control-plane taints remain respected.
 
 The architecture uses:
 
@@ -210,6 +213,12 @@ NEXTCLOUD_TALK_IMAGE_TAG
 ```
 
 The Talk image currently uses the official quick-install `latest` channel, so the image behind that tag can change without the variable changing.
+
+The launcher uses Bash to supervise eturnal, Janus, and signaling directly,
+without requiring a bundled `dinit` supervisor. It forwards shutdown signals
+and exits if any service stops, allowing Kubernetes to restart the container.
+`NEXTCLOUD_TALK_CONFIG_REVISION` triggers a Talk rollout when launcher changes
+are synced; increment it for future ConfigMap-only startup changes.
 
 ---
 

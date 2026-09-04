@@ -60,6 +60,10 @@ spec:
       labels:
         app.kubernetes.io/name: nextcloud-talk-nats
     spec:
+      tolerations:
+      - key: quorum
+        operator: Exists
+        effect: NoSchedule
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -156,9 +160,9 @@ data:
       nextcloud-talk-1) export TALK_PORT=${NEXTCLOUD_TALK_TURN_1_PORT} ;;
       *) echo "No TURN port assigned to $POD_NAME" >&2; exit 1 ;;
     esac
-    exec /start.sh /bin/sh /scripts/cluster.sh
+    exec /start.sh /bin/bash /scripts/cluster.sh
   cluster.sh: |
-    #!/bin/sh
+    #!/bin/bash
     set -eu
     sed -i   -e "s|^hashkey = .*|hashkey = $HASH_KEY|"   -e "s|^blockkey = .*|blockkey = $BLOCK_KEY|"   -e "s|^url = nats://.*|url = nats://$NATS_TOKEN@${NEXTCLOUD_TALK_NATS_HOST}:4222|"   /conf/signaling.conf
     cat >> /conf/signaling.conf <<'EOF'
@@ -168,14 +172,28 @@ data:
     targets = ${NEXTCLOUD_TALK_HEADLESS_HOST}:9090
     dnsdiscovery = true
     EOF
-    exec dinit --system --container --socket-path /tmp/dinitctl eturnal janus signaling
-  signaling: |
-    type = process
-    command = nextcloud-spreed-signaling -config /conf/signaling.conf
-    term-signal = TERM
-    restart = yes
-    options = shares-console
-    depends-on = janus
+    # AIO releases do not all bundle the same process supervisor. Bash is
+    # required by /start.sh and can supervise the foreground services directly.
+    children=()
+    stop_services() {
+      trap '' TERM INT
+      kill -TERM "${children[@]}" 2>/dev/null || true
+      wait "${children[@]}" 2>/dev/null || true
+    }
+    trap 'stop_services; exit 0' TERM INT
+    eturnalctl foreground &
+    children+=("$!")
+    janus --config=/conf/janus.jcfg --disable-colors --log-stdout \
+      --full-trickle --debug-level "${JANUS_LOG_LEVEL:-3}" &
+    children+=("$!")
+    nextcloud-spreed-signaling -config /conf/signaling.conf &
+    children+=("$!")
+    # Restart the whole pod if any service exits, including a clean exit.
+    status=0
+    wait -n "${children[@]}" || status=$?
+    echo "Talk service exited (status $status); restarting container" >&2
+    stop_services
+    exit 1
 ---
 apiVersion: v1
 kind: Service
@@ -223,6 +241,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: nextcloud-talk
+      annotations:
+        config.antblu.net/revision: "${NEXTCLOUD_TALK_CONFIG_REVISION}"
     spec:
       affinity:
         podAntiAffinity:
@@ -343,10 +363,6 @@ spec:
           mountPath: /conf
         - name: tmp
           mountPath: /tmp
-        - name: scripts
-          mountPath: /etc/dinit.d/signaling
-          subPath: signaling
-          readOnly: true
       volumes:
       - name: scripts
         configMap:
