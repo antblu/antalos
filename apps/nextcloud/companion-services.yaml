@@ -93,6 +93,11 @@ spec:
                 secretKeyRef:
                   name: nextcloud-companion-secrets
                   key: eurooffice-jwt-secret
+            - name: SECURE_LINK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-companion-secrets
+                  key: eurooffice-secure-link-secret
           ports:
             - name: http
               containerPort: 80
