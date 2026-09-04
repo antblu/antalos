@@ -83,6 +83,21 @@ spec:
         - name: document-server
           image: ghcr.io/euro-office/documentserver:${EUROOFFICE_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -eu
+            - -c
+            - |
+              # The upstream secure-link helper updates nginx but relies on the
+              # absent npm/json tool to configure the URL signer. Use bundled jq
+              # before the entrypoint so both use the same sealed secret.
+              config_file="$EO_CONF/local.json"
+              jq '.storage.fs.secretString = env.SECURE_LINK_SECRET' \
+                "$config_file" > "$config_file.tmp"
+              chown ds:ds "$config_file.tmp"
+              chmod 600 "$config_file.tmp"
+              mv "$config_file.tmp" "$config_file"
+              exec /entrypoint.sh
           env:
             - name: JWT_ENABLED
               value: "true"
