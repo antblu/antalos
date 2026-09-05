@@ -324,7 +324,7 @@ spec:
             - name: STALWART_URL
               value: http://stalwart-web.stalwart.svc.cluster.local:8080
             - name: STALWART_USER
-              value: admin
+              value: administrator
             - name: STALWART_PASSWORD
               valueFrom:
                 secretKeyRef:
