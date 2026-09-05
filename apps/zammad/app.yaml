@@ -56,6 +56,13 @@ spec:
               secretName: zammad-storage
               secretKey: s3-url
           zammadConfig:
+            tmpDirVolume:
+              emptyDir:
+                medium: Memory
+                sizeLimit: 100Mi
+            initContainers:
+              volumePermissions:
+                enabled: false
             elasticsearch:
               enabled: false
               host: zammad-elasticsearch
