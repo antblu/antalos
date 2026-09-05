@@ -1,0 +1,235 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zammad-elasticsearch-env
+  namespace: zammad
+data:
+  cluster.name: zammad-search
+  discovery.seed_hosts: zammad-elasticsearch-headless,zammad-elasticsearch-master-headless
+  cluster.initial_master_nodes: zammad-elasticsearch-0,zammad-elasticsearch-1,zammad-elasticsearch-master-0
+  xpack.security.enabled: "false"
+  xpack.security.enrollment.enabled: "false"
+  xpack.ml.enabled: "false"
+  node.store.allow_mmap: "false"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-elasticsearch-headless
+  namespace: zammad
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: zammad-elasticsearch
+  ports:
+    - name: transport
+      port: 9300
+      targetPort: transport
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-elasticsearch
+  namespace: zammad
+spec:
+  selector:
+    app.kubernetes.io/name: zammad-elasticsearch
+  ports:
+    - name: http
+      port: 9200
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zammad-elasticsearch
+  namespace: zammad
+spec:
+  serviceName: zammad-elasticsearch-headless
+  replicas: 2
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: zammad-elasticsearch
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: zammad-elasticsearch
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ${TALOS_WORKER_LEFT}
+                      - ${TALOS_WORKER_RIGHT}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: zammad-elasticsearch
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_IMAGE_TAG}
+          envFrom:
+            - configMapRef:
+                name: zammad-elasticsearch-env
+          env:
+            - name: node.name
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: node.roles
+              value: master,data,ingest
+            - name: ES_JAVA_OPTS
+              value: -Xms${ELASTICSEARCH_DATA_HEAP_SIZE} -Xmx${ELASTICSEARCH_DATA_HEAP_SIZE}
+          ports:
+            - name: http
+              containerPort: 9200
+            - name: transport
+              containerPort: 9300
+          readinessProbe:
+            httpGet:
+              path: /_cluster/health?local=true
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: ${ELASTICSEARCH_DATA_CPU_REQUEST}
+              memory: ${ELASTICSEARCH_DATA_MEMORY_REQUEST}
+            limits:
+              memory: ${ELASTICSEARCH_DATA_MEMORY_LIMIT}
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/elasticsearch/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: openebs-local
+        resources:
+          requests:
+            storage: ${ZAMMAD_ELASTICSEARCH_DATA_STORAGE_SIZE}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: zammad-elasticsearch
+  namespace: zammad
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: zammad-elasticsearch
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-elasticsearch-master-headless
+  namespace: zammad
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: zammad-elasticsearch-master
+  ports:
+    - name: transport
+      port: 9300
+      targetPort: transport
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zammad-elasticsearch-master
+  namespace: zammad
+spec:
+  serviceName: zammad-elasticsearch-master-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: zammad-elasticsearch-master
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: zammad-elasticsearch-master
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${TALOS_WORKER_RTX}
+      tolerations:
+        - key: quorum
+          operator: Exists
+          effect: NoSchedule
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_IMAGE_TAG}
+          envFrom:
+            - configMapRef:
+                name: zammad-elasticsearch-env
+          env:
+            - name: node.name
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: node.roles
+              value: master
+            - name: ES_JAVA_OPTS
+              value: -Xms${ELASTICSEARCH_MASTER_HEAP_SIZE} -Xmx${ELASTICSEARCH_MASTER_HEAP_SIZE}
+          ports:
+            - name: transport
+              containerPort: 9300
+          readinessProbe:
+            tcpSocket:
+              port: transport
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: ${ELASTICSEARCH_MASTER_CPU_REQUEST}
+              memory: ${ELASTICSEARCH_MASTER_MEMORY_REQUEST}
+            limits:
+              cpu: ${ELASTICSEARCH_MASTER_CPU_LIMIT}
+              memory: ${ELASTICSEARCH_MASTER_MEMORY_LIMIT}
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/elasticsearch/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: openebs-local
+        resources:
+          requests:
+            storage: ${ZAMMAD_ELASTICSEARCH_MASTER_STORAGE_SIZE}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: zammad-elasticsearch-master
+  namespace: zammad
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: zammad-elasticsearch-master

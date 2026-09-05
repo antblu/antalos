@@ -1,0 +1,128 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: zammad
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://zammad.github.io/zammad-helm
+      chart: zammad
+      targetRevision: ${ZAMMAD_CHART_VERSION}
+      helm:
+        releaseName: zammad
+        parameters:
+          - name: image.tag
+            value: ${ZAMMAD_IMAGE_TAG}
+          - name: ingress.hosts[0].host
+            value: ${ZAMMAD_HOST}
+          - name: ingress.tls[0].hosts[0]
+            value: ${ZAMMAD_HOST}
+          - name: ingress.tls[0].secretName
+            value: zammad-tls
+          - name: zammadConfig.postgresql.host
+            value: ${ZAMMAD_DATABASE_HOST}
+          - name: zammadConfig.redis.sentinel.sentinels[0]
+            value: ${ZAMMAD_REDIS_DATA_0_HOST}:26379
+          - name: zammadConfig.redis.sentinel.sentinels[1]
+            value: ${ZAMMAD_REDIS_DATA_1_HOST}:26379
+          - name: zammadConfig.redis.sentinel.sentinels[2]
+            value: ${ZAMMAD_REDIS_SENTINEL_2_HOST}:26379
+        valuesObject:
+          ingress:
+            enabled: true
+            className: traefik
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.tls: "true"
+          podDisruptionBudget:
+            enabled: true
+            minAvailable: "1"
+          secrets:
+            postgresql:
+              useExisting: true
+              secretName: zammad-db-app
+              secretKey: password
+            redis:
+              useExisting: true
+              secretName: zammad-redis
+              secretKey: password
+              sentinel:
+                useExisting: true
+                secretName: zammad-redis
+                secretKey: password
+            s3:
+              useExisting: true
+              secretName: zammad-storage
+              secretKey: s3-url
+          zammadConfig:
+            elasticsearch:
+              enabled: false
+              host: zammad-elasticsearch
+              port: 9200
+              schema: http
+              initialisation: true
+            minio:
+              enabled: false
+            nginx:
+              replicas: 2
+              affinity:
+                podAntiAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    - labelSelector:
+                        matchLabels:
+                          app.kubernetes.io/name: zammad
+                          app.kubernetes.io/instance: zammad
+                          app.kubernetes.io/component: zammad-nginx
+                      topologyKey: kubernetes.io/hostname
+            postgresql:
+              enabled: false
+              db: zammad_production
+              user: zammad
+              options: pool=50
+            railsserver:
+              replicas: 2
+              affinity:
+                podAntiAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    - labelSelector:
+                        matchLabels:
+                          app.kubernetes.io/name: zammad
+                          app.kubernetes.io/instance: zammad
+                          app.kubernetes.io/component: zammad-railsserver
+                      topologyKey: kubernetes.io/hostname
+            redis:
+              enabled: false
+              host: zammad-redis-haproxy
+              port: 6379
+              sentinel:
+                enabled: true
+                masterName: zammad
+            scheduler:
+              replicas: 1
+            websocket:
+              replicas: 1
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values:
+                          - ${TALOS_WORKER_LEFT}
+                          - ${TALOS_WORKER_RIGHT}
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      path: apps/zammad
+      plugin:
+        name: yaml-envsubst
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: zammad
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

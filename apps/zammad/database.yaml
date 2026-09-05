@@ -1,0 +1,45 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: zammad-db
+  namespace: zammad
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:${POSTGRES_IMAGE_TAG}
+  enableSuperuserAccess: false
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: kubernetes.io/hostname
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                  - ${TALOS_WORKER_LEFT}
+                  - ${TALOS_WORKER_RIGHT}
+  postgresql:
+    synchronous:
+      method: any
+      number: 1
+      dataDurability: preferred
+  storage:
+    storageClass: openebs-local
+    size: ${ZAMMAD_DATABASE_STORAGE_SIZE}
+  bootstrap:
+    initdb:
+      database: zammad_production
+      owner: zammad
+      secret:
+        name: zammad-db-app
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
