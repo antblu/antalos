@@ -70,15 +70,21 @@ spec:
           ports:
             - {name: http, containerPort: 3000, protocol: TCP}
           startupProbe:
-            httpGet: {path: /healthz, port: http}
+            exec:
+              command:
+                - /bin/hp_healthcheck
             periodSeconds: 2
             failureThreshold: 30
           readinessProbe:
-            httpGet: {path: /healthz, port: http}
+            exec:
+              command:
+                - /bin/hp_healthcheck
             periodSeconds: 10
             failureThreshold: 3
           livenessProbe:
-            httpGet: {path: /healthz, port: http}
+            exec:
+              command:
+                - /bin/hp_healthcheck
             periodSeconds: 30
             failureThreshold: 3
           resources:
