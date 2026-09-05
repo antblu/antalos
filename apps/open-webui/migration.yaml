@@ -42,6 +42,11 @@ spec:
                   key: database-url
             - name: ENABLE_DB_MIGRATIONS
               value: "false"
+            - name: WEBUI_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui-app
+                  key: webui-secret-key
           resources:
             requests:
               cpu: 100m
