@@ -25,7 +25,8 @@ data:
     cat > /tmp/sentinel.conf <<SENTINEL
     port 26379
     protected-mode no
-    requirepass "$REDIS_PASSWORD"
+    # Open WebUI passes REDIS_URL credentials to the discovered Redis master,
+    # but its Sentinel clients do not forward them to the Sentinel endpoints.
     sentinel resolve-hostnames yes
     sentinel announce-hostnames yes
     sentinel monitor open-webui ${OPEN_WEBUI_REDIS_DATA_0_HOST} 6379 2
