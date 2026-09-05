@@ -1,0 +1,125 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: open-webui
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://helm.openwebui.com
+      chart: open-webui
+      targetRevision: ${OPEN_WEBUI_CHART_VERSION}
+      helm:
+        releaseName: open-webui
+        parameters:
+          - {name: image.tag, value: ${OPEN_WEBUI_IMAGE_TAG}}
+          - {name: ingress.host, value: ${OPEN_WEBUI_HOST}}
+          - {name: persistence.s3.accessKey, value: ${OPEN_WEBUI_S3_ACCESS_KEY}}
+          - {name: persistence.s3.endpointUrl, value: "http://${GARAGE_S3_IP}:${GARAGE_S3_PORT}"}
+          - {name: persistence.s3.region, value: ${GARAGE_S3_CUSTOM_REGION}}
+          - {name: persistence.s3.bucket, value: ${OPEN_WEBUI_S3_BUCKET}}
+        valuesObject:
+          fullnameOverride: open-webui
+          workload: {kind: Deployment}
+          replicaCount: 2
+          strategy: {type: Recreate}
+          annotations:
+            argocd.argoproj.io/sync-wave: "2"
+          ollama: {enabled: false}
+          ollamaUrls: []
+          pipelines: {enabled: false}
+          tika: {enabled: false}
+          terminals: {enabled: false}
+          websocket:
+            enabled: true
+            manager: redis
+            existingSecret: open-webui-redis
+            existingSecretKey: redis-url
+            redis: {enabled: false}
+          persistence:
+            enabled: false
+            provider: s3
+            s3:
+              secretKeyExistingSecret: open-webui-app
+              secretKeyExistingSecretKey: s3-secret-key
+          ingress:
+            enabled: true
+            class: traefik
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.tls: "true"
+            tls: true
+            existingSecret: open-webui-tls
+          enableOpenaiApi: true
+          openaiApiKey: ""
+          databaseUrl: ""
+          extraEnvVars:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: open-webui-db-app, key: database-url}
+            - {name: VECTOR_DB, value: pgvector}
+            - {name: PGVECTOR_CREATE_EXTENSION, value: "false"}
+            - {name: REDIS_SENTINEL_HOSTS, value: "${OPEN_WEBUI_REDIS_DATA_0_HOST},${OPEN_WEBUI_REDIS_DATA_1_HOST},${OPEN_WEBUI_REDIS_SENTINEL_2_HOST}"}
+            - {name: REDIS_SENTINEL_PORT, value: "26379"}
+            - {name: WEBSOCKET_SENTINEL_HOSTS, value: "${OPEN_WEBUI_REDIS_DATA_0_HOST},${OPEN_WEBUI_REDIS_DATA_1_HOST},${OPEN_WEBUI_REDIS_SENTINEL_2_HOST}"}
+            - {name: WEBSOCKET_SENTINEL_PORT, value: "26379"}
+            - {name: REDIS_SOCKET_CONNECT_TIMEOUT, value: "5"}
+            - name: WEBUI_SECRET_KEY
+              valueFrom:
+                secretKeyRef: {name: open-webui-app, key: webui-secret-key}
+            - {name: STORAGE_LOCAL_CACHE, value: "false"}
+            - {name: S3_ADDRESSING_STYLE, value: path}
+            - {name: RAG_EMBEDDING_ENGINE, value: openai}
+            - {name: AUDIO_STT_ENGINE, value: openai}
+            - {name: AUDIO_TTS_ENGINE, value: openai}
+            - {name: UVICORN_WORKERS, value: "1"}
+            - {name: ENABLE_DB_MIGRATIONS, value: "false"}
+            - {name: DATABASE_USER_ACTIVE_STATUS_UPDATE_INTERVAL, value: "120"}
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values: [${TALOS_WORKER_LEFT}, ${TALOS_WORKER_RIGHT}]
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/instance: open-webui
+                      app.kubernetes.io/component: open-webui
+                  topologyKey: kubernetes.io/hostname
+          startupProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: {path: /health/db, port: http}
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 250m, memory: 512Mi}
+            limits: {cpu: "2", memory: 2Gi}
+          copyAppData:
+            resources:
+              requests: {cpu: 25m, memory: 64Mi}
+              limits: {cpu: 250m, memory: 256Mi}
+          containerSecurityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            seccompProfile: {type: RuntimeDefault}
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      path: apps/open-webui
+      plugin: {name: yaml-envsubst}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: open-webui
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [CreateNamespace=true]

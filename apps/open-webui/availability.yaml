@@ -1,0 +1,22 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: open-webui
+  namespace: open-webui
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: open-webui
+      app.kubernetes.io/component: open-webui
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: open-webui-redis-data
+  namespace: open-webui
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: open-webui-redis-data

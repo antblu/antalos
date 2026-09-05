@@ -12,6 +12,7 @@ variables:
   METALLB_CHART_VERSION: 0.16.1
   NFS_DRIVER_CHART_VERSION: 4.13.4
   NEXTCLOUD_CHART_VERSION: 9.2.6
+  OPEN_WEBUI_CHART_VERSION: 16.5.0
   OPENEBS_CHART_VERSION: 4.5.1
   RANCHER_CHART_VERSION: 2.15.0
   SEALED_SECRETS_CHART_VERSION: 2.19.3
@@ -23,6 +24,8 @@ variables:
   DOCS_IMAGE_TAG: main
   POSTGRES_IMAGE_TAG: 18.6-minimal-trixie
   NEXTCLOUD_POSTGRES_IMAGE_TAG: 18.6-standard-trixie
+  OPEN_WEBUI_POSTGRES_IMAGE_TAG: 18.6-standard-trixie
+  OPEN_WEBUI_IMAGE_TAG: 0.11.3
   STALWART_IMAGE_TAG: v0.16.19
   STALWART_CLI_IMAGE_TAG: 1.0.12
   ELASTICSEARCH_IMAGE_TAG: 9.5.1
@@ -115,6 +118,7 @@ variables:
   GRAFANA_HOST: grafana.antblu.net
   MAIL_HOST: mail.antblu.net
   NEXTCLOUD_HOST: nextcloud.antblu.net
+  OPEN_WEBUI_HOST: ai.antblu.net
   DOCS_HOST: docs.antblu.net
   EUROOFFICE_HOST: office.antblu.net
   WHITEBOARD_HOST: whiteboard.antblu.net
@@ -141,6 +145,19 @@ variables:
   NEXTCLOUD_REDIS_QUORUM_CPU_LIMIT: 500m
   NEXTCLOUD_REDIS_QUORUM_MEMORY_REQUEST: 128Mi
   NEXTCLOUD_REDIS_QUORUM_MEMORY_LIMIT: 256Mi
+
+  # Open WebUI: two stateless app replicas, one replicated CNPG database with
+  # pgvector, and two Redis data nodes plus a quorum-only Sentinel on RTX.
+  OPEN_WEBUI_DATABASE_HOST: open-webui-db-rw.open-webui.svc.cluster.local
+  OPEN_WEBUI_DATABASE_STORAGE_SIZE: 20Gi
+  OPEN_WEBUI_REDIS_DATA_0_HOST: open-webui-redis-data-0.open-webui-redis-data.open-webui.svc.cluster.local
+  OPEN_WEBUI_REDIS_DATA_1_HOST: open-webui-redis-data-1.open-webui-redis-data.open-webui.svc.cluster.local
+  OPEN_WEBUI_REDIS_SENTINEL_2_HOST: open-webui-redis-sentinel-2.open-webui.svc.cluster.local
+  OPEN_WEBUI_REDIS_STORAGE_SIZE: 5Gi
+  OPEN_WEBUI_REDIS_QUORUM_CPU_REQUEST: 100m
+  OPEN_WEBUI_REDIS_QUORUM_CPU_LIMIT: 500m
+  OPEN_WEBUI_REDIS_QUORUM_MEMORY_REQUEST: 128Mi
+  OPEN_WEBUI_REDIS_QUORUM_MEMORY_LIMIT: 256Mi
 
   STALWART_DATABASE_STORAGE_SIZE: 20Gi
   STALWART_REDIS_STORAGE_SIZE: 5Gi
@@ -179,6 +196,8 @@ variables:
   GARAGE_S3_PORT: "30188"
   GARAGE_S3_CUSTOM_REGION: garage
   GARAGE_S3_BUCKET: mail
+  OPEN_WEBUI_S3_BUCKET: openwebui
+  OPEN_WEBUI_S3_ACCESS_KEY: GKf3a425de117cc18a373198bf
   STALWART_S3_ACCESS_KEY: GKf3a425de117cc18a373198bf
   NEXTCLOUD_S3_BUCKET: nextcloud
   NEXTCLOUD_S3_ACCESS_KEY: GKf1cf070fd131e347984c1b08
