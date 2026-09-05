@@ -1,0 +1,36 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: grafana-db
+  namespace: monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:${POSTGRES_IMAGE_TAG}
+  enableSuperuserAccess: false
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: required
+  postgresql:
+    synchronous:
+      method: any
+      number: 1
+      dataDurability: preferred
+  storage:
+    storageClass: openebs-local
+    size: ${GRAFANA_DATABASE_STORAGE_SIZE}
+  bootstrap:
+    initdb:
+      database: grafana
+      owner: grafana
+      secret:
+        name: grafana-db-app
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi

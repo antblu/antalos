@@ -116,6 +116,7 @@ variables:
   RANCHER_HOST: rancher.antblu.net
   TRAEFIK_HOST: traefik.antblu.net
   GRAFANA_HOST: grafana.antblu.net
+  GRAFANA_DATABASE_HOST: grafana-db-rw.monitoring.svc.cluster.local
   MAIL_HOST: mail.antblu.net
   NEXTCLOUD_HOST: nextcloud.antblu.net
   OPEN_WEBUI_HOST: ai.antblu.net
@@ -193,6 +194,7 @@ variables:
   VICTORIAMETRICS_VMAGENT_STORAGE_SIZE: 5Gi
   VICTORIAMETRICS_VLSTORAGE_STORAGE_SIZE: 25Gi
   VICTORIAMETRICS_GRAFANA_STORAGE_SIZE: 5Gi
+  GRAFANA_DATABASE_STORAGE_SIZE: 10Gi
 
   GARAGE_S3_IP: 10.30.0.5
   GARAGE_S3_PORT: "30188"

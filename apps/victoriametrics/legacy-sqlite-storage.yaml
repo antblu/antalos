@@ -1,0 +1,16 @@
+# Keep the former SQLite volume intact and detached. Grafana now stores its
+# state in CNPG; this claim is intentionally not mounted or migrated.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana
+  namespace: monitoring
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: openebs-local
+  resources:
+    requests:
+      storage: ${VICTORIAMETRICS_GRAFANA_STORAGE_SIZE}
