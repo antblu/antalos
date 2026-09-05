@@ -99,6 +99,7 @@ spec:
             - {name: config, mountPath: /etc/headplane/config.yaml, subPath: config.yaml, readOnly: true}
             - {name: headscale-config, mountPath: /etc/headscale/config.yaml, subPath: config.yaml, readOnly: true}
             - {name: secret, mountPath: /var/run/secrets/headplane, readOnly: true}
+            - {name: oidc-secret, mountPath: /var/run/secrets/headscale-oidc, readOnly: true}
             - {name: data, mountPath: /var/lib/headplane}
             - {name: tmp, mountPath: /tmp}
         - name: litestream
@@ -125,6 +126,8 @@ spec:
           configMap: {name: headscale}
         - name: secret
           secret: {secretName: headplane}
+        - name: oidc-secret
+          secret: {secretName: headscale-oidc}
         - name: data
           emptyDir:
             sizeLimit: ${HEADPLANE_LOCAL_STORAGE_SIZE}

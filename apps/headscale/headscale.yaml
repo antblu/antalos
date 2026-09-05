@@ -144,6 +144,9 @@ spec:
               mountPath: /etc/headscale/config.yaml
               subPath: config.yaml
               readOnly: true
+            - name: oidc-secret
+              mountPath: /var/run/secrets/headscale-oidc
+              readOnly: true
             - name: data
               mountPath: /var/lib/headscale
             - name: backup
@@ -185,6 +188,9 @@ spec:
         - name: config
           configMap:
             name: headscale
+        - name: oidc-secret
+          secret:
+            secretName: headscale-oidc
         - name: data
           emptyDir:
             sizeLimit: ${HEADSCALE_LOCAL_STORAGE_SIZE}

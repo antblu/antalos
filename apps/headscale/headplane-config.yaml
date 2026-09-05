@@ -17,6 +17,7 @@ data:
       url: http://headscale.headscale.svc.cluster.local
       public_url: https://${HEADSCALE_HOST}
       config_path: /etc/headscale/config.yaml
+      api_key_path: /var/run/secrets/headscale-oidc/api-key
     integration:
       agent:
         enabled: false
@@ -27,6 +28,15 @@ data:
         pod_name: headplane
       proc:
         enabled: false
+    oidc:
+      enabled: true
+      issuer: ${HEADSCALE_OIDC_ISSUER}
+      client_id: ${HEADSCALE_OIDC_CLIENT_ID}
+      client_secret_path: /var/run/secrets/headscale-oidc/client-secret
+      use_pkce: ${HEADPLANE_OIDC_USE_PKCE}
+      disable_api_key_login: true
+      token_endpoint_auth_method: ${HEADPLANE_OIDC_TOKEN_ENDPOINT_AUTH_METHOD}
+      default_role: ${HEADPLANE_OIDC_DEFAULT_ROLE}
   litestream.yml: |
     dbs:
       - path: /var/lib/headplane/hp_persist.db

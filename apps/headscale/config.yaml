@@ -66,6 +66,23 @@ data:
       search_domains: []
       extra_records: []
 
+    oidc:
+      only_start_if_oidc_is_available: ${HEADSCALE_OIDC_ONLY_START_IF_AVAILABLE}
+      issuer: ${HEADSCALE_OIDC_ISSUER}
+      client_id: ${HEADSCALE_OIDC_CLIENT_ID}
+      client_secret_path: /var/run/secrets/headscale-oidc/client-secret
+      use_expiry_from_token: ${HEADSCALE_OIDC_USE_EXPIRY_FROM_TOKEN}
+      scope:
+        - openid
+        - profile
+        - email
+      email_verified_required: ${HEADSCALE_OIDC_EMAIL_VERIFIED_REQUIRED}
+      allowed_domains:
+        - ${HEADSCALE_OIDC_ALLOWED_DOMAIN}
+      pkce:
+        enabled: ${HEADSCALE_OIDC_PKCE_ENABLED}
+        method: S256
+
     unix_socket: /var/run/headscale/headscale.sock
     unix_socket_permission: "0770"
   litestream.yml: |
