@@ -120,7 +120,8 @@ spec:
         - name: secret
           secret: {secretName: headplane}
         - name: data
-          emptyDir: {sizeLimit: ${HEADPLANE_LOCAL_STORAGE_SIZE}}
+          emptyDir:
+            sizeLimit: ${HEADPLANE_LOCAL_STORAGE_SIZE}
         - name: backup
           persistentVolumeClaim: {claimName: headscale-backup}
         - name: tmp
@@ -159,7 +160,8 @@ metadata:
 spec:
   ingressClassName: traefik
   tls:
-    - hosts: [${HEADSCALE_HOST}]
+    - hosts:
+        - ${HEADSCALE_HOST}
       secretName: headscale-tls
   rules:
     - host: ${HEADSCALE_HOST}
@@ -184,7 +186,8 @@ metadata:
 spec:
   ingressClassName: traefik
   tls:
-    - hosts: [${HEADSCALE_HOST}]
+    - hosts:
+        - ${HEADSCALE_HOST}
       secretName: headscale-tls
   rules:
     - host: ${HEADSCALE_HOST}
