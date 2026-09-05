@@ -8,4 +8,5 @@ spec:
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
-  dnsNames: [${OPEN_WEBUI_HOST}]
+  dnsNames:
+    - ${OPEN_WEBUI_HOST}

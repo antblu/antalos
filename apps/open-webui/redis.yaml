@@ -47,8 +47,12 @@ spec:
   selector:
     app.kubernetes.io/name: open-webui-redis-data
   ports:
-    - {name: redis, port: 6379, targetPort: redis}
-    - {name: sentinel, port: 26379, targetPort: sentinel}
+    - name: redis
+      port: 6379
+      targetPort: redis
+    - name: sentinel
+      port: 26379
+      targetPort: sentinel
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -74,7 +78,9 @@ spec:
               - matchExpressions:
                   - key: kubernetes.io/hostname
                     operator: In
-                    values: [${TALOS_WORKER_LEFT}, ${TALOS_WORKER_RIGHT}]
+                    values:
+                      - ${TALOS_WORKER_LEFT}
+                      - ${TALOS_WORKER_RIGHT}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
@@ -86,58 +92,91 @@ spec:
         runAsUser: 999
         runAsGroup: 999
         fsGroup: 999
-        seccompProfile: {type: RuntimeDefault}
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: redis
           image: redis:${REDIS_IMAGE_TAG}
-          command: [/config/start-redis.sh]
+          command:
+            - /config/start-redis.sh
           env:
             - name: REDIS_PASSWORD
               valueFrom:
-                secretKeyRef: {name: open-webui-redis, key: password}
+                secretKeyRef:
+                  name: open-webui-redis
+                  key: password
           ports:
-            - {name: redis, containerPort: 6379}
+            - name: redis
+              containerPort: 6379
           readinessProbe:
             exec:
-              command: [sh, -ec, 'redis-cli --no-auth-warning -a "$REDIS_PASSWORD" ping | grep PONG']
+              command:
+                - sh
+                - -ec
+                - redis-cli --no-auth-warning -a "$REDIS_PASSWORD" ping | grep PONG
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             exec:
-              command: [sh, -ec, 'redis-cli --no-auth-warning -a "$REDIS_PASSWORD" ping | grep PONG']
+              command:
+                - sh
+                - -ec
+                - redis-cli --no-auth-warning -a "$REDIS_PASSWORD" ping | grep PONG
             initialDelaySeconds: 15
             periodSeconds: 20
           resources:
-            requests: {cpu: 50m, memory: 128Mi}
-            limits: {cpu: 500m, memory: 512Mi}
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           volumeMounts:
-            - {name: config, mountPath: /config}
-            - {name: data, mountPath: /data}
+            - name: config
+              mountPath: /config
+            - name: data
+              mountPath: /data
           securityContext:
             allowPrivilegeEscalation: false
-            capabilities: {drop: [ALL]}
+            capabilities:
+              drop:
+                - ALL
         - name: sentinel
           image: redis:${REDIS_IMAGE_TAG}
-          command: [/config/start-sentinel.sh]
+          command:
+            - /config/start-sentinel.sh
           env:
             - name: REDIS_PASSWORD
               valueFrom:
-                secretKeyRef: {name: open-webui-redis, key: password}
+                secretKeyRef:
+                  name: open-webui-redis
+                  key: password
           ports:
-            - {name: sentinel, containerPort: 26379}
+            - name: sentinel
+              containerPort: 26379
           readinessProbe:
             exec:
-              command: [sh, -ec, 'redis-cli --no-auth-warning -p 26379 -a "$REDIS_PASSWORD" ping | grep PONG']
+              command:
+                - sh
+                - -ec
+                - redis-cli --no-auth-warning -p 26379 -a "$REDIS_PASSWORD" ping | grep PONG
             initialDelaySeconds: 5
             periodSeconds: 10
           resources:
-            requests: {cpu: 25m, memory: 64Mi}
-            limits: {cpu: 250m, memory: 128Mi}
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
           volumeMounts:
-            - {name: config, mountPath: /config}
+            - name: config
+              mountPath: /config
           securityContext:
             allowPrivilegeEscalation: false
-            capabilities: {drop: [ALL]}
+            capabilities:
+              drop:
+                - ALL
       volumes:
         - name: config
           configMap:
@@ -147,7 +186,8 @@ spec:
     - metadata:
         name: data
       spec:
-        accessModes: [ReadWriteOnce]
+        accessModes:
+          - ReadWriteOnce
         storageClassName: openebs-local
         resources:
           requests:
@@ -162,7 +202,9 @@ spec:
   selector:
     app.kubernetes.io/name: open-webui-redis-quorum
   ports:
-    - {name: sentinel, port: 26379, targetPort: sentinel}
+    - name: sentinel
+      port: 26379
+      targetPort: sentinel
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -171,7 +213,8 @@ metadata:
   namespace: open-webui
 spec:
   replicas: 1
-  strategy: {type: Recreate}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: open-webui-redis-quorum
@@ -183,25 +226,35 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: ${TALOS_WORKER_RTX}
       tolerations:
-        - {key: quorum, operator: Exists, effect: NoSchedule}
+        - key: quorum
+          operator: Exists
+          effect: NoSchedule
       securityContext:
         runAsNonRoot: true
         runAsUser: 999
         runAsGroup: 999
-        seccompProfile: {type: RuntimeDefault}
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: sentinel
           image: redis:${REDIS_IMAGE_TAG}
-          command: [/config/start-sentinel.sh]
+          command:
+            - /config/start-sentinel.sh
           env:
             - name: REDIS_PASSWORD
               valueFrom:
-                secretKeyRef: {name: open-webui-redis, key: password}
+                secretKeyRef:
+                  name: open-webui-redis
+                  key: password
           ports:
-            - {name: sentinel, containerPort: 26379}
+            - name: sentinel
+              containerPort: 26379
           readinessProbe:
             exec:
-              command: [sh, -ec, 'redis-cli --no-auth-warning -p 26379 -a "$REDIS_PASSWORD" ping | grep PONG']
+              command:
+                - sh
+                - -ec
+                - redis-cli --no-auth-warning -p 26379 -a "$REDIS_PASSWORD" ping | grep PONG
             initialDelaySeconds: 5
             periodSeconds: 10
           resources:
@@ -212,10 +265,13 @@ spec:
               cpu: ${OPEN_WEBUI_REDIS_QUORUM_CPU_LIMIT}
               memory: ${OPEN_WEBUI_REDIS_QUORUM_MEMORY_LIMIT}
           volumeMounts:
-            - {name: config, mountPath: /config}
+            - name: config
+              mountPath: /config
           securityContext:
             allowPrivilegeEscalation: false
-            capabilities: {drop: [ALL]}
+            capabilities:
+              drop:
+                - ALL
       volumes:
         - name: config
           configMap:

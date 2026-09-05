@@ -19,9 +19,14 @@ spec:
           - matchExpressions:
               - key: kubernetes.io/hostname
                 operator: In
-                values: [${TALOS_WORKER_LEFT}, ${TALOS_WORKER_RIGHT}]
+                values:
+                  - ${TALOS_WORKER_LEFT}
+                  - ${TALOS_WORKER_RIGHT}
   postgresql:
-    synchronous: {method: any, number: 1, dataDurability: preferred}
+    synchronous:
+      method: any
+      number: 1
+      dataDurability: preferred
   storage:
     storageClass: openebs-local
     size: ${OPEN_WEBUI_DATABASE_STORAGE_SIZE}
@@ -29,10 +34,15 @@ spec:
     initdb:
       database: open_webui
       owner: open_webui
-      secret: {name: open-webui-db-app}
+      secret:
+        name: open-webui-db-app
   resources:
-    requests: {cpu: 250m, memory: 512Mi}
-    limits: {cpu: "2", memory: 2Gi}
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Database
@@ -44,6 +54,8 @@ metadata:
 spec:
   name: open_webui
   owner: open_webui
-  cluster: {name: open-webui-db}
+  cluster:
+    name: open-webui-db
   extensions:
-    - {name: vector, ensure: present}
+    - name: vector
+      ensure: present

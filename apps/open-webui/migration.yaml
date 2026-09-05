@@ -12,7 +12,8 @@ spec:
   ttlSecondsAfterFinished: 86400
   template:
     metadata:
-      labels: {app.kubernetes.io/name: open-webui-database-migration}
+      labels:
+        app.kubernetes.io/name: open-webui-database-migration
     spec:
       restartPolicy: Never
       affinity:
@@ -22,21 +23,36 @@ spec:
               - matchExpressions:
                   - key: kubernetes.io/hostname
                     operator: In
-                    values: [${TALOS_WORKER_LEFT}, ${TALOS_WORKER_RIGHT}]
+                    values:
+                      - ${TALOS_WORKER_LEFT}
+                      - ${TALOS_WORKER_RIGHT}
       containers:
         - name: migrate
           image: ghcr.io/open-webui/open-webui:${OPEN_WEBUI_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
-          command: [sh, -ec, "cd /app/backend/open_webui && alembic upgrade head"]
+          command:
+            - sh
+            - -ec
+            - cd /app/backend/open_webui && alembic upgrade head
           env:
             - name: DATABASE_URL
               valueFrom:
-                secretKeyRef: {name: open-webui-db-app, key: database-url}
-            - {name: ENABLE_DB_MIGRATIONS, value: "false"}
+                secretKeyRef:
+                  name: open-webui-db-app
+                  key: database-url
+            - name: ENABLE_DB_MIGRATIONS
+              value: "false"
           resources:
-            requests: {cpu: 100m, memory: 256Mi}
-            limits: {cpu: "1", memory: 1Gi}
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
           securityContext:
             allowPrivilegeEscalation: false
-            capabilities: {drop: [ALL]}
-            seccompProfile: {type: RuntimeDefault}
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
