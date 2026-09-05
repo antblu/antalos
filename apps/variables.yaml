@@ -119,6 +119,8 @@ variables:
   MAIL_HOST: mail.antblu.net
   NEXTCLOUD_HOST: nextcloud.antblu.net
   OPEN_WEBUI_HOST: ai.antblu.net
+  OPEN_WEBUI_OIDC_CLIENT_ID: D9mZ728iVOvT6edf6UvDBjFHl7rbqVxc9p6XKPpo
+  OPEN_WEBUI_OIDC_PROVIDER_URL: https://auth.antblu.net/application/o/open-web-ui/.well-known/openid-configuration
   DOCS_HOST: docs.antblu.net
   EUROOFFICE_HOST: office.antblu.net
   WHITEBOARD_HOST: whiteboard.antblu.net

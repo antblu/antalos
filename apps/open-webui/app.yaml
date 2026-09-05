@@ -91,6 +91,19 @@ spec:
                 secretKeyRef:
                   name: open-webui-app
                   key: webui-secret-key
+            - name: WEBUI_URL
+              value: https://${OPEN_WEBUI_HOST}
+            - name: ENABLE_OAUTH_SIGNUP
+              value: "true"
+            - name: OAUTH_CLIENT_ID
+              value: ${OPEN_WEBUI_OIDC_CLIENT_ID}
+            - name: OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui-oidc
+                  key: oauth-client-secret
+            - name: OPENID_PROVIDER_URL
+              value: ${OPEN_WEBUI_OIDC_PROVIDER_URL}
             - name: STORAGE_LOCAL_CACHE
               value: "false"
             - name: S3_ADDRESSING_STYLE
