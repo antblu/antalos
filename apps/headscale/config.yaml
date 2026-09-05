@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: headscale
+  namespace: headscale
+data:
+  config.yaml: |
+    server_url: https://${HEADSCALE_HOST}
+    listen_addr: 0.0.0.0:8080
+    metrics_listen_addr: 0.0.0.0:9090
+    grpc_listen_addr: 127.0.0.1:50443
+    grpc_allow_insecure: false
+    trusted_proxies:
+      - ${KUBERNETES_POD_CIDR}
+
+    noise:
+      private_key_path: /backup/noise_private.key
+
+    prefixes:
+      v4: 100.64.0.0/10
+      v6: fd7a:115c:a1e0::/48
+    allocation: sequential
+
+    derp:
+      server:
+        enabled: false
+      urls:
+        - https://controlplane.tailscale.com/derpmap/default
+      paths: []
+      auto_update_enabled: true
+      update_frequency: 3h
+
+    disable_check_updates: true
+
+    database:
+      type: sqlite
+      debug: false
+      gorm:
+        prepare_stmt: true
+        parameterized_queries: true
+        skip_err_record_not_found: true
+        slow_threshold: 1000
+      sqlite:
+        path: /var/lib/headscale/db.sqlite
+        write_ahead_log: true
+        wal_autocheckpoint: 1000
+
+    tls_cert_path: ""
+    tls_key_path: ""
+
+    log:
+      level: info
+      format: text
+
+    policy:
+      mode: database
+
+    dns:
+      magic_dns: false
+      base_domain: ${HEADSCALE_BASE_DOMAIN}
+      override_local_dns: true
+      nameservers:
+        global:
+          - ${HEADSCALE_DNS_SERVER}
+        split: {}
+      search_domains: []
+      extra_records: []
+
+    unix_socket: /var/run/headscale/headscale.sock
+    unix_socket_permission: "0770"
+  litestream.yml: |
+    dbs:
+      - path: /var/lib/headscale/db.sqlite
+        replica:
+          path: /backup/db.sqlite

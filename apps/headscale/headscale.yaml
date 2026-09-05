@@ -1,0 +1,224 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: headscale-headless
+  namespace: headscale
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: headscale
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: headscale
+  namespace: headscale
+  labels:
+    app.kubernetes.io/name: headscale
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: headscale
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: headscale
+  namespace: headscale
+  labels:
+    app.kubernetes.io/name: headscale
+    app.kubernetes.io/part-of: antalos
+spec:
+  serviceName: headscale-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: headscale
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: headscale
+        app.kubernetes.io/part-of: antalos
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1002
+        runAsGroup: 1002
+        fsGroup: 1002
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: restore
+          image: docker.io/litestream/litestream:${LITESTREAM_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          args:
+            - restore
+            - -if-db-not-exists
+            - -if-replica-exists
+            - /var/lib/headscale/db.sqlite
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: config
+              mountPath: /etc/litestream.yml
+              subPath: litestream.yml
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/headscale
+            - name: backup
+              mountPath: /backup
+            - name: tmp
+              mountPath: /tmp
+      containers:
+        - name: headscale
+          image: ghcr.io/juanfont/headscale:${HEADSCALE_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          args:
+            - serve
+          env:
+            - name: HOME
+              value: /var/lib/headscale
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          startupProbe:
+            exec:
+              command:
+                - headscale
+                - health
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            exec:
+              command:
+                - headscale
+                - health
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - headscale
+                - health
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: config
+              mountPath: /etc/headscale/config.yaml
+              subPath: config.yaml
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/headscale
+            - name: backup
+              mountPath: /backup
+            - name: run
+              mountPath: /var/run/headscale
+            - name: tmp
+              mountPath: /tmp
+        - name: litestream
+          image: docker.io/litestream/litestream:${LITESTREAM_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          args:
+            - replicate
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: config
+              mountPath: /etc/litestream.yml
+              subPath: litestream.yml
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/headscale
+            - name: backup
+              mountPath: /backup
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: headscale
+        - name: data
+          emptyDir:
+            sizeLimit: ${HEADSCALE_LOCAL_STORAGE_SIZE}
+        - name: backup
+          persistentVolumeClaim:
+            claimName: headscale-backup
+        - name: run
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: headscale
+  namespace: headscale
+  labels:
+    app.kubernetes.io/name: headscale
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: headscale-headplane-cors@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - ${HEADSCALE_HOST}
+      secretName: headscale-tls
+  rules:
+    - host: ${HEADSCALE_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: headscale
+                port:
+                  name: http
