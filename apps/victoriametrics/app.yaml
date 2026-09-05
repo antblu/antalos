@@ -188,6 +188,11 @@ spec:
             enabled: true
             fullnameOverride: grafana
             replicas: 2
+            deploymentStrategy:
+              type: RollingUpdate
+              rollingUpdate:
+                maxSurge: 0
+                maxUnavailable: 1
             grafana.ini:
               server:
                 root_url: https://${GRAFANA_HOST}
