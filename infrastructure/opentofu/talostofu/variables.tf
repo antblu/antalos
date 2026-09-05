@@ -150,7 +150,7 @@ variable "se350_worker_vm_disk_size" {
 variable "rtx_worker_vm_memory" {
   type        = number
   description = "Memory in MiB for worker VMs (28 GiB = 28672 MiB)"
-  default     = 2048
+  default     = 3072
 }
 
 variable "rtx_worker_vm_cores" {
