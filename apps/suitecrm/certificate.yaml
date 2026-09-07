@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: suitecrm-tls
+  namespace: suitecrm
+spec:
+  secretName: suitecrm-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - ${SUITECRM_HOST}

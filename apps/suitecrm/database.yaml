@@ -1,0 +1,220 @@
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: suitecrm-db
+  namespace: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+spec:
+  image: mariadb:${SUITECRM_MARIADB_IMAGE_TAG}
+  imagePullPolicy: IfNotPresent
+  rootPasswordSecretKeyRef:
+    name: suitecrm-db-root
+    key: root-password
+  storage:
+    storageClassName: openebs-local
+    size: ${SUITECRM_DATABASE_STORAGE_SIZE}
+  replicas: 2
+  replicasAllowEvenNumber: true
+  galera:
+    enabled: true
+    recovery:
+      enabled: true
+      minClusterSize: 1
+  updateStrategy:
+    type: ReplicasFirstPrimaryLast
+  service:
+    type: ClusterIP
+  primaryService:
+    type: ClusterIP
+  secondaryService:
+    type: ClusterIP
+  metrics:
+    enabled: true
+  tls:
+    enabled: false
+  timeZone: America/Denver
+  myCnf: |
+    [mariadb]
+    bind-address=*
+    default_storage_engine=InnoDB
+    binlog_format=row
+    innodb_autoinc_lock_mode=2
+    innodb_buffer_pool_size=1G
+    max_allowed_packet=256M
+    character_set_server=utf8mb4
+    collation_server=utf8mb4_unicode_ci
+  affinity:
+    antiAffinityEnabled: true
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                  - ${TALOS_WORKER_LEFT}
+                  - ${TALOS_WORKER_RIGHT}
+  podDisruptionBudget:
+    minAvailable: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  startupProbe:
+    failureThreshold: 60
+    periodSeconds: 5
+    timeoutSeconds: 5
+  readinessProbe:
+    periodSeconds: 5
+    timeoutSeconds: 5
+  livenessProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: suitecrm
+  namespace: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
+spec:
+  mariaDbRef:
+    name: suitecrm-db
+  characterSet: utf8mb4
+  collate: utf8mb4_unicode_ci
+  cleanupPolicy: Skip
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: suitecrm
+  namespace: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
+spec:
+  mariaDbRef:
+    name: suitecrm-db
+  passwordSecretKeyRef:
+    name: suitecrm-db-user
+    key: password
+  host: "%"
+  maxUserConnections: 100
+  cleanupPolicy: Skip
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: suitecrm
+  namespace: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+spec:
+  mariaDbRef:
+    name: suitecrm-db
+  privileges:
+    - ALL PRIVILEGES
+  database: suitecrm
+  table: "*"
+  username: suitecrm
+  host: "%"
+  grantOption: false
+  cleanupPolicy: Skip
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: suitecrm-garbd
+  namespace: suitecrm
+  labels:
+    app.kubernetes.io/name: suitecrm-garbd
+    app.kubernetes.io/part-of: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: suitecrm-garbd
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: suitecrm-garbd
+        app.kubernetes.io/part-of: suitecrm
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${TALOS_WORKER_RTX}
+      tolerations:
+        - key: quorum
+          operator: Exists
+          effect: NoSchedule
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: garbd
+          image: wodby/mariadb:${SUITECRM_GARBD_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          command:
+            - garbd
+          args:
+            - --address
+            - gcomm://suitecrm-db-0.suitecrm-db-internal.suitecrm.svc.cluster.local:4567,suitecrm-db-1.suitecrm-db-internal.suitecrm.svc.cluster.local:4567
+            - --group
+            - mariadb-operator
+            - --name
+            - suitecrm-garbd
+            - --options
+            - gmcast.listen_addr=tcp://0.0.0.0:4567
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - kill -0 1
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - kill -0 1
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: suitecrm-garbd
+  namespace: suitecrm
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: suitecrm-garbd

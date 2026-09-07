@@ -1,0 +1,48 @@
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: PhysicalBackup
+metadata:
+  name: suitecrm-db-daily
+  namespace: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  mariaDbRef:
+    name: suitecrm-db
+  target: PreferReplica
+  schedule:
+    cron: "0 3 * * *"
+    suspend: false
+    immediate: true
+  compression: bzip2
+  maxRetention: 720h
+  storage:
+    s3:
+      bucket: ${SUITECRM_S3_BUCKET}
+      prefix: database
+      endpoint: ${GARAGE_S3_IP}:${GARAGE_S3_PORT}
+      region: ${GARAGE_S3_CUSTOM_REGION}
+      accessKeyIdSecretKeyRef:
+        name: suitecrm-s3
+        key: access-key-id
+      secretAccessKeySecretKeyRef:
+        name: suitecrm-s3
+        key: secret-access-key
+      tls:
+        enabled: false
+  stagingStorage:
+    persistentVolumeClaim:
+      storageClassName: openebs-local
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: ${SUITECRM_DATABASE_STORAGE_SIZE}
+  podAffinity: true
+  timeout: 2h
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
