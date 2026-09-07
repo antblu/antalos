@@ -21,8 +21,6 @@ spec:
         runAsNonRoot: true
         runAsUser: 82
         runAsGroup: 82
-        fsGroup: 82
-        fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -48,6 +46,7 @@ spec:
                 fi
                 sleep 5
               done
+              export PATH="/command:${PATH}"
               exec /etc/s6-overlay/scripts/20-suitecrm-bootstrap
           env:
             - name: APP_URL
@@ -146,8 +145,6 @@ spec:
         runAsNonRoot: true
         runAsUser: 82
         runAsGroup: 82
-        fsGroup: 82
-        fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -215,7 +212,7 @@ spec:
             failureThreshold: 3
           resources:
             requests:
-              cpu: 250m
+              cpu: 100m
               memory: 512Mi
             limits:
               cpu: "2"
@@ -281,8 +278,6 @@ spec:
             runAsNonRoot: true
             runAsUser: 82
             runAsGroup: 82
-            fsGroup: 82
-            fsGroupChangePolicy: OnRootMismatch
             seccompProfile:
               type: RuntimeDefault
           containers:

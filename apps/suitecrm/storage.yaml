@@ -36,3 +36,33 @@ spec:
   resources:
     requests:
       storage: ${SUITECRM_DATA_STORAGE_SIZE}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: galera-suitecrm-db-0
+  namespace: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: "-6"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: openebs-local
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: galera-suitecrm-db-1
+  namespace: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: "-6"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: openebs-local
+  resources:
+    requests:
+      storage: 100Mi
