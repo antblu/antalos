@@ -259,6 +259,9 @@ spec:
               requests:
                 cpu: 50m
                 memory: 128Mi
+            antiAffinityLabels:
+              matchLabels:
+                app: toolbox
           gitlab-exporter:
             enabled: false
   - repoURL: https://github.com/antblu/antalos.git
