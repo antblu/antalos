@@ -157,6 +157,10 @@ metadata:
   namespace: urbackup
   labels:
     app.kubernetes.io/name: urbackup
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authentik-forward-auth@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
