@@ -5,6 +5,14 @@ metadata:
   namespace: headscale
   labels:
     app.kubernetes.io/name: headplane
+  annotations:
+    gethomepage.dev/description: Headscale administration
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Platform
+    gethomepage.dev/href: https://${HEADSCALE_HOST}/admin
+    gethomepage.dev/icon: headscale.png
+    gethomepage.dev/name: Headplane
+    gethomepage.dev/weight: "60"
 spec:
   type: ClusterIP
   selector:

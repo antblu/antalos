@@ -1,3 +1,130 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: homepage
+  namespace: homepage
+  labels:
+    app.kubernetes.io/name: homepage
+    app.kubernetes.io/part-of: antalos
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: homepage
+  labels:
+    app.kubernetes.io/name: homepage
+    app.kubernetes.io/part-of: antalos
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - nodes
+      - pods
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - traefik.io
+    resources:
+      - ingressroutes
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - metrics.k8s.io
+    resources:
+      - nodes
+      - pods
+    verbs:
+      - get
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: homepage
+  labels:
+    app.kubernetes.io/name: homepage
+    app.kubernetes.io/part-of: antalos
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: homepage
+subjects:
+  - kind: ServiceAccount
+    name: homepage
+    namespace: homepage
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-config
+  namespace: homepage
+  labels:
+    app.kubernetes.io/name: homepage
+    app.kubernetes.io/part-of: antalos
+data:
+  kubernetes.yaml: |
+    mode: cluster
+    ingress: true
+    traefik: true
+  settings.yaml: |
+    title: Antalos
+    description: Antalos services and cluster operations
+    startUrl: https://${HOMEPAGE_HOST}
+    fullWidth: true
+    headerStyle: clean
+    statusStyle: dot
+    useEqualHeights: true
+    disableIndexing: true
+    layout:
+      Applications:
+        style: row
+        columns: 4
+      Communication:
+        style: row
+        columns: 4
+      Platform:
+        style: row
+        columns: 4
+      Resources:
+        style: row
+        columns: 4
+  services.yaml: |
+    []
+  bookmarks.yaml: |
+    []
+  widgets.yaml: |
+    - kubernetes:
+        cluster:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+          label: Antalos
+        nodes:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+    - search:
+        provider: duckduckgo
+        target: _blank
+  docker.yaml: |
+    ""
+  custom.css: |
+    
+  custom.js: |
+    
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,7 +149,8 @@ spec:
         app.kubernetes.io/name: homepage
         app.kubernetes.io/part-of: antalos
     spec:
-      automountServiceAccountToken: false
+      serviceAccountName: homepage
+      automountServiceAccountToken: true
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -78,8 +206,32 @@ spec:
             - name: PGID
               value: "1000"
           volumeMounts:
-            - name: config
-              mountPath: /app/config
+            - name: homepage-config
+              mountPath: /app/config/kubernetes.yaml
+              subPath: kubernetes.yaml
+            - name: homepage-config
+              mountPath: /app/config/settings.yaml
+              subPath: settings.yaml
+            - name: homepage-config
+              mountPath: /app/config/services.yaml
+              subPath: services.yaml
+            - name: homepage-config
+              mountPath: /app/config/bookmarks.yaml
+              subPath: bookmarks.yaml
+            - name: homepage-config
+              mountPath: /app/config/widgets.yaml
+              subPath: widgets.yaml
+            - name: homepage-config
+              mountPath: /app/config/docker.yaml
+              subPath: docker.yaml
+            - name: homepage-config
+              mountPath: /app/config/custom.css
+              subPath: custom.css
+            - name: homepage-config
+              mountPath: /app/config/custom.js
+              subPath: custom.js
+            - name: logs
+              mountPath: /app/config/logs
           readinessProbe:
             httpGet:
               path: /api/healthcheck
@@ -114,7 +266,10 @@ spec:
             limits:
               memory: 512Mi
       volumes:
-        - name: config
+        - name: homepage-config
+          configMap:
+            name: homepage-config
+        - name: logs
           emptyDir: {}
 ---
 apiVersion: policy/v1
@@ -158,6 +313,13 @@ metadata:
   namespace: homepage
   labels:
     app.kubernetes.io/name: homepage
+  annotations:
+    gethomepage.dev/description: Service dashboard
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Resources
+    gethomepage.dev/icon: homepage.png
+    gethomepage.dev/name: Homepage
+    gethomepage.dev/weight: "10"
 spec:
   ingressClassName: traefik
   tls:

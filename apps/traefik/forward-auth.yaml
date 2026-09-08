@@ -38,6 +38,14 @@ kind: Service
 metadata:
   name: authentik-embedded-outpost
   namespace: traefik
+  annotations:
+    gethomepage.dev/description: Ingress routing dashboard
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Platform
+    gethomepage.dev/href: https://${TRAEFIK_HOST}/dashboard/
+    gethomepage.dev/icon: traefik-proxy.png
+    gethomepage.dev/name: Traefik
+    gethomepage.dev/weight: "50"
 spec:
   type: ExternalName
   externalName: authentik-server.authentik.svc.cluster.local

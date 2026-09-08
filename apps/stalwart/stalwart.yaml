@@ -84,6 +84,12 @@ metadata:
   name: stalwart
   namespace: stalwart
   annotations:
+    gethomepage.dev/description: Mail server administration
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Communication
+    gethomepage.dev/icon: stalwart-mail-server.png
+    gethomepage.dev/name: Stalwart Mail
+    gethomepage.dev/weight: "10"
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
 spec:

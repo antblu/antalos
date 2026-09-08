@@ -37,6 +37,12 @@ spec:
             enabled: true
             className: traefik
             annotations:
+              gethomepage.dev/description: Help desk and support
+              gethomepage.dev/enabled: "true"
+              gethomepage.dev/group: Communication
+              gethomepage.dev/icon: zammad.png
+              gethomepage.dev/name: Zammad
+              gethomepage.dev/weight: "20"
               traefik.ingress.kubernetes.io/router.entrypoints: websecure
               traefik.ingress.kubernetes.io/router.tls: "true"
           podDisruptionBudget:

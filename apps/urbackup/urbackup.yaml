@@ -158,6 +158,12 @@ metadata:
   labels:
     app.kubernetes.io/name: urbackup
   annotations:
+    gethomepage.dev/description: Backup administration
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Platform
+    gethomepage.dev/icon: urbackup.png
+    gethomepage.dev/name: UrBackup
+    gethomepage.dev/weight: "80"
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.middlewares: traefik-authentik-forward-auth@kubernetescrd

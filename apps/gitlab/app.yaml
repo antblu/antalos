@@ -163,6 +163,14 @@ spec:
           webservice:
             minReplicas: 2
             maxReplicas: 2
+            ingress:
+              annotations:
+                gethomepage.dev/description: Source code and CI/CD
+                gethomepage.dev/enabled: "true"
+                gethomepage.dev/group: Applications
+                gethomepage.dev/icon: gitlab.png
+                gethomepage.dev/name: GitLab
+                gethomepage.dev/weight: "30"
             deployment:
               strategy: *id001
             workerProcesses: 2
