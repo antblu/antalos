@@ -93,6 +93,8 @@ spec:
         ports:
         - name: relay
           containerPort: 21117
+        - name: relay-websocket
+          containerPort: 21119
         startupProbe:
           tcpSocket:
             port: relay

@@ -114,6 +114,8 @@ spec:
         - name: id-udp
           containerPort: 21116
           protocol: UDP
+        - name: id-websocket
+          containerPort: 21118
         startupProbe:
           tcpSocket:
             port: id-tcp

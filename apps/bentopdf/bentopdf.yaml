@@ -132,7 +132,7 @@ metadata:
     gethomepage.dev/icon: bentopdf.png
     gethomepage.dev/name: BentoPDF
     gethomepage.dev/weight: "70"
-    traefik.ingress.kubernetes.io/router.middlewares: bentopdf-bentopdf-headers@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authentik-forward-auth@kubernetescrd,bentopdf-bentopdf-headers@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:

@@ -37,6 +37,48 @@ spec:
           web:
             expose:
               default: false
+          rustdesk-nat:
+            port: 21115
+            expose:
+              default: true
+            exposedPort: 21115
+            protocol: TCP
+          rustdesk-id-tcp:
+            port: 21116
+            expose:
+              default: true
+            exposedPort: 21116
+            protocol: TCP
+          rustdesk-id-udp:
+            port: 21116
+            expose:
+              default: true
+            exposedPort: 21116
+            protocol: UDP
+          rustdesk-relay:
+            port: 21117
+            expose:
+              default: true
+            exposedPort: 21117
+            protocol: TCP
+          rustdesk-rly-b:
+            port: 21120
+            expose:
+              default: true
+            exposedPort: 21120
+            protocol: TCP
+          rustdesk-ws-id:
+            port: 21118
+            expose:
+              default: true
+            exposedPort: 21118
+            protocol: TCP
+          rustdesk-ws-rly:
+            port: 21119
+            expose:
+              default: true
+            exposedPort: 21119
+            protocol: TCP
         ingressClass:
           enabled: true
           isDefaultClass: true

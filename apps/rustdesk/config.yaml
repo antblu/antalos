@@ -18,4 +18,4 @@ data:
     exec 9>/data/hbbs.lock
     /tools/busybox flock -n 9
     /tools/litestream restore -config /config/litestream.yml -if-db-not-exists -if-replica-exists /data/db_v2.sqlite3
-    exec /tools/litestream replicate -config /config/litestream.yml -exec "/usr/bin/hbbs -k _ -r ${RUSTDESK_RELAY_0_HOST}:21117,${RUSTDESK_RELAY_1_HOST}:21117"
+    exec /tools/litestream replicate -config /config/litestream.yml -exec "/usr/bin/hbbs -k _ -r ${RUSTDESK_HOST}:21117,${RUSTDESK_HOST}:21120"

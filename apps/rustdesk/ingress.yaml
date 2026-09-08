@@ -1,0 +1,120 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: rustdesk-websocket
+  namespace: rustdesk
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`${RUSTDESK_HOST}`) && PathPrefix(`/ws/id`)
+      services:
+        - kind: Service
+          name: rustdesk-hbbs
+          port: 21118
+    - kind: Rule
+      match: Host(`${RUSTDESK_HOST}`) && PathPrefix(`/ws/relay`)
+      services:
+        - kind: Service
+          name: rustdesk-hbbr-0
+          port: 21119
+  tls:
+    secretName: rustdesk-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: rustdesk-nat
+  namespace: rustdesk
+spec:
+  entryPoints:
+    - rustdesk-nat
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: rustdesk-hbbs
+          port: 21115
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: rustdesk-id
+  namespace: rustdesk
+spec:
+  entryPoints:
+    - rustdesk-id-tcp
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: rustdesk-hbbs
+          port: 21116
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteUDP
+metadata:
+  name: rustdesk-id
+  namespace: rustdesk
+spec:
+  entryPoints:
+    - rustdesk-id-udp
+  routes:
+    - services:
+        - name: rustdesk-hbbs
+          port: 21116
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: rustdesk-relay
+  namespace: rustdesk
+spec:
+  entryPoints:
+    - rustdesk-relay
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: rustdesk-hbbr-0
+          port: 21117
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: rustdesk-relay-secondary
+  namespace: rustdesk
+spec:
+  entryPoints:
+    - rustdesk-rly-b
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: rustdesk-hbbr-1
+          port: 21117
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: rustdesk-id-websocket
+  namespace: rustdesk
+spec:
+  entryPoints:
+    - rustdesk-ws-id
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: rustdesk-hbbs
+          port: 21118
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: rustdesk-relay-websocket
+  namespace: rustdesk
+spec:
+  entryPoints:
+    - rustdesk-ws-rly
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: rustdesk-hbbr-0
+          port: 21119

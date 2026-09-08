@@ -12,6 +12,9 @@ spec:
   - name: relay
     port: 21117
     targetPort: relay
+  - name: relay-websocket
+    port: 21119
+    targetPort: relay-websocket
 ---
 apiVersion: v1
 kind: Service
@@ -37,6 +40,9 @@ spec:
     port: 21116
     targetPort: id-udp
     protocol: UDP
+  - name: id-websocket
+    port: 21118
+    targetPort: id-websocket
 ---
 apiVersion: v1
 kind: Service
@@ -54,6 +60,9 @@ spec:
   - name: relay
     port: 21117
     targetPort: relay
+  - name: relay-websocket
+    port: 21119
+    targetPort: relay-websocket
 ---
 apiVersion: v1
 kind: Service
@@ -71,3 +80,6 @@ spec:
   - name: relay
     port: 21117
     targetPort: relay
+  - name: relay-websocket
+    port: 21119
+    targetPort: relay-websocket
