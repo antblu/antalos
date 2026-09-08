@@ -182,6 +182,33 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+      - name: state-permissions
+        image: redis:${REDIS_IMAGE_TAG}
+        command:
+        - sh
+        - -ec
+        - chown -R 999:999 /sentinel; chmod -R u+rwX /sentinel
+        securityContext:
+          runAsUser: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+            - FOWNER
+            - DAC_OVERRIDE
+        volumeMounts:
+        - name: sentinel-state
+          mountPath: /sentinel
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            memory: 64Mi
   volumeClaimTemplates:
   - metadata:
       name: data
@@ -303,6 +330,33 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+      - name: state-permissions
+        image: redis:${REDIS_IMAGE_TAG}
+        command:
+        - sh
+        - -ec
+        - chown -R 999:999 /sentinel; chmod -R u+rwX /sentinel
+        securityContext:
+          runAsUser: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+            - FOWNER
+            - DAC_OVERRIDE
+        volumeMounts:
+        - name: sentinel-state
+          mountPath: /sentinel
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            memory: 64Mi
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
