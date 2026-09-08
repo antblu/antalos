@@ -47,6 +47,7 @@ export default defineConfig({
             { label: 'Routine cluster operations', link: '/operations/routine-operations/' },
             { label: 'GitLab HA deployment', link: '/gitlab/deployment/' },
             { label: 'LiteLLM gateway', link: '/operations/litellm/' },
+            { label: 'RustDesk remote desktop', link: '/operations/rustdesk/' },
           ],
         },
         {

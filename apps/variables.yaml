@@ -318,3 +318,19 @@ variables:
   LITELLM_REDIS_DATA_1_HOST: litellm-redis-data-1.litellm-redis-data.litellm.svc.cluster.local
   LITELLM_REDIS_SENTINEL_2_HOST: litellm-redis-sentinel-2.litellm.svc.cluster.local
   GITLAB_S3_BUCKET: gitlabs
+
+  # RustDesk OSS: one recoverable hbbs and two independently addressed relays.
+  RUSTDESK_IMAGE_TAG: 1.1.16
+  RUSTDESK_BUSYBOX_IMAGE_TAG: 1.37.0-musl
+  RUSTDESK_HOST: rustdesk.antblu.net
+  RUSTDESK_RELAY_0_HOST: rustdesk-relay-1.antblu.net
+  RUSTDESK_RELAY_1_HOST: rustdesk-relay-2.antblu.net
+  RUSTDESK_HBBS_LOAD_BALANCER_IP: 10.30.0.242
+  RUSTDESK_RELAY_0_LOAD_BALANCER_IP: 10.30.0.243
+  RUSTDESK_RELAY_1_LOAD_BALANCER_IP: 10.30.0.244
+  RUSTDESK_NFS_SHARE: /mnt/nvme/Rustdesk
+  RUSTDESK_NFS_STORAGE_SIZE: 5Gi
+  RUSTDESK_LOCAL_STORAGE_SIZE: 1Gi
+  RUSTDESK_RELAY_STORAGE_SIZE: 64Mi
+  RUSTDESK_TOOLS_STORAGE_SIZE: 128Mi
+  RUSTDESK_TMP_STORAGE_SIZE: 64Mi

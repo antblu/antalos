@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: rustdesk-backup
+spec:
+  capacity:
+    storage: ${RUSTDESK_NFS_STORAGE_SIZE}
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ''
+  claimRef:
+    name: rustdesk-backup
+    namespace: rustdesk
+  mountOptions:
+  - nfsvers=4.1
+  - hard
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: rustdesk-backup
+    volumeAttributes:
+      server: ${NFS_SERVER}
+      share: ${RUSTDESK_NFS_SHARE}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rustdesk-backup
+  namespace: rustdesk
+spec:
+  accessModes:
+  - ReadWriteMany
+  storageClassName: ''
+  volumeName: rustdesk-backup
+  resources:
+    requests:
+      storage: ${RUSTDESK_NFS_STORAGE_SIZE}

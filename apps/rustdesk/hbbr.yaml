@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rustdesk-hbbr
+  namespace: rustdesk
+spec:
+  serviceName: rustdesk-hbbr
+  replicas: 2
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rustdesk-hbbr
+      app.kubernetes.io/part-of: rustdesk
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rustdesk-hbbr
+        app.kubernetes.io/part-of: rustdesk
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1003
+        runAsGroup: 1003
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: rustdesk-hbbr
+                app.kubernetes.io/part-of: rustdesk
+            topologyKey: kubernetes.io/hostname
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 60
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 60
+      initContainers:
+      - name: prepare-data
+        image: busybox:${RUSTDESK_BUSYBOX_IMAGE_TAG}
+        command:
+        - /bin/sh
+        - -ec
+        - cp /identity/id_ed25519 /identity/id_ed25519.pub /data/; chmod 600 /data/id_ed25519
+        securityContext: &id001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+        volumeMounts:
+        - name: identity
+          mountPath: /identity
+          readOnly: true
+        - name: data
+          mountPath: /data
+      containers:
+      - name: hbbr
+        image: rustdesk/rustdesk-server:${RUSTDESK_IMAGE_TAG}
+        workingDir: /data
+        command:
+        - /usr/bin/hbbr
+        args:
+        - -k
+        - _
+        env:
+        - name: HOME
+          value: /data
+        securityContext: *id001
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: '1'
+            memory: 256Mi
+        ports:
+        - name: relay
+          containerPort: 21117
+        startupProbe:
+          tcpSocket:
+            port: relay
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket:
+            port: relay
+          periodSeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: relay
+          periodSeconds: 20
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: identity
+        secret:
+          secretName: rustdesk-identity
+      - name: data
+        emptyDir:
+          sizeLimit: ${RUSTDESK_RELAY_STORAGE_SIZE}
+      - name: tmp
+        emptyDir:
+          sizeLimit: ${RUSTDESK_TMP_STORAGE_SIZE}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: rustdesk-hbbr
+  namespace: rustdesk
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rustdesk-hbbr
+      app.kubernetes.io/part-of: rustdesk

@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rustdesk-hbbr
+  namespace: rustdesk
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: rustdesk-hbbr
+    app.kubernetes.io/part-of: rustdesk
+  ports:
+  - name: relay
+    port: 21117
+    targetPort: relay
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rustdesk-hbbs
+  namespace: rustdesk
+  annotations:
+    metallb.io/loadBalancerIPs: ${RUSTDESK_HBBS_LOAD_BALANCER_IP}
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app.kubernetes.io/name: rustdesk-hbbs
+    app.kubernetes.io/part-of: rustdesk
+  ports:
+  - name: nat
+    port: 21115
+    targetPort: nat
+  - name: id-tcp
+    port: 21116
+    targetPort: id-tcp
+  - name: id-udp
+    port: 21116
+    targetPort: id-udp
+    protocol: UDP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rustdesk-hbbr-0
+  namespace: rustdesk
+  annotations:
+    metallb.io/loadBalancerIPs: ${RUSTDESK_RELAY_0_LOAD_BALANCER_IP}
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    statefulset.kubernetes.io/pod-name: rustdesk-hbbr-0
+  ports:
+  - name: relay
+    port: 21117
+    targetPort: relay
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rustdesk-hbbr-1
+  namespace: rustdesk
+  annotations:
+    metallb.io/loadBalancerIPs: ${RUSTDESK_RELAY_1_LOAD_BALANCER_IP}
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    statefulset.kubernetes.io/pod-name: rustdesk-hbbr-1
+  ports:
+  - name: relay
+    port: 21117
+    targetPort: relay

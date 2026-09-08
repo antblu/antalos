@@ -1,0 +1,174 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rustdesk-hbbs
+  namespace: rustdesk
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rustdesk-hbbs
+      app.kubernetes.io/part-of: rustdesk
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rustdesk-hbbs
+        app.kubernetes.io/part-of: rustdesk
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1003
+        runAsGroup: 1003
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: rustdesk-hbbs
+                app.kubernetes.io/part-of: rustdesk
+            topologyKey: kubernetes.io/hostname
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 60
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 60
+      initContainers:
+      - name: prepare-data
+        image: busybox:${RUSTDESK_BUSYBOX_IMAGE_TAG}
+        command:
+        - /bin/sh
+        - -ec
+        - cp /identity/id_ed25519 /identity/id_ed25519.pub /data/; chmod 600 /data/id_ed25519;
+          cp /bin/busybox /tools/busybox
+        securityContext: &id001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources: &id002
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+        volumeMounts:
+        - name: identity
+          mountPath: /identity
+          readOnly: true
+        - name: data
+          mountPath: /data
+        - name: tools
+          mountPath: /tools
+      - name: prepare-litestream
+        image: litestream/litestream:${LITESTREAM_IMAGE_TAG}
+        command:
+        - /bin/cp
+        - /usr/local/bin/litestream
+        - /tools/litestream
+        securityContext: *id001
+        resources: *id002
+        volumeMounts:
+        - name: tools
+          mountPath: /tools
+      containers:
+      - name: hbbs
+        image: rustdesk/rustdesk-server:${RUSTDESK_IMAGE_TAG}
+        workingDir: /data
+        command:
+        - /tools/busybox
+        - sh
+        - /config/start.sh
+        env:
+        - name: HOME
+          value: /data
+        - name: DB_URL
+          value: /data/db_v2.sqlite3
+        securityContext: *id001
+        resources:
+          requests:
+            cpu: 25m
+            memory: 96Mi
+          limits:
+            cpu: '1'
+            memory: 384Mi
+        ports:
+        - name: nat
+          containerPort: 21115
+        - name: id-tcp
+          containerPort: 21116
+        - name: id-udp
+          containerPort: 21116
+          protocol: UDP
+        startupProbe:
+          tcpSocket:
+            port: id-tcp
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket:
+            port: id-tcp
+          periodSeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: id-tcp
+          periodSeconds: 20
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: backup
+          mountPath: /backup
+        - name: tools
+          mountPath: /tools
+          readOnly: true
+        - name: config
+          mountPath: /config
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: identity
+        secret:
+          secretName: rustdesk-identity
+      - name: data
+        emptyDir:
+          sizeLimit: ${RUSTDESK_LOCAL_STORAGE_SIZE}
+      - name: backup
+        persistentVolumeClaim:
+          claimName: rustdesk-backup
+      - name: tools
+        emptyDir:
+          sizeLimit: ${RUSTDESK_TOOLS_STORAGE_SIZE}
+      - name: tmp
+        emptyDir:
+          sizeLimit: ${RUSTDESK_TMP_STORAGE_SIZE}
+      - name: config
+        configMap:
+          name: rustdesk-hbbs
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: rustdesk-hbbs
+  namespace: rustdesk
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rustdesk-hbbs
+      app.kubernetes.io/part-of: rustdesk

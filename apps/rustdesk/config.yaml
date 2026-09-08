@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rustdesk-hbbs
+  namespace: rustdesk
+data:
+  litestream.yml: |
+    dbs:
+      - path: /data/db_v2.sqlite3
+        replica:
+          path: /backup/hbbs-db
+          sync-interval: 1s
+  start.sh: |
+    #!/tools/busybox sh
+    set -eu
+    # Never use nolock/local_lock: this lock must be coordinated by NFS.
+    # Opening the FD for writing is required for an exclusive lock over NFS.
+    exec 9>/backup/hbbs.lock
+    /tools/busybox flock -n 9
+    /tools/litestream restore -config /config/litestream.yml -if-db-not-exists -if-replica-exists /data/db_v2.sqlite3
+    exec /tools/litestream replicate -config /config/litestream.yml -exec "/usr/bin/hbbs -k _ -r ${RUSTDESK_RELAY_0_HOST}:21117,${RUSTDESK_RELAY_1_HOST}:21117"
