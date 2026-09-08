@@ -91,7 +91,7 @@ spec:
                 touch "$app_root/.suitecrm-code-$SUITECRM_VERSION"
               fi
 
-              mkdir -p "$app_root/var/sessions"
+              mkdir -p "$app_root/var/sessions" /var/www/html/var/sessions
               cd "$app_root"
 
               if [ ! -f public/legacy/config.php ]; then
@@ -172,10 +172,17 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /mnt/suitecrm-data
+            # Cache must not live on the shared NFS volume: cache:clear races
+            # with live replicas when Argo CD reruns this hook.
+            - name: cache
+              mountPath: /mnt/suitecrm-data/suitecrm8/cache
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: suitecrm-data
+        - name: cache
+          emptyDir:
+            medium: ""
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -267,7 +274,7 @@ spec:
               port: http
             failureThreshold: 60
             periodSeconds: 5
-            timeoutSeconds: 5
+            timeoutSeconds: 15
           readinessProbe:
             httpGet:
               path: /auth
@@ -276,11 +283,10 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
           livenessProbe:
-            httpGet:
-              path: /auth
+            tcpSocket:
               port: http
             periodSeconds: 30
-            timeoutSeconds: 10
+            timeoutSeconds: 2
             failureThreshold: 3
           resources:
             requests:
@@ -293,10 +299,16 @@ spec:
             - name: data
               mountPath: /var/www/html
               subPath: suitecrm8
+            # Keep each replica's generated Symfony cache isolated and local.
+            - name: cache
+              mountPath: /var/www/html/cache
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: suitecrm-data
+        - name: cache
+          emptyDir:
+            medium: ""
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -324,7 +336,7 @@ spec:
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 50
   successfulJobsHistoryLimit: 1
-  failedJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
       backoffLimit: 1
@@ -398,10 +410,15 @@ spec:
                 - name: data
                   mountPath: /var/www/html
                   subPath: suitecrm8
+                - name: cache
+                  mountPath: /var/www/html/cache
           volumes:
             - name: data
               persistentVolumeClaim:
                 claimName: suitecrm-data
+            - name: cache
+              emptyDir:
+                medium: ""
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -511,10 +528,15 @@ spec:
             - name: data
               mountPath: /var/www/html
               subPath: suitecrm8
+            - name: cache
+              mountPath: /var/www/html/cache
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: suitecrm-data
+        - name: cache
+          emptyDir:
+            medium: ""
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
