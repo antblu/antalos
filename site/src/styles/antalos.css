@@ -9,6 +9,7 @@
   --antalos-radius-lg: 18px;
   --sl-nav-height: 68px;
   --sl-sidebar-width: 18rem;
+  --antalos-toc-width: 18rem;
   --sl-content-width: 46rem;
   --sl-font: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --sl-font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
@@ -247,12 +248,13 @@ h1 {
 
 @media (min-width: 72rem) {
   .right-sidebar-container {
-    flex: 0 0 var(--sl-sidebar-width);
-    width: var(--sl-sidebar-width);
+    flex: 0 0 var(--antalos-toc-width);
+    width: var(--antalos-toc-width);
   }
 
   .right-sidebar {
-    width: var(--sl-sidebar-width);
+    inset-inline-end: 0;
+    width: var(--antalos-toc-width);
   }
 }
 
