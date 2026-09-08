@@ -26,6 +26,13 @@ export default defineConfig({
       sidebar: [
         { label: 'Overview', link: '/' },
         {
+          label: 'Architecture',
+          items: [
+            { label: 'Infrastructure architecture', link: '/architecture/infrastructure/' },
+            { label: 'Service availability', link: '/architecture/service-availability/' },
+          ],
+        },
+        {
           label: 'Deployment guide',
           items: [
             { label: 'Workstation prerequisites', link: '/deployment-guide/prerequisites/' },

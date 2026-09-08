@@ -7,6 +7,8 @@ sidebar:
 
 Use Git as the normal control plane for application configuration. Use direct `kubectl` changes only for diagnostics, bootstrap, or an explicitly documented recovery operation.
 
+Before maintaining a node, identify the affected quorum members, local volumes, and single-instance workloads in [Service availability](/architecture/service-availability/). A healthy replica count does not make the external NFS or Garage storage endpoint redundant.
+
 ## Daily health check
 
 From the repository root:

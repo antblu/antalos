@@ -7,6 +7,8 @@ sidebar:
 
 Recover the platform from the bottom up. Git reconstructs desired state, but Git alone does not contain the data or private key material needed for a complete recovery.
 
+Review [Infrastructure architecture](/architecture/infrastructure/) for the physical and storage failure domains and [Service availability](/architecture/service-availability/) for the components expected to fail over versus restart or restore.
+
 ## Recovery set
 
 Keep recoverable copies of:

@@ -7,7 +7,9 @@ sidebar:
 
 ## About 
 
-This is a highly available homelab Kubernetes platform. OpenTofu provisions Talos Linux virtual machines and bootstraps Kubernetes. Argo CD then deploys applications and  infrastructure from this repository.
+This is a highly available homelab Kubernetes platform. OpenTofu provisions Talos Linux virtual machines and bootstraps Kubernetes. Argo CD then deploys applications and infrastructure from this repository.
+
+The cluster has three control-plane nodes and three workers distributed across three Proxmox hosts. Most serving workloads use replicas on the two main workers, while the tainted RTX worker provides a third failure domain for lightweight quorum voters. Availability is intentionally documented per service: several external storage paths and single-instance workloads remain recovery-based rather than continuously available.
 
 ## Control boundaries
 
@@ -38,6 +40,8 @@ Normal application changes flow from GitHub to Argo CD. Direct cluster changes a
 
 ## Where to begin
 
+- Understand the platform: read [infrastructure architecture](/architecture/infrastructure/).
+- Plan maintenance or failure response: consult [service availability](/architecture/service-availability/).
 - New workstation: start with [workstation prerequisites](/deployment-guide/prerequisites/).
 - New cluster: follow the [deployment order](/deployment-guide/deployment-order/).
 - Healthy cluster: use the [routine operations runbook](/operations/routine-operations/).

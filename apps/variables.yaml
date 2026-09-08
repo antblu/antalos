@@ -39,6 +39,7 @@ variables:
   ZAMMAD_IMAGE_TAG: 7.1.3-0006
   HEADSCALE_IMAGE_TAG: v0.29.3
   HEADPLANE_IMAGE_TAG: 0.7.1
+  BENTOPDF_IMAGE_TAG: 2.8.7
   LITESTREAM_IMAGE_TAG: 0.5.16
   NEXTCLOUD_IMAGE_TAG: 34.0.3-apache
   NEXTCLOUD_INSTANCE_ID: ocxyyr3nkdoj
@@ -129,6 +130,7 @@ variables:
   OPEN_WEBUI_OIDC_CLIENT_ID: D9mZ728iVOvT6edf6UvDBjFHl7rbqVxc9p6XKPpo
   OPEN_WEBUI_OIDC_PROVIDER_URL: https://auth.antblu.net/application/o/open-web-ui/.well-known/openid-configuration
   DOCS_HOST: docs.antblu.net
+  BENTOPDF_HOST: pdf.antblu.net
   EUROOFFICE_HOST: office.antblu.net
   WHITEBOARD_HOST: whiteboard.antblu.net
   MAIL_DOMAIN: antblu.net

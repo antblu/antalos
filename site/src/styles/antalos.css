@@ -245,6 +245,25 @@ h1 {
   color: var(--antalos-blue-bright);
 }
 
+@media (min-width: 72rem) {
+  .right-sidebar-container {
+    flex: 0 0 var(--sl-sidebar-width);
+    width: var(--sl-sidebar-width);
+  }
+
+  .right-sidebar {
+    width: var(--sl-sidebar-width);
+  }
+
+  [data-has-sidebar][data-has-toc] .main-pane {
+    width: calc(100% - var(--sl-sidebar-width));
+  }
+
+  .right-sidebar-panel .sl-container {
+    max-width: none;
+  }
+}
+
 .pagination-links a {
   border-color: var(--sl-color-hairline-light);
   border-radius: var(--antalos-radius);
