@@ -1,3 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: suitecrm-env
+  namespace: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+data:
+  APP_ENV: prod
+  AUTH_TYPE: saml
+  SAML_USERNAME_ATTRIBUTE: uid
+  SAML_USE_ATTRIBUTE_FRIENDLY_NAME: "true"
+  SAML_AUTO_CREATE: enabled
+  SAML_AUTOCREATE_ATTRIBUTES_MAP: "{}"
+  SAML_IDP_ENTITY_ID: https://${AUTHENTIK_HOST}/application/saml/suitecrm/metadata/
+  SAML_IDP_SSO_URL: https://${AUTHENTIK_HOST}/application/saml/suitecrm/
+  SAML_IDP_SLO_URL: https://${AUTHENTIK_HOST}/application/saml/suitecrm/
+  SAML_SP_ENTITY_ID: https://${SUITECRM_HOST}
+  SAML_STRICT: "true"
+  SAML_DEBUG: "false"
+  SAML_AUTHN_REQUESTS_SIGNED: "false"
+  SAML_LOGOUT_REQUEST_SIGNED: "false"
+  SAML_LOGOUT_RESPONSE_SIGNED: "false"
+  SAML_WANT_MESSAGES_SIGNED: "false"
+  SAML_WANT_ASSERTIONS_SIGNED: "true"
+  SAML_WANT_ASSERTIONS_ENCRYPTED: "false"
+  SAML_WANT_NAME_ID: "false"
+  SAML_REQUESTED_AUTHN_CONTEXT: "false"
+  TZ: America/Denver
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -17,6 +47,8 @@ spec:
     spec:
       restartPolicy: OnFailure
       automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: suitecrm-registry
       securityContext:
         runAsNonRoot: true
         runAsUser: 82
@@ -25,7 +57,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: bootstrap
-          image: ghcr.io/pikapods/docker-suitecrm:${SUITECRM_IMAGE_TAG}
+          image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}@${SUITECRM_IMAGE_DIGEST}
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -33,22 +65,61 @@ spec:
           args:
             - |
               deadline=$(( $(date +%s) + 900 ))
-              until mysql --connect-timeout=5 \
-                -h "$DB_HOST" \
-                -P "$DB_PORT" \
-                -u "$DB_USER" \
-                --password="$DB_PASS" \
-                "$DB_NAME" \
-                -N -B -e "SELECT 1" >/dev/null 2>&1; do
+              until php -r '
+                try {
+                  new PDO(
+                    "mysql:host=" . getenv("DB_HOST") . ";port=" . getenv("DB_PORT") . ";dbname=" . getenv("DB_NAME"),
+                    getenv("DB_USER"),
+                    getenv("DB_PASS"),
+                    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+                  );
+                } catch (Throwable $error) {
+                  exit(1);
+                }
+              ' >/dev/null 2>&1; do
                 if [ "$(date +%s)" -ge "$deadline" ]; then
                   echo "database and application user were not ready within 15 minutes" >&2
                   exit 1
                 fi
                 sleep 5
               done
-              export PATH="/command:${PATH}"
-              exec /etc/s6-overlay/scripts/20-suitecrm-bootstrap
+
+              app_root=/mnt/suitecrm-data/suitecrm8
+              mkdir -p "$app_root"
+              if [ ! -f "$app_root/.suitecrm-code-$SUITECRM_VERSION" ]; then
+                cp -a /var/www/html/. "$app_root/"
+                touch "$app_root/.suitecrm-code-$SUITECRM_VERSION"
+              fi
+
+              mkdir -p "$app_root/var/sessions"
+              cd "$app_root"
+
+              if [ ! -f public/legacy/config.php ]; then
+                php -d session.save_path="$app_root/var/sessions" bin/console suitecrm:app:install \
+                  -u "$ADMIN_USER" \
+                  -p "$ADMIN_PASS" \
+                  -U "$DB_USER" \
+                  -P "$DB_PASS" \
+                  -H "$DB_HOST" \
+                  -Z "$DB_PORT" \
+                  -N "$DB_NAME" \
+                  -S "$APP_URL" \
+                  -d no \
+                  -W true
+              fi
+
+              if ! grep -q "/var/www/html/var/sessions" public/legacy/config_override.php 2>/dev/null; then
+                printf "\n\$sugar_config['session_dir'] = '/var/www/html/var/sessions';\n" >> public/legacy/config_override.php
+              fi
+
+              php -d session.save_path="$app_root/var/sessions" bin/console messenger:setup-transports
+              php -d session.save_path="$app_root/var/sessions" bin/console cache:clear
+          envFrom:
+            - configMapRef:
+                name: suitecrm-env
           env:
+            - name: SUITECRM_VERSION
+              value: ${SUITECRM_IMAGE_TAG}
             - name: APP_URL
               value: https://${SUITECRM_HOST}
             - name: DB_HOST
@@ -71,12 +142,21 @@ spec:
                 secretKeyRef:
                   name: suitecrm-app
                   key: admin-password
-            - name: SITE_NAME
-              value: SuiteCRM
-            - name: TZ
-              value: America/Denver
-            - name: ENABLE_SUITECRM_CRON
-              value: "FALSE"
+            - name: SAML_IDP_X509CERT
+              valueFrom:
+                secretKeyRef:
+                  name: suitecrm-saml
+                  key: idp-cert
+            - name: SAML_SP_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: suitecrm-saml
+                  key: sp-private-key
+            - name: SAML_SP_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: suitecrm-saml
+                  key: sp-cert
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -85,13 +165,13 @@ spec:
           resources:
             requests:
               cpu: 250m
-              memory: 256Mi
+              memory: 512Mi
             limits:
               cpu: "2"
-              memory: 1Gi
+              memory: 2Gi
           volumeMounts:
             - name: data
-              mountPath: /data
+              mountPath: /mnt/suitecrm-data
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -124,6 +204,8 @@ spec:
         app.kubernetes.io/part-of: suitecrm
     spec:
       automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: suitecrm-registry
       terminationGracePeriodSeconds: 60
       affinity:
         nodeAffinity:
@@ -149,37 +231,27 @@ spec:
           type: RuntimeDefault
       containers:
         - name: suitecrm
-          image: ghcr.io/pikapods/docker-suitecrm:${SUITECRM_IMAGE_TAG}
+          image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}@${SUITECRM_IMAGE_DIGEST}
           imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: suitecrm-env
           env:
-            - name: APP_URL
-              value: https://${SUITECRM_HOST}
-            - name: DB_HOST
-              value: ${SUITECRM_DATABASE_HOST}
-            - name: DB_PORT
-              value: "3306"
-            - name: DB_NAME
-              value: suitecrm
-            - name: DB_USER
-              value: suitecrm
-            - name: DB_PASS
+            - name: SAML_IDP_X509CERT
               valueFrom:
                 secretKeyRef:
-                  name: suitecrm-db-user
-                  key: password
-            - name: ADMIN_USER
-              value: admin
-            - name: ADMIN_PASS
+                  name: suitecrm-saml
+                  key: idp-cert
+            - name: SAML_SP_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
-                  name: suitecrm-app
-                  key: admin-password
-            - name: SITE_NAME
-              value: SuiteCRM
-            - name: TZ
-              value: America/Denver
-            - name: ENABLE_SUITECRM_CRON
-              value: "FALSE"
+                  name: suitecrm-saml
+                  key: sp-private-key
+            - name: SAML_SP_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: suitecrm-saml
+                  key: sp-cert
           ports:
             - name: http
               containerPort: 8080
@@ -191,21 +263,21 @@ spec:
                 - ALL
           startupProbe:
             httpGet:
-              path: /index.php?module=Users&action=Login
+              path: /auth
               port: http
             failureThreshold: 60
             periodSeconds: 5
             timeoutSeconds: 5
           readinessProbe:
             httpGet:
-              path: /index.php?module=Users&action=Login
+              path: /auth
               port: http
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /index.php?module=Users&action=Login
+              path: /auth
               port: http
             periodSeconds: 30
             timeoutSeconds: 10
@@ -219,7 +291,8 @@ spec:
               memory: 2Gi
           volumeMounts:
             - name: data
-              mountPath: /data
+              mountPath: /var/www/html
+              subPath: suitecrm8
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -264,6 +337,8 @@ spec:
         spec:
           restartPolicy: Never
           automountServiceAccountToken: false
+          imagePullSecrets:
+            - name: suitecrm-registry
           affinity:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
@@ -282,13 +357,31 @@ spec:
               type: RuntimeDefault
           containers:
             - name: scheduler
-              image: ghcr.io/pikapods/docker-suitecrm:${SUITECRM_IMAGE_TAG}
+              image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}@${SUITECRM_IMAGE_DIGEST}
               imagePullPolicy: IfNotPresent
               command:
-                - sh
-                - -ec
-              args:
-                - cd /var/www/html && php -f cron.php
+                - php
+                - bin/console
+                - schedulers:run
+              envFrom:
+                - configMapRef:
+                    name: suitecrm-env
+              env:
+                - name: SAML_IDP_X509CERT
+                  valueFrom:
+                    secretKeyRef:
+                      name: suitecrm-saml
+                      key: idp-cert
+                - name: SAML_SP_PRIVATE_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: suitecrm-saml
+                      key: sp-private-key
+                - name: SAML_SP_CERT
+                  valueFrom:
+                    secretKeyRef:
+                      name: suitecrm-saml
+                      key: sp-cert
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:
@@ -303,11 +396,136 @@ spec:
                   memory: 512Mi
               volumeMounts:
                 - name: data
-                  mountPath: /data
+                  mountPath: /var/www/html
+                  subPath: suitecrm8
           volumes:
             - name: data
               persistentVolumeClaim:
                 claimName: suitecrm-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: suitecrm-messenger
+  namespace: suitecrm
+  labels:
+    app.kubernetes.io/name: suitecrm-messenger
+    app.kubernetes.io/part-of: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: suitecrm-messenger
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: suitecrm-messenger
+        app.kubernetes.io/part-of: suitecrm
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: suitecrm-registry
+      terminationGracePeriodSeconds: 60
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ${TALOS_WORKER_LEFT}
+                      - ${TALOS_WORKER_RIGHT}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 82
+        runAsGroup: 82
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: messenger
+          image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}@${SUITECRM_IMAGE_DIGEST}
+          imagePullPolicy: IfNotPresent
+          command:
+            - php
+            - bin/console
+            - messenger:consume
+            - internal-async
+            - --time-limit=3600
+            - --memory-limit=256M
+          envFrom:
+            - configMapRef:
+                name: suitecrm-env
+          env:
+            - name: SAML_IDP_X509CERT
+              valueFrom:
+                secretKeyRef:
+                  name: suitecrm-saml
+                  key: idp-cert
+            - name: SAML_SP_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: suitecrm-saml
+                  key: sp-private-key
+            - name: SAML_SP_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: suitecrm-saml
+                  key: sp-cert
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - kill -0 1
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - kill -0 1
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/www/html
+              subPath: suitecrm8
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: suitecrm-data
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: suitecrm-messenger
+  namespace: suitecrm
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: suitecrm-messenger
 ---
 apiVersion: v1
 kind: Service
