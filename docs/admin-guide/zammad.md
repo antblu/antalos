@@ -41,6 +41,16 @@ The manifests do not configure a native OIDC provider. Complete the initial admi
 
 3. Establish database/object backups and document recovery of scheduled and real-time processing.
 
+## Availability before maintenance
+
+**Partially HA: paired HTTP tiers and data services, with singleton real-time/background roles and Redis/search caveats.**
+
+Chart init/migration Jobs gate the upgrade. PDB/paired HTTP replicas do not guarantee compatible schema operation or continuous scheduler/WebSocket service. Keep initialization status separate from current HTTP readiness.
+
+Establish Redis election/rejoin correctness and shard-copy evidence, protect Garage, and assess whether the deployed version supports replication of scheduler/WebSocket roles. Record email-to-ticket, reply, attachment, and search behavior through one-node loss.
+
+Use the [component-by-component failure contract](/infrastructure/zammad/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Back up PostgreSQL, Garage objects, and application credentials. Elasticsearch indexes can be rebuilt from authoritative application data using the upstream procedure, but search remains degraded until rebuilding completes. Preserve identity and email-channel configuration stored in the database.

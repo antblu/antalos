@@ -23,6 +23,12 @@ This is a platform service with no standalone user-facing website. Its consumers
 
 For mount failures, inspect PVC binding, node-plugin events, protocol support, and network reachability. For permission errors, inspect numeric ownership and export mappings. Avoid applying recursive fsGroup changes to populated shared data as a generic fix.
 
+## Availability when using this service
+
+**Not HA storage: the CSI path has node coverage, but all declared exports depend on one external endpoint.** Other consumers can continue using a healthy export; single-instance applications still incur restart time. Persistent handles/locks and application recovery rules determine whether a replacement can safely start.
+
+Read [how redundancy and recovery work](/infrastructure/nfs-driver/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official NFS CSI driver documentation](https://github.com/kubernetes-csi/csi-driver-nfs) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

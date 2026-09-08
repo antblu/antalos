@@ -43,6 +43,16 @@ SuiteCRM is configured for SAML, not OIDC. Create an Authentik SAML provider for
 
 3. Inspect the daily physical backup status and rehearse database plus NFS restoration together.
 
+## Availability before maintenance
+
+**Partially HA: replicated web and Galera data, but background workers and shared files have separate outage paths.**
+
+Web updates use zero surge and one unavailable. MariaDB declares ReplicasFirstPrimaryLast. The messenger is singleton and can pause during its update. A PDB protects evictions, not every scheduled task or a database schema migration.
+
+Protect NFS, define background-job outage expectations, and prove a database-plus-files restore. For stronger complete-service HA, assess supported messenger concurrency and capture CRM read/write behavior during membership loss and rejoin.
+
+Use the [component-by-component failure contract](/infrastructure/suitecrm/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Back up MariaDB and the NFS application data together, including uploaded files and custom configuration. Preserve the SAML service-provider key and identity-provider certificate. The `PhysicalBackup` resource covers the database; it does not itself back up NFS.

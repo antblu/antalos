@@ -25,6 +25,12 @@ The public address is defined by `VAULTWARDEN_HOST` in `apps/variables.yaml`. Us
 
 If a native client cannot log in, confirm its custom server URL and TLS trust. Missing invitations may be expected while SMTP is absent. For failed attachment operations, inspect the NFS mount separately from PostgreSQL readiness.
 
+## Availability when using this service
+
+**Not HA at the application layer: one vault server; PostgreSQL alone is replicated.** Server access stops if the single application pod was there. When only the standby database member is lost, the server may continue with reduced database redundancy; loss of the primary adds promotion/reconnection time.
+
+Read [how redundancy and recovery work](/infrastructure/vaultwarden/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Vaultwarden documentation](https://github.com/dani-garcia/vaultwarden/wiki) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

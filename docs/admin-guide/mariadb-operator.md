@@ -39,6 +39,16 @@ There is no browser OIDC configuration for this operator. Kubernetes RBAC contro
 
 2. Review backup schedule, S3 access, and Galera recovery against the pinned operator version’s official documentation.
 
+## Availability before maintenance
+
+**HA management design: replicated operator and webhook; database HA still belongs to each managed MariaDB.**
+
+CRDs reconcile before the operator through waves -10 and -9. Management rollouts use zero surge and one unavailable; incompatible CRD/operator changes can still block reconciliation.
+
+Record management/webhook continuity and Galera membership changes separately. Keep schema/CRD version compatibility and physical-backup restoration part of the database service contract.
+
+Use the [component-by-component failure contract](/infrastructure/mariadb-operator/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 The operator installation is reconstructable. MariaDB data, physical backups, root/application credentials, and S3 credentials belong to SuiteCRM’s recovery set. The arbitrator stores no recoverable application database.

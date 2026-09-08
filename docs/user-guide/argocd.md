@@ -25,6 +25,12 @@ The public address is defined by `ARGOCD_HOST` in `apps/variables.yaml`. Use you
 
 For apparent stale health, inspect `argocd.argoproj.io/skip-reconcile`, operation state, and hook conditions. Remove a reconciliation pause only after understanding why it was set. A failed historical pod should not outweigh healthy current replicas in the incident conclusion.
 
+## Availability when using this service
+
+**Partially HA overall: replicated API/rendering and Redis HA design; reconciliation and SSO are not proven by those counts.** Surviving serving replicas may continue, but an affected controller shard or unreplicated authentication component can pause operations. Already-running applications normally do not stop just because Argo cannot reconcile them.
+
+Read [how redundancy and recovery work](/infrastructure/argocd/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Argo CD documentation](https://argo-cd.readthedocs.io/en/stable/user-guide/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

@@ -5,7 +5,7 @@ description: "Backend components, persistence, placement, and failure boundaries
 
 <nav class="guide-switcher" aria-label="Grafana and VictoriaMetrics guide sections"><a href="/user-guide/victoriametrics/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/victoriametrics/">Infrastructure Explanation</a><a href="/admin-guide/victoriametrics/">Deployment and Admin Guide</a></nav>
 
-Two vmagent replicas scrape targets. The VictoriaMetrics cluster has two replicas each of vminsert, vmselect, and vmstorage with replication factor two and sample deduplication. VictoriaLogs also has paired insert/select/storage roles, but the manifest does not explicitly declare a log replication factor. Two Grafana replicas share a two-instance CNPG database. Dashboard ConfigMaps are provisioned from Git; collectors and exporters run near their targets.
+Two vmagent replicas scrape targets. The VictoriaMetrics cluster has two replicas each of vminsert, vmselect, and vmstorage with replication factor two and sample deduplication. VictoriaLogs also has paired insert/select/storage roles, but its storage nodes hold shards rather than redundant copies of all logs. Two Grafana replicas share a two-instance CNPG database. Dashboard ConfigMaps are provisioned from Git; collectors and exporters run near their targets.
 
 ## Component boundaries
 
@@ -21,9 +21,47 @@ Preserve Grafana PostgreSQL data for UI-created settings and dashboards that hav
 
 ## Availability and failure behavior
 
-Metrics and Grafana serving tiers are replicated. Two log storage pods do not prove that every log has two copies. The VictoriaMetrics operator is single-instance; collector outages can leave gaps even when query frontends remain healthy.
+**Availability classification: Mixed availability: Grafana and metrics have replicated designs; the current log storage is sharded, not redundantly copied.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Grafana | 2 anti-affined pods + 2 CNPG instances | Shared PostgreSQL prevents separate per-pod dashboard/session databases. |
+| Metrics collection | 2 vmagent replicas | Duplicate scraping is paired with deduplication in the query/storage design. |
+| Metrics cluster | 2 each of vminsert, vmselect, vmstorage; replicationFactor 2 | Metrics ingestion requests redundant storage copies; query frontends can use surviving storage. |
+| Logs | 2 each of vlinsert, vlselect, vlstorage | Storage nodes hold different shards; frontend replication does not duplicate every log. |
+| Management / collectors | 1 VictoriaMetrics operator; node-local collectors | Reconciliation and local data capture have separate availability limits. |
+
+### How a failure is handled
+
+A Grafana request can retry on the other pod, with database promotion when needed. Metrics can retain a surviving storage copy when samples were successfully replicated before the failure. VictoriaLogs has a different contract: losing a storage node removes access to its shard and can make queries incomplete or fail; the other pod is not a full copy.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | Grafana and metrics can continue with reduced serving capacity and storage redundancy. New writes during degradation cannot acquire two independent local copies while only one storage member is available. Log history on the lost worker may be unavailable until its volume returns or is restored. |
+| RTX worker only | No dedicated metrics/Grafana database voter is declared on RTX. Whole-host API failure can still stop operator-driven promotion and repair. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Grafana uses zero surge/one unavailable with a PDB. Metrics and logs have role-specific updates; two storage pods do not mean a log-storage rolling restart has complete-history query availability. The single operator may pause reconciliation during replacement.
+
+### What prevents a stronger HA claim
+
+Both metrics storage volumes remain node-local. Do not assume old metrics missing from one member are automatically backfilled merely because a second pod later becomes Ready. Log replication would require an explicit supported design, such as ingestion into independent copies/clusters and query failover, not the metrics replicationFactor copied onto a log CR.
+
+### What would improve the availability contract
+
+Test Grafana, metric query completeness, degraded metric ingestion, and log completeness separately. Protect all storage shards and the Grafana database. Add a supported independent-copy log architecture if full log-history HA is required.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

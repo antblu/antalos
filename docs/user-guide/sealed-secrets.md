@@ -25,6 +25,12 @@ This is a platform service with no standalone user-facing website. Its consumers
 
 For decryption failures, compare sealing scope, name, namespace, and controller identity. For a successful SealedSecret with a failing pod, compare the generated Secret’s key names and consumer format. Do not rotate unrelated working keys while repairing one malformed field.
 
+## Availability when using this service
+
+**Not explicitly HA as a controller; existing generated Secrets remain available independently of its process.** Credential reconciliation can pause if the controller was there, without immediately stopping consumers with usable Secrets. Lost consumers may still restart if their generated Secret remains in Kubernetes.
+
+Read [how redundancy and recovery work](/infrastructure/sealed-secrets/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Sealed Secrets documentation](https://github.com/bitnami/sealed-secrets) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

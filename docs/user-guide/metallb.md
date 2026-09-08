@@ -23,6 +23,12 @@ This is a platform service with no standalone user-facing website. Its consumers
 
 An unassigned address points to pool/allocation problems. An assigned but unreachable address points to advertisement, traffic policy, endpoint health, or network routing. Start with Service events and speaker logs.
 
+## Availability when using this service
+
+**Partially HA: distributed address advertisement; controller allocation and the physical network remain separate.** The address may move if its advertiser was on that worker. Ready endpoints on remaining nodes are still needed; Local versus Cluster traffic policy also affects eligible forwarding.
+
+Read [how redundancy and recovery work](/infrastructure/metallb/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official MetalLB documentation](https://metallb.io/usage/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

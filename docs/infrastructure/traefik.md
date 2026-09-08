@@ -21,9 +21,46 @@ Routes, middleware, entry points, and certificates are declarative. Preserve aut
 
 ## Availability and failure behavior
 
-The ingress serving tier is replicated with a rolling strategy and disruption budget. MetalLB advertisement, DNS, the router, certificate validity, and backend health remain dependencies. Active connections may reset during failure.
+**Availability classification: HA ingress process tier for one serving-node loss; upstream routing and established connections remain separate.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Proxy | 2 anti-affined replicas | Both watch Kubernetes and route configured HTTP/TCP/UDP traffic. |
+| Exposure | MetalLB LoadBalancer | The advertised address reaches ready backend proxy endpoints. |
+| Update/eviction | Zero surge; one unavailable; PDB minimum 1 | Fits two eligible serving nodes for the intended update. |
+| TLS/auth | Certificate Secrets and Authentik middleware | Existing certificates are reusable; identity decisions depend on Authentik. |
+
+### How a failure is handled
+
+The surviving proxy can accept new connections after MetalLB and Kubernetes routing converge. Existing TCP, WebSocket, and UDP session handling is not transferred from the failed process. Native protocols and application clients must reconnect or recover according to their own rules.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | A ready proxy remains on the other worker; endpoint/advertisement detection and surviving throughput set the interruption. The real backend must also survive the same failure. |
+| RTX worker only | Worker-only loss need not remove a serving proxy, but the elected MetalLB speaker can be affected. Host loss also affects the API endpoint and route/control-plane updates. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+The declared rolling strategy retains a serving instance and does not require a third anti-affined placement. Client connections on a terminating instance still need graceful completion or reconnect.
+
+### What prevents a stronger HA claim
+
+A single router/switch/DNS failure can remove access to both proxies. Two Traefik pods do not make a singleton backend or an Authentik-protected access path independent of those dependencies.
+
+### What would improve the availability contract
+
+Exercise HTTP, TCP, UDP, and WSS separately, document router/DNS availability, and measure client reconnection rather than equating a surviving proxy with uninterrupted sessions.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

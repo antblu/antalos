@@ -39,6 +39,16 @@ No OIDC configuration is needed for the service. Users access metrics through Ku
 
 2. If tightening kubelet TLS verification, provision trusted certificates and adjust the collector before removing the current flag.
 
+## Availability before maintenance
+
+**Not explicitly HA: resource-metrics collection can pause until its chart workload recovers.**
+
+Replica and rollout behavior are chart-derived here. Do not claim the repository-standard two-replica update protection without an explicit configuration.
+
+Configure the upstream-supported HA deployment if resource-metrics continuity is required, and record HPA metrics availability during collector loss rather than checking only dashboard history.
+
+Use the [component-by-component failure contract](/infrastructure/metrics-server/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Collected samples are short-lived runtime data. Configuration and API access can be reconstructed; there is no application database or user file backup for this service.

@@ -39,6 +39,16 @@ There is no OIDC login for NFS CSI. Kubernetes permissions control mounts, while
 
 2. Back up the NFS server and document who owns quota, snapshots, and export recovery.
 
+## Availability before maintenance
+
+**Not HA storage: the CSI path has node coverage, but all declared exports depend on one external endpoint.**
+
+Updating CSI components is different from stopping the external server. Existing mounted I/O may continue during some controller outages, while new provisioning/mount work pauses.
+
+Document or implement external NFS failover with correct locking/fencing, protect exports, and test both already-mounted I/O and a new pod mount during server/control-component failure.
+
+Use the [component-by-component failure contract](/infrastructure/nfs-driver/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 The external export contains the data. PV/PVC objects only describe access to it. Preserve export contents, server permissions, mount protocol requirements, and backup history outside the cluster.

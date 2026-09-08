@@ -21,9 +21,46 @@ Database data and backups belong to each managed cluster. The operator chart is 
 
 ## Availability and failure behavior
 
-The operator is not explicitly replicated. Existing PostgreSQL processes can continue serving during an operator outage, but promotion and repair may wait for it to return. Each database also has its own durability policy.
+**Availability classification: Not explicitly HA as an operator; it manages replicated database clusters with separate availability contracts.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Operator | Chart installed without explicit replica override | Reconciliation and promotion can wait for recovery if its active process is unavailable. |
+| Managed databases | Usually 2 instances per application | PostgreSQL primary/standby replication runs in each application namespace. |
+| Client routing | Per-cluster read/write Service | Must be directed to the correct elected/promoted writer. |
+| Storage | Separate LocalPV volumes | The operator does not make one local volume portable or replicated. |
+
+### How a failure is handled
+
+If only the operator is lost, an existing primary and its standby can continue their PostgreSQL work. If a database primary is also lost, automatic promotion requires the relevant controller/API path to function. A database standby is useful but is not an independently complete failover controller.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | Database serving depends on whether the lost worker held the primary and/or operator. Correlated loss of a primary and the single operator may extend interruption beyond simple standby promotion. |
+| RTX worker only | No operator-specific vote is declared. Whole-host API loss is especially significant because cluster observation and Service updates depend on it. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Operator restarts and CRD upgrades can pause management while databases keep serving. Perform application database upgrades according to each cluster’s policy, not by treating the operator rollout as the database rollout.
+
+### What prevents a stronger HA claim
+
+No explicit operator replica count means this repository does not establish redundant management. Most databases have only one standby; after one member fails there is no second replica to absorb another loss.
+
+### What would improve the availability contract
+
+Make operator leader-election/replica behavior explicit for the pinned chart, protect API access, and measure primary loss both with and without a simultaneous operator disruption. Keep backup policy per database.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

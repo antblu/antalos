@@ -21,9 +21,46 @@ Back up PostgreSQL, the media export, and the original `AUTHENTIK_SECRET_KEY`. T
 
 ## Availability and failure behavior
 
-Partial availability: server, worker, and database replicas span nodes, but NFS remains external and the repository does not declare an Authentik application disruption budget. Identity outages can prevent new sessions in dependent applications.
+**Availability classification: Partially HA: replicated identity processing and database; external shared media and maintenance limits remain.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Server | 2; required anti-affinity | Service routes requests to ready servers; both use shared database state. |
+| Worker | 2; required anti-affinity | Background processing has another worker after one is lost. |
+| PostgreSQL | 2 CNPG instances; separate local volumes | Primary/standby streaming replication; no synchronous policy is declared. |
+| Media | One external NFS endpoint | Both servers can mount the same files; no NFS-server failover is declared. |
+
+### How a failure is handled
+
+When a server disappears, new requests can reach the remaining ready server. If the failed worker also hosted the PostgreSQL primary, CNPG must promote the surviving standby and update the read/write endpoint before database-dependent requests recover. Connections and in-progress requests may need retries; server replicas do not bypass that database failover interval.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | One server, one worker, and one database instance can remain. This assumes the healthy members were on different hosts and the surviving worker has enough capacity for the full login/background workload. |
+| RTX worker only | No dedicated Authentik data or voter is pinned to RTX. Losing only the RTX worker is different from losing the entire RTX host, which also removes the configured Kubernetes API endpoint. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Server and worker rolling updates use zero surge and one unavailable replica. No application PDB is explicitly declared here, so do not assume a normal drain enforces a one-healthy-server minimum.
+
+### What prevents a stronger HA claim
+
+Asynchronous PostgreSQL replication can lose recent acknowledged writes after primary loss. NFS failure can break media-dependent requests and startup even with healthy application pods. An Authentik outage can affect new logins across dependent services; existing sessions have application-specific behavior.
+
+### What would improve the availability contract
+
+Protect or remove the shared-media failure boundary, explicitly budget voluntary disruption, protect the CNPG control path, and record a login/provider transaction during a controlled primary and worker failure.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

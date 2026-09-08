@@ -21,9 +21,46 @@ Preserve the Litestream backup and the `rustdesk-identity` sealed private key. T
 
 ## Availability and failure behavior
 
-Recovery-based rendezvous with replicated native relay choices. Active sessions on a failed relay reconnect; secure WebSocket traffic uses the first relay path. The single NFS backend and hbbs restart remain availability boundaries. A lock is not infrastructure fencing during a node partition.
+**Availability classification: Not continuously HA end to end: one recoverable rendezvous server, with two independent native relays.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| hbbs | 1 Deployment replica | Kubernetes replacement and NFS restore are required after process loss. |
+| hbbr | 2 StatefulSet pods on separate nodes | Each has its own routed endpoint; relay pairing is process-local. |
+| SQLite | Local emptyDir + Litestream copy to NFS | Replacement restores the latest available copy before starting. |
+| Identity / writer ownership | Sealed server key + exclusive NFS lock | Identity survives restart; the lock serializes restore/writer startup but is not node fencing. |
+
+### How a failure is handled
+
+For hbbs failure, detection, eviction, scheduling, image startup, lock acquisition, and SQLite restore all precede service recovery. For native relay failure, hbbs can select the other advertised relay for new connections. Both participants in one relay session must reach the same process, so a generic load-balanced Service across both relays would not provide correct pairing.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | If hbbs is on the failed node, new rendezvous waits for restart/restore. The surviving relay can serve new native relay sessions once clients can coordinate; sessions on the failed relay reconnect. Some established direct peer connections may remain, but they do not prove new-session availability. |
+| RTX worker only | No dedicated quorum voter is needed. Access still depends on ingress/network and a working Kubernetes recovery path. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+The single hbbs uses zero surge and one unavailable, so updates interrupt it. Its PDB minimum 1 blocks ordinary eviction of the only replica. Relay StatefulSet updates replace ordinals sequentially; secure WebSocket paths on 443/21119 target the first relay and are not equivalent to the two native relay choices.
+
+### What prevents a stronger HA claim
+
+The NFS backup server is a single dependency. Async copy lag can lose recent registration changes; the configured one-second interval is not an RPO guarantee. During a partition, the old process must be fenced before forcing a replacement; deleting a lock is not fencing.
+
+### What would improve the availability contract
+
+Measure rendezvous recovery separately from relay continuity, protect the NFS backup and original key, and exercise direct/native relay/WSS paths separately. Continuous hbbs availability needs a supported design beyond adding a second SQLite writer.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

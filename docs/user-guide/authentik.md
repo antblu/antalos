@@ -25,6 +25,12 @@ The public address is defined by `AUTHENTIK_HOST` in `apps/variables.yaml`. Use 
 
 If authentication loops, compare the requested callback URI with the provider allowlist, then check the issuer, signing keys, and server clock. If a protected hostname returns an outpost 404, inspect the host-specific outpost route and provider assignment before changing the protected application.
 
+## Availability when using this service
+
+**Partially HA: replicated identity processing and database; external shared media and maintenance limits remain.** One server, one worker, and one database instance can remain. This assumes the healthy members were on different hosts and the surviving worker has enough capacity for the full login/background workload.
+
+Read [how redundancy and recovery work](/infrastructure/authentik/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Authentik documentation](https://docs.goauthentik.io/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

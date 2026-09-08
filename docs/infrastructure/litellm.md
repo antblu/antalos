@@ -21,9 +21,47 @@ PostgreSQL stores model configuration, keys, and administration state. Preserve 
 
 ## Availability and failure behavior
 
-The serving and data tiers tolerate a single worker failure with an election/promotion interval. In-flight streams are interrupted. Preferred synchronous PostgreSQL settings allow writes without a standby; this and asynchronous Redis replication limit durability guarantees.
+**Availability classification: HA design for a single data-worker loss, conditional on healthy control-plane, Sentinel communication, and upstream providers.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Proxy | 2 anti-affined replicas on the main workers | Stateless request routing; zero-surge rollout and PDB minimum 1. |
+| PostgreSQL | 2 CNPG members on separate local volumes | A surviving standby is promoted; method any, number 1, durability preferred. |
+| Redis data | 2 persistent members; one Sentinel beside each | Asynchronous replication, writable saved Redis roles and Sentinel topology. |
+| Third voter | 1 Sentinel on RTX | Provides the third vote; the shared Sentinel PDB retains 2 voters for voluntary eviction. |
+| Client connection | Direct discovery from all 3 Sentinel endpoints | No single HAProxy pod between LiteLLM and Redis. |
+
+### How a failure is handled
+
+If the failed worker owns the Redis primary, the two surviving voters can authorize promotion when quorum and peer authentication are working. LiteLLM rediscovers the primary. CNPG independently promotes its surviving PostgreSQL standby if needed, and incoming requests retry against the remaining proxy. The startup scripts query reachable Sentinels and preserve data-side topology so a returned member can rejoin the elected primary.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | One proxy, one PostgreSQL instance, one Redis data member, and two Sentinel voters remain. Availability is reduced while promotion and client reconnection happen; replacement data members remain constrained to the two main workers. |
+| RTX worker only | The two data-side Sentinels and both proxies remain. Direct discovery avoids making the RTX-only voter the Redis access endpoint, although another voter loss would remove failover tolerance. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Proxy updates retain one pod. A single Sync hook runs the schema migration before new proxies start; migration failure intentionally blocks rollout. Backward-incompatible schema changes may still require a maintenance window.
+
+### What prevents a stronger HA claim
+
+In-flight streams do not migrate. Redis replication and AOF every-second fsync do not guarantee zero loss. Preferred synchronous PostgreSQL also allows degraded writes without a standby. No off-cluster database backup is configured. Network partitions and correlated control-plane failures require separate evidence.
+
+### What would improve the availability contract
+
+Record a real API request during primary loss, verify returned-member roles and all Sentinel peer connections, and establish a database backup with the original salt key. Provider/network availability needs its own assessment.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

@@ -39,6 +39,16 @@ No OIDC or user login is involved. Kubernetes RBAC governs address pools and Ser
 
 2. For public services, configure public DNS and NAT/firewall rules for every published port. Preserve intentional shared-IP rules for mail and mixed TCP/UDP listeners.
 
+## Availability before maintenance
+
+**Partially HA: distributed address advertisement; controller allocation and the physical network remain separate.**
+
+Existing allocations and advertisement have a different dependency path from assigning new IPs. A controller restart should not be described as proof that all existing traffic stops or all new allocations continue.
+
+Document the external network failure domains, make control-component redundancy explicit if required, and measure reachability from actual LAN/WAN clients after advertiser loss.
+
+Use the [component-by-component failure contract](/infrastructure/metallb/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Address pools and Service declarations live in Git. Reserve the same range outside DHCP and other infrastructure allocation systems. Network configuration outside Kubernetes must be retained separately.

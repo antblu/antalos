@@ -35,9 +35,49 @@ The two PostgreSQL instances hold both Nextcloud and the separately declared `cc
 
 ## Availability and failure behavior
 
-Most serving components are replicated, while NFS and Garage remain external dependencies. Office and Talk sessions can reconnect after their owning process fails. Talk recording is external to this repository and has no availability guarantee defined by these manifests.
+**Availability classification: Partially HA overall: replicated web and many companions, with shared storage, session, Redis recovery, and upgrade limits.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Web / notify_push | 2 anti-affined web-sidecar pairs | The Service can use the surviving ready web pod. |
+| PostgreSQL / Context Chat DB | 2 CNPG instances | Primary/standby replication on local volumes; no synchronous policy is declared. |
+| Redis | 2 data + 3 Sentinels + 2 HAProxy replicas | Sentinel intends to elect; HAProxy checks AUTH and ROLE to route to a primary. |
+| Context Chat | Request, update, and indexing: 2 each | Role-specific Services and PDBs preserve process redundancy; all share database/provider dependencies. |
+| Office / Whiteboard | 2 each | Office uses sticky routing; Whiteboard shares Redis and NFS recording state. |
+| Talk | 2 signaling/Janus/TURN pods; 3 NATS nodes | Independent TURN allocations remain pinned to their owning ordinal. |
+| Files / code / recording | Garage + NFS; recorder external | No storage-host failover or external-recorder HA is defined here. |
+
+### How a failure is handled
+
+A web request can retry against the surviving pod, but file operations still need PostgreSQL, Garage, and Redis locks. PostgreSQL promotion and Redis primary election are separate recovery steps. The two HAProxy processes avoid a single proxy pod, but their ROLE checks do not elect or fence a primary. Companions recover independently: surviving process capacity does not preserve every in-memory editing or call session.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | One copy of each paired role can remain, along with one database instance, one Redis data member, and two voters. The surviving components must reach external storage. An interrupted upload, edit, call, or indexing task may need application-specific retry. |
+| RTX worker only | Removes a Redis voter and one NATS member. Both data workers remain; the usual data tiers can continue with reduced fault tolerance. NATS Core membership provides redundant messaging connectivity here, not a persistent replicated log of user calls. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy uses maxSurge 1 and maxUnavailable 0: hard anti-affinity can stall its replacement with only two eligible workers. Major Nextcloud upgrades still require the documented isolated maintenance and single-owner schema migration procedure.
+
+### What prevents a stronger HA claim
+
+The Redis startup script hardcodes ordinal 0 as the initial primary and ordinal 1 as its replica; Sentinel config is recreated in /tmp. After a promotion, restarting a member can therefore reintroduce a stale role/topology until corrected. Protected Sentinels also need peer-authentication evidence. These are reasons to describe election intent separately from proven failover/rejoin. Database replication is asynchronous; NFS/Garage and the external recorder remain separate failure domains.
+
+### What would improve the availability contract
+
+Establish Redis election and safe rejoin behavior, correct the HAProxy rollout capacity constraint, protect shared storage, and exercise file/office/Talk workflows during degraded operation. A warm web replica does not make the whole Nextcloud suite outage-free.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

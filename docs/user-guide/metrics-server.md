@@ -23,6 +23,12 @@ This is a platform service with no standalone user-facing website. Its consumers
 
 For unknown HPA utilization, inspect metrics API availability, kubelet connection errors, and pod resource requests. A working Grafana dashboard does not prove that the resource-metrics API works.
 
+## Availability when using this service
+
+**Not explicitly HA: resource-metrics collection can pause until its chart workload recovers.** If the collector was on that worker, resource metrics may be missing. Existing application replicas can keep serving even while some scaling decisions are impaired.
+
+Read [how redundancy and recovery work](/infrastructure/metrics-server/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Metrics Server documentation](https://github.com/kubernetes-sigs/metrics-server) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

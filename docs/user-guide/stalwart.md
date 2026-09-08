@@ -25,6 +25,12 @@ The public address is defined by `MAIL_HOST` in `apps/variables.yaml`. Use your 
 
 For bootstrap 401 responses, verify the administrator Secret format and the active recovery-auth configuration without printing the credential. For mail delays, inspect queue and delivery errors, DNS, and upstream reachability. A healthy HTTPS page does not prove SMTP delivery.
 
+## Availability when using this service
+
+**Partially HA; loss of the RTX-only Redis proxy is an explicit single-worker failure gap.** One mail replica and data member per paired backend may remain. A failed primary requires promotion/election and client reconnect. The custom Redis configuration’s restart and authentication caveats still apply.
+
+Read [how redundancy and recovery work](/infrastructure/stalwart/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Stalwart Mail documentation](https://stalw.art/docs/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

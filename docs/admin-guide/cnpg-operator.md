@@ -39,6 +39,16 @@ There is no user-facing OIDC configuration. Database authentication uses the Sec
 
 2. Add a backup design per cluster; replication alone does not create an off-cluster backup. Rehearse restore into a new isolated cluster.
 
+## Availability before maintenance
+
+**Not explicitly HA as an operator; it manages replicated database clusters with separate availability contracts.**
+
+Operator restarts and CRD upgrades can pause management while databases keep serving. Perform application database upgrades according to each cluster’s policy, not by treating the operator rollout as the database rollout.
+
+Make operator leader-election/replica behavior explicit for the pinned chart, protect API access, and measure primary loss both with and without a simultaneous operator disruption. Keep backup policy per database.
+
+Use the [component-by-component failure contract](/infrastructure/cnpg-operator/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Database data and backups belong to each managed cluster. The operator chart is reconstructable from Git. Preserve database credentials, backup credentials, WAL/base backups where configured, and the sealing key.

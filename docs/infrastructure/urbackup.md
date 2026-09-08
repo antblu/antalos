@@ -21,9 +21,46 @@ Both the configuration export and backup export are essential. Preserve client r
 
 ## Availability and failure behavior
 
-Recovery-based: there is one server process and an external NFS dependency. The `minAvailable: 1` budget blocks ordinary eviction of the single replica but does not make backup processing highly available.
+**Availability classification: Not HA: one backup server, restored with two external NFS exports.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Server | 1 Deployment replica | No other active process can continue server work immediately. |
+| Configuration | NFS mounted at /var/urbackup | Server database/registration state survives a pod restart if the export survives. |
+| Backup data | Separate NFS export at /backups | Backup payload persistence is external to the pod. |
+| Eviction/update | PDB minimum 1; zero surge, one unavailable | Normal drain blocks; a controller update can still replace the only server. |
+
+### How a failure is handled
+
+Kubernetes recreates the failed server, remounts both exports, and starts it with the configured PUID/PGID. Clients reconnect and backup jobs resume or retry according to application state. Sharing the data on NFS permits relocation; it does not supply a running standby.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | If it hosts UrBackup, the UI and backup processing stop until the replacement starts and can access both exports. Neither readiness probes nor anti-affinity create a second replica. |
+| RTX worker only | No dedicated voter. Recovery still needs the API/scheduler and external storage. Client routing must remain reachable independently of the web interface. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Updates deliberately permit one unavailable replica, which here means the entire application. The singleton PDB can block drain until an administrator schedules the accepted outage; bypassing it does not create HA.
+
+### What prevents a stronger HA claim
+
+Both exports are required for a useful recovered installation. A backup of client files is not necessarily a backup of server registration/configuration. NFS failure can stop backup writes even with a Running server.
+
+### What would improve the availability contract
+
+Define a restart/recovery objective, protect both exports, and prove a client backup and restore after server recovery. Do not scale the server to multiple concurrent writers without an upstream-supported storage/coordination design.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

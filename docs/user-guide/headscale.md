@@ -25,6 +25,12 @@ The public address is defined by `HEADSCALE_HOST` in `apps/variables.yaml`. Use 
 
 If Headscale will not start, check issuer discovery and NFS restore first. If the VPN works but Headplane fails, check its backend API key and separate database. A policy denying a connection can be correct behavior even when both services are healthy.
 
+## Availability when using this service
+
+**Not continuously HA: Headscale and Headplane each recover by restarting one process.** If it hosts Headscale, registration and control updates stop until recovery. If it hosts Headplane, browser administration stops independently. Already-established client tunnels may continue using existing peer state, but new enrollment, policy distribution, or reconnection must not be assumed available.
+
+Read [how redundancy and recovery work](/infrastructure/headscale/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Headscale and Headplane documentation](https://headscale.net/stable/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

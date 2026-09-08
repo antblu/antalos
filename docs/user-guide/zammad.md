@@ -25,6 +25,12 @@ The public address is defined by `ZAMMAD_HOST` in `apps/variables.yaml`. Use you
 
 If Argo remains Progressing while Rails serves traffic, inspect the current init Job, ownerReferences, and hook status. For missing email, inspect scheduler and channel errors. For search failures, inspect Elasticsearch quorum and indexing separately from ticket storage.
 
+## Availability when using this service
+
+**Partially HA: paired HTTP tiers and data services, with singleton real-time/background roles and Redis/search caveats.** One web path and one member of each paired data tier can remain with two voters. Email polling/background tasks or real-time updates can pause depending on singleton placement. Test attachment retrieval separately from ticket-list rendering.
+
+Read [how redundancy and recovery work](/infrastructure/zammad/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Zammad documentation](https://user-docs.zammad.org/en/latest/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

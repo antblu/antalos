@@ -27,6 +27,12 @@ The public address is defined by `NEXTCLOUD_HOST` in `apps/variables.yaml`. Use 
 
 For a 503 or incomplete rollout, separate database migration, app-code initialization, Redis discovery, and ingress failures. For missing files, verify database and object-store consistency before changing buckets. Read-only configuration requires the controlled maintenance procedure in the upgrade guide.
 
+## Availability when using this service
+
+**Partially HA overall: replicated web and many companions, with shared storage, session, Redis recovery, and upgrade limits.** One copy of each paired role can remain, along with one database instance, one Redis data member, and two voters. The surviving components must reach external storage. An interrupted upload, edit, call, or indexing task may need application-specific retry.
+
+Read [how redundancy and recovery work](/infrastructure/nextcloud/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Nextcloud documentation](https://docs.nextcloud.com/server/latest/user_manual/en/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

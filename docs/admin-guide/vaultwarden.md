@@ -41,6 +41,16 @@ The manifests do not configure OIDC. Use the token in `vaultwarden-admin` to acc
 
 3. Define and rehearse a coordinated PostgreSQL and NFS backup. Accept a brief application outage for Recreate updates.
 
+## Availability before maintenance
+
+**Not HA at the application layer: one vault server; PostgreSQL alone is replicated.**
+
+Recreate removes the application process during upgrades. Running two database instances does not make that deployment strategy zero downtime.
+
+Define the accepted synchronization outage and rehearse a database-plus-/data restore. Continuous vault-server HA would need a supported multi-instance application and shared-state design rather than a replica-count edit alone.
+
+Use the [component-by-component failure contract](/infrastructure/vaultwarden/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Preserve PostgreSQL, the NFS data directory, the administrator token, and database credentials. Attachments and other `/data` state must accompany the database backup. The original deployment’s data and keys must remain consistent during recovery.

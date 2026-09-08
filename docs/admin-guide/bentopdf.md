@@ -39,6 +39,16 @@ Create an Authentik proxy provider in forward-auth mode for the exact BentoPDF H
 
 2. URL-based conversion may need a separate CORS proxy and a custom frontend build with `VITE_CORS_PROXY_URL`; no such proxy is provisioned here. Follow the upstream self-hosting instructions for the selected image before enabling that feature.
 
+## Availability before maintenance
+
+**HA static serving tier; access depends on the shared identity and ingress services.**
+
+The declared zero-surge update fits two eligible nodes, provided the remaining pod is Ready. A PDB controls eviction; it does not prevent every failed release or node outage.
+
+Measure protected page access after losing one serving pod and separately assess identity/ingress continuity. Preserve an honest distinction between frontend uptime and browser job success.
+
+Use the [component-by-component failure contract](/infrastructure/bentopdf/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Git, the image, and ingress configuration reconstruct the server. User input and exported PDFs remain on the client. Downloaded results need the user’s own storage and backup policy.

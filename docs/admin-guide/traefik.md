@@ -41,6 +41,16 @@ The dashboard uses Authentik forward-auth. Create a proxy provider for the dashb
 
 3. Keep auth callbacks and non-browser protocol paths free from recursive interactive login challenges.
 
+## Availability before maintenance
+
+**HA ingress process tier for one serving-node loss; upstream routing and established connections remain separate.**
+
+The declared rolling strategy retains a serving instance and does not require a third anti-affined placement. Client connections on a terminating instance still need graceful completion or reconnect.
+
+Exercise HTTP, TCP, UDP, and WSS separately, document router/DNS availability, and measure client reconnection rather than equating a surviving proxy with uninterrupted sessions.
+
+Use the [component-by-component failure contract](/infrastructure/traefik/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Routes, middleware, entry points, and certificates are declarative. Preserve authentication-provider configuration and DNS/router state alongside Git. Traefik does not persist application sessions or files.

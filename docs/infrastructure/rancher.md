@@ -21,9 +21,45 @@ Rancher management state lives in Kubernetes resources and secrets; recovery mus
 
 ## Availability and failure behavior
 
-Two replicas protect the serving process from a node failure, but a cluster-wide API or ingress outage also removes the management UI. Keep the repository kubeconfig and Talos access available independently.
+**Availability classification: HA management web tier; it is not an independent control plane for recovering this cluster.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Rancher server | 2 replicas with required host anti-affinity | The ingress Service routes to the remaining server. |
+| Managed state | Kubernetes API and cluster agents | UI replicas depend on the same cluster they manage. |
+| Certificate | Separate rancher-config Application | Existing TLS Secret supports serving; certificate management has its own availability. |
+
+### How a failure is handled
+
+A failed Rancher pod can be removed from routing while another handles management requests. Active UI/API connections may reconnect. The healthy pod still needs Kubernetes API access and functioning agents; replacing a web server cannot recover an unavailable underlying API.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | A surviving server can remain accessible, assuming ingress and the API work. No second copy of a Rancher pod is a substitute for the etcd data and credentials underneath its resources. |
+| RTX worker only | Worker-only failure has no dedicated Rancher voter impact. Losing the whole RTX host also removes the configured API address and can leave the web page reachable while cluster management fails. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+The repository pins two replicas and required anti-affinity but does not explicitly declare a Rancher PDB or rollout strategy. Those details are chart-derived; do not claim the standard zero-surge/minimum-one contract from this Application alone.
+
+### What prevents a stronger HA claim
+
+Rancher availability is bounded by ingress and the cluster API. Its local-cluster deployment cannot be your sole out-of-band recovery tool.
+
+### What would improve the availability contract
+
+Retain independent kubectl/Talos access, make chart-derived rollout/disruption settings explicit where needed, and measure both UI access and a real API-backed operation during one-server failure.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

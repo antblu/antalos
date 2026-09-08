@@ -43,6 +43,16 @@ On a new database, complete the upstream initial setup flow at `/if/flow/initial
 
 3. For proxy applications, add the provider to the embedded outpost and create a callback route on the protected application hostname.
 
+## Availability before maintenance
+
+**Partially HA: replicated identity processing and database; external shared media and maintenance limits remain.**
+
+Server and worker rolling updates use zero surge and one unavailable replica. No application PDB is explicitly declared here, so do not assume a normal drain enforces a one-healthy-server minimum.
+
+Protect or remove the shared-media failure boundary, explicitly budget voluntary disruption, protect the CNPG control path, and record a login/provider transaction during a controlled primary and worker failure.
+
+Use the [component-by-component failure contract](/infrastructure/authentik/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Back up PostgreSQL, the media export, and the original `AUTHENTIK_SECRET_KEY`. The database holds users, provider definitions, policy bindings, and flows. Restoring pods from Git does not recreate provider configuration stored in that database.

@@ -25,6 +25,12 @@ The public address is defined by `TRAEFIK_HOST` in `apps/variables.yaml`. Use yo
 
 An HTTP 404 often means no router matched; a 502/503 points toward backend connectivity or readiness. A 404 specifically on the outpost path needs provider and host-route inspection. Examine the layer that generated the response before changing application replicas.
 
+## Availability when using this service
+
+**HA ingress process tier for one serving-node loss; upstream routing and established connections remain separate.** A ready proxy remains on the other worker; endpoint/advertisement detection and surviving throughput set the interruption. The real backend must also survive the same failure.
+
+Read [how redundancy and recovery work](/infrastructure/traefik/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Traefik documentation](https://doc.traefik.io/traefik/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

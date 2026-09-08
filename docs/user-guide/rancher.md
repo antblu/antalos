@@ -25,6 +25,12 @@ The public address is defined by `RANCHER_HOST` in `apps/variables.yaml`. Use yo
 
 When the UI is unavailable, use kubectl directly. Check both Argo Applications, the certificate, and the Rancher pods. Authentication success without cluster access usually points to authorization or agent connectivity rather than ingress.
 
+## Availability when using this service
+
+**HA management web tier; it is not an independent control plane for recovering this cluster.** A surviving server can remain accessible, assuming ingress and the API work. No second copy of a Rancher pod is a substitute for the etcd data and credentials underneath its resources.
+
+Read [how redundancy and recovery work](/infrastructure/rancher/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Rancher documentation](https://ranchermanager.docs.rancher.com/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

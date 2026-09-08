@@ -41,6 +41,16 @@ Dex is configured for the Authentik issuer `/application/o/argo-cd/`. Create the
 
 3. Test a read-only identity and preserve independent kubeconfig access for recovery.
 
+## Availability before maintenance
+
+**Partially HA overall: replicated API/rendering and Redis HA design; reconciliation and SSO are not proven by those counts.**
+
+Server/repo-server/proxy overrides use zero surge and one unavailable. Plugin subPath changes require repo-server replacement. Confirm chart-derived auxiliary replica and PDB behavior before promising seamless upgrades.
+
+Make authentication and controller recovery topology explicit, protect the API endpoint, and record both login/API access and reconciliation of the affected cluster during a controlled controller loss.
+
+Use the [component-by-component failure contract](/infrastructure/argocd/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Git reconstructs desired state. Preserve repository credentials, Argo authentication secrets, the sealing key, and bootstrap state. Redis is control-plane support state rather than a backup of application databases.

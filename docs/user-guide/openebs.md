@@ -23,6 +23,12 @@ This is a platform service with no standalone user-facing website. Its consumers
 
 Pending claims can be caused by scheduling, node affinity, or missing host capacity. Determine whether the consumer must schedule before binding. Do not move a local PV’s node affinity to imply that its data exists on another node.
 
+## Availability when using this service
+
+**Not replicated storage: individual LocalPV volumes cannot survive loss of their owning disk as live copies.** Volumes on that worker become inaccessible. Paired databases use surviving members; a singleton or uniquely sharded dataset may wait for the node/disk or require restoration.
+
+Read [how redundancy and recovery work](/infrastructure/openebs/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official OpenEBS documentation](https://openebs.io/docs/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

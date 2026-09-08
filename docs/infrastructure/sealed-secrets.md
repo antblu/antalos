@@ -21,9 +21,45 @@ The external backup must include all controller private keys that encrypted repo
 
 ## Availability and failure behavior
 
-Recovery-based controller: the manifest does not explicitly configure multiple replicas. Existing generated Secrets remain usable while the controller is down; new or changed ciphertext waits for reconciliation.
+**Availability classification: Not explicitly HA as a controller; existing generated Secrets remain available independently of its process.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Controller | No explicit replica override | New or changed ciphertext needs the controller to reconcile. |
+| Generated Secrets | Kubernetes objects consumed by workloads | Already-created credentials do not require a live decrypt call for each request. |
+| Sealing private keys | Controller Secret plus external backup | Only the matching original keys can decrypt the committed ciphertext. |
+
+### How a failure is handled
+
+Existing applications can keep using already-generated Secrets while the controller restarts. New workloads that require a missing generated Secret can remain blocked until decryption resumes. Recreating the controller with the original keys restores that function; inventing a new key does not.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | Credential reconciliation can pause if the controller was there, without immediately stopping consumers with usable Secrets. Lost consumers may still restart if their generated Secret remains in Kubernetes. |
+| RTX worker only | No dedicated voter. Loss of the API endpoint affects controller reconciliation and Secret retrieval through the API. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Controller/key maintenance must keep all required keys available. Updating ciphertext before a required key is loaded can block dependent workloads even when old credentials worked.
+
+### What prevents a stronger HA claim
+
+The private-key backup is disaster recovery, not a hot decryption replica. Kubernetes/etcd and its own recovery set ultimately protect generated Secret objects.
+
+### What would improve the availability contract
+
+Make controller availability explicit if decryption continuity is required, retain all sealing keys, and exercise both existing-consumer continuity and creation of a new encrypted Secret during a controlled controller outage.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

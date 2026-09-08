@@ -25,6 +25,12 @@ The public address is defined by `BENTOPDF_HOST` in `apps/variables.yaml`. Use y
 
 If the page works but a tool fails, inspect browser errors for blocked worker resources, cross-origin isolation, or memory exhaustion. If the page never opens, resolve forward-auth and callback routing before troubleshooting PDF processing.
 
+## Availability when using this service
+
+**HA static serving tier; access depends on the shared identity and ingress services.** The other serving replica can handle new requests. There is no persistent application volume attached to the lost node that must move before the static site returns.
+
+Read [how redundancy and recovery work](/infrastructure/bentopdf/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official BentoPDF documentation](https://www.bentopdf.com/docs/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

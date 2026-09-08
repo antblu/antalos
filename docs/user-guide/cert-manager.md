@@ -23,6 +23,12 @@ This is a platform service with no standalone user-facing website. Its consumers
 
 Inspect Certificate, CertificateRequest, Order, and Challenge in that order. An IssuerNotFound error is a resource name/kind problem; a DNS challenge failure requires inspecting token permissions and DNS propagation.
 
+## Availability when using this service
+
+**Partially HA: replicated admission webhook; certificate issuance is not fully replicated by the manifest.** Issued sites may remain reachable while new certificate operations pause. Distinguish certificate-controller health from the active certificate served by ingress.
+
+Read [how redundancy and recovery work](/infrastructure/cert-manager/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official cert-manager documentation](https://cert-manager.io/docs/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

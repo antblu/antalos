@@ -25,6 +25,12 @@ The public address is defined by `GRAFANA_HOST` in `apps/variables.yaml`. Use yo
 
 For missing data, follow collection, ingestion, storage, then query layers. If Grafana works but a panel is empty, inspect the query labels and time range. If HPA resource metrics are missing, inspect metrics-server; Grafana’s historical metrics pipeline is a separate system.
 
+## Availability when using this service
+
+**Mixed availability: Grafana and metrics have replicated designs; the current log storage is sharded, not redundantly copied.** Grafana and metrics can continue with reduced serving capacity and storage redundancy. New writes during degradation cannot acquire two independent local copies while only one storage member is available. Log history on the lost worker may be unavailable until its volume returns or is restored.
+
+Read [how redundancy and recovery work](/infrastructure/victoriametrics/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Grafana and VictoriaMetrics documentation](https://grafana.com/docs/grafana/latest/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

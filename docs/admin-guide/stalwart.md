@@ -43,6 +43,16 @@ The manifests bootstrap a local Stalwart administrator; they do not configure Au
 
 3. Verify TLS on every exposed mail protocol, mailbox search, object storage writes, and the database backup/restore procedure.
 
+## Availability before maintenance
+
+**Partially HA; loss of the RTX-only Redis proxy is an explicit single-worker failure gap.**
+
+Stalwart’s StatefulSet updates its processes incrementally and has a PDB minimum 1. The Redis quorum/proxy Deployment uses Recreate, so updating that singleton can interrupt Redis access for both mail replicas.
+
+Remove the single Redis client-path dependency through a supported replicated proxy or native discovery design, establish election/rejoin correctness, and record SMTP, mailbox read, search, and blob access during failure. Protect external storage and verify per-index shard allocation.
+
+Use the [component-by-component failure contract](/infrastructure/stalwart/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Back up PostgreSQL, Garage message blobs, sealed credentials, signing material, and declarative bootstrap configuration. Mail identity also depends on external DNS records. Replicated search and cache components are not independent backups of mailboxes.

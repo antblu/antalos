@@ -39,6 +39,16 @@ No OIDC configuration is involved. Kubernetes RBAC, node security, and applicati
 
 2. Document how a lost member is recreated from its surviving peer or backup. Do not enable Mayastor merely to satisfy an HA label; it is a separate storage design.
 
+## Availability before maintenance
+
+**Not replicated storage: individual LocalPV volumes cannot survive loss of their owning disk as live copies.**
+
+Provisioner/StorageClass changes need to preserve existing volume identity. Scaling a StatefulSet or editing node affinity does not copy files between disks.
+
+Choose explicit application-level replication and restore procedures per consumer, or design a separate supported replicated-storage migration. Never describe an unreplicated local PV as HA because the provisioner has multiple pods.
+
+Use the [component-by-component failure contract](/infrastructure/openebs/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Volume data resides on the worker’s local disk. Losing that disk loses its local copy. Preserve application-level replication and off-node backups; Git can recreate a claim but cannot recover its previous contents.

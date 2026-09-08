@@ -21,9 +21,46 @@ Volume data resides on the worker’s local disk. Losing that disk loses its loc
 
 ## Availability and failure behavior
 
-LocalPV is a persistence primitive, not a replicated storage system. Database failover depends on another healthy member with its own volume. Two members on the same physical failure domain do not provide host-loss protection.
+**Availability classification: Not replicated storage: individual LocalPV volumes cannot survive loss of their owning disk as live copies.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Provisioning | LocalPV Hostpath / node-deployment mode | Creates storage on the selected worker’s local path. |
+| Volume placement | WaitForFirstConsumer and node affinity | Claims bind with workload placement; data stays on that node. |
+| Replication | Mayastor disabled | Any second data copy comes from PostgreSQL, Redis, Galera, or another application. |
+| Retention | Retain storage policy | Avoids automatic cleanup of data; it is not an independent copy. |
+
+### How a failure is handled
+
+OpenEBS does not move a lost node’s existing local data to a healthy node. The application may promote a member on a different LocalPV, or restore a backup into new storage. A provisioner restart can recover volume management while saying nothing about lost payloads.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | Volumes on that worker become inaccessible. Paired databases use surviving members; a singleton or uniquely sharded dataset may wait for the node/disk or require restoration. |
+| RTX worker only | Local volumes used by Gitaly and some quorum state on RTX are also affected. A voter’s local state is different from the only usable copy of a user dataset. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Provisioner/StorageClass changes need to preserve existing volume identity. Scaling a StatefulSet or editing node affinity does not copy files between disks.
+
+### What prevents a stronger HA claim
+
+The storage layer does not provide node-loss HA for a single volume. Capacity and resynchronization traffic on survivors can prevent full redundancy from returning quickly.
+
+### What would improve the availability contract
+
+Choose explicit application-level replication and restore procedures per consumer, or design a separate supported replicated-storage migration. Never describe an unreplicated local PV as HA because the provisioner has multiple pods.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

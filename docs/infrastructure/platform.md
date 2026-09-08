@@ -59,7 +59,7 @@ Antalos uses multiple storage tiers because they have different availability and
 | Garage S3 at `10.30.0.5:30188` | Nextcloud objects, Stalwart blobs, Open WebUI objects, Zammad objects, and SuiteCRM backups | Applications can restart on another worker without moving object data. Garage's own replication and the host's availability are external to this repository. |
 | Git | Manifests, configuration, versions, and encrypted secrets | Reconstructs desired state, but not application data or Sealed Secrets private keys. |
 
-OpenEBS is configured only as a local-volume provisioner; the replicated Mayastor engine is disabled. A lost worker therefore takes its local volumes with it. Two-member data services remain available through their surviving application-level replica, but replacing the lost member requires creating or recovering storage on a healthy node.
+OpenEBS is configured only as a local-volume provisioner; the replicated Mayastor engine is disabled. A lost worker therefore takes its local volumes with it. Two-member data services can use their surviving application-level replica when promotion, client routing, and dependencies work; this may involve an interruption. Replacing the lost member requires creating or recovering storage and resynchronizing its data. Sharded services such as VictoriaLogs do not have a complete surviving copy merely because a second storage process remains.
 
 ## GitOps and secrets
 
@@ -86,3 +86,7 @@ High availability keeps a service running through an expected failure. Backups a
 ## Source of this topology
 
 The machine layout comes from [`talostofu`](https://github.com/antblu/antalos/tree/main/infrastructure/opentofu/talostofu). Shared application values are in [`apps/variables.yaml`](https://github.com/antblu/antalos/blob/main/apps/variables.yaml). These are repository defaults and intended placement, not a live capacity or health measurement.
+
+## Follow the complete availability contract
+
+Use [service availability](/infrastructure/availability/) for explicit HA, partial-HA, and recovery-based classifications. It separates worker loss from physical-host/API loss, describes election and returned-member behavior, and identifies single processes, shared storage, sharded data, and rollout constraints. Each application has its own detailed component/failure table.

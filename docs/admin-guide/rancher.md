@@ -41,6 +41,16 @@ The checked-in chart does not define an external authentication provider. Comple
 
 3. Add a management-state backup and recovery procedure if Rancher-created resources are part of your operational recovery set.
 
+## Availability before maintenance
+
+**HA management web tier; it is not an independent control plane for recovering this cluster.**
+
+The repository pins two replicas and required anti-affinity but does not explicitly declare a Rancher PDB or rollout strategy. Those details are chart-derived; do not claim the standard zero-surge/minimum-one contract from this Application alone.
+
+Retain independent kubectl/Talos access, make chart-derived rollout/disruption settings explicit where needed, and measure both UI access and a real API-backed operation during one-server failure.
+
+Use the [component-by-component failure contract](/infrastructure/rancher/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Rancher management state lives in Kubernetes resources and secrets; recovery must account for that state as well as the Helm values. Preserve the platform recovery set and use upstream Rancher backup procedures where configured.

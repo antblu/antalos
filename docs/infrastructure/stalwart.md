@@ -21,9 +21,48 @@ Back up PostgreSQL, Garage message blobs, sealed credentials, signing material, 
 
 ## Availability and failure behavior
 
-Partial availability: paired application and database members protect worker loss, but Garage is external and loss of the RTX Redis proxy can interrupt the configured Redis connection path. Mail sessions in progress may reconnect.
+**Availability classification: Partially HA; loss of the RTX-only Redis proxy is an explicit single-worker failure gap.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Mail processes | 2 anti-affined Stalwart replicas | Protocol Services can route new sessions to a surviving server. |
+| PostgreSQL | 2 CNPG members | No synchronous policy is declared; promotion is separate from mail process routing. |
+| Redis data / votes | 2 data + 3 Sentinels | Intended primary election requires working voter communication. |
+| Redis client endpoint | 1 HAProxy in the RTX quorum pod | All configured Redis access depends on this one pod even with healthy data members. |
+| Search | 2 data/master nodes + 1 master-only RTX node | A majority can elect; actual shard replica allocation determines data survival. |
+| Message blobs | External Garage endpoint | Mailbox contents still depend on the external object service. |
+
+### How a failure is handled
+
+A surviving Stalwart replica can accept a new protocol connection when its database, Redis endpoint, and blob store are available. PostgreSQL promotion and Redis election can interrupt that path. Elasticsearch majority protects master election only; a ready search process does not prove every needed shard has another copy.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | One mail replica and data member per paired backend may remain. A failed primary requires promotion/election and client reconnect. The custom Redis configuration’s restart and authentication caveats still apply. |
+| RTX worker only | The Stalwart Redis Service selects the sole proxy inside redis-quorum on RTX. Losing RTX removes that endpoint, not just a third vote; Redis-dependent mail operations can fail while both Redis data members are alive. Search also loses its master-only member. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Stalwart’s StatefulSet updates its processes incrementally and has a PDB minimum 1. The Redis quorum/proxy Deployment uses Recreate, so updating that singleton can interrupt Redis access for both mail replicas.
+
+### What prevents a stronger HA claim
+
+Redis startup derives roles from ordinal names, writes Sentinel topology to /tmp, and requires matching authentication and discovery settings across the voters and clients. Safe election/rejoin must be established. PostgreSQL can lag; Garage is external; Elasticsearch shard replicas are not proven by its pod count.
+
+### What would improve the availability contract
+
+Remove the single Redis client-path dependency through a supported replicated proxy or native discovery design, establish election/rejoin correctness, and record SMTP, mailbox read, search, and blob access during failure. Protect external storage and verify per-index shard allocation.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

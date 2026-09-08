@@ -25,6 +25,12 @@ The public address is defined by `GITLAB_HOST` in `apps/variables.yaml`. Use you
 
 For a stuck initialization, examine the current chart hook and its dependency rather than deleting every old Job. For repository failures, inspect Gitaly and Praefect quorum as well as Rails. For object failures, test the relevant prefix permissions and S3 endpoint.
 
+## Availability when using this service
+
+**Partially HA as a complete service: extensive replication, with external storage and failover/recovery prerequisites.** Paired application roles, one instance of each PostgreSQL cluster, one Redis data member, and two repository members can remain. Both surviving Sentinel voters must communicate correctly. The remaining worker and RTX also need enough CPU, memory, and disk headroom for degraded operation.
+
+Read [how redundancy and recovery work](/infrastructure/gitlab/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official GitLab documentation](https://docs.gitlab.com/user/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

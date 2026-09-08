@@ -25,6 +25,12 @@ The public address is defined by `OPEN_WEBUI_HOST` in `apps/variables.yaml`. Use
 
 If browser login succeeds but callbacks fail, compare the OIDC redirect and discovery URL. If uploads fail, inspect S3 access. If streams or replicas disagree, inspect Redis Sentinel authentication and the shared application key before increasing replicas.
 
+## Availability when using this service
+
+**Partially HA: steady-state replicas exist, but Recreate upgrades and Redis/storage dependencies can interrupt all users.** One app, one database member, one Redis data member, and two Sentinel voters can remain. Sustained inference throughput depends on the model provider and surviving app capacity.
+
+Read [how redundancy and recovery work](/infrastructure/open-webui/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Open WebUI documentation](https://docs.openwebui.com/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

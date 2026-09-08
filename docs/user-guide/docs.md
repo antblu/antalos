@@ -25,6 +25,12 @@ The public address is defined by `DOCS_HOST` in `apps/variables.yaml`. Use your 
 
 If content is old, compare the published image and `DOCS_IMAGE_TAG` with the running revision. If one URL fails, inspect the static route and redirect configuration. `/healthz` checks NGINX liveness, not the correctness of every guide.
 
+## Availability when using this service
+
+**HA static serving tier for node loss; current zero-unavailable rollout can be blocked by placement.** One pod can continue serving. However, hard anti-affinity prevents the lost replica from simply joining the survivor on the same node; availability returns to full redundancy only when another eligible placement is available.
+
+Read [how redundancy and recovery work](/infrastructure/docs/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official Antalos documentation documentation](https://starlight.astro.build/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

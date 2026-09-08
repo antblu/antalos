@@ -25,6 +25,12 @@ The public address is defined by `URBACKUP_HOST` in `apps/variables.yaml`. Use y
 
 For startup permission errors, inspect which of the two mounts fails and the configured UID/GID. For invisible clients, inspect transport and discovery reachability rather than the HTTPS certificate. For an outpost 404, repair the Authentik callback route/provider mapping.
 
+## Availability when using this service
+
+**Not HA: one backup server, restored with two external NFS exports.** If it hosts UrBackup, the UI and backup processing stop until the replacement starts and can access both exports. Neither readiness probes nor anti-affinity create a second replica.
+
+Read [how redundancy and recovery work](/infrastructure/urbackup/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official UrBackup documentation](https://www.urbackup.org/administration_manual.html) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

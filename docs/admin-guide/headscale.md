@@ -41,6 +41,16 @@ Both applications share the configured Authentik OIDC client. Register Headscale
 
 3. Rehearse restore of both databases and retain out-of-band cluster access before changing the network policy or identity provider.
 
+## Availability before maintenance
+
+**Not continuously HA: Headscale and Headplane each recover by restarting one process.**
+
+Single-replica updates interrupt the corresponding service; Headplane uses Recreate. Do not scale SQLite writers to two as an HA shortcut without a supported coordination/storage redesign.
+
+State a measured recovery-time and recovery-point objective, protect NFS and sealing material, and rehearse both restores. Continuous service availability would require a supported application/storage topology beyond the current singleton design.
+
+Use the [component-by-component failure contract](/infrastructure/headscale/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Preserve both Litestream backup directories, Headscale configuration and key material included in the storage arrangement, the Headplane cookie secret, and sealed OIDC/API credentials. A surviving backup is needed when the disposable SQLite volume is recreated.

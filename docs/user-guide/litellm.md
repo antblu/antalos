@@ -25,6 +25,12 @@ The public address is defined by `LITELLM_HOST` in `apps/variables.yaml`. Use yo
 
 If rollout is blocked, inspect `litellm-migrations` before the proxy logs. A Redis `MasterNotFoundError` requires checking all Sentinel endpoints and authentication. A working UI with failing requests usually needs model/provider, permission, quota, or upstream investigation.
 
+## Availability when using this service
+
+**HA design for a single data-worker loss, conditional on healthy control-plane, Sentinel communication, and upstream providers.** One proxy, one PostgreSQL instance, one Redis data member, and two Sentinel voters remain. Availability is reduced while promotion and client reconnection happen; replacement data members remain constrained to the two main workers.
+
+Read [how redundancy and recovery work](/infrastructure/litellm/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official LiteLLM documentation](https://docs.litellm.ai/docs/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

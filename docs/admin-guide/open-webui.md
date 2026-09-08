@@ -43,6 +43,16 @@ Native OIDC uses `OPEN_WEBUI_OIDC_PROVIDER_URL`, `OPEN_WEBUI_OIDC_CLIENT_ID`, an
 
 3. Define backups for chat history and objects and retain the same encryption key during restores.
 
+## Availability before maintenance
+
+**Partially HA: steady-state replicas exist, but Recreate upgrades and Redis/storage dependencies can interrupt all users.**
+
+The chart explicitly uses Recreate. A version rollout may terminate both application replicas before starting their replacements; the application PDB does not turn a controller-driven Recreate update into a rolling one.
+
+Document an upgrade outage unless a supported rolling/migration design is implemented. Establish Redis restart/rejoin correctness, durable backups, and a chat/upload test after failover. Keep the shared application secret identical across replicas and recovery.
+
+Use the [component-by-component failure contract](/infrastructure/open-webui/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Back up PostgreSQL and the Garage bucket together. Preserve the shared `webui-secret-key` across both replicas and recovery, as well as the OIDC and provider credentials. Local application storage is not the authoritative chat or upload database.

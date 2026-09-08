@@ -25,6 +25,12 @@ The public address is defined by `RUSTDESK_HOST` in `apps/variables.yaml`. Use y
 
 If IDs resolve but connections fail, inspect the advertised relay endpoint and port routing. If restore loops, inspect NFS access and locks. Fence a partitioned old worker before forced recovery; deleting the lock file does not safely establish single-writer ownership.
 
+## Availability when using this service
+
+**Not continuously HA end to end: one recoverable rendezvous server, with two independent native relays.** If hbbs is on the failed node, new rendezvous waits for restart/restore. The surviving relay can serve new native relay sessions once clients can coordinate; sessions on the failed relay reconnect. Some established direct peer connections may remain, but they do not prove new-session availability.
+
+Read [how redundancy and recovery work](/infrastructure/rustdesk/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official RustDesk documentation](https://rustdesk.com/docs/en/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

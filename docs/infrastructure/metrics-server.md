@@ -21,9 +21,45 @@ Collected samples are short-lived runtime data. Configuration and API access can
 
 ## Availability and failure behavior
 
-The manifest does not explicitly increase chart replicas. A service outage can remove resource metrics and affect autoscaling decisions while workloads themselves keep running.
+**Availability classification: Not explicitly HA: resource-metrics collection can pause until its chart workload recovers.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Collector | No explicit replica override | The manifest does not establish a redundant collector topology. |
+| Metrics API | Aggregated Kubernetes API | HPA and kubectl top depend on current samples and API availability. |
+| History | No persistent metrics archive here | VictoriaMetrics is a separate historical pipeline. |
+
+### How a failure is handled
+
+Kubernetes replaces the failed collector and it must scrape kubelets again before useful measurements return. HPA behavior during missing samples follows its policy and existing recommendations; it is not evidence that applications themselves have crashed.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | If the collector was on that worker, resource metrics may be missing. Existing application replicas can keep serving even while some scaling decisions are impaired. |
+| RTX worker only | No dedicated voter. Losing the whole host’s API endpoint can affect metrics queries even if the collector still runs. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Replica and rollout behavior are chart-derived here. Do not claim the repository-standard two-replica update protection without an explicit configuration.
+
+### What prevents a stronger HA claim
+
+Historical Grafana samples do not substitute for the resource-metrics API used by HPA. Kubelet network and TLS configuration are also collector dependencies.
+
+### What would improve the availability contract
+
+Configure the upstream-supported HA deployment if resource-metrics continuity is required, and record HPA metrics availability during collector loss rather than checking only dashboard history.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

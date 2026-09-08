@@ -43,6 +43,16 @@ The checked-in deployment uses the credentials in `litellm-app` for its `/ui` ad
 
 3. Establish a PostgreSQL backup and restore procedure. Restart proxies after changing mounted startup configuration that is not dynamically reloaded.
 
+## Availability before maintenance
+
+**HA design for a single data-worker loss, conditional on healthy control-plane, Sentinel communication, and upstream providers.**
+
+Proxy updates retain one pod. A single Sync hook runs the schema migration before new proxies start; migration failure intentionally blocks rollout. Backward-incompatible schema changes may still require a maintenance window.
+
+Record a real API request during primary loss, verify returned-member roles and all Sentinel peer connections, and establish a database backup with the original salt key. Provider/network availability needs its own assessment.
+
+Use the [component-by-component failure contract](/infrastructure/litellm/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 PostgreSQL stores model configuration, keys, and administration state. Preserve the original `litellm-app` salt key to decrypt stored provider credentials. Redis state is asynchronous; the configuration does not declare an off-cluster PostgreSQL backup.

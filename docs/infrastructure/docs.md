@@ -21,9 +21,46 @@ Content, CSS, components, navigation, and build definitions live in Git. The ser
 
 ## Availability and failure behavior
 
-Two anti-affined serving replicas and a disruption budget cover one serving-node failure. Ingress and DNS remain shared dependencies. The declared `maxSurge: 1` / `maxUnavailable: 0` rollout needs a spare eligible node under required anti-affinity. With only two eligible workers, it can stall until that scheduling or rollout constraint is addressed.
+**Availability classification: HA static serving tier for node loss; current zero-unavailable rollout can be blocked by placement.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| NGINX | 2 stateless replicas; required host anti-affinity | The Service routes to ready copies of the same image. |
+| Persistent state | None in serving pods | Pages and search assets are reconstructed from Git and the built image. |
+| Eviction | PDB minimum 1 | A voluntary eviction should retain a healthy serving pod. |
+| Rollout | maxSurge 1; maxUnavailable 0 | Requires space for a third anti-affined pod before removing an old one. |
+
+### How a failure is handled
+
+The surviving NGINX pod serves new requests after endpoint detection/routing converges. No database promotion or volume restoration is required. The failed node does not contain the only copy of the site source or published image.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | One pod can continue serving. However, hard anti-affinity prevents the lost replica from simply joining the survivor on the same node; availability returns to full redundancy only when another eligible placement is available. |
+| RTX worker only | The app has no dedicated RTX dependency, but its ordinary pods do not automatically tolerate the quorum taint. Spare capacity on a tainted node is not automatically usable surge capacity. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+With exactly two eligible nodes already occupied by the two old replicas, the surge pod cannot schedule and zero-unavailable prevents freeing a slot. This is a rollout deadlock condition, not evidence that steady-state node failover is broken.
+
+### What prevents a stronger HA claim
+
+Ingress, DNS, network, and API-driven endpoint updates remain shared dependencies. A mutable image tag does not provide rollback provenance or automatically trigger a rollout.
+
+### What would improve the availability contract
+
+For predictable updates, provide a third eligible failure domain or change the rollout to a placement-compatible strategy as a separate manifest change. Use immutable images and a real request test during one-node maintenance.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

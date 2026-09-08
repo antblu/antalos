@@ -21,9 +21,47 @@ Git reconstructs desired state. Preserve repository credentials, Argo authentica
 
 ## Availability and failure behavior
 
-Replicated Argo components support node loss, but Git access and the Kubernetes API remain dependencies. Existing workloads can continue while reconciliation is down; new changes and repairs wait.
+**Availability classification: Partially HA overall: replicated API/rendering and Redis HA design; reconciliation and SSO are not proven by those counts.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| API server | 2 replicas; hard anti-affinity | New UI/API requests can use the surviving server. |
+| Repo server | 2 replicas; hard anti-affinity | Either can render Git inputs when Git and the plugin are available. |
+| Application controller | 2 replicas; round-robin cluster sharding | Shards assign reconciliation work; a second replica is not automatically a hot copy of every cluster’s reconciliation loop. |
+| Redis HA | 3 chart members; quorum toleration | Sentinel/proxy behavior follows the pinned chart; it is distinct from the bespoke app Redis scripts. |
+| Dex / other chart roles | No explicit replica override in this file | Do not infer SSO or every auxiliary component is replicated. |
+
+### How a failure is handled
+
+API and manifest-rendering requests can retry on the surviving replicas. Redis failover depends on the chart’s HA configuration. Reconciliation for an affected controller shard depends on the rendered controller mode and shard recovery/redistribution; the two-replica value and heartbeat setting alone do not prove seamless takeover. A login path can also be unavailable while API requests with an existing token still work.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | Surviving serving replicas may continue, but an affected controller shard or unreplicated authentication component can pause operations. Already-running applications normally do not stop just because Argo cannot reconcile them. |
+| RTX worker only | A Redis HA member may use the tainted worker because of its toleration. The whole RTX host also carries the configured Kubernetes API endpoint, making its loss a separate reconciliation dependency failure. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Server/repo-server/proxy overrides use zero surge and one unavailable. Plugin subPath changes require repo-server replacement. Confirm chart-derived auxiliary replica and PDB behavior before promising seamless upgrades.
+
+### What prevents a stronger HA claim
+
+Git connectivity, the single configured API endpoint, potential auxiliary singletons, and shard recovery bound complete control-plane availability. A surviving web UI does not prove that manifests are being applied.
+
+### What would improve the availability contract
+
+Make authentication and controller recovery topology explicit, protect the API endpoint, and record both login/API access and reconciliation of the affected cluster during a controlled controller loss.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

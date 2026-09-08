@@ -25,6 +25,12 @@ The public address is defined by `SUITECRM_HOST` in `apps/variables.yaml`. Use y
 
 For database startup failures, inspect Galera quorum, PVC placement, and arbitrator compatibility. NFS permission errors need export-side ownership analysis; recursively changing ownership on populated shared storage can be disruptive. SAML failures require checking assertion signatures, entity IDs, and username mapping.
 
+## Availability when using this service
+
+**Partially HA: replicated web and Galera data, but background workers and shared files have separate outage paths.** One web and one database member can remain with the arbitrator. Work owned by the single messenger may pause if that pod was on the failed worker. Remaining capacity and NFS availability still bound the user experience.
+
+Read [how redundancy and recovery work](/infrastructure/suitecrm/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official SuiteCRM documentation](https://docs.suitecrm.com/user/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

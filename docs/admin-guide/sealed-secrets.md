@@ -39,6 +39,16 @@ No OIDC integration is needed. Public-certificate access enables encryption, not
 
 2. Refresh the external key backup after rotation and rehearse offline recovery-unseal with output discarded or written only to protected storage.
 
+## Availability before maintenance
+
+**Not explicitly HA as a controller; existing generated Secrets remain available independently of its process.**
+
+Controller/key maintenance must keep all required keys available. Updating ciphertext before a required key is loaded can block dependent workloads even when old credentials worked.
+
+Make controller availability explicit if decryption continuity is required, retain all sealing keys, and exercise both existing-consumer continuity and creation of a new encrypted Secret during a controlled controller outage.
+
+Use the [component-by-component failure contract](/infrastructure/sealed-secrets/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 The external backup must include all controller private keys that encrypted repository secrets. A newly generated valid key cannot decrypt old ciphertext. Restoring Git without those keys is insufficient.

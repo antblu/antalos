@@ -39,6 +39,16 @@ cert-manager has no browser account or OIDC setup. Kubernetes RBAC controls cert
 
 2. Confirm the Certificate is Ready and that ingress serves it for the correct hostname. Add expiry visibility to operations.
 
+## Availability before maintenance
+
+**Partially HA: replicated admission webhook; certificate issuance is not fully replicated by the manifest.**
+
+Webhook updates use zero surge/one unavailable. Other controller behavior is chart-derived; do not infer identical rollout guarantees from the webhook overrides.
+
+Set and document controller/webhook availability policies where needed, monitor renewal deadlines, and keep DNS access recoverable. Test renewal separately from continued serving of an already-issued certificate.
+
+Use the [component-by-component failure contract](/infrastructure/cert-manager/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Keep DNS API access recoverable and preserve the sealing keys for its Secret. Issued TLS Secrets and ACME account keys are runtime state. Reissuance also depends on DNS control and ACME availability.

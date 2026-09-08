@@ -21,9 +21,46 @@ Preserve both Litestream backup directories, Headscale configuration and key mat
 
 ## Availability and failure behavior
 
-Recovery-based: neither application has a hot replica. NFS availability and backup freshness determine restart recovery. OIDC discovery is configured as a Headscale startup dependency, so Authentik must be reachable when it starts.
+**Availability classification: Not continuously HA: Headscale and Headplane each recover by restarting one process.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Headscale | 1 StatefulSet pod | No second server is ready to take over control-plane requests. |
+| Headplane | 1 Deployment pod; Recreate | The management interface has its own single-process outage. |
+| Databases | Two separate local SQLite databases | Litestream copies each database into its NFS backup directory. |
+| Backup target | One external NFS service | Replacement pods restore the latest available copy before serving. |
+
+### How a failure is handled
+
+Kubernetes must detect the failure and start a replacement on an eligible node. Initialization restores the relevant SQLite database from NFS, then the process starts with its original configuration and credentials. That is restart-and-restore recovery, not routing to a hot standby.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | If it hosts Headscale, registration and control updates stop until recovery. If it hosts Headplane, browser administration stops independently. Already-established client tunnels may continue using existing peer state, but new enrollment, policy distribution, or reconnection must not be assumed available. |
+| RTX worker only | No dedicated voter is involved. Headscale startup also depends on OIDC discovery under the checked-in only-start-if-available setting, so Authentik must be reachable during recovery. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Single-replica updates interrupt the corresponding service; Headplane uses Recreate. Do not scale SQLite writers to two as an HA shortcut without a supported coordination/storage redesign.
+
+### What prevents a stronger HA claim
+
+Unreplicated recent SQLite changes may be absent from the restored backup. NFS loss prevents dependable backup/restore. Restoring both applications requires both databases, not just the Headscale one.
+
+### What would improve the availability contract
+
+State a measured recovery-time and recovery-point objective, protect NFS and sealing material, and rehearse both restores. Continuous service availability would require a supported application/storage topology beyond the current singleton design.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

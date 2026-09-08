@@ -21,9 +21,46 @@ Git, the image, and ingress configuration reconstruct the server. User input and
 
 ## Availability and failure behavior
 
-The static serving tier is replicated. New access still depends on ingress and Authentik; losing a web replica does not transfer or restart an operation already running inside the browser.
+**Availability classification: HA static serving tier; access depends on the shared identity and ingress services.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Frontend | 2 stateless pods on separate nodes | Ready Service endpoints serve interchangeable copies of frontend assets. |
+| Update/eviction protection | Zero surge; one unavailable; PDB minimum 1 | Retains one serving replica during the intended rolling update or voluntary eviction. |
+| PDF processing | Inside each user’s browser | No server database or shared processing volume to promote. |
+| Access | Authentik forward-auth and Traefik | A separate dependency path must be reachable for protected access. |
+
+### How a failure is handled
+
+Once Kubernetes stops routing to the failed endpoint, fresh page and asset requests go to the other replica. A PDF operation already running in a loaded browser is not transferred between pods and may continue locally; subsequent asset fetches still need the site.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | The other serving replica can handle new requests. There is no persistent application volume attached to the lost node that must move before the static site returns. |
+| RTX worker only | No app-specific voter or backend is pinned to RTX. Whole-host API failure can still affect endpoint updates and replacement scheduling. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+The declared zero-surge update fits two eligible nodes, provided the remaining pod is Ready. A PDB controls eviction; it does not prevent every failed release or node outage.
+
+### What prevents a stronger HA claim
+
+This is not independent end-to-end HA while Authentik, ingress, DNS, and their dependencies can fail. Browser memory exhaustion and a missing optional CORS proxy are feature problems that extra server replicas do not fix.
+
+### What would improve the availability contract
+
+Measure protected page access after losing one serving pod and separately assess identity/ingress continuity. Preserve an honest distinction between frontend uptime and browser job success.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

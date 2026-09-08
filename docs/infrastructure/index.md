@@ -5,6 +5,10 @@ description: "Understand the backend before changing it."
 
 Understand the backend before changing it. Start with [platform topology](/infrastructure/platform/) and [service availability](/infrastructure/availability/), then follow an application’s request path and recovery contract.
 
+## Understand availability first
+
+The [service availability reference](/infrastructure/availability/) classifies every application and platform service and explains the mechanisms behind each claim. It distinguishes serving replicas, database promotion, quorum voters, sharded logs, singleton recovery, physical-host failure, and upgrade outages. The application pages below contain the detailed failure scenarios and remaining improvements.
+
 ## Applications
 
 | Service | Purpose |

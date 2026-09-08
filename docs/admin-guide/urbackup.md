@@ -43,6 +43,16 @@ The UI ingress references Authentik forward-auth. Create a proxy provider for th
 
 3. Monitor export free space and protect the server configuration separately from the clients it backs up. Plan a brief outage for server upgrades.
 
+## Availability before maintenance
+
+**Not HA: one backup server, restored with two external NFS exports.**
+
+Updates deliberately permit one unavailable replica, which here means the entire application. The singleton PDB can block drain until an administrator schedules the accepted outage; bypassing it does not create HA.
+
+Define a restart/recovery objective, protect both exports, and prove a client backup and restore after server recovery. Do not scale the server to multiple concurrent writers without an upstream-supported storage/coordination design.
+
+Use the [component-by-component failure contract](/infrastructure/urbackup/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Both the configuration export and backup export are essential. Preserve client registration/database state along with stored backup files. An NFS claim’s requested size does not enforce a quota on the export; capacity must be managed on the NFS server.

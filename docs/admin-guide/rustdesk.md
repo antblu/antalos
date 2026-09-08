@@ -43,6 +43,16 @@ This is RustDesk Server OSS. Native clients authenticate the server through its 
 
 3. Schedule a restore drill for hbbs. A `minAvailable: 1` budget on its single replica blocks a normal drain; maintenance requires an accepted outage and a controlled budget adjustment.
 
+## Availability before maintenance
+
+**Not continuously HA end to end: one recoverable rendezvous server, with two independent native relays.**
+
+The single hbbs uses zero surge and one unavailable, so updates interrupt it. Its PDB minimum 1 blocks ordinary eviction of the only replica. Relay StatefulSet updates replace ordinals sequentially; secure WebSocket paths on 443/21119 target the first relay and are not equivalent to the two native relay choices.
+
+Measure rendezvous recovery separately from relay continuity, protect the NFS backup and original key, and exercise direct/native relay/WSS paths separately. Continuous hbbs availability needs a supported design beyond adding a second SQLite writer.
+
+Use the [component-by-component failure contract](/infrastructure/rustdesk/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Preserve the Litestream backup and the `rustdesk-identity` sealed private key. The public key is supplied in `apps/rustdesk/public-key.txt`. Replacing the identity changes what clients trust. A one-second copy interval is a backup target, not a guaranteed recovery point.

@@ -21,9 +21,46 @@ Keep DNS API access recoverable and preserve the sealing keys for its Secret. Is
 
 ## Availability and failure behavior
 
-Partial availability: issued certificates remain usable by ingress while controllers are down. New issuance and renewal can pause, so expiry monitoring is separate from web readiness.
+**Availability classification: Partially HA: replicated admission webhook; certificate issuance is not fully replicated by the manifest.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Webhook | 2 anti-affined replicas | Admission can use a remaining endpoint when one webhook pod fails. |
+| Controller / CA injector | No explicit replica increase | Issuance/reconciliation can pause during their recovery. |
+| Already issued certificate | Kubernetes TLS Secret read by ingress | Existing HTTPS can continue without an immediate call to cert-manager. |
+| Issuance dependencies | Cloudflare DNS / ACME / API | These external/control-plane services must work for new certificates and renewals. |
+
+### How a failure is handled
+
+Webhook service routing can retain admission availability. Existing Traefik TLS termination continues using its loaded/available Secret while an issuer controller restarts. The failure becomes user-visible when a needed certificate cannot be issued, loaded, or renewed before expiry.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | Issued sites may remain reachable while new certificate operations pause. Distinguish certificate-controller health from the active certificate served by ingress. |
+| RTX worker only | No dedicated voter; whole-host API failure interrupts certificate reconciliation independently of webhook replica count. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Webhook updates use zero surge/one unavailable. Other controller behavior is chart-derived; do not infer identical rollout guarantees from the webhook overrides.
+
+### What prevents a stronger HA claim
+
+Two admission replicas are not two independent certificate-issuance stacks. Missing DNS credentials, ACME unavailability, and the current source-rendering prerequisite can block issuance even with healthy pods.
+
+### What would improve the availability contract
+
+Set and document controller/webhook availability policies where needed, monitor renewal deadlines, and keep DNS access recoverable. Test renewal separately from continued serving of an already-issued certificate.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

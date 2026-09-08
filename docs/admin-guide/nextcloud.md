@@ -45,6 +45,16 @@ The repository installs `user_oidc`, but does not create its Authentik provider 
 
 3. Upload, share, sync, and download a file; edit a document with two users; test a Talk call across networks. Establish a coordinated database/object backup before inviting users.
 
+## Availability before maintenance
+
+**Partially HA overall: replicated web and many companions, with shared storage, session, Redis recovery, and upgrade limits.**
+
+Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy uses maxSurge 1 and maxUnavailable 0: hard anti-affinity can stall its replacement with only two eligible workers. Major Nextcloud upgrades still require the documented isolated maintenance and single-owner schema migration procedure.
+
+Establish Redis election and safe rejoin behavior, correct the HAProxy rollout capacity constraint, protect shared storage, and exercise file/office/Talk workflows during degraded operation. A warm web replica does not make the whole Nextcloud suite outage-free.
+
+Use the [component-by-component failure contract](/infrastructure/nextcloud/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 A recoverable Nextcloud installation needs the database, Garage objects, original secret/salt and credentials, Git configuration, and any NFS content that cannot be re-created. Pinned application code can be downloaded again, but Whiteboard recording files or manually installed extensions on shared storage need separate consideration. Redis locks and disposable pod files do not replace the data backup.

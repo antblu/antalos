@@ -21,9 +21,46 @@ The operator installation is reconstructable. MariaDB data, physical backups, ro
 
 ## Availability and failure behavior
 
-The management and webhook tiers are replicated. Database availability still depends on Galera quorum, data-member health, and local storage; operator replicas cannot replace missing database copies.
+**Availability classification: HA management design: replicated operator and webhook; database HA still belongs to each managed MariaDB.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Operator | 2 anti-affined replicas | Leader-election/control-loop recovery can retain an available manager. |
+| Webhook | 2 anti-affined replicas | Admission routes to surviving endpoints. |
+| Disruption/update | PDB maxUnavailable 1; zero surge/one unavailable | Protects one management/webhook process during intended maintenance. |
+| Managed state | SuiteCRM Galera + database resources | Database quorum and data copies are separate from operator replicas. |
+
+### How a failure is handled
+
+Losing a management pod leaves another eligible controller to continue under the operator’s leadership model. Admission uses a surviving webhook. SQL requests continue through the MariaDB data service independently of HTTP traffic to the operator, although management is needed for repair.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | One controller and webhook can remain. If the same worker held a Galera data node, the database separately needs its surviving data member and arbitrator to retain membership. |
+| RTX worker only | The SuiteCRM arbitrator can be lost independently of operator replicas. Whole-host API loss still interrupts management and recovery operations. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+CRDs reconcile before the operator through waves -10 and -9. Management rollouts use zero surge and one unavailable; incompatible CRD/operator changes can still block reconciliation.
+
+### What prevents a stronger HA claim
+
+Two managers do not create a third SQL data copy, make NFS redundant, or prove a database backup is restorable. Leader transition and API availability still introduce possible management delays.
+
+### What would improve the availability contract
+
+Record management/webhook continuity and Galera membership changes separately. Keep schema/CRD version compatibility and physical-backup restoration part of the database service contract.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 

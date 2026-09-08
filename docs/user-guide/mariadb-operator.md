@@ -23,6 +23,12 @@ This is a platform service with no standalone user-facing website. Its consumers
 
 Webhook errors can block new resources even when SQL remains available. For Galera failures, distinguish operator reconciliation from quorum, state transfer, image compatibility, and volume ownership problems.
 
+## Availability when using this service
+
+**HA management design: replicated operator and webhook; database HA still belongs to each managed MariaDB.** One controller and webhook can remain. If the same worker held a Galera data node, the database separately needs its surviving data member and arbitrator to retain membership.
+
+Read [how redundancy and recovery work](/infrastructure/mariadb-operator/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+
 ## Official documentation
 
 Use the [official MariaDB operator documentation](https://github.com/mariadb-operator/mariadb-operator) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.

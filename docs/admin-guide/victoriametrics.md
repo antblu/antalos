@@ -43,6 +43,16 @@ The repository does not configure Grafana OIDC. Use the generated Grafana admini
 
 3. Export durable dashboard changes into `apps/victoriametrics/` and define Grafana database backup and metrics/log retention policies.
 
+## Availability before maintenance
+
+**Mixed availability: Grafana and metrics have replicated designs; the current log storage is sharded, not redundantly copied.**
+
+Grafana uses zero surge/one unavailable with a PDB. Metrics and logs have role-specific updates; two storage pods do not mean a log-storage rolling restart has complete-history query availability. The single operator may pause reconciliation during replacement.
+
+Test Grafana, metric query completeness, degraded metric ingestion, and log completeness separately. Protect all storage shards and the Grafana database. Add a supported independent-copy log architecture if full log-history HA is required.
+
+Use the [component-by-component failure contract](/infrastructure/victoriametrics/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+
 ## 5. Maintain and recover
 
 Preserve Grafana PostgreSQL data for UI-created settings and dashboards that have not been exported to Git. Metrics and logs reside on node-local storage with configured retention. The legacy SQLite PVC is retained as migration-era data and is not the active Grafana database.

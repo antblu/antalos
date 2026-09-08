@@ -21,9 +21,45 @@ Address pools and Service declarations live in Git. Reserve the same range outsi
 
 ## Availability and failure behavior
 
-L2 advertisement can move after a speaker/node failure. The controller is not explicitly replicated, so allocation changes may pause. Router, switch, and shared subnet failures remain outside the replica model.
+**Availability classification: Partially HA: distributed address advertisement; controller allocation and the physical network remain separate.**
 
-A disruption budget governs voluntary eviction; it does not stop a machine failure, repair external storage, or prove recovery time. The [platform availability reference](/infrastructure/availability/) explains the shared failure domains.
+This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+
+### What supplies redundancy
+
+| Component | Declared layout | Mechanism |
+| --- | --- | --- |
+| Speakers | Node-level instances | An eligible speaker can take over L2 advertisement of an address. |
+| Controller | No explicit replica increase | Address allocation/config changes can wait for controller recovery. |
+| Data forwarding | Kubernetes Services and endpoints | A new advertiser still needs reachable healthy service endpoints. |
+
+### How a failure is handled
+
+In the configured L2 mode, the eligible speaker set selects an advertiser. After its loss, another can advertise the same service IP and clients/neighbors must update their network state. MetalLB does not copy an application session or route around a dead physical subnet.
+
+### Failure scenarios
+
+| Failure | Expected behavior and remaining dependency |
+| --- | --- |
+| One main worker | The address may move if its advertiser was on that worker. Ready endpoints on remaining nodes are still needed; Local versus Cluster traffic policy also affects eligible forwarding. |
+| RTX worker only | May remove a speaker; no data replica lives in the pool object. Loss of the whole host can additionally interrupt API-driven configuration. |
+| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+
+### Upgrades and voluntary maintenance
+
+Existing allocations and advertisement have a different dependency path from assigning new IPs. A controller restart should not be described as proof that all existing traffic stops or all new allocations continue.
+
+### What prevents a stronger HA claim
+
+L2 failover can have convergence delay. The single external router, address conflict, VLAN, or switch can defeat all speakers. The chart’s controller count is not explicitly overridden.
+
+### What would improve the availability contract
+
+Document the external network failure domains, make control-component redundancy explicit if required, and measure reachability from actual LAN/WAN clients after advertiser loss.
+
+These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 
 ## Configuration ownership
 
