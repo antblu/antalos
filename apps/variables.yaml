@@ -148,7 +148,7 @@ variables:
   HEADPLANE_OIDC_USE_PKCE: "true"
   HEADPLANE_OIDC_TOKEN_ENDPOINT_AUTH_METHOD: client_secret_basic
   HEADPLANE_OIDC_DEFAULT_ROLE: member
-  HOMEPAGE_HOST: dash.antblu.net
+  HOMEPAGE_HOST: home.antblu.net
   HOMEPAGE_OIDC_ISSUER: https://auth.antblu.net/application/o/homepage/
   HOMEPAGE_OIDC_CLIENT_ID: r3p8EWn25T8523rm7lcgIpxCcu0lfTGib2kiOXkY
 
