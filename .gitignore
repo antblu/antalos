@@ -22,3 +22,4 @@ site/node_modules/
 site/dist/
 site/.astro/
 pnpm-debug.log*
+apps/rustdesk/public-key.txt
