@@ -159,7 +159,7 @@ Argo CD detects the desired-state change and synchronizes the cluster.
 
 ## Fresh Cluster Bootstrap
 
-### Check out [`deployment-order.md`](https://chatgpt.com/c/docs/deployment-guide/deployment-order.md)
+### Check out [cluster bootstrap](https://docs.antblu.net/admin-guide/bootstrap/)
 
 ## Secrets
 
@@ -194,7 +194,7 @@ This allows the Kubernetes environment to be recreated from Git while still pres
 
 See the full procedure:
 
-[`k8s-secrets-bootstrap.md`](https://chatgpt.com/c/docs/deployment-guide/k8s-secrets-bootstrap.md)
+[sealed credential guide](https://docs.antblu.net/admin-guide/secrets/)
 
 ## Using This Repository
 
@@ -230,3 +230,14 @@ Use of these names and logos does not imply endorsement.
 ## License
 
 This project is licensed under the [MIT License](https://chatgpt.com/c/LICENSE).
+
+
+## Documentation
+
+The [Antalos handbook](https://docs.antblu.net/) has three matching perspectives for each application and platform service:
+
+- [Overview and User Guide](https://docs.antblu.net/user-guide/): purpose, first workflows, and official product manuals.
+- [Infrastructure Explanation](https://docs.antblu.net/infrastructure/): components, storage, placement, and failure boundaries.
+- [Deployment and Admin Guide](https://docs.antblu.net/admin-guide/): manifests, credentials, identity, integrations, and recovery.
+
+Source pages live in the three matching folders under `docs/`. The Astro Starlight implementation lives in `site/`; see the [site authoring guide](https://docs.antblu.net/admin-guide/site-authoring/) for content and publishing conventions.

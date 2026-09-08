@@ -11,7 +11,8 @@ data:
   SAML_USERNAME_ATTRIBUTE: http://schemas.goauthentik.io/2021/02/saml/username
   SAML_USE_ATTRIBUTE_FRIENDLY_NAME: "false"
   SAML_AUTO_CREATE: enabled
-  SAML_AUTOCREATE_ATTRIBUTES_MAP: "{}"
+  SAML_AUTOCREATE_ATTRIBUTES_MAP: >-
+    {"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress":"email1"}
   SAML_IDP_ENTITY_ID: https://${AUTHENTIK_HOST}/application/saml/suitecrm/metadata/
   SAML_IDP_SSO_URL: https://${AUTHENTIK_HOST}/application/saml/suitecrm/
   SAML_IDP_SLO_URL: https://${AUTHENTIK_HOST}/application/saml/suitecrm/

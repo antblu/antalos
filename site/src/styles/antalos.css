@@ -9,7 +9,6 @@
   --antalos-radius-lg: 18px;
   --sl-nav-height: 68px;
   --sl-sidebar-width: 18rem;
-  --antalos-toc-width: 18rem;
   --sl-content-width: 46rem;
   --sl-font: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --sl-font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
@@ -111,8 +110,8 @@ starlight-theme-select label:hover {
 
 .sidebar-content {
   padding-top: 1.25rem;
-  font-family: var(--sl-font-mono);
-  font-size: 0.82rem;
+  font-family: var(--sl-font);
+  font-size: 0.875rem;
   font-variant-ligatures: none;
   letter-spacing: -0.015em;
 }
@@ -165,8 +164,8 @@ starlight-theme-select label:hover {
 }
 
 h1 {
-  max-width: 17ch;
-  font-size: clamp(2.35rem, 4.2vw, 3.65rem);
+  max-width: 25ch;
+  font-size: clamp(2rem, 3.5vw, 3rem);
   font-weight: 680;
   letter-spacing: -0.052em;
   line-height: 1.04;
@@ -191,7 +190,7 @@ h1 {
 }
 
 .sl-markdown-content a:not([class]) {
-  color: var(--antalos-blue-bright);
+  color: var(--sl-color-accent);
   text-decoration-color: rgba(98, 165, 255, 0.42);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.22em;
@@ -217,7 +216,9 @@ h1 {
 }
 
 .sl-markdown-content table {
-  overflow: hidden;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
   border: 1px solid var(--sl-color-hairline-light);
   border-radius: var(--antalos-radius);
   font-size: 0.925rem;
@@ -246,17 +247,6 @@ h1 {
   color: var(--antalos-blue-bright);
 }
 
-@media (min-width: 72rem) {
-  .right-sidebar-container {
-    flex: 0 0 var(--antalos-toc-width);
-    width: var(--antalos-toc-width);
-  }
-
-  .right-sidebar {
-    inset-inline-end: 0;
-    width: var(--antalos-toc-width);
-  }
-}
 
 .pagination-links a {
   border-color: var(--sl-color-hairline-light);
@@ -373,4 +363,163 @@ h1 {
   *::after {
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Editorial components are in the article flow; Starlight positions the TOC. */
+.sl-markdown-content > p:first-of-type {
+  color: var(--sl-color-gray-2);
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+
+.sl-markdown-content :is(h2, h3) { scroll-margin-top: 7rem; }
+.sl-markdown-content li + li { margin-top: 0.5rem; }
+.sl-markdown-content :is(th, td) { padding: 0.8rem 1rem; }
+.sl-markdown-content tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--sl-color-gray-6) 24%, transparent);
+}
+.sl-markdown-content a:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 4px;
+}
+.sl-markdown-content .guide-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-block: 0 2rem;
+  padding: 0.4rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: var(--antalos-radius);
+  background: var(--sl-color-bg-sidebar);
+}
+.sl-markdown-content .guide-switcher a {
+  flex: 1 1 10rem;
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--antalos-radius-sm);
+  color: var(--sl-color-gray-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.45;
+  text-decoration: none;
+}
+.sl-markdown-content .guide-switcher a[aria-current='page'],
+.sl-markdown-content .guide-switcher a:hover {
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-accent-high);
+}
+.sl-markdown-content .architecture-diagram {
+  margin: 1.75rem 0;
+  padding: clamp(1rem, 3vw, 1.75rem);
+  border: 1px solid var(--sl-color-hairline-light);
+  border-radius: var(--antalos-radius-lg);
+  background:
+    radial-gradient(ellipse at top right, var(--antalos-blue-soft), transparent 65%),
+    var(--sl-color-bg-sidebar);
+}
+.sl-markdown-content .diagram-heading {
+  margin: 0 0 1.25rem;
+  color: var(--sl-color-white);
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+.sl-markdown-content .diagram-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sl-markdown-content .diagram-stage { position: relative; margin: 0; min-width: 0; }
+.sl-markdown-content .diagram-stage + .diagram-stage::before {
+  content: '→';
+  position: absolute;
+  inset-inline-start: -1.5rem;
+  top: 2.6rem;
+  color: var(--sl-color-accent);
+  font-size: 1.15rem;
+}
+.sl-markdown-content .diagram-label {
+  display: block;
+  margin-bottom: 0.6rem;
+  color: var(--sl-color-gray-2);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.065em;
+  text-transform: uppercase;
+}
+.sl-markdown-content .diagram-stage ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sl-markdown-content .diagram-stage ul li {
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--sl-color-hairline-light);
+  border-radius: var(--antalos-radius-sm);
+  background: var(--sl-color-bg);
+  color: var(--sl-color-white);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  box-shadow: 0 4px 12px -8px var(--antalos-glow);
+}
+.sl-markdown-content .architecture-diagram figcaption {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sl-color-hairline);
+  color: var(--sl-color-gray-2);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+.sl-markdown-content .guide-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: 1rem;
+  margin-block: 1.5rem 2.5rem;
+}
+.sl-markdown-content .guide-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1.5rem;
+  border: 1px solid var(--sl-color-hairline-light);
+  border-radius: var(--antalos-radius);
+  background: var(--sl-color-bg-sidebar);
+  color: var(--sl-color-white);
+  text-decoration: none;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.sl-markdown-content .guide-card:hover {
+  border-color: var(--sl-color-accent);
+  background: var(--sl-color-accent-low);
+}
+.sl-markdown-content .guide-card span {
+  margin: 0;
+  color: var(--sl-color-gray-2);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.sl-markdown-content .guide-card .card-number {
+  color: var(--sl-color-accent);
+  font-family: var(--sl-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+}
+@media (max-width: 38rem) {
+  .sl-markdown-content .diagram-flow { grid-template-columns: 1fr; gap: 2rem; }
+  .sl-markdown-content .diagram-stage + .diagram-stage::before {
+    content: '↓';
+    top: -1.85rem;
+    inset-inline-start: 50%;
+  }
+}
+@media print {
+  .guide-switcher { display: none !important; }
+  .architecture-diagram { break-inside: avoid; }
 }
