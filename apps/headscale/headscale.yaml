@@ -33,6 +33,21 @@ spec:
       targetPort: metrics
       protocol: TCP
 ---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: headscale
+  namespace: headscale
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: headscale
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:

@@ -83,6 +83,36 @@ data:
           "targets": [{"expr": "increase(traefik_config_reloads_total[$__rate_interval])", "legendFormat": "{{pod}}", "refId": "A"}],
           "title": "Configuration reloads",
           "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
+          "fieldConfig": {"defaults": {"unit": "cores"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 22},
+          "id": 9,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "sum by (pod, container) (rate(container_cpu_usage_seconds_total{namespace=\"traefik\",container!=\"POD\",container!=\"\"}[$__rate_interval]))", "legendFormat": "{{pod}} / {{container}}", "refId": "A"}],
+          "title": "Container CPU",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
+          "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 22},
+          "id": 10,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"traefik\",container!=\"POD\",container!=\"\"})", "legendFormat": "{{pod}} / {{container}}", "refId": "A"}],
+          "title": "Container memory",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs"},
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 30},
+          "id": 11,
+          "options": {"dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true},
+          "targets": [{"datasource": {"type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs"}, "expr": "kubernetes.pod_namespace:=\"traefik\"", "queryType": "range", "refId": "A"}],
+          "title": "Traefik logs",
+          "type": "logs"
         }
       ],
       "refresh": "30s",
