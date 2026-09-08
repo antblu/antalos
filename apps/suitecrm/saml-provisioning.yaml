@@ -42,7 +42,15 @@ data:
         }
     }
   services.yaml: |
+    security:
+      firewalls:
+        main:
+          entry_point: App\Extension\antalos\backend\Security\Saml\LoginEntryPoint
     services:
+      App\Extension\antalos\backend\Security\Saml\LoginEntryPoint: ~
+      App\Extension\antalos\backend\Security\Saml\LoginPageSubscriber:
+        tags:
+          - kernel.event_subscriber
       App\Extension\antalos\backend\Security\Saml\SamlUserFactory:
         arguments:
           $userHandler: '@App\Authentication\LegacyHandler\UserHandler'
@@ -51,3 +59,86 @@ data:
       saml_user_factory:
         alias: App\Extension\antalos\backend\Security\Saml\SamlUserFactory
         public: true
+  LoginEntryPoint.php: |
+    <?php
+
+    namespace App\Extension\antalos\backend\Security\Saml;
+
+    use Symfony\Component\HttpFoundation\RedirectResponse;
+    use Symfony\Component\HttpFoundation\Request;
+    use Symfony\Component\HttpFoundation\Response;
+    use Symfony\Component\Security\Core\Exception\AuthenticationException;
+    use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
+
+    class LoginEntryPoint implements AuthenticationEntryPointInterface
+    {
+        public function start(Request $request, ?AuthenticationException $authException = null): Response
+        {
+            return new RedirectResponse('/auth');
+        }
+    }
+  LoginPageSubscriber.php: |
+    <?php
+
+    namespace App\Extension\antalos\backend\Security\Saml;
+
+    use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+    use Symfony\Component\HttpKernel\Event\ResponseEvent;
+    use Symfony\Component\HttpKernel\KernelEvents;
+
+    class LoginPageSubscriber implements EventSubscriberInterface
+    {
+        public static function getSubscribedEvents(): array
+        {
+            return [KernelEvents::RESPONSE => 'onResponse'];
+        }
+
+        public function onResponse(ResponseEvent $event): void
+        {
+            if (!$event->isMainRequest() || $event->getRequest()->getPathInfo() !== '/auth') {
+                return;
+            }
+            $response = $event->getResponse();
+            if ($response->getStatusCode() !== 200 || !str_contains($response->getContent(), '</body>')) {
+                return;
+            }
+            $response->setContent(str_replace(
+                '</body>',
+                '<script src="/login-options.js" defer></script></body>',
+                $response->getContent()
+            ));
+        }
+    }
+  login-options.js: |
+    (() => {
+        // The release ships a compiled Angular form. Add the optional SSO link
+        // when that form renders, including after password-recovery/2FA views.
+        function addSsoOption() {
+            const passwordButton = document.querySelector('scrm-login-ui #login-button');
+            if (!passwordButton || document.getElementById('sso-login-button')) return;
+            const link = document.createElement('a');
+            link.id = 'sso-login-button';
+            link.href = '/saml/login';
+            link.textContent = 'Sign in with SSO';
+            link.className = 'login-button';
+            link.style.cssText = 'display:block;text-align:center;text-decoration:none;margin-top:12px;padding:12px;';
+            passwordButton.insertAdjacentElement('afterend', link);
+        }
+        new MutationObserver(addSsoOption).observe(document.body, {childList: true, subtree: true});
+        addSsoOption();
+    })();
+  register-smarty.php: |
+    <?php
+
+    // Keep the upstream template working without suppressing deprecations.
+    $path = $argv[1] . '/public/legacy/include/Sugar_Smarty.php';
+    $source = file_get_contents($path);
+    $registration = '$this->registerPlugin("modifier", "file_exists", "file_exists");';
+    if (str_contains($source, $registration)) {
+        exit(0);
+    }
+    $anchor = '$this->registerPlugin("modifier", "strval", "strval");';
+    if (substr_count($source, $anchor) !== 1) {
+        throw new RuntimeException('Review the Smarty registration patch for this SuiteCRM release');
+    }
+    file_put_contents($path, str_replace($anchor, $registration . "\n        " . $anchor, $source));

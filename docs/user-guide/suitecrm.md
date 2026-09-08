@@ -5,7 +5,7 @@ description: "What SuiteCRM does, how to use it in Antalos, and where to find it
 
 <nav class="guide-switcher" aria-label="SuiteCRM guide sections"><a aria-current="page" href="/user-guide/suitecrm/">Overview and User Guide</a><a href="/infrastructure/suitecrm/">Infrastructure Explanation</a><a href="/admin-guide/suitecrm/">Deployment and Admin Guide</a></nav>
 
-SuiteCRM tracks customer relationships through leads, contacts, accounts, opportunities, activities, and cases. Antalos uses a custom packaged SuiteCRM image and Authentik SAML sign-in. CRM access and record visibility are controlled by roles and security groups inside SuiteCRM.
+SuiteCRM tracks customer relationships through leads, contacts, accounts, opportunities, activities, and cases. Antalos uses a custom packaged SuiteCRM image with password login and optional Authentik SAML sign-in. CRM access and record visibility are controlled by roles and security groups inside SuiteCRM.
 
 ## Access and audience
 
@@ -13,7 +13,7 @@ The public address is defined by `SUITECRM_HOST` in `apps/variables.yaml`. Use y
 
 ## Your first workflow
 
-1. Sign in through the configured SAML provider and select the relevant module, such as Accounts, Contacts, or Leads.
+1. Enter your SuiteCRM username and password, or choose **Sign in with SSO** to use Authentik. SSO-created accounts use Authentik unless an administrator explicitly enables a local password. Then select the relevant module, such as Accounts, Contacts, or Leads.
 
 2. Search for an existing record before creating a duplicate. Link a contact to the correct account and record the next activity or follow-up.
 

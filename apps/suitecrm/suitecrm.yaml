@@ -98,7 +98,11 @@ spec:
               # Reinstall the SAML extension even when shared application code exists.
               mkdir -p extensions/antalos/backend/Security/Saml extensions/antalos/config
               cp /mnt/saml-provisioning/SamlUserFactory.php extensions/antalos/backend/Security/Saml/
+              cp /mnt/saml-provisioning/LoginEntryPoint.php extensions/antalos/backend/Security/Saml/
+              cp /mnt/saml-provisioning/LoginPageSubscriber.php extensions/antalos/backend/Security/Saml/
               cp /mnt/saml-provisioning/services.yaml extensions/antalos/config/
+              cp /mnt/saml-provisioning/login-options.js public/
+              php /mnt/saml-provisioning/register-smarty.php "$app_root"
               # Restore upstream external-only provisioning on older shared copies.
               sed -i "/external_auth_only/s/= 0;/= 1;/" public/legacy/include/portability/User/CreateUser.php
 
