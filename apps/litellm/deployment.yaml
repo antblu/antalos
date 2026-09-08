@@ -81,11 +81,7 @@ spec:
             secretKeyRef:
               name: litellm-app
               key: salt-key
-        - name: UI_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: litellm-app
-              key: ui-username
+        - name: admin
         - name: UI_PASSWORD
           valueFrom:
             secretKeyRef:

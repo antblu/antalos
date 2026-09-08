@@ -84,6 +84,9 @@ spec:
             httpGet:
               path: /api/healthcheck
               port: http
+              httpHeaders:
+                - name: Host
+                  value: ${HOMEPAGE_HOST}
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 3
@@ -92,6 +95,9 @@ spec:
             httpGet:
               path: /api/healthcheck
               port: http
+              httpHeaders:
+                - name: Host
+                  value: ${HOMEPAGE_HOST}
             initialDelaySeconds: 15
             periodSeconds: 30
             timeoutSeconds: 3
