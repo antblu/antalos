@@ -288,3 +288,24 @@ variables:
   VAULTWARDEN_NFS_SHARE: /mnt/nvme/vaultwarden
   VAULTWARDEN_DATA_STORAGE_SIZE: 10Gi
   VAULTWARDEN_DATABASE_STORAGE_SIZE: 10Gi
+
+  # GitLab HA, with repository quorum on the RTX worker.
+  GITLAB_CHART_VERSION: "10.3.1"
+  GITLAB_VERSION: "19.3.1"
+  GITLAB_HOST: "gitlab.antblu.net"
+  GITLAB_REGISTRY_HOST: "registry.antblu.net"
+  GITLAB_KAS_HOST: "kas.antblu.net"
+  GITLAB_DOMAIN: "antblu.net"
+  GITLAB_DATABASE_HOST: "gitlab-db-rw.gitlab.svc.cluster.local"
+  GITLAB_PRAEFECT_DATABASE_HOST: "gitlab-praefect-db-rw.gitlab.svc.cluster.local"
+  GITLAB_DATABASE_STORAGE_SIZE: "20Gi"
+  GITLAB_PRAEFECT_DATABASE_STORAGE_SIZE: "5Gi"
+  GITLAB_GITALY_STORAGE_SIZE: "10Gi"
+  GITLAB_REDIS_STORAGE_SIZE: "2Gi"
+  GITLAB_NTP_HOST: "pool.ntp.org"
+  GITLAB_REDIS_DATA_0_HOST: "gitlab-redis-data-0.gitlab-redis-data.gitlab.svc.cluster.local"
+  GITLAB_REDIS_DATA_1_HOST: "gitlab-redis-data-1.gitlab-redis-data.gitlab.svc.cluster.local"
+  GITLAB_REDIS_SENTINEL_2_HOST: "gitlab-redis-sentinel-2.gitlab.svc.cluster.local"
+  GITLAB_SENTINEL_STORAGE_SIZE: 100Mi
+
+  GITLAB_S3_BUCKET: gitlabs

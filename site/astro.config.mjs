@@ -45,6 +45,7 @@ export default defineConfig({
           label: 'Operations',
           items: [
             { label: 'Routine cluster operations', link: '/operations/routine-operations/' },
+            { label: 'GitLab HA deployment', link: '/gitlab/deployment/' },
           ],
         },
         {

@@ -1,0 +1,277 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gitlab
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: https://charts.gitlab.io/
+    chart: gitlab
+    targetRevision: ${GITLAB_CHART_VERSION}
+    helm:
+      releaseName: gitlab
+      valuesObject:
+        global:
+          gitlabVersion: ${GITLAB_VERSION}
+          hosts:
+            domain: ${GITLAB_DOMAIN}
+            gitlab:
+              name: ${GITLAB_HOST}
+            registry:
+              name: ${GITLAB_REGISTRY_HOST}
+            kas:
+              name: ${GITLAB_KAS_HOST}
+          ingress:
+            class: traefik
+            configureCertmanager: false
+            tls:
+              secretName: gitlab-tls
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.tls: 'true'
+          antiAffinity: hard
+          nodeAffinity: hard
+          affinity:
+            podAntiAffinity:
+              topologyKey: kubernetes.io/hostname
+            nodeAffinity:
+              key: kubernetes.io/hostname
+              values:
+              - ${TALOS_WORKER_LEFT}
+              - ${TALOS_WORKER_RIGHT}
+          minio:
+            enabled: false
+          psql:
+            host: ${GITLAB_DATABASE_HOST}
+            username: gitlab
+            database: gitlabhq_production
+            password:
+              secret: gitlab-db-app
+              key: password
+          redis:
+            host: gitlab
+            auth:
+              enabled: true
+              secret: gitlab-redis
+              key: password
+            sentinelAuth:
+              enabled: true
+              secret: gitlab-redis
+              key: password
+            sentinels:
+            - host: ${GITLAB_REDIS_DATA_0_HOST}
+              port: 26379
+            - host: ${GITLAB_REDIS_DATA_1_HOST}
+              port: 26379
+            - host: ${GITLAB_REDIS_SENTINEL_2_HOST}
+              port: 26379
+          praefect:
+            enabled: true
+            ntpHost: ${GITLAB_NTP_HOST}
+            virtualStorages:
+            - name: default
+              gitalyReplicas: 3
+              maxUnavailable: 1
+            psql:
+              host: ${GITLAB_PRAEFECT_DATABASE_HOST}
+              user: praefect
+              dbName: praefect
+              sslMode: require
+            dbSecret:
+              secret: gitlab-praefect-db-app
+              key: password
+          appConfig:
+            object_store:
+              enabled: true
+              proxy_download: true
+              connection:
+                secret: gitlab-object-storage
+                key: connection
+            enableUsagePing: false
+            lfs:
+              enabled: true
+              bucket: ${GITLAB_S3_BUCKET}/lfs
+              proxy_download: true
+            artifacts:
+              enabled: true
+              bucket: ${GITLAB_S3_BUCKET}/artifacts
+              proxy_download: true
+            uploads:
+              enabled: true
+              bucket: ${GITLAB_S3_BUCKET}/uploads
+              proxy_download: true
+            packages:
+              enabled: true
+              bucket: ${GITLAB_S3_BUCKET}/packages
+              proxy_download: true
+            externalDiffs:
+              enabled: true
+              bucket: ${GITLAB_S3_BUCKET}/externalDiffs
+              proxy_download: true
+            terraformState:
+              enabled: true
+              bucket: ${GITLAB_S3_BUCKET}/terraformState
+              proxy_download: true
+            ciSecureFiles:
+              enabled: true
+              bucket: ${GITLAB_S3_BUCKET}/ciSecureFiles
+              proxy_download: true
+            dependencyProxy:
+              enabled: true
+              bucket: ${GITLAB_S3_BUCKET}/dependencyProxy
+              proxy_download: true
+            backups:
+              bucket: ${GITLAB_S3_BUCKET}
+              tmpBucket: ${GITLAB_S3_BUCKET}/restore-tmp
+          smtp:
+            enabled: false
+          gatewayApi:
+            enabled: false
+            installEnvoy: false
+            configureCertmanager: false
+        installCertmanager: false
+        nginx-ingress:
+          enabled: false
+        prometheus:
+          install: false
+        gitlab-runner:
+          install: false
+        shared-secrets:
+          enabled: false
+        registry:
+          hpa:
+            minReplicas: 2
+            maxReplicas: 2
+          deployment:
+            strategy: &id001
+              type: RollingUpdate
+              rollingUpdate:
+                maxSurge: 0
+                maxUnavailable: 1
+          storage:
+            secret: gitlab-registry-storage
+            key: config
+            redirect:
+              disable: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+        gitlab:
+          webservice:
+            minReplicas: 2
+            maxReplicas: 2
+            deployment:
+              strategy: *id001
+            workerProcesses: 2
+            resources:
+              requests:
+                cpu: 300m
+                memory: 2500Mi
+              limits:
+                memory: 4Gi
+            helmTests:
+              enabled: false
+          sidekiq:
+            minReplicas: 2
+            maxReplicas: 2
+            deployment:
+              strategy: *id001
+            concurrency: 10
+            resources:
+              requests:
+                cpu: 250m
+                memory: 1500Mi
+              limits:
+                memory: 3Gi
+          gitlab-shell:
+            minReplicas: 2
+            maxReplicas: 2
+            deployment:
+              strategy: *id001
+            service:
+              type: LoadBalancer
+              annotations:
+                metallb.io/loadBalancerIPs: ${INGRESS_LOAD_BALANCER_IP}
+                metallb.io/allow-shared-ip: antblu-net
+          kas:
+            minReplicas: 2
+            maxReplicas: 2
+            deployment:
+              strategy: *id001
+          praefect:
+            affinity:
+              nodeAffinity:
+                key: kubernetes.io/hostname
+                values:
+                - ${TALOS_WORKER_LEFT}
+                - ${TALOS_WORKER_RIGHT}
+                - ${TALOS_WORKER_RTX}
+            tolerations:
+            - key: quorum
+              operator: Exists
+              effect: NoSchedule
+            replicas: 3
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+            statefulset:
+              strategy:
+                type: RollingUpdate
+          gitaly:
+            affinity:
+              nodeAffinity:
+                key: kubernetes.io/hostname
+                values:
+                - ${TALOS_WORKER_LEFT}
+                - ${TALOS_WORKER_RIGHT}
+                - ${TALOS_WORKER_RTX}
+            tolerations:
+            - key: quorum
+              operator: Exists
+              effect: NoSchedule
+            persistence:
+              storageClass: openebs-local
+              size: ${GITLAB_GITALY_STORAGE_SIZE}
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 1Gi
+            statefulset:
+              strategy:
+                type: RollingUpdate
+          toolbox:
+            replicas: 2
+            deployment:
+              strategy: *id001
+            backups:
+              objectStorage:
+                config:
+                  secret: gitlab-object-storage
+                  key: s3cfg
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+          gitlab-exporter:
+            enabled: false
+  - repoURL: https://github.com/antblu/antalos.git
+    targetRevision: main
+    path: apps/gitlab
+    plugin:
+      name: yaml-envsubst
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gitlab
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true

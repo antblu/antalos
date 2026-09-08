@@ -1,0 +1,329 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitlab-redis-config
+  namespace: gitlab
+data:
+  start-redis.sh: |
+    #!/bin/sh
+    set -eu
+    export REDISCLI_AUTH="$REDIS_PASSWORD"
+    self="${HOSTNAME}.gitlab-redis-data.gitlab.svc.cluster.local"
+    master=""
+    for sentinel in ${GITLAB_REDIS_DATA_0_HOST} ${GITLAB_REDIS_DATA_1_HOST} ${GITLAB_REDIS_SENTINEL_2_HOST}; do
+      candidate=$(redis-cli --no-auth-warning -h "$sentinel" -p 26379 --raw SENTINEL get-master-addr-by-name gitlab 2>/dev/null | head -1 || true)
+      if [ -n "$candidate" ]; then master="$candidate"; break; fi
+    done
+    # A data file marks an initialized node; never guess a primary after initialization.
+    if [ -z "$master" ] && [ -e /data/initialized ]; then
+      echo "No Sentinel available; retrying rather than creating a second primary."
+      sleep 5
+      exec /config/start-redis.sh
+    fi
+    master="${master:-${GITLAB_REDIS_DATA_0_HOST}}"
+    set -- redis-server --appendonly yes --appendfsync everysec --requirepass "$REDIS_PASSWORD" --masterauth "$REDIS_PASSWORD" --protected-mode no --replica-announce-ip "$self"
+    if [ "$master" != "$self" ]; then set -- "$@" --replicaof "$master" 6379; fi
+    touch /data/initialized
+    exec "$@"
+  start-sentinel.sh: |
+    #!/bin/sh
+    set -eu
+    if [ ! -s /sentinel/sentinel.conf ]; then
+      cat > /sentinel/sentinel.conf <<SENTINEL
+    port 26379
+    protected-mode no
+    requirepass "$REDIS_PASSWORD"
+    sentinel resolve-hostnames yes
+    sentinel announce-hostnames yes
+    sentinel monitor gitlab ${GITLAB_REDIS_DATA_0_HOST} 6379 2
+    sentinel auth-pass gitlab "$REDIS_PASSWORD"
+    sentinel down-after-milliseconds gitlab 5000
+    sentinel failover-timeout gitlab 60000
+    sentinel parallel-syncs gitlab 1
+    SENTINEL
+    fi
+    exec redis-sentinel /sentinel/sentinel.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-redis-data
+  namespace: gitlab
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: gitlab-redis-data
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: redis
+  - name: sentinel
+    port: 26379
+    targetPort: sentinel
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: gitlab-redis-data
+  namespace: gitlab
+spec:
+  serviceName: gitlab-redis-data
+  replicas: 2
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gitlab-redis-data
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gitlab-redis-data
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ${TALOS_WORKER_LEFT}
+                - ${TALOS_WORKER_RIGHT}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: gitlab-redis-data
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: redis
+        image: redis:${REDIS_IMAGE_TAG}
+        command:
+        - /config/start-redis.sh
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-redis
+              key: password
+        ports:
+        - name: redis
+          containerPort: 6379
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - redis-cli -a "$REDIS_PASSWORD" ping | grep PONG
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: data
+          mountPath: /data
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      - name: sentinel
+        image: redis:${REDIS_IMAGE_TAG}
+        command:
+        - /config/start-sentinel.sh
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-redis
+              key: password
+        ports:
+        - name: sentinel
+          containerPort: 26379
+        readinessProbe:
+          tcpSocket:
+            port: sentinel
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: sentinel-state
+          mountPath: /sentinel
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: config
+        configMap:
+          name: gitlab-redis-config
+          defaultMode: 365
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: openebs-local
+      resources:
+        requests:
+          storage: ${GITLAB_REDIS_STORAGE_SIZE}
+  - metadata:
+      name: sentinel-state
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: openebs-local
+      resources:
+        requests:
+          storage: ${GITLAB_SENTINEL_STORAGE_SIZE}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gitlab-redis-data
+  namespace: gitlab
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gitlab-redis-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-redis-sentinel-2
+  namespace: gitlab
+spec:
+  selector:
+    app.kubernetes.io/name: gitlab-redis-quorum
+  ports:
+  - name: sentinel
+    port: 26379
+    targetPort: sentinel
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab-redis-quorum
+  namespace: gitlab
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gitlab-redis-quorum
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gitlab-redis-quorum
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${TALOS_WORKER_RTX}
+      tolerations:
+      - key: quorum
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: sentinel
+        image: redis:${REDIS_IMAGE_TAG}
+        command:
+        - /config/start-sentinel.sh
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-redis
+              key: password
+        ports:
+        - name: sentinel
+          containerPort: 26379
+        readinessProbe:
+          tcpSocket:
+            port: sentinel
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: sentinel-state
+          mountPath: /sentinel
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: config
+        configMap:
+          name: gitlab-redis-config
+          defaultMode: 365
+      - name: sentinel-state
+        persistentVolumeClaim:
+          claimName: gitlab-redis-quorum-state
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gitlab-redis-quorum
+  namespace: gitlab
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gitlab-redis-quorum
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gitlab-redis-quorum-state
+  namespace: gitlab
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: openebs-local
+  resources:
+    requests:
+      storage: ${GITLAB_SENTINEL_STORAGE_SIZE}
