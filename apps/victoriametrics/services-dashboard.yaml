@@ -69,16 +69,18 @@ data:
               ],
               "fields": "",
               "values": false
-            }
+            },
+            "textMode": "name"
           },
           "targets": [
             {
               "expr": "kube_pod_status_ready{namespace=\"argocd\",pod=~\"argocd-server-.*\",condition=\"true\"}",
+              "legendFormat": "{{pod}}",
               "refId": "A"
             }
           ],
           "title": "Argo CD replica status",
-          "type": "table"
+          "type": "stat"
         },
         {
           "datasource": {
@@ -154,44 +156,6 @@ data:
             }
           ],
           "title": "Container restarts",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "VictoriaMetrics"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percentunit"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 5,
-            "w": 6,
-            "x": 18,
-            "y": 0
-          },
-          "id": 4,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            }
-          },
-          "targets": [
-            {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"argocd\",container!=\"POD\",container!=\"\"}[$__rate_interval])) / clamp_min(sum(kube_pod_container_resource_requests{namespace=\"argocd\",resource=\"cpu\",unit=\"core\"}), 0.001)",
-              "refId": "A"
-            }
-          ],
-          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -2590,44 +2554,6 @@ data:
             }
           ],
           "title": "Container restarts",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "VictoriaMetrics"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percentunit"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 5,
-            "w": 6,
-            "x": 18,
-            "y": 0
-          },
-          "id": 4,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            }
-          },
-          "targets": [
-            {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"rancher\",container!=\"POD\",container!=\"\"}[$__rate_interval])) / clamp_min(sum(kube_pod_container_resource_requests{namespace=\"rancher\",resource=\"cpu\",unit=\"core\"}), 0.001)",
-              "refId": "A"
-            }
-          ],
-          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
