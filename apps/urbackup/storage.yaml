@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: urbackup-config
+spec:
+  capacity:
+    storage: ${URBACKUP_CONFIG_STORAGE_SIZE}
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    name: urbackup-config
+    namespace: urbackup
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: urbackup-config
+    volumeAttributes:
+      server: ${NFS_SERVER}
+      share: ${URBACKUP_CONFIG_NFS_SHARE}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: urbackup-config
+  namespace: urbackup
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: urbackup-config
+  resources:
+    requests:
+      storage: ${URBACKUP_CONFIG_STORAGE_SIZE}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: urbackup-backups
+spec:
+  capacity:
+    storage: ${URBACKUP_BACKUP_STORAGE_SIZE}
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    name: urbackup-backups
+    namespace: urbackup
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: urbackup-backups
+    volumeAttributes:
+      server: ${NFS_SERVER}
+      share: ${URBACKUP_BACKUP_NFS_SHARE}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: urbackup-backups
+  namespace: urbackup
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: urbackup-backups
+  resources:
+    requests:
+      storage: ${URBACKUP_BACKUP_STORAGE_SIZE}

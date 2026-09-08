@@ -13,9 +13,9 @@ data:
   start.sh: |
     #!/tools/busybox sh
     set -eu
-    # Never use nolock/local_lock: this lock must be coordinated by NFS.
-    # Opening the FD for writing is required for an exclusive lock over NFS.
-    exec 9>/backup/hbbs.lock
+    # Keep the process lock on the writable pod-local data volume. The NFS
+    # export is root-squashed and is used only for Litestream replication.
+    exec 9>/data/hbbs.lock
     /tools/busybox flock -n 9
     /tools/litestream restore -config /config/litestream.yml -if-db-not-exists -if-replica-exists /data/db_v2.sqlite3
     exec /tools/litestream replicate -config /config/litestream.yml -exec "/usr/bin/hbbs -k _ -r ${RUSTDESK_RELAY_0_HOST}:21117,${RUSTDESK_RELAY_1_HOST}:21117"
