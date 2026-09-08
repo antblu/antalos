@@ -63,12 +63,6 @@ spec:
             class: traefik
             nginxIngressAnnotations: false
             additionalAnnotations:
-              gethomepage.dev/description: Password manager
-              gethomepage.dev/enabled: "true"
-              gethomepage.dev/group: Applications
-              gethomepage.dev/icon: vaultwarden.png
-              gethomepage.dev/name: Vaultwarden
-              gethomepage.dev/weight: "40"
               traefik.ingress.kubernetes.io/router.entrypoints: websecure
               traefik.ingress.kubernetes.io/router.tls: "true"
             tls: true

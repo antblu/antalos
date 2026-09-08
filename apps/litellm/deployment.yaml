@@ -164,12 +164,6 @@ metadata:
   name: litellm
   namespace: litellm
   annotations:
-    gethomepage.dev/description: LLM gateway and model management
-    gethomepage.dev/enabled: "true"
-    gethomepage.dev/group: Platform
-    gethomepage.dev/icon: litellm.png
-    gethomepage.dev/name: LiteLLM
-    gethomepage.dev/weight: "70"
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: 'true'
 spec:

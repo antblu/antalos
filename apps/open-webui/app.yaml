@@ -59,12 +59,6 @@ spec:
             enabled: true
             class: traefik
             annotations:
-              gethomepage.dev/description: AI workspace
-              gethomepage.dev/enabled: "true"
-              gethomepage.dev/group: Applications
-              gethomepage.dev/icon: open-webui.png
-              gethomepage.dev/name: Open WebUI
-              gethomepage.dev/weight: "20"
               traefik.ingress.kubernetes.io/router.entrypoints: websecure
               traefik.ingress.kubernetes.io/router.tls: "true"
             tls: true

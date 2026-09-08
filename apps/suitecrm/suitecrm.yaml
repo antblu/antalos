@@ -334,12 +334,6 @@ metadata:
   labels:
     app.kubernetes.io/name: suitecrm
   annotations:
-    gethomepage.dev/description: Customer relationship management
-    gethomepage.dev/enabled: "true"
-    gethomepage.dev/group: Applications
-    gethomepage.dev/icon: suitecrm.png
-    gethomepage.dev/name: SuiteCRM
-    gethomepage.dev/weight: "50"
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/service.sticky.cookie: "true"

@@ -229,12 +229,6 @@ spec:
               enabled: true
               ingressClassName: traefik
               annotations:
-                gethomepage.dev/description: Metrics, logs, and dashboards
-                gethomepage.dev/enabled: "true"
-                gethomepage.dev/group: Platform
-                gethomepage.dev/icon: grafana.png
-                gethomepage.dev/name: Grafana
-                gethomepage.dev/weight: "40"
               hosts:
                 - ${GRAFANA_HOST}
               tls:

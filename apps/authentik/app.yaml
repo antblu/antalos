@@ -73,12 +73,6 @@ spec:
               enabled: true
               ingressClassName: traefik
               annotations:
-                gethomepage.dev/description: Identity and access management
-                gethomepage.dev/enabled: "true"
-                gethomepage.dev/group: Platform
-                gethomepage.dev/icon: authentik.png
-                gethomepage.dev/name: Authentik
-                gethomepage.dev/weight: "20"
               hosts:
                 - ${AUTHENTIK_HOST}
               tls:

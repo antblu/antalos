@@ -13,6 +13,7 @@ spec:
       valuesObject:
         deployment:
           replicas: 2
+        affinity:
           podAntiAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
               - topologyKey: kubernetes.io/hostname
@@ -52,7 +53,7 @@ spec:
           rustdesk-id-udp:
             port: 21116
             expose:
-              default: true
+              default: false
             exposedPort: 21116
             protocol: UDP
           rustdesk-relay:

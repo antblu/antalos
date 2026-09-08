@@ -97,12 +97,6 @@ metadata:
   labels:
     app.kubernetes.io/name: docs
   annotations:
-    gethomepage.dev/description: Antalos documentation
-    gethomepage.dev/enabled: "true"
-    gethomepage.dev/group: Resources
-    gethomepage.dev/icon: mdi-book-open-page-variant
-    gethomepage.dev/name: Documentation
-    gethomepage.dev/weight: "20"
 spec:
   type: ClusterIP
   selector:

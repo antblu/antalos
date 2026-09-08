@@ -11,7 +11,7 @@ The setup follows the [official RustDesk server guide](https://rustdesk.com/docs
 
 ## Endpoints and client configuration
 
-The addresses below are in the repository's MetalLB pool. Hostnames and addresses are configurable in `apps/variables.yaml`; DNS and any upstream firewall or NAT rules must route the listed ports to the corresponding address.
+The addresses below are in the repository's MetalLB pool. Hostnames and addresses are configurable in `apps/variables.yaml`; DNS and any upstream firewall or NAT rules must route the listed ports to the corresponding address. Traefik exposes UDP 21116 through a separate shared-IP Service because Kubernetes strategic-merge patching cannot reliably reconcile TCP and UDP entries with the same numeric port in one Service.
 
 | Role | DNS name | MetalLB address | Open ports |
 | --- | --- | --- | --- |

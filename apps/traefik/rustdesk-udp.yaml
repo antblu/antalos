@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-rustdesk-udp
+  namespace: traefik
+  annotations:
+    metallb.io/loadBalancerIPs: ${INGRESS_LOAD_BALANCER_IP}
+    metallb.io/allow-shared-ip: antblu-net
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/instance: traefik-traefik
+  ports:
+    - name: rustdesk-id-udp
+      port: 21116
+      targetPort: 21116
+      protocol: UDP

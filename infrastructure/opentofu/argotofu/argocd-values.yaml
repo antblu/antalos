@@ -76,12 +76,6 @@ server:
     ingressClassName: traefik
     tls: true
     annotations:
-      gethomepage.dev/description: GitOps deployment control plane
-      gethomepage.dev/enabled: "true"
-      gethomepage.dev/group: Platform
-      gethomepage.dev/icon: argo-cd.png
-      gethomepage.dev/name: Argo CD
-      gethomepage.dev/weight: "10"
 controller:
   replicas: 2
   heartbeatTime: 5

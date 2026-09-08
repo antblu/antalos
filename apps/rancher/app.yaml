@@ -22,12 +22,6 @@ spec:
           enabled: true
           ingressClassName: traefik
           extraAnnotations:
-            gethomepage.dev/description: Kubernetes cluster management
-            gethomepage.dev/enabled: "true"
-            gethomepage.dev/group: Platform
-            gethomepage.dev/icon: rancher.png
-            gethomepage.dev/name: Rancher
-            gethomepage.dev/weight: "30"
 
           tls:
             source: secret

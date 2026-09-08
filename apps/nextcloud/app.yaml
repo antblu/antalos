@@ -108,12 +108,6 @@ spec:
             enabled: true
             className: traefik
             annotations:
-              gethomepage.dev/description: Files, collaboration, and productivity
-              gethomepage.dev/enabled: "true"
-              gethomepage.dev/group: Applications
-              gethomepage.dev/icon: nextcloud.png
-              gethomepage.dev/name: Nextcloud
-              gethomepage.dev/weight: "10"
               traefik.ingress.kubernetes.io/router.entrypoints: websecure
               traefik.ingress.kubernetes.io/router.tls: "true"
               traefik.ingress.kubernetes.io/router.middlewares: nextcloud-nextcloud-security-headers@kubernetescrd,nextcloud-nextcloud-well-known@kubernetescrd
