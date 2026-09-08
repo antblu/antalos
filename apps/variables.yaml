@@ -306,7 +306,7 @@ variables:
   GITLAB_KAS_HOST: "kas.antblu.net"
   GITLAB_DOMAIN: "antblu.net"
   GITLAB_OIDC_CLIENT_ID: "NipOaabjdW7cDmVRVeIvCFQ1La2sH5GLNWJwthWD"
-  GITLAB_OIDC_ISSUER: "https://auth.antblu.net/application/o/gitlab/"
+  GITLAB_OIDC_ISSUER: "https://auth.antblu.net/application/o/git-lab/"
   GITLAB_OIDC_LABEL: "antID"
   GITLAB_OIDC_CLIENT_AUTH_METHOD: "basic"
   GITLAB_OIDC_UID_FIELD: "sub"
