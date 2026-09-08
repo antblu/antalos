@@ -1,0 +1,377 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-redis-config
+  namespace: litellm
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+data:
+  discover-master.sh: |
+    #!/bin/sh
+    # Prefer a live Sentinel's current topology; stdout contains only host and port.
+    for sentinel in ${LITELLM_REDIS_DATA_0_HOST} ${LITELLM_REDIS_DATA_1_HOST} ${LITELLM_REDIS_SENTINEL_2_HOST}; do
+      reply=$(REDISCLI_AUTH="$REDIS_PASSWORD" timeout 3 redis-cli --raw -h "$sentinel" -p 26379 SENTINEL get-master-addr-by-name litellm 2>/dev/null) || continue
+      set -- $reply
+      if [ "$#" -eq 2 ] && [ "$2" = 6379 ]; then
+        printf '%s %s\n' "$1" "$2"
+        exit 0
+      fi
+    done
+    exit 1
+  start-redis.sh: |
+    #!/bin/sh
+    set -eu
+    umask 077
+    mkdir -p /data/redis
+    config=/data/redis/redis.conf
+    if [ ! -f "$config" ]; then
+      cat > "$config" <<EOF
+    port 6379
+    dir /data/redis
+    appendonly yes
+    appendfsync everysec
+    protected-mode no
+    requirepass "$REDIS_PASSWORD"
+    masterauth "$REDIS_PASSWORD"
+    replica-announce-ip $POD_DNS
+    replica-announce-port 6379
+    EOF
+      if [ "$HOSTNAME" = litellm-redis-data-1 ]; then
+        printf 'replicaof %s 6379\n' '${LITELLM_REDIS_DATA_0_HOST}' >> "$config"
+      fi
+    fi
+    # A restarted former primary must rejoin the elected primary. When all voters
+    # are down, keep the role Sentinel persisted with CONFIG REWRITE.
+    master=$(/config/discover-master.sh) || master=""
+    if [ -n "$master" ]; then
+      set -- $master
+      sed -i '/^replicaof /d; /^slaveof /d' "$config"
+      if [ "$1" != "$POD_DNS" ] && [ "$1" != "$POD_IP" ]; then
+        printf 'replicaof %s %s\n' "$1" "$2" >> "$config"
+      fi
+    fi
+    exec redis-server "$config"
+  start-sentinel.sh: |
+    #!/bin/sh
+    set -eu
+    umask 077
+    mkdir -p /data/sentinel
+    config=/data/sentinel/sentinel.conf
+    if [ ! -f "$config" ]; then
+      master=$(/config/discover-master.sh) || master="${LITELLM_REDIS_DATA_0_HOST} 6379"
+      set -- $master
+      cat > "$config" <<EOF
+    port 26379
+    protected-mode no
+    requirepass "$REDIS_PASSWORD"
+    sentinel sentinel-pass "$REDIS_PASSWORD"
+    sentinel resolve-hostnames yes
+    sentinel announce-hostnames yes
+    sentinel announce-ip $POD_DNS
+    sentinel announce-port 26379
+    sentinel monitor litellm $1 $2 2
+    sentinel auth-pass litellm "$REDIS_PASSWORD"
+    sentinel down-after-milliseconds litellm 5000
+    sentinel failover-timeout litellm 60000
+    sentinel parallel-syncs litellm 1
+    EOF
+    fi
+    exec redis-sentinel "$config"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: litellm-redis-data
+  namespace: litellm
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: litellm-redis-data
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: redis
+  - name: sentinel
+    port: 26379
+    targetPort: sentinel
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: litellm-redis-data
+  namespace: litellm
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  serviceName: litellm-redis-data
+  replicas: 2
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: litellm-redis-data
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: litellm-redis-data
+        litellm.antblu.net/sentinel: 'true'
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ${TALOS_WORKER_LEFT}
+                - ${TALOS_WORKER_RIGHT}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: litellm-redis-data
+            topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: redis
+        image: redis:${REDIS_IMAGE_TAG}
+        command:
+        - sh
+        - -ec
+        - case "$HOSTNAME" in litellm-redis-data-0) export POD_DNS="$DATA_0_HOST" ;; *) export POD_DNS="$DATA_1_HOST"
+          ;; esac; exec /config/start-redis.sh
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: litellm-redis
+              key: password
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: DATA_0_HOST
+          value: ${LITELLM_REDIS_DATA_0_HOST}
+        - name: DATA_1_HOST
+          value: ${LITELLM_REDIS_DATA_1_HOST}
+        ports:
+        - name: redis
+          containerPort: 6379
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli ping | grep PONG
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli ping | grep PONG
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 3
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: data
+          mountPath: /data
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      - name: sentinel
+        image: redis:${REDIS_IMAGE_TAG}
+        command:
+        - sh
+        - -ec
+        - case "$HOSTNAME" in litellm-redis-data-0) export POD_DNS="$DATA_0_HOST" ;; *) export POD_DNS="$DATA_1_HOST"
+          ;; esac; exec /config/start-sentinel.sh
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: litellm-redis
+              key: password
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: DATA_0_HOST
+          value: ${LITELLM_REDIS_DATA_0_HOST}
+        - name: DATA_1_HOST
+          value: ${LITELLM_REDIS_DATA_1_HOST}
+        ports:
+        - name: sentinel
+          containerPort: 26379
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -p 26379 ping | grep PONG
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: data
+          mountPath: /data
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: config
+        configMap:
+          name: litellm-redis-config
+          defaultMode: 365
+      automountServiceAccountToken: false
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: openebs-local
+      resources:
+        requests:
+          storage: ${LITELLM_REDIS_STORAGE_SIZE}
+  updateStrategy:
+    type: RollingUpdate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: litellm-redis-sentinel-2
+  namespace: litellm
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  selector:
+    app.kubernetes.io/name: litellm-redis-quorum
+  ports:
+  - name: sentinel
+    port: 26379
+    targetPort: sentinel
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litellm-redis-quorum
+  namespace: litellm
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: litellm-redis-quorum
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: litellm-redis-quorum
+        litellm.antblu.net/sentinel: 'true'
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${TALOS_WORKER_RTX}
+      tolerations:
+      - key: quorum
+        operator: Exists
+        effect: NoSchedule
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: sentinel
+        image: redis:${REDIS_IMAGE_TAG}
+        command:
+        - /config/start-sentinel.sh
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: litellm-redis
+              key: password
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: POD_DNS
+          value: ${LITELLM_REDIS_SENTINEL_2_HOST}
+        ports:
+        - name: sentinel
+          containerPort: 26379
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -p 26379 ping | grep PONG
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: data
+          mountPath: /data
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: config
+        configMap:
+          name: litellm-redis-config
+          defaultMode: 365
+      - name: data
+        emptyDir:
+          sizeLimit: 16Mi
+      automountServiceAccountToken: false

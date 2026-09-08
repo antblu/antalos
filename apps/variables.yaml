@@ -308,4 +308,13 @@ variables:
   GITLAB_REDIS_SENTINEL_2_HOST: "gitlab-redis-sentinel-2.gitlab.svc.cluster.local"
   GITLAB_SENTINEL_STORAGE_SIZE: 100Mi
 
+  # LiteLLM: two proxy and CNPG instances; Redis has a third Sentinel on RTX.
+  LITELLM_IMAGE_TAG: v1.100.0
+  LITELLM_HOST: litellm.antblu.net
+  LITELLM_DATABASE_HOST: litellm-db-rw.litellm.svc.cluster.local
+  LITELLM_DATABASE_STORAGE_SIZE: 10Gi
+  LITELLM_REDIS_STORAGE_SIZE: 5Gi
+  LITELLM_REDIS_DATA_0_HOST: litellm-redis-data-0.litellm-redis-data.litellm.svc.cluster.local
+  LITELLM_REDIS_DATA_1_HOST: litellm-redis-data-1.litellm-redis-data.litellm.svc.cluster.local
+  LITELLM_REDIS_SENTINEL_2_HOST: litellm-redis-sentinel-2.litellm.svc.cluster.local
   GITLAB_S3_BUCKET: gitlabs

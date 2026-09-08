@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-config
+  namespace: litellm
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+data:
+  config.yaml: |
+    general_settings:
+      master_key: os.environ/LITELLM_MASTER_KEY
+      database_url: os.environ/DATABASE_URL
+      store_model_in_db: true
+      coordination_redis:
+        service_name: litellm
+        sentinel_nodes:
+        - - ${LITELLM_REDIS_DATA_0_HOST}
+          - 26379
+        - - ${LITELLM_REDIS_DATA_1_HOST}
+          - 26379
+        - - ${LITELLM_REDIS_SENTINEL_2_HOST}
+          - 26379
+        password: os.environ/REDIS_PASSWORD
+        sentinel_password: os.environ/REDIS_PASSWORD
+    litellm_settings:
+      enable_redis_auth_cache: true
+    router_settings:
+      routing_strategy: simple-shuffle
