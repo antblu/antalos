@@ -321,42 +321,8 @@ Internet
 NATS, gRPC peer discovery, and Janus' internal interfaces remain private to the Kubernetes cluster.
 ## Recording backend
 
-The recording backend follows the [official recording server installation guide](https://github.com/nextcloud/nextcloud-talk-recording/blob/main/docs/installation.md)
-and uses the [official AIO recording image](https://github.com/nextcloud/all-in-one/tree/main/Containers/talk-recording), pinned by digest in `apps/variables.yaml`.
-
-`apps/nextcloud/talk-recording.yaml` deploys one recording process in a StatefulSet.
-Traefik strips the `/recording` prefix and forwards requests directly to the
-recorder. No HAProxy sidecar or room-based load balancing is needed.
-Nextcloud uses `https://<NEXTCLOUD_TALK_HOST>/recording`, with the existing Talk
-certificate from `certificate.yaml`. No additional DNS or router rule is needed.
-
-The recording authentication secret is generated and sealed in
-`talk-recording-secrets.yaml`. The recording process reuses the HPB's existing
-`internal-secret` separately. The Nextcloud lifecycle hook manages the recording
-URL and shared secret. TLS verification remains enabled for both Nextcloud and HPB.
-
-The recorder has a retained `openebs-local` PVC sized by
-`NEXTCLOUD_RECORDING_STORAGE_SIZE`. The launcher stores recordings under
-`/recordings`; disposable browser state stays under `/tmp`. It bypasses the AIO
-entrypoint because that entrypoint clears temporary files on startup. Failed
-uploads remain available for manual recovery on the owning PVC. Local volumes
-stay attached to their original worker and are not replicated backups.
-
-### Availability limits
-
-Recording is unavailable while the single pod restarts or its worker is down.
-Active recordings cannot resume after a process failure. The retained local PVC
-stays on its original worker, including the former second replica's PVC, which
-is preserved for manual recovery. There is no disruption budget blocking node
-maintenance for this single-replica service.
-
-### Verification
-
-Check the single StatefulSet pod is ready. The
-HTTPS welcome endpoint is `/recording/api/v1/welcome`; a successful response alone
-does not verify the authentication secrets or media path.
-
-For end-to-end verification, start a dedicated test call as a moderator, start
-recording, speak with video enabled, stop recording, and check the uploaded file
-and notification. Inspect the recording container logs if joining, encoding, or
-uploading fails. Avoid testing against another user's live conversation.
+The recording backend is hosted on an external server. This repository no longer
+deploys or configures a recording server, so the external server's URL, shared
+secret, TLS, storage, and operational lifecycle must be managed outside
+Kubernetes. Configure the resulting recording server in Nextcloud Talk after
+the external service is available.

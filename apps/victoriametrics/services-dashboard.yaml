@@ -73,12 +73,12 @@ data:
           },
           "targets": [
             {
-              "expr": "max(kube_pod_status_ready{namespace=\"argocd\",condition=\"true\"})",
+              "expr": "kube_pod_status_ready{namespace=\"argocd\",pod=~\"argocd-server-.*\",condition=\"true\"}",
               "refId": "A"
             }
           ],
-          "title": "Argo CD pod readiness",
-          "type": "stat"
+          "title": "Argo CD replica status",
+          "type": "table"
         },
         {
           "datasource": {
@@ -191,7 +191,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "CPU vs requested",
+          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -265,11 +265,16 @@ data:
           "targets": [
             {
               "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"argocd\",container!=\"POD\",container!=\"\"})",
-              "legendFormat": "{{pod}} / {{container}}",
+              "legendFormat": "{{pod}} / {{container}} used",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (pod, container) (kube_pod_container_resource_requests{namespace=\"argocd\",resource=\"memory\",unit=\"byte\"})",
+              "legendFormat": "{{pod}} / {{container}} requested",
+              "refId": "B"
             }
           ],
-          "title": "Memory working set",
+          "title": "Memory vs Requested",
           "type": "timeseries"
         },
         {
@@ -474,12 +479,12 @@ data:
           },
           "targets": [
             {
-              "expr": "max(kube_pod_status_ready{namespace=\"bentopdf\",condition=\"true\"})",
+              "expr": "kube_pod_status_ready{namespace=\"bentopdf\",pod=~\"bentopdf-[a-f0-9]+-.*\",condition=\"true\"}",
               "refId": "A"
             }
           ],
-          "title": "BentoPDF pod readiness",
-          "type": "stat"
+          "title": "BentoPDF replica status",
+          "type": "table"
         },
         {
           "datasource": {
@@ -592,7 +597,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "CPU vs requested",
+          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -666,11 +671,16 @@ data:
           "targets": [
             {
               "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"bentopdf\",container!=\"POD\",container!=\"\"})",
-              "legendFormat": "{{pod}} / {{container}}",
+              "legendFormat": "{{pod}} / {{container}} used",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (pod, container) (kube_pod_container_resource_requests{namespace=\"bentopdf\",resource=\"memory\",unit=\"byte\"})",
+              "legendFormat": "{{pod}} / {{container}} requested",
+              "refId": "B"
             }
           ],
-          "title": "Memory working set",
+          "title": "Memory vs Requested",
           "type": "timeseries"
         },
         {
@@ -875,12 +885,12 @@ data:
           },
           "targets": [
             {
-              "expr": "max(kube_pod_status_ready{namespace=\"docs\",condition=\"true\"})",
+              "expr": "kube_pod_status_ready{namespace=\"docs\",pod=~\"docs-[a-f0-9]+-.*\",condition=\"true\"}",
               "refId": "A"
             }
           ],
-          "title": "Documentation pod readiness",
-          "type": "stat"
+          "title": "Documentation replica status",
+          "type": "table"
         },
         {
           "datasource": {
@@ -993,7 +1003,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "CPU vs requested",
+          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -1067,11 +1077,16 @@ data:
           "targets": [
             {
               "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"docs\",container!=\"POD\",container!=\"\"})",
-              "legendFormat": "{{pod}} / {{container}}",
+              "legendFormat": "{{pod}} / {{container}} used",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (pod, container) (kube_pod_container_resource_requests{namespace=\"docs\",resource=\"memory\",unit=\"byte\"})",
+              "legendFormat": "{{pod}} / {{container}} requested",
+              "refId": "B"
             }
           ],
-          "title": "Memory working set",
+          "title": "Memory vs Requested",
           "type": "timeseries"
         },
         {
@@ -1276,12 +1291,12 @@ data:
           },
           "targets": [
             {
-              "expr": "max(kube_pod_status_ready{namespace=\"gitlab\",condition=\"true\"})",
+              "expr": "kube_pod_status_ready{namespace=\"gitlab\",pod=~\"gitlab-webservice-.*\",condition=\"true\"}",
               "refId": "A"
             }
           ],
-          "title": "GitLab pod readiness",
-          "type": "stat"
+          "title": "GitLab replica status",
+          "type": "table"
         },
         {
           "datasource": {
@@ -1394,7 +1409,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "CPU vs requested",
+          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -1468,11 +1483,16 @@ data:
           "targets": [
             {
               "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"gitlab\",container!=\"POD\",container!=\"\"})",
-              "legendFormat": "{{pod}} / {{container}}",
+              "legendFormat": "{{pod}} / {{container}} used",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (pod, container) (kube_pod_container_resource_requests{namespace=\"gitlab\",resource=\"memory\",unit=\"byte\"})",
+              "legendFormat": "{{pod}} / {{container}} requested",
+              "refId": "B"
             }
           ],
-          "title": "Memory working set",
+          "title": "Memory vs Requested",
           "type": "timeseries"
         },
         {
@@ -1677,12 +1697,12 @@ data:
           },
           "targets": [
             {
-              "expr": "max(kube_pod_status_ready{namespace=\"litellm\",condition=\"true\"})",
+              "expr": "kube_pod_status_ready{namespace=\"litellm\",pod=~\"litellm-[a-f0-9]+-.*\",condition=\"true\"}",
               "refId": "A"
             }
           ],
-          "title": "LiteLLM pod readiness",
-          "type": "stat"
+          "title": "LiteLLM replica status",
+          "type": "table"
         },
         {
           "datasource": {
@@ -1795,7 +1815,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "CPU vs requested",
+          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -1869,11 +1889,16 @@ data:
           "targets": [
             {
               "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"litellm\",container!=\"POD\",container!=\"\"})",
-              "legendFormat": "{{pod}} / {{container}}",
+              "legendFormat": "{{pod}} / {{container}} used",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (pod, container) (kube_pod_container_resource_requests{namespace=\"litellm\",resource=\"memory\",unit=\"byte\"})",
+              "legendFormat": "{{pod}} / {{container}} requested",
+              "refId": "B"
             }
           ],
-          "title": "Memory working set",
+          "title": "Memory vs Requested",
           "type": "timeseries"
         },
         {
@@ -2078,12 +2103,12 @@ data:
           },
           "targets": [
             {
-              "expr": "max(kube_pod_status_ready{namespace=\"open-webui\",condition=\"true\"})",
+              "expr": "kube_pod_status_ready{namespace=\"open-webui\",pod=~\"open-webui-[a-f0-9]+-.*\",condition=\"true\"}",
               "refId": "A"
             }
           ],
-          "title": "Open WebUI pod readiness",
-          "type": "stat"
+          "title": "Open WebUI replica status",
+          "type": "table"
         },
         {
           "datasource": {
@@ -2196,7 +2221,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "CPU vs requested",
+          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -2270,11 +2295,16 @@ data:
           "targets": [
             {
               "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"open-webui\",container!=\"POD\",container!=\"\"})",
-              "legendFormat": "{{pod}} / {{container}}",
+              "legendFormat": "{{pod}} / {{container}} used",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (pod, container) (kube_pod_container_resource_requests{namespace=\"open-webui\",resource=\"memory\",unit=\"byte\"})",
+              "legendFormat": "{{pod}} / {{container}} requested",
+              "refId": "B"
             }
           ],
-          "title": "Memory working set",
+          "title": "Memory vs Requested",
           "type": "timeseries"
         },
         {
@@ -2479,12 +2509,12 @@ data:
           },
           "targets": [
             {
-              "expr": "max(kube_pod_status_ready{namespace=\"rancher\",condition=\"true\"})",
+              "expr": "kube_pod_status_ready{namespace=\"cattle-system\",pod=~\"rancher-[a-z0-9]+-[a-z0-9]+\",condition=\"true\"}",
               "refId": "A"
             }
           ],
-          "title": "Rancher pod readiness",
-          "type": "stat"
+          "title": "Rancher replica status",
+          "type": "table"
         },
         {
           "datasource": {
@@ -2597,7 +2627,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "CPU vs requested",
+          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -2671,11 +2701,16 @@ data:
           "targets": [
             {
               "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"rancher\",container!=\"POD\",container!=\"\"})",
-              "legendFormat": "{{pod}} / {{container}}",
+              "legendFormat": "{{pod}} / {{container}} used",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (pod, container) (kube_pod_container_resource_requests{namespace=\"rancher\",resource=\"memory\",unit=\"byte\"})",
+              "legendFormat": "{{pod}} / {{container}} requested",
+              "refId": "B"
             }
           ],
-          "title": "Memory working set",
+          "title": "Memory vs Requested",
           "type": "timeseries"
         },
         {
@@ -2880,12 +2915,12 @@ data:
           },
           "targets": [
             {
-              "expr": "max(kube_pod_status_ready{namespace=\"rustdesk\",condition=\"true\"})",
+              "expr": "kube_pod_status_ready{namespace=\"rustdesk\",pod=~\"rustdesk-hbbs-.*\",condition=\"true\"}",
               "refId": "A"
             }
           ],
-          "title": "RustDesk pod readiness",
-          "type": "stat"
+          "title": "RustDesk replica status",
+          "type": "table"
         },
         {
           "datasource": {
@@ -2998,7 +3033,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "CPU vs requested",
+          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -3072,11 +3107,16 @@ data:
           "targets": [
             {
               "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"rustdesk\",container!=\"POD\",container!=\"\"})",
-              "legendFormat": "{{pod}} / {{container}}",
+              "legendFormat": "{{pod}} / {{container}} used",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (pod, container) (kube_pod_container_resource_requests{namespace=\"rustdesk\",resource=\"memory\",unit=\"byte\"})",
+              "legendFormat": "{{pod}} / {{container}} requested",
+              "refId": "B"
             }
           ],
-          "title": "Memory working set",
+          "title": "Memory vs Requested",
           "type": "timeseries"
         },
         {
@@ -3281,12 +3321,12 @@ data:
           },
           "targets": [
             {
-              "expr": "max(kube_pod_status_ready{namespace=\"stalwart\",condition=\"true\"})",
+              "expr": "kube_pod_status_ready{namespace=\"stalwart\",pod=~\"stalwart-[0-9]+.*\",condition=\"true\"}",
               "refId": "A"
             }
           ],
-          "title": "Stalwart pod readiness",
-          "type": "stat"
+          "title": "Stalwart replica status",
+          "type": "table"
         },
         {
           "datasource": {
@@ -3399,7 +3439,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "CPU vs requested",
+          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -3473,11 +3513,16 @@ data:
           "targets": [
             {
               "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"stalwart\",container!=\"POD\",container!=\"\"})",
-              "legendFormat": "{{pod}} / {{container}}",
+              "legendFormat": "{{pod}} / {{container}} used",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (pod, container) (kube_pod_container_resource_requests{namespace=\"stalwart\",resource=\"memory\",unit=\"byte\"})",
+              "legendFormat": "{{pod}} / {{container}} requested",
+              "refId": "B"
             }
           ],
-          "title": "Memory working set",
+          "title": "Memory vs Requested",
           "type": "timeseries"
         },
         {
@@ -3682,12 +3727,12 @@ data:
           },
           "targets": [
             {
-              "expr": "max(kube_pod_status_ready{namespace=\"suitecrm\",condition=\"true\"})",
+              "expr": "kube_pod_status_ready{namespace=\"suitecrm\",pod=~\"suitecrm-[a-f0-9]+-.*\",condition=\"true\"}",
               "refId": "A"
             }
           ],
-          "title": "SuiteCRM pod readiness",
-          "type": "stat"
+          "title": "SuiteCRM replica status",
+          "type": "table"
         },
         {
           "datasource": {
@@ -3800,7 +3845,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "CPU vs requested",
+          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -3874,11 +3919,16 @@ data:
           "targets": [
             {
               "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"suitecrm\",container!=\"POD\",container!=\"\"})",
-              "legendFormat": "{{pod}} / {{container}}",
+              "legendFormat": "{{pod}} / {{container}} used",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (pod, container) (kube_pod_container_resource_requests{namespace=\"suitecrm\",resource=\"memory\",unit=\"byte\"})",
+              "legendFormat": "{{pod}} / {{container}} requested",
+              "refId": "B"
             }
           ],
-          "title": "Memory working set",
+          "title": "Memory vs Requested",
           "type": "timeseries"
         },
         {
@@ -4083,12 +4133,12 @@ data:
           },
           "targets": [
             {
-              "expr": "max(kube_pod_status_ready{namespace=\"urbackup\",condition=\"true\"})",
+              "expr": "kube_pod_status_ready{namespace=\"urbackup\",pod=~\"urbackup-[a-f0-9]+-.*\",condition=\"true\"}",
               "refId": "A"
             }
           ],
-          "title": "UrBackup pod readiness",
-          "type": "stat"
+          "title": "UrBackup replica status",
+          "type": "table"
         },
         {
           "datasource": {
@@ -4201,7 +4251,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "CPU vs requested",
+          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -4275,11 +4325,16 @@ data:
           "targets": [
             {
               "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"urbackup\",container!=\"POD\",container!=\"\"})",
-              "legendFormat": "{{pod}} / {{container}}",
+              "legendFormat": "{{pod}} / {{container}} used",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (pod, container) (kube_pod_container_resource_requests{namespace=\"urbackup\",resource=\"memory\",unit=\"byte\"})",
+              "legendFormat": "{{pod}} / {{container}} requested",
+              "refId": "B"
             }
           ],
-          "title": "Memory working set",
+          "title": "Memory vs Requested",
           "type": "timeseries"
         },
         {
@@ -4484,12 +4539,12 @@ data:
           },
           "targets": [
             {
-              "expr": "max(kube_pod_status_ready{namespace=\"vaultwarden\",condition=\"true\"})",
+              "expr": "kube_pod_status_ready{namespace=\"vaultwarden\",pod=~\"vaultwarden-[a-f0-9]+-.*\",condition=\"true\"}",
               "refId": "A"
             }
           ],
-          "title": "Vaultwarden pod readiness",
-          "type": "stat"
+          "title": "Vaultwarden replica status",
+          "type": "table"
         },
         {
           "datasource": {
@@ -4602,7 +4657,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "CPU vs requested",
+          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -4676,11 +4731,16 @@ data:
           "targets": [
             {
               "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"vaultwarden\",container!=\"POD\",container!=\"\"})",
-              "legendFormat": "{{pod}} / {{container}}",
+              "legendFormat": "{{pod}} / {{container}} used",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (pod, container) (kube_pod_container_resource_requests{namespace=\"vaultwarden\",resource=\"memory\",unit=\"byte\"})",
+              "legendFormat": "{{pod}} / {{container}} requested",
+              "refId": "B"
             }
           ],
-          "title": "Memory working set",
+          "title": "Memory vs Requested",
           "type": "timeseries"
         },
         {
@@ -4885,12 +4945,12 @@ data:
           },
           "targets": [
             {
-              "expr": "max(kube_pod_status_ready{namespace=\"zammad\",condition=\"true\"})",
+              "expr": "kube_pod_status_ready{namespace=\"zammad\",pod=~\"zammad-railsserver-[a-f0-9]+-.*\",condition=\"true\"}",
               "refId": "A"
             }
           ],
-          "title": "Zammad pod readiness",
-          "type": "stat"
+          "title": "Zammad replica status",
+          "type": "table"
         },
         {
           "datasource": {
@@ -5003,7 +5063,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "CPU vs requested",
+          "title": "CPU vs Requested",
           "type": "stat"
         },
         {
@@ -5077,11 +5137,16 @@ data:
           "targets": [
             {
               "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"zammad\",container!=\"POD\",container!=\"\"})",
-              "legendFormat": "{{pod}} / {{container}}",
+              "legendFormat": "{{pod}} / {{container}} used",
               "refId": "A"
+            },
+            {
+              "expr": "sum by (pod, container) (kube_pod_container_resource_requests{namespace=\"zammad\",resource=\"memory\",unit=\"byte\"})",
+              "legendFormat": "{{pod}} / {{container}} requested",
+              "refId": "B"
             }
           ],
-          "title": "Memory working set",
+          "title": "Memory vs Requested",
           "type": "timeseries"
         },
         {
