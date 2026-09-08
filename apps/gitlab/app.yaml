@@ -83,6 +83,16 @@ spec:
               secret: gitlab-praefect-db-app
               key: password
           appConfig:
+            omniauth:
+              enabled: true
+              allowSingleSignOn:
+              - openid_connect
+              blockAutoCreatedUsers: false
+              autoLinkUser:
+              - openid_connect
+              providers:
+              - secret: gitlab-oidc
+                key: provider
             object_store:
               enabled: true
               proxy_download: true
