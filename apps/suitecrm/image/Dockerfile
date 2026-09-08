@@ -48,8 +48,6 @@ RUN set -eux; \
     rm -rf /var/www/html/*; \
     unzip -q /tmp/suitecrm.zip -d /var/www/html; \
     rm /tmp/suitecrm.zip; \
-    sed -i "/external_auth_only/s/= 1;/= 0;/" \
-        /var/www/html/public/legacy/include/portability/User/CreateUser.php; \
     groupmod --gid 82 www-data; \
     usermod --uid 82 --gid 82 www-data; \
     chown -R www-data:www-data /var/www/html; \

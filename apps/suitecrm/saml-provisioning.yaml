@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: suitecrm-saml-provisioning
+  namespace: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+data:
+  SamlUserFactory.php: |
+    <?php
+
+    namespace App\Extension\antalos\backend\Security\Saml;
+
+    use App\Security\Saml\AppSamlUserFactory;
+    use BeanFactory;
+    use RuntimeException;
+    use Symfony\Component\Security\Core\User\UserInterface;
+
+    /** Allow validated SAML provisioning through the legacy user-save ACL. */
+    class SamlUserFactory extends AppSamlUserFactory
+    {
+        public function createUser(string $identifier, array $attributes): UserInterface
+        {
+            $this->userHandler->init();
+            $previousUser = $GLOBALS['current_user'] ?? null;
+
+            try {
+                // SAML validation and auto-create gating happen before this factory.
+                // Use the system actor only for this save, never for the login session.
+                $systemUser = BeanFactory::newBean('Users')->getSystemUser();
+                if (empty($systemUser->id) || !is_admin($systemUser) || !$systemUser->isEnabled()) {
+                    throw new RuntimeException('SAML provisioning requires an active system administrator');
+                }
+                $GLOBALS['current_user'] = $systemUser;
+
+                // The upstream helper forces Active, non-admin, external-only users.
+                return parent::createUser($identifier, $attributes);
+            } finally {
+                $GLOBALS['current_user'] = $previousUser;
+                $this->userHandler->close();
+            }
+        }
+    }
+  services.yaml: |
+    services:
+      App\Extension\antalos\backend\Security\Saml\SamlUserFactory:
+        arguments:
+          $userHandler: '@App\Authentication\LegacyHandler\UserHandler'
+          $samlAutoCreateAttributesMap: '%saml.autocreate.attributes_map%'
+          $authLogger: '@monolog.logger.auth'
+      saml_user_factory:
+        alias: App\Extension\antalos\backend\Security\Saml\SamlUserFactory
+        public: true

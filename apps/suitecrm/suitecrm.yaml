@@ -95,6 +95,13 @@ spec:
               mkdir -p "$app_root/var/sessions" /var/www/html/var/sessions
               cd "$app_root"
 
+              # Reinstall the SAML extension even when shared application code exists.
+              mkdir -p extensions/antalos/backend/Security/Saml extensions/antalos/config
+              cp /mnt/saml-provisioning/SamlUserFactory.php extensions/antalos/backend/Security/Saml/
+              cp /mnt/saml-provisioning/services.yaml extensions/antalos/config/
+              # Restore upstream external-only provisioning on older shared copies.
+              sed -i "/external_auth_only/s/= 0;/= 1;/" public/legacy/include/portability/User/CreateUser.php
+
               if [ ! -f public/legacy/config.php ]; then
                 php -d session.save_path="$app_root/var/sessions" bin/console suitecrm:app:install \
                   -u "$ADMIN_USER" \
@@ -171,6 +178,9 @@ spec:
               cpu: "2"
               memory: 2Gi
           volumeMounts:
+            - name: saml-provisioning
+              mountPath: /mnt/saml-provisioning
+              readOnly: true
             - name: data
               mountPath: /mnt/suitecrm-data
             # Cache must not live on the shared NFS volume: cache:clear races
@@ -178,6 +188,9 @@ spec:
             - name: cache
               mountPath: /mnt/suitecrm-data/suitecrm8/cache
       volumes:
+        - name: saml-provisioning
+          configMap:
+            name: suitecrm-saml-provisioning
         - name: data
           persistentVolumeClaim:
             claimName: suitecrm-data

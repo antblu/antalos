@@ -35,6 +35,8 @@ Wait for required controllers, database initialization, and migration Jobs befor
 
 SuiteCRM is configured for SAML, not OIDC. Create an Authentik SAML provider for the SuiteCRM origin and use SuiteCRM’s service-provider metadata to obtain its ACS URL and bindings. Match `SAML_SP_ENTITY_ID`, the Authentik metadata/SSO URLs, and the username mapping `http://schemas.goauthentik.io/2021/02/saml/username`. Seal the IdP certificate, SP certificate, and SP private key in `suitecrm-saml`. Assertions must be signed under the checked-in settings. New-account creation is enabled; constrain provider access and assign CRM roles after provisioning.
 
+The `suitecrm-saml-provisioning` ConfigMap supplies a backend extension installed by the bootstrap Job. SuiteCRM 8.10.2's legacy user-save permission check rejects new users without an administrator actor, including users being provisioned after successful SAML validation. The extension uses the existing active system administrator only during account creation and restores the previous actor in a `finally` block. Provisioned users remain active, non-admin, external-authentication-only accounts. The bootstrap also restores the upstream `external_auth_only` default on existing shared application copies. Restart the web replicas after updating this extension so each replica rebuilds its local Symfony container cache.
+
 ## 4. Connect and operate the service
 
 1. Let `suitecrm-bootstrap` finish before using the application. Log in as both administrator and ordinary user and confirm record visibility.
