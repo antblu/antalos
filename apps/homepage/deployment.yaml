@@ -25,6 +25,9 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       affinity:
@@ -70,6 +73,10 @@ spec:
                 secretKeyRef:
                   name: homepage-oidc
                   key: auth-secret
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
           volumeMounts:
             - name: config
               mountPath: /app/config
