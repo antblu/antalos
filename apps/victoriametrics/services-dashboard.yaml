@@ -73,7 +73,7 @@ data:
           },
           "targets": [
             {
-              "expr": "min(kube_pod_status_ready{namespace=\"argocd\",condition=\"true\"})",
+              "expr": "max(kube_pod_status_ready{namespace=\"argocd\",condition=\"true\"})",
               "refId": "A"
             }
           ],
@@ -474,7 +474,7 @@ data:
           },
           "targets": [
             {
-              "expr": "min(kube_pod_status_ready{namespace=\"bentopdf\",condition=\"true\"})",
+              "expr": "max(kube_pod_status_ready{namespace=\"bentopdf\",condition=\"true\"})",
               "refId": "A"
             }
           ],
@@ -875,7 +875,7 @@ data:
           },
           "targets": [
             {
-              "expr": "min(kube_pod_status_ready{namespace=\"docs\",condition=\"true\"})",
+              "expr": "max(kube_pod_status_ready{namespace=\"docs\",condition=\"true\"})",
               "refId": "A"
             }
           ],
@@ -1276,7 +1276,7 @@ data:
           },
           "targets": [
             {
-              "expr": "min(kube_pod_status_ready{namespace=\"gitlab\",condition=\"true\"})",
+              "expr": "max(kube_pod_status_ready{namespace=\"gitlab\",condition=\"true\"})",
               "refId": "A"
             }
           ],
@@ -1677,7 +1677,7 @@ data:
           },
           "targets": [
             {
-              "expr": "min(kube_pod_status_ready{namespace=\"litellm\",condition=\"true\"})",
+              "expr": "max(kube_pod_status_ready{namespace=\"litellm\",condition=\"true\"})",
               "refId": "A"
             }
           ],
@@ -2078,7 +2078,7 @@ data:
           },
           "targets": [
             {
-              "expr": "min(kube_pod_status_ready{namespace=\"open-webui\",condition=\"true\"})",
+              "expr": "max(kube_pod_status_ready{namespace=\"open-webui\",condition=\"true\"})",
               "refId": "A"
             }
           ],
@@ -2479,7 +2479,7 @@ data:
           },
           "targets": [
             {
-              "expr": "min(kube_pod_status_ready{namespace=\"rancher\",condition=\"true\"})",
+              "expr": "max(kube_pod_status_ready{namespace=\"rancher\",condition=\"true\"})",
               "refId": "A"
             }
           ],
@@ -2880,7 +2880,7 @@ data:
           },
           "targets": [
             {
-              "expr": "min(kube_pod_status_ready{namespace=\"rustdesk\",condition=\"true\"})",
+              "expr": "max(kube_pod_status_ready{namespace=\"rustdesk\",condition=\"true\"})",
               "refId": "A"
             }
           ],
@@ -3281,7 +3281,7 @@ data:
           },
           "targets": [
             {
-              "expr": "min(kube_pod_status_ready{namespace=\"stalwart\",condition=\"true\"})",
+              "expr": "max(kube_pod_status_ready{namespace=\"stalwart\",condition=\"true\"})",
               "refId": "A"
             }
           ],
@@ -3682,7 +3682,7 @@ data:
           },
           "targets": [
             {
-              "expr": "min(kube_pod_status_ready{namespace=\"suitecrm\",condition=\"true\"})",
+              "expr": "max(kube_pod_status_ready{namespace=\"suitecrm\",condition=\"true\"})",
               "refId": "A"
             }
           ],
@@ -4083,7 +4083,7 @@ data:
           },
           "targets": [
             {
-              "expr": "min(kube_pod_status_ready{namespace=\"urbackup\",condition=\"true\"})",
+              "expr": "max(kube_pod_status_ready{namespace=\"urbackup\",condition=\"true\"})",
               "refId": "A"
             }
           ],
@@ -4484,7 +4484,7 @@ data:
           },
           "targets": [
             {
-              "expr": "min(kube_pod_status_ready{namespace=\"vaultwarden\",condition=\"true\"})",
+              "expr": "max(kube_pod_status_ready{namespace=\"vaultwarden\",condition=\"true\"})",
               "refId": "A"
             }
           ],
@@ -4885,7 +4885,7 @@ data:
           },
           "targets": [
             {
-              "expr": "min(kube_pod_status_ready{namespace=\"zammad\",condition=\"true\"})",
+              "expr": "max(kube_pod_status_ready{namespace=\"zammad\",condition=\"true\"})",
               "refId": "A"
             }
           ],
@@ -5219,4 +5219,3 @@ data:
       "uid": "zammad-kubernetes-victoriametrics",
       "version": 1
     }
-

@@ -19,7 +19,7 @@ data:
           "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
           "id": 1,
           "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
-          "targets": [{"expr": "min(up{namespace=\"nextcloud\",service=\"nextcloud\"})", "refId": "A"}],
+          "targets": [{"expr": "max(up{namespace=\"nextcloud\",service=\"nextcloud\"})", "refId": "A"}],
           "title": "Nextcloud availability",
           "type": "stat"
         },

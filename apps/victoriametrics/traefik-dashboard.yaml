@@ -17,7 +17,7 @@ data:
           "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
           "id": 1,
           "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
-          "targets": [{"expr": "min(up{namespace=\"traefik\"})", "refId": "A"}],
+          "targets": [{"expr": "max(up{namespace=\"traefik\"})", "refId": "A"}],
           "title": "Traefik availability",
           "type": "stat"
         },

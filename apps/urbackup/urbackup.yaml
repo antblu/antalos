@@ -59,6 +59,9 @@ spec:
             capabilities:
               drop:
                 - ALL
+              add:
+                - SETGID
+                - SETUID
           ports:
             - name: web
               containerPort: 55414
