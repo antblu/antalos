@@ -131,7 +131,7 @@ Therefore, “survives one worker” must not be promoted to “survives any Pro
 | Shared dependency | Affected paths | Why application replicas cannot replace it |
 | --- | --- | --- |
 | NFS at the declared external endpoint | Authentik media, Nextcloud code/recording content, SuiteCRM files, Vaultwarden data, UrBackup exports, SQLite backups | Every replica or replacement mounts the same external service. |
-| Garage S3 at the declared external endpoint | Nextcloud files, GitLab objects/registry, Stalwart blobs, Open WebUI uploads, Zammad attachments, SuiteCRM backups | Separate application pods still address the same object service. |
+| Garage S3 at the declared external endpoint | Nextcloud files, GitLab objects/registry, Stalwart blobs, Open WebUI uploads, Zammad attachments, SuiteCRM media/database backups | Separate application pods still address the same object service. |
 | Router, DNS, subnet, switches | Public and internal client access | The repository does not declare independent replacements for every network component. |
 | Authentik | New SSO/forward-auth access | Application replica counts do not duplicate the identity service’s database/storage path. |
 | CNPG/operator/API | Controlled state changes and database recovery | A standby does not independently guarantee the required controller action. |

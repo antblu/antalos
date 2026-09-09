@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: suitecrm-image-download-fix
+  namespace: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+data:
+  fix-image-download.php: |
+    <?php
+    // Apply to shared application code on every bootstrap, including existing installs.
+    $path = rtrim($argv[1], '/') . '/public/legacy/download.php';
+    $source = file_get_contents($path);
+    if ($source === false) {
+        throw new RuntimeException('Cannot read SuiteCRM download handler');
+    }
+    $old = <<<'PHP_BLOCK'
+            $focus = BeanFactory::newBean($module);
+            $focus->retrieve($_REQUEST['id']);
+            $isDocument = isset($focus->object_name) && $focus->object_name == 'Document';
+    PHP_BLOCK;
+    $replacement = <<<'PHP_BLOCK'
+            $focus = BeanFactory::newBean($module);
+    
+            // Image fields are requested as "<record-id>_<field-name>".
+            // Split the field name from the record ID before retrieving the bean.
+            $image_field = null;
+            $image_id = $_REQUEST['id'];
+    
+            $parts = explode('_', $image_id);
+            $index = count($parts) - 1;
+    
+            while ($index) {
+                $possible_field = implode('_', array_slice($parts, $index));
+    
+                if (isset($focus->field_defs[$possible_field])) {
+                    $image_field = $possible_field;
+                    $image_id = implode('_', array_slice($parts, 0, $index));
+                    break;
+                }
+    
+                $index--;
+            }
+    
+            $focus->retrieve(isset($image_field) ? $image_id : $_REQUEST['id']);
+    
+            $isDocument = isset($focus->object_name) && $focus->object_name == 'Document';
+    PHP_BLOCK;
+    $duplicate = <<<'PHP_BLOCK'
+        // id here is really id_field. But since both "id" and "field" can also have underscores in them,
+        // we'll try out parts starting from the end, checking if we get a valid field name.
+        // Some edge cases might be impossible to untangle (ids that contain field names,
+        // and field names that partially contain others, e.g. name and first_name).
+        // TODO: drop this ugly scheme of passing ids together with field names - just pass them in separately...
+        $image_field = null;
+        $image_id = $_REQUEST['id'];
+        $parts = explode('_', $image_id);
+        $index = count($parts) - 1;
+        while ($index) {
+            $possible_field = implode('_', array_slice($parts, $index)); // final parts, from index to end
+            if (isset($focus->field_defs[$possible_field])) {
+                $image_field = $possible_field;
+                $image_id = implode('_', array_slice($parts, 0, $index)); // initial parts, up to index
+                break;
+            }
+            $index--;
+        }
+    PHP_BLOCK;
+    
+    if (substr_count($source, $replacement) === 1 && !str_contains($source, $duplicate)) {
+        echo "SuiteCRM image download fix already applied\n";
+        exit(0);
+    }
+    if (substr_count($source, $old) !== 1 || substr_count($source, $duplicate) !== 1) {
+        throw new RuntimeException('Unexpected SuiteCRM download handler; review image patch for this release');
+    }
+    $patched = str_replace([$old, $duplicate], [$replacement, ''], $source);
+    $temp = $path . '.image-fix.tmp';
+    if (file_put_contents($temp, $patched) === false) {
+        throw new RuntimeException('Cannot write patched SuiteCRM download handler');
+    }
+    chmod($temp, fileperms($path) & 0777);
+    if (!rename($temp, $path)) {
+        throw new RuntimeException('Cannot replace SuiteCRM download handler');
+    }
+    echo "SuiteCRM image download fix applied\n";

@@ -11,9 +11,9 @@ This runbook deploys the service from `apps/suitecrm/` and completes the configu
 
 1. Deploy MariaDB CRDs, the MariaDB operator, OpenEBS, NFS CSI, ingress, and cert-manager first. Set `SUITECRM_*` variables.
 
-2. Prepare the NFS export for the web image’s runtime identity. Preserve the predeclared Galera PVCs and node placement in `storage.yaml`.
+2. Prepare the NFS export for UID/GID 82, which runs the SuiteCRM application workloads. Preserve the static `suitecrm-data` PV/PVC, the per-member Galera configuration PVCs, and the database node placement in `storage.yaml`.
 
-3. Reseal database, application, S3, SAML, and registry credentials. Build/publish the custom image in `apps/suitecrm/image/` when changing the packaged release or configuration.
+3. Create the `${SUITECRM_S3_BUCKET}` Garage bucket and grant the sealed `suitecrm-s3` identity access to it. That identity is shared by SuiteCRM media and mariadb-operator backups. Reseal database, application, S3, SAML, and registry credentials. Build/publish the custom image in `apps/suitecrm/image/` when changing the packaged release or configuration.
 
 ## 2. Reconcile the application
 
@@ -31,6 +31,21 @@ From the repository root, inspect the Application and its namespace:
 
 Wait for required controllers, database initialization, and migration Jobs before testing the user workflow. Synced configuration, ready workloads, and a successful user transaction are separate milestones.
 
+### Understand the storage before first reconciliation
+
+The deployment uses four storage behaviors, each with a different lifecycle:
+
+| Storage | Purpose | Administration rule |
+| --- | --- | --- |
+| `suitecrm-data` NFS PV/PVC | Shared installed application tree, configuration, extensions, logs, and unmigrated legacy uploads | Back it up before upgrades. Do not place Symfony cache or PHP sessions back on it. |
+| Per-member OpenEBS MariaDB claims | InnoDB/Galera data | Treat each claim as one database replica. Let mariadb-operator and Galera recover or resynchronize members. |
+| 100 MiB `galera-suitecrm-db-*` claims | Galera configuration shared inside each database pod | Preserve them with the database declaration, but do not mistake them for SQL data or backups. |
+| Pod-local `emptyDir` volumes | Symfony caches and web sessions | Caches are disposable. Web-session loss signs out users; Traefik stickiness only routes a live session and does not persist it. |
+| Garage S3 bucket | SuiteCRM media plus physical database-backup objects | Protect and monitor the bucket separately. A successful database backup does not prove that media is recoverable. |
+| Physical-backup staging PVC | Temporary backup assembly and compression space | Size it for the database. It is scratch space and is cleaned after a completed run. |
+
+The bootstrap, web, scheduler, and messenger workloads mount the same `suitecrm-data` claim but receive separate cache volumes. Only web pods have the `sessions` volume. Garage is reached through the S3 API; there is no S3 filesystem mount in the pods.
+
 ## 3. Complete identity and first access
 
 SuiteCRM is configured for SAML, not OIDC. Create an Authentik SAML provider for the SuiteCRM origin and use SuiteCRM’s service-provider metadata to obtain its ACS URL and bindings. Match `SAML_SP_ENTITY_ID`, the Authentik metadata/SSO URLs, and the username mapping `http://schemas.goauthentik.io/2021/02/saml/username`. Seal the IdP certificate, SP certificate, and SP private key in `suitecrm-saml`. Assertions must be signed under the checked-in settings. New-account creation is enabled; constrain provider access and assign CRM roles after provisioning.
@@ -45,7 +60,9 @@ The extension directs unauthenticated visitors to the native password form at `/
 
 2. Configure outbound email and any inbound mailbox processing. Confirm scheduled jobs and the messenger worker process queued work.
 
-3. Inspect the daily physical backup status and rehearse database plus NFS restoration together.
+3. Inspect the daily physical backup status and rehearse a coordinated database, NFS, and Garage-media restoration.
+
+4. On SuiteCRM 8.10 and later, review **Admin → Migrations**. Run the approved Document Revision, Note Attachment, and legacy photo/file migrations while `suitecrm-messenger` is available, then confirm the tasks completed before treating old media as protected by S3.
 
 ## Availability before maintenance
 
@@ -59,7 +76,7 @@ Use the [component-by-component failure contract](/infrastructure/suitecrm/#avai
 
 ## 5. Maintain and recover
 
-Back up MariaDB and the NFS application data together, including uploaded files and custom configuration. Preserve the SAML service-provider key and identity-provider certificate. The `PhysicalBackup` resource covers the database; it does not itself back up NFS.
+Back up MariaDB, the NFS application tree, and the Garage media objects as one recovery set. NFS contains installed code, generated configuration, extensions, logs, and any legacy uploads that have not been migrated. Garage contains new media objects and completed physical database backups. Preserve the SAML service-provider key and identity-provider certificate. The `PhysicalBackup` resource covers MariaDB only; it does not copy NFS or create a second copy of SuiteCRM media.
 
 Use [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/) for the platform sequence.
 
@@ -102,11 +119,13 @@ After writes and background processing are stopped:
 
 1. Trigger a new SuiteCRM `PhysicalBackup` and wait for its `Complete` condition to report success. Verify that the new object exists in the configured Garage bucket; an old successful Job or a scheduled timestamp is not proof of a current backup.
 
-2. Snapshot or copy the complete `suitecrm-data` NFS tree, including application files, uploads, extensions, configuration, and version-marker files.
+2. Snapshot or copy the complete `suitecrm-data` NFS tree, including application files, legacy uploads that have not been migrated, extensions, configuration, logs, and version-marker files.
 
-3. Preserve the sealed application, database, S3, registry, and SAML secrets with the matching Git revision.
+3. Protect or snapshot the SuiteCRM Garage bucket so media objects and the selected database-backup object belong to the same recovery point.
 
-Treat the database and NFS copies as one recovery point. If the schema migration fails after making changes, restore both copies from that point. Starting the old image against a partly upgraded schema is not a rollback.
+4. Preserve the sealed application, database, S3, registry, and SAML secrets with the matching Git revision.
+
+Treat the database, NFS, and Garage copies as one recovery point. If the schema migration fails after making changes, restore the coordinated set. Starting the old image against a partly upgraded schema is not a rollback.
 
 ### 6.4. Run the upgrade once
 
@@ -170,7 +189,7 @@ Keep the pre-upgrade recovery point until the application, integrations, backgro
 
 ## Troubleshooting
 
-For database startup failures, inspect Galera quorum, PVC placement, and arbitrator compatibility. NFS permission errors need export-side ownership analysis; recursively changing ownership on populated shared storage can be disruptive. SAML failures require checking assertion signatures, entity IDs, and username mapping.
+For database startup failures, distinguish the large per-member database claims from the 100 MiB Galera configuration claims, then inspect quorum, PVC placement, and arbitrator compatibility. NFS permission errors need export-side ownership analysis; recursively changing ownership on populated shared storage can be disruptive. S3 media failures require checking the SuiteCRM media mappings, Garage endpoint, bucket access, and the sealed `suitecrm-s3` credentials in every participating workload. SAML failures require checking assertion signatures, entity IDs, and username mapping.
 
 If navigation logs users out and `logs/prod/prod.log` reports `Failed to decode session object`, verify that each web pod has its own local `/var/www/html/var/sessions` emptyDir and that the ingress is setting its sticky cookie. PHP sessions are mutable, lock-heavy state and must not be shared over the application NFS volume. Recreate both web pods after changing this mount; existing pods retain their old volume layout. A healthy Argo CD status does not establish that existing pods have adopted the new session mount.
 

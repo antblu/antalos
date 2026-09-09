@@ -100,6 +100,8 @@ spec:
               mkdir -p "$app_root/var/sessions" /var/www/html/var/sessions
               cd "$app_root"
 
+              php /mnt/image-download-fix/fix-image-download.php "$app_root"
+
               # Reinstall the SAML extension even when shared application code exists.
               mkdir -p extensions/antalos/backend/Security/Saml extensions/antalos/config
               cp /mnt/saml-provisioning/SamlUserFactory.php extensions/antalos/backend/Security/Saml/
@@ -197,6 +199,9 @@ spec:
               cpu: "2"
               memory: 2Gi
           volumeMounts:
+            - name: image-download-fix
+              mountPath: /mnt/image-download-fix
+              readOnly: true
             - name: saml-provisioning
               mountPath: /mnt/saml-provisioning
               readOnly: true
@@ -207,6 +212,9 @@ spec:
             - name: cache
               mountPath: /mnt/suitecrm-data/suitecrm8/cache
       volumes:
+        - name: image-download-fix
+          configMap:
+            name: suitecrm-image-download-fix
         - name: saml-provisioning
           configMap:
             name: suitecrm-saml-provisioning
