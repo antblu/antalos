@@ -61,7 +61,112 @@ Use the [component-by-component failure contract](/infrastructure/suitecrm/#avai
 
 Back up MariaDB and the NFS application data together, including uploaded files and custom configuration. Preserve the SAML service-provider key and identity-provider certificate. The `PhysicalBackup` resource covers the database; it does not itself back up NFS.
 
-Before an upgrade, read the release notes for the pinned target and record a recovery point. A previous image tag is not a database rollback after a schema migration. Use [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/) for the platform sequence.
+Use [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/) for the platform sequence.
+
+## 6. Upgrade SuiteCRM
+
+This deployment cannot be upgraded safely by changing `SUITECRM_IMAGE_TAG` alone. The container image supplies the target release, but `/var/www/html` is the shared `suitecrm-data` NFS volume. SuiteCRM must upgrade that shared file tree and its database exactly once before the new image is rolled out to every workload.
+
+SuiteCRM's [official upgrade guide](https://docs.suitecrm.com/8.x/admin/upgrading/) is authoritative for supported version steps. Read the [target release notes](https://docs.suitecrm.com/8.x/admin/releases/) and [compatibility matrix](https://docs.suitecrm.com/8.x/admin/compatibility-matrix/) before changing production. Do not skip a required intermediate release. The procedure below adapts the official `suitecrm:app:upgrade` and `suitecrm:app:upgrade-finalize` process to this repository's shared-NFS and GitOps layout.
+
+### 6.1. Prepare and test the target
+
+1. Rehearse the entire upgrade against a recent database and NFS copy in an isolated environment. Include the checked-in SAML provisioning extension and any files under `public/legacy/custom`.
+
+2. Confirm that the target supports the pinned PHP, MariaDB, and web-server versions. Review every release note between the current and target versions for required actions.
+
+3. Download the official `SuiteCRM-<version>.zip`, calculate its SHA-256 digest, and compare the download with a trusted upstream checksum when one is published. Do not copy a checksum from an untrusted mirror.
+
+4. Build `apps/suitecrm/image/` with the target version, `SUITECRM_PHP_BASE_IMAGE`, and verified release checksum. Publish the immutable image and record its registry digest. Do not change `apps/variables.yaml` or let Argo CD deploy the target yet.
+
+The four SuiteCRM release variables have different roles:
+
+| Variable | Purpose |
+| --- | --- |
+| `SUITECRM_IMAGE_TAG` | SuiteCRM target version and image tag |
+| `SUITECRM_IMAGE_DIGEST` | Immutable digest of the published custom image |
+| `SUITECRM_PHP_BASE_IMAGE` | Pinned PHP/Apache base image, including its digest |
+| `SUITECRM_RELEASE_SHA256` | SHA-256 of the official SuiteCRM release ZIP used by the image build and upgrade |
+
+### 6.2. Establish a maintenance window
+
+Record the current Git revision, image digest, SuiteCRM version, Argo CD state, Galera state, and all workload replica counts. Confirm that both web replicas, the messenger worker, recent scheduler Jobs, and the current database backup are healthy before proceeding.
+
+Block public writes before touching the shared application tree. Keep one current web pod as the sole upgrade executor, but isolate ingress from users and integrations. Stop the other web replica, the messenger Deployment, and the scheduler CronJob through a reviewed temporary maintenance change. Argo CD must not self-heal those temporary replica changes while the maintenance window is active. Record the temporary change and its exact reversal; never leave `argocd.argoproj.io/skip-reconcile` behind after maintenance.
+
+The database, NFS volume, and administrator exec access must remain available. Do not run the upgrade command from both web replicas.
+
+### 6.3. Take a coordinated recovery point
+
+After writes and background processing are stopped:
+
+1. Trigger a new SuiteCRM `PhysicalBackup` and wait for its `Complete` condition to report success. Verify that the new object exists in the configured Garage bucket; an old successful Job or a scheduled timestamp is not proof of a current backup.
+
+2. Snapshot or copy the complete `suitecrm-data` NFS tree, including application files, uploads, extensions, configuration, and version-marker files.
+
+3. Preserve the sealed application, database, S3, registry, and SAML secrets with the matching Git revision.
+
+Treat the database and NFS copies as one recovery point. If the schema migration fails after making changes, restore both copies from that point. Starting the old image against a partly upgraded schema is not a rollback.
+
+### 6.4. Run the upgrade once
+
+Select the single current web pod retained as the executor. Replace both placeholders with the reviewed target version and release checksum:
+
+```bash title="Stage and verify the official target package"
+SUITECRM_UPGRADE_POD='REPLACE_WITH_THE_SINGLE_EXECUTOR_POD'
+SUITECRM_TARGET='REPLACE_WITH_TARGET_VERSION'
+SUITECRM_TARGET_SHA256='REPLACE_WITH_VERIFIED_RELEASE_SHA256'
+
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig \
+  -n suitecrm exec "$SUITECRM_UPGRADE_POD" -c suitecrm -- sh -ec '
+    target="$1"
+    expected="$2"
+    package="/var/www/html/tmp/package/upgrade/SuiteCRM-${target}.zip"
+
+    mkdir -p /var/www/html/tmp/package/upgrade
+    curl -fL --retry 3 \
+      -o "$package" \
+      "https://github.com/SuiteCRM/SuiteCRM-Core/releases/download/v${target}/SuiteCRM-${target}.zip"
+    printf "%s  %s\n" "$expected" "$package" | sha256sum -c -
+  ' sh "$SUITECRM_TARGET" "$SUITECRM_TARGET_SHA256"
+```
+
+Stop if verification fails. With traffic still isolated, run the official upgrade and finalize commands from that same pod:
+
+```bash title="Upgrade the shared files and database once"
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig \
+  -n suitecrm exec "$SUITECRM_UPGRADE_POD" -c suitecrm -- sh -ec '
+    target="$1"
+    cd /var/www/html
+    php -d session.save_path=/var/www/html/var/sessions \
+      bin/console suitecrm:app:upgrade -t "SuiteCRM-${target}" -vvv
+    php -d session.save_path=/var/www/html/var/sessions \
+      bin/console suitecrm:app:upgrade-finalize -t "SuiteCRM-${target}" -vvv
+    touch ".suitecrm-code-${target}"
+  ' sh "$SUITECRM_TARGET"
+```
+
+Both commands must finish successfully before continuing. The version marker tells `suitecrm-bootstrap` that the shared NFS tree already contains the migrated target; without it, the hook would merge the image's files into the live tree again. Review the SAML extension against the target source when the bootstrap registration guard reports an incompatibility.
+
+### 6.5. Publish the target and reconcile
+
+Update `SUITECRM_IMAGE_TAG`, `SUITECRM_IMAGE_DIGEST`, `SUITECRM_PHP_BASE_IMAGE` when changed, and `SUITECRM_RELEASE_SHA256` in `apps/variables.yaml`. Publish the reviewed Git change to the revision tracked by Argo CD.
+
+Allow Argo CD to run `suitecrm-bootstrap` and roll the target image. The bootstrap hook reinstalls the repository-owned SAML extension, sets up messenger transports, and clears a pod-local cache. Restore the declared two web replicas, messenger replica, scheduler schedule, and normal ingress only after the hook and rollout succeed. Remove every temporary maintenance or reconciliation pause.
+
+### 6.6. Validate before reopening service
+
+Do not accept the upgrade based only on Running pods. Confirm all of the following:
+
+1. Argo CD reports the intended Git revision as `Synced` and `Healthy`, and no operation or hook remains active.
+2. `suitecrm-bootstrap` completed, both web replicas use the target image digest with zero new restarts, Galera is Primary/Ready, and the messenger and newest scheduler Job complete normally.
+3. HTTPS certificate validation succeeds, `/` redirects to `/auth`, and `/auth` renders the SuiteCRM login application.
+4. A local administrator and an ordinary Authentik SAML user can log in, remain logged in while requests cross the ingress, view permitted records, and create then edit a disposable record. Test logout as well.
+5. Outbound mail, queued work, and any inbound-mail integration still function.
+6. For SuiteCRM 8.10.0 and later, **Admin → Migrations** has no unexplained pending or failed manual migration. Keep the messenger running while approved manual migration tasks execute.
+7. A new post-upgrade database backup completes and the matching object is present in Garage.
+
+Keep the pre-upgrade recovery point until the application, integrations, background migrations, and backups are accepted. If a schema-changing upgrade must be rolled back, restore the coordinated database and NFS recovery point before restoring the previous Git revision and image.
 
 ## Troubleshooting
 
