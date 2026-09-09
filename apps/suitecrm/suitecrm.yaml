@@ -7,7 +7,12 @@ metadata:
     argocd.argoproj.io/sync-wave: "-1"
 data:
   APP_ENV: prod
+  AWS_ENDPOINT_URL_S3: http://${GARAGE_S3_IP}:${GARAGE_S3_PORT}
+  AWS_S3_INSTANCES: >-
+    {"main":{"region":"${GARAGE_S3_CUSTOM_REGION}","access_key":"%env(AWS_S3_ACCESS_KEY)%","access_secret":"%env(AWS_S3_ACCESS_SECRET)%"}}
   AUTH_TYPE: saml
+  MEDIA_FLY_SYSTEM_STORAGES: >-
+    {"private.documents.storage":{"adapter":"aws","options":{"client":"aws.s3.client.main","bucket":"${SUITECRM_S3_BUCKET}"}},"public.documents.storage":{"adapter":"aws","options":{"client":"aws.s3.client.main","bucket":"${SUITECRM_S3_BUCKET}"}},"private.images.storage":{"adapter":"aws","options":{"client":"aws.s3.client.main","bucket":"${SUITECRM_S3_BUCKET}"}},"public.images.storage":{"adapter":"aws","options":{"client":"aws.s3.client.main","bucket":"${SUITECRM_S3_BUCKET}"}},"archived.documents.storage":{"adapter":"aws","options":{"client":"aws.s3.client.main","bucket":"${SUITECRM_S3_BUCKET}"}}}
   SAML_USERNAME_ATTRIBUTE: http://schemas.goauthentik.io/2021/02/saml/username
   SAML_USE_ATTRIBUTE_FRIENDLY_NAME: "false"
   SAML_AUTO_CREATE: enabled
@@ -154,6 +159,16 @@ spec:
                 secretKeyRef:
                   name: suitecrm-app
                   key: admin-password
+            - name: AWS_S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: suitecrm-s3
+                  key: access-key-id
+            - name: AWS_S3_ACCESS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: suitecrm-s3
+                  key: secret-access-key
             - name: SAML_IDP_X509CERT
               valueFrom:
                 secretKeyRef:
@@ -262,6 +277,16 @@ spec:
             - configMapRef:
                 name: suitecrm-env
           env:
+            - name: AWS_S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: suitecrm-s3
+                  key: access-key-id
+            - name: AWS_S3_ACCESS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: suitecrm-s3
+                  key: secret-access-key
             - name: SAML_IDP_X509CERT
               valueFrom:
                 secretKeyRef:
@@ -404,6 +429,16 @@ spec:
                 - configMapRef:
                     name: suitecrm-env
               env:
+                - name: AWS_S3_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: suitecrm-s3
+                      key: access-key-id
+                - name: AWS_S3_ACCESS_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: suitecrm-s3
+                      key: secret-access-key
                 - name: SAML_IDP_X509CERT
                   valueFrom:
                     secretKeyRef:
@@ -506,6 +541,16 @@ spec:
             - configMapRef:
                 name: suitecrm-env
           env:
+            - name: AWS_S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: suitecrm-s3
+                  key: access-key-id
+            - name: AWS_S3_ACCESS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: suitecrm-s3
+                  key: secret-access-key
             - name: SAML_IDP_X509CERT
               valueFrom:
                 secretKeyRef:
