@@ -67,6 +67,8 @@ Before an upgrade, read the release notes for the pinned target and record a rec
 
 For database startup failures, inspect Galera quorum, PVC placement, and arbitrator compatibility. NFS permission errors need export-side ownership analysis; recursively changing ownership on populated shared storage can be disruptive. SAML failures require checking assertion signatures, entity IDs, and username mapping.
 
+If navigation logs users out and `logs/prod/prod.log` reports `Failed to decode session object`, verify that each web pod has its own local `/var/www/html/var/sessions` emptyDir and that the ingress is setting its sticky cookie. PHP sessions are mutable, lock-heavy state and must not be shared over the application NFS volume. Recreate both web pods after changing this mount; existing pods retain their old volume layout. A healthy Argo CD status does not establish that existing pods have adopted the new session mount.
+
 ## Manifest and upstream reference
 
 - [`app.yaml`](https://github.com/antblu/antalos/blob/main/apps/suitecrm/app.yaml)

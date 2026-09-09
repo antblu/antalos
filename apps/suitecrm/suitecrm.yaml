@@ -320,11 +320,18 @@ spec:
             # Keep each replica's generated Symfony cache isolated and local.
             - name: cache
               mountPath: /var/www/html/cache
+            # PHP sessions are mutable, lock-heavy state. Keep them local to
+            # each replica; the ingress cookie pins a browser to that replica.
+            - name: sessions
+              mountPath: /var/www/html/var/sessions
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: suitecrm-data
         - name: cache
+          emptyDir:
+            medium: ""
+        - name: sessions
           emptyDir:
             medium: ""
 ---
@@ -574,6 +581,11 @@ metadata:
   namespace: suitecrm
   labels:
     app.kubernetes.io/name: suitecrm
+  annotations:
+    traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.httponly: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.secure: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.samesite: lax
 spec:
   type: ClusterIP
   selector:
