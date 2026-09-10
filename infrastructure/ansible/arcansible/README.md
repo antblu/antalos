@@ -5,6 +5,11 @@ This Ansible project provisions the Docker workload on `debian-arc`
 `infrastructure/opentofu/arctofu`; its cloud-init installs Docker and the host
 Intel firmware/media packages before Ansible runs.
 
+The Debian `genericcloud` image initially boots a reduced `cloud-amd64` kernel
+that does not contain the `i915` module. Both cloud-init and Ansible install the
+full `linux-image-amd64` kernel, stop tracking the cloud-kernel metapackage, and
+reboot once before requiring `/dev/dri/renderD128`.
+
 The Compose source of truth is `arc-compose/compose.yaml`. It runs exactly these
 GPU-enabled services:
 
@@ -28,23 +33,39 @@ GPU.
 Create and encrypt the vault before the first run:
 
 ```bash
-cd infrastructure/ansible
-cp group_vars/debian_arc/vault.yml.example group_vars/debian_arc/vault.yml
-ansible-vault encrypt group_vars/debian_arc/vault.yml
+cd infrastructure/ansible/arcansible
+cp vars/vault.yml.example vars/vault.yml
+ansible-vault encrypt vars/vault.yml
+ansible-vault edit vars/vault.yml
 ```
 
-Use independent 64-character hexadecimal secrets. The Talk internal secret must
-match `clients.internalsecret` on the standalone signaling server. The recording
-secret is shared with Nextcloud's Talk recording configuration. Store the
-original values in the password manager; never recover them by decrypting a
-SealedSecret.
+Generate new 64-character hexadecimal values for the recording secret and
+Docling API key with `openssl rand -hex 32`. The Talk internal secret is not a
+new independent value: it must match `clients.internalsecret` on the standalone
+signaling server. The recording secret is shared with Nextcloud's Talk recording
+configuration. Keep all three quoted in the vault and store their originals in
+the password manager; never commit the decrypted vault.
+
+For an existing encrypted vault, use only:
+
+```bash
+ansible-vault edit vars/vault.yml
+```
+
+The file must contain these three keys:
+
+```yaml
+vault_nextcloud_talk_recording_secret: "<64 hexadecimal characters>"
+vault_nextcloud_talk_internal_secret: "<existing 64-character signaling secret>"
+vault_docling_api_key: "<different 64 hexadecimal characters>"
+```
 
 ## Provision
 
 After OpenTofu has created the VM and attached the Arc A310, run:
 
 ```bash
-cd infrastructure/ansible
+cd infrastructure/ansible/arcansible
 ansible-playbook site.yml --ask-vault-pass
 ```
 
@@ -67,4 +88,6 @@ QSV, Intel low-power encoding, and the Arc render device. Its media directory is
 
 Cloud-init runs only on first boot. For an existing VM, recreate it to apply a
 changed cloud-init dependency set, or install the same packages manually before
-running the playbook.
+running the playbook. The playbook also repairs the active Debian repository
+configuration, including `contrib`, `non-free`, and `non-free-firmware`, so an
+existing VM does not need to be recreated solely for missing package sources.

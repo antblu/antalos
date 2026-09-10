@@ -33,6 +33,7 @@ arc_host_packages:
   - intel-gpu-tools
   - intel-media-va-driver-non-free
   - libvpl2
+  - linux-image-amd64
   - pciutils
   - python3
   - qemu-guest-agent

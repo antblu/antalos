@@ -4,14 +4,14 @@
   become: true
   gather_facts: true
   vars_files:
-    - group_vars/debian_arc/main.yml
-    - group_vars/debian_arc/vault.yml
+    - vars/main.yml
+    - vars/vault.yml
   tasks:
     - name: Require Debian on the Arc VM
       ansible.builtin.assert:
         that:
-          - ansible_distribution == "Debian"
-          - ansible_distribution_major_version | int >= 13
+          - ansible_facts["distribution"] == "Debian"
+          - ansible_facts["distribution_major_version"] | int >= 13
         fail_msg: This playbook requires Debian 13 or newer.
 
     - name: Require protected application secrets
@@ -20,8 +20,11 @@
           - vault_nextcloud_talk_recording_secret is match('^[0-9a-fA-F]{64}$')
           - vault_nextcloud_talk_internal_secret is match('^[0-9a-fA-F]{64}$')
           - vault_docling_api_key is match('^[0-9a-fA-F]{64}$')
-        fail_msg: Populate and encrypt group_vars/debian_arc/vault.yml with three independent 64-character hexadecimal secrets.
-      no_log: true
+        fail_msg: >-
+          Edit vars/vault.yml with ansible-vault. The recording and Docling
+          values must be newly generated 64-character hexadecimal secrets; the
+          Talk internal value must be the existing signaling internal secret
+          and must also contain exactly 64 hexadecimal characters.
 
     - name: Set the VM hostname
       ansible.builtin.hostname:
@@ -46,12 +49,84 @@
       when: configured_timezone.stdout != debian_arc_timezone
       changed_when: true
 
+    - name: Configure Debian repositories with firmware components
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/debian.sources
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          Types: deb
+          URIs: https://deb.debian.org/debian
+          Suites: {{ ansible_facts["distribution_release"] }} {{ ansible_facts["distribution_release"] }}-updates
+          Components: main contrib non-free non-free-firmware
+          Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+          Types: deb
+          URIs: https://security.debian.org/debian-security
+          Suites: {{ ansible_facts["distribution_release"] }}-security
+          Components: main contrib non-free non-free-firmware
+          Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+    - name: Remove the legacy Debian source list
+      ansible.builtin.file:
+        path: /etc/apt/sources.list
+        state: absent
+
     - name: Install Docker and Intel Arc runtime packages
       ansible.builtin.apt:
         name: "{{ arc_host_packages }}"
         state: present
         update_cache: true
-        cache_valid_time: 3600
+
+    - name: Stop tracking the hardware-trimmed cloud kernel
+      ansible.builtin.apt:
+        name: linux-image-cloud-amd64
+        state: absent
+
+    - name: Reboot from the cloud kernel into the hardware-capable kernel
+      ansible.builtin.reboot:
+        msg: Rebooting into linux-image-amd64 for Intel Arc A310 support
+        reboot_timeout: 900
+        post_reboot_delay: 10
+      when: "'-cloud-amd64' in ansible_facts['kernel']"
+
+    - name: Refresh facts after the kernel reboot
+      ansible.builtin.setup:
+        gather_subset:
+          - min
+      when: "'-cloud-amd64' in ansible_facts['kernel']"
+
+    - name: Verify the running kernel provides i915
+      ansible.builtin.command:
+        argv:
+          - /usr/sbin/modinfo
+          - i915
+      register: i915_module_info
+      changed_when: false
+      failed_when: false
+
+    - name: Require the hardware-capable Debian kernel
+      ansible.builtin.assert:
+        that:
+          - i915_module_info.rc == 0
+        fail_msg: >-
+          The running kernel does not provide i915. Confirm that
+          linux-image-amd64 is installed and selected in GRUB instead of a
+          cloud-amd64 kernel, then reboot the VM.
+
+    - name: Check whether i915 is loaded
+      ansible.builtin.stat:
+        path: /sys/module/i915
+      register: i915_module_status
+
+    - name: Load the Intel i915 driver
+      ansible.builtin.command:
+        argv:
+          - /usr/sbin/modprobe
+          - i915
+      when: not i915_module_status.stat.exists
+      changed_when: true
 
     - name: Enable Docker and the QEMU guest agent
       ansible.builtin.systemd_service:
@@ -328,8 +403,8 @@
   become: false
   gather_facts: false
   vars_files:
-    - group_vars/debian_arc/main.yml
-    - group_vars/debian_arc/vault.yml
+    - vars/main.yml
+    - vars/vault.yml
   vars:
     nextcloud_talk_recording_config:
       servers:
@@ -342,7 +417,7 @@
         argv:
           - /home/linuxbrew/.linuxbrew/bin/kubectl
           - --kubeconfig
-          - "{{ playbook_dir }}/../../kubeconfig"
+          - "{{ playbook_dir }}/../../../kubeconfig"
           - --namespace
           - nextcloud
           - exec
@@ -366,7 +441,7 @@
         argv:
           - /home/linuxbrew/.linuxbrew/bin/kubectl
           - --kubeconfig
-          - "{{ playbook_dir }}/../../kubeconfig"
+          - "{{ playbook_dir }}/../../../kubeconfig"
           - --namespace
           - nextcloud
           - exec

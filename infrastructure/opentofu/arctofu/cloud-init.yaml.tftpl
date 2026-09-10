@@ -14,9 +14,17 @@ resize_rootfs: true
 apt:
   preserve_sources_list: false
   sources_list: |
-    deb http://deb.debian.org/debian $RELEASE main contrib non-free non-free-firmware
-    deb http://deb.debian.org/debian $RELEASE-updates main contrib non-free non-free-firmware
-    deb http://security.debian.org/debian-security $RELEASE-security main contrib non-free non-free-firmware
+    Types: deb
+    URIs: https://deb.debian.org/debian
+    Suites: $RELEASE $RELEASE-updates
+    Components: main contrib non-free non-free-firmware
+    Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+    Types: deb
+    URIs: https://security.debian.org/debian-security
+    Suites: $RELEASE-security
+    Components: main contrib non-free non-free-firmware
+    Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 groups:
   - docker
 users:
@@ -43,6 +51,7 @@ packages:
   - intel-gpu-tools
   - intel-media-va-driver-non-free
   - libvpl2
+  - linux-image-amd64
   - openssh-server
   - pciutils
   - python3
@@ -149,6 +158,7 @@ write_files:
         intel-media-va-driver-non-free \
         jq \
         libvpl2 \
+        linux-image-amd64 \
         needrestart \
         nfs-common \
         pciutils \
@@ -167,12 +177,16 @@ write_files:
         docker-ce-cli \
         docker-compose-plugin
 
+      DEBIAN_FRONTEND=noninteractive apt-get remove --yes linux-image-cloud-amd64 || true
+
       rm -f /etc/default/grub.d/60-serial-console.cfg
 
       usermod --append --groups docker ${username}
       systemctl enable --now docker
       systemctl enable --now fail2ban
       sysctl --system
+      update-initramfs -u -k all
+      update-grub
       touch /var/lib/cloud/instance/antalos-bootstrap-complete
 runcmd:
   - apt-get update
