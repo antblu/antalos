@@ -654,6 +654,10 @@
           - live_transcription
           - "{{ nextcloud_appapi_daemon_name }}"
           - "--json-info={{ nextcloud_live_transcription_registration | to_json }}"
+          - --env
+          - "LT_HPB_URL=wss://{{ nextcloud_talk_host }}/standalone-signaling/spreed"
+          - --env
+          - "LT_INTERNAL_SECRET={{ vault_nextcloud_talk_internal_secret }}"
       async: 900
       poll: 0
       register: live_transcription_registration_job
