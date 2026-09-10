@@ -179,6 +179,15 @@ write_files:
 
       DEBIAN_FRONTEND=noninteractive apt-get remove --yes linux-image-cloud-amd64 || true
 
+      standard_kernel="$(find /boot -maxdepth 1 -type f -name 'vmlinuz-*+deb13-amd64' -printf '%f\n' | sort -V | tail -n 1)"
+      if [ -z "$${standard_kernel}" ]; then
+        echo "linux-image-amd64 did not install a standard Debian kernel under /boot" >&2
+        exit 1
+      fi
+      cat > /etc/default/grub.d/70-antalos-kernel.cfg <<EOF
+      GRUB_TOP_LEVEL="/boot/$${standard_kernel}"
+      EOF
+
       rm -f /etc/default/grub.d/60-serial-console.cfg
 
       usermod --append --groups docker ${username}

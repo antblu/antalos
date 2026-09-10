@@ -8,7 +8,10 @@ Intel firmware/media packages before Ansible runs.
 The Debian `genericcloud` image initially boots a reduced `cloud-amd64` kernel
 that does not contain the `i915` module. Both cloud-init and Ansible install the
 full `linux-image-amd64` kernel, stop tracking the cloud-kernel metapackage, and
-reboot once before requiring `/dev/dri/renderD128`.
+set that kernel as GRUB's explicit top-level entry before rebooting and requiring
+`/dev/dri/renderD128`. This is necessary because the cloud and standard kernel
+can have the same upstream version while GRUB's automatic ordering still selects
+the hardware-trimmed cloud variant.
 
 The Compose source of truth is `arc-compose/compose.yaml`. It runs exactly these
 GPU-enabled services:

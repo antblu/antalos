@@ -84,18 +84,71 @@
         name: linux-image-cloud-amd64
         state: absent
 
-    - name: Reboot from the cloud kernel into the hardware-capable kernel
+    - name: Find installed hardware-capable kernels
+      ansible.builtin.find:
+        paths: /boot
+        patterns:
+          - vmlinuz-*+deb13-amd64
+        file_type: file
+        recurse: false
+      register: standard_kernel_images
+
+    - name: Require an installed hardware-capable kernel
+      ansible.builtin.assert:
+        that:
+          - standard_kernel_images.matched | int > 0
+        fail_msg: >-
+          linux-image-amd64 did not install a standard Debian kernel under
+          /boot.
+
+    - name: Select the newest hardware-capable kernel
+      ansible.builtin.set_fact:
+        standard_kernel_version: >-
+          {{
+            (standard_kernel_images.files | sort(attribute='mtime') | last).path
+            | basename
+            | regex_replace('^vmlinuz-', '')
+          }}
+
+    - name: Make the hardware-capable kernel the GRUB top-level entry
+      ansible.builtin.copy:
+        dest: /etc/default/grub.d/70-antalos-kernel.cfg
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          GRUB_TOP_LEVEL="/boot/vmlinuz-{{ standard_kernel_version }}"
+      register: grub_kernel_selection
+
+    - name: Regenerate GRUB after selecting the hardware-capable kernel
+      ansible.builtin.command:
+        argv:
+          - /usr/sbin/update-grub
+      when: grub_kernel_selection.changed
+      changed_when: true
+
+    - name: Reboot into the selected hardware-capable kernel
       ansible.builtin.reboot:
         msg: Rebooting into linux-image-amd64 for Intel Arc A310 support
         reboot_timeout: 900
         post_reboot_delay: 10
-      when: "'-cloud-amd64' in ansible_facts['kernel']"
+      when: ansible_facts["kernel"] != standard_kernel_version
+      register: kernel_reboot
 
     - name: Refresh facts after the kernel reboot
       ansible.builtin.setup:
         gather_subset:
           - min
-      when: "'-cloud-amd64' in ansible_facts['kernel']"
+      when: kernel_reboot.changed
+
+    - name: Require the selected hardware-capable kernel to be running
+      ansible.builtin.assert:
+        that:
+          - ansible_facts["kernel"] == standard_kernel_version
+        fail_msg: >-
+          GRUB did not boot the selected standard Debian kernel
+          {{ standard_kernel_version }}; the running kernel is
+          {{ ansible_facts["kernel"] }}.
 
     - name: Verify the running kernel provides i915
       ansible.builtin.command:
@@ -111,9 +164,8 @@
         that:
           - i915_module_info.rc == 0
         fail_msg: >-
-          The running kernel does not provide i915. Confirm that
-          linux-image-amd64 is installed and selected in GRUB instead of a
-          cloud-amd64 kernel, then reboot the VM.
+          The selected standard Debian kernel does not provide i915 even
+          though linux-image-amd64 is installed.
 
     - name: Check whether i915 is loaded
       ansible.builtin.stat:
