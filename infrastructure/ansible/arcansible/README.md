@@ -29,7 +29,8 @@ Docling publishes CPU, CUDA, and AMD deployment paths, but no Intel container.
 its OCR/model dependencies onto Intel's pinned XPU runtime image. This supplies
 both XPU-enabled PyTorch and the Intel Level Zero compute runtime. The playbook
 proves that the resulting container can execute a tensor operation on the Arc
-GPU.
+GPU. For Immich, it verifies the ONNX Runtime OpenVINO execution provider and
+requires that the provider reports an Intel GPU device.
 
 ## Secrets
 

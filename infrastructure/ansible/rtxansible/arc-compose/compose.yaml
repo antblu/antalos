@@ -1,0 +1,155 @@
+name: antalos-debian-rtx
+
+services:
+  llama-cpp:
+    image: ${LLAMA_CPP_IMAGE}
+    container_name: llama-cpp
+    restart: unless-stopped
+    environment:
+      LLAMA_ARG_API_KEY_FILE: /run/secrets/llama-api-key
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      NVIDIA_VISIBLE_DEVICES: "0"
+    command:
+      - --model
+      - /models/${LLAMA_CPP_MODEL_NAME}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --ctx-size
+      - "4096"
+      - --parallel
+      - "1"
+      - --n-gpu-layers
+      - "99"
+      - --jinja
+      - --metrics
+    ports:
+      - "${DEBIAN_RTX_IP}:${LLAMA_CPP_PORT}:8080/tcp"
+    volumes:
+      - type: bind
+        source: /srv/llama-models
+        target: /models
+        read_only: true
+      - type: bind
+        source: ./secrets/llama-api-key
+        target: /run/secrets/llama-api-key
+        read_only: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids:
+                - "0"
+              capabilities:
+                - gpu
+    security_opt:
+      - no-new-privileges:true
+
+  appapi-harp:
+    image: ${NEXTCLOUD_HARP_IMAGE}
+    container_name: appapi-harp
+    restart: unless-stopped
+    environment:
+      HP_EXAPPS_ADDRESS: 0.0.0.0:8780
+      HP_FRP_ADDRESS: 0.0.0.0:8782
+      HP_LOG_LEVEL: warning
+      HP_SHARED_KEY: ${NEXTCLOUD_HARP_SHARED_KEY}
+      NC_INSTANCE_URL: ${NEXTCLOUD_URL}
+    ports:
+      - "${DEBIAN_RTX_IP}:${NEXTCLOUD_HARP_PORT}:8780/tcp"
+      - "${DEBIAN_RTX_IP}:${NEXTCLOUD_HARP_FRP_PORT}:8782/tcp"
+    volumes:
+      - type: volume
+        source: harp-certificates
+        target: /certs
+    security_opt:
+      - no-new-privileges:true
+
+  translate2:
+    image: ${NEXTCLOUD_TRANSLATE2_IMAGE}
+    container_name: translate2
+    restart: unless-stopped
+    environment:
+      AA_VERSION: "3.2.0"
+      APP_DISPLAY_NAME: Local Machine Translation
+      APP_HOST: 0.0.0.0
+      APP_ID: translate2
+      APP_PERSISTENT_STORAGE: /data
+      APP_PORT: ${NEXTCLOUD_TRANSLATE2_PORT}
+      APP_PROTOCOL: http
+      APP_SECRET: ${NEXTCLOUD_TRANSLATE2_APP_SECRET}
+      APP_VERSION: ${NEXTCLOUD_TRANSLATE2_VERSION}
+      COMPUTE_DEVICE: CUDA
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL}
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      NVIDIA_VISIBLE_DEVICES: "0"
+    ports:
+      - "${DEBIAN_RTX_IP}:${NEXTCLOUD_TRANSLATE2_PORT}:${NEXTCLOUD_TRANSLATE2_PORT}/tcp"
+    volumes:
+      - type: volume
+        source: translate2-data
+        target: /data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids:
+                - "0"
+              capabilities:
+                - gpu
+    security_opt:
+      - no-new-privileges:true
+
+  live_transcription:
+    image: ${NEXTCLOUD_LIVE_TRANSCRIPTION_IMAGE}
+    container_name: live_transcription
+    restart: unless-stopped
+    environment:
+      AA_VERSION: "3.2.0"
+      APP_DISPLAY_NAME: Live Transcription in Talk
+      APP_HOST: 0.0.0.0
+      APP_ID: live_transcription
+      APP_PERSISTENT_STORAGE: /data
+      APP_PORT: ${NEXTCLOUD_LIVE_TRANSCRIPTION_PORT}
+      APP_PROTOCOL: http
+      APP_SECRET: ${NEXTCLOUD_LIVE_TRANSCRIPTION_APP_SECRET}
+      APP_VERSION: ${NEXTCLOUD_LIVE_TRANSCRIPTION_VERSION}
+      COMPUTE_DEVICE: CUDA
+      LT_DISABLE_INTERNAL_VOSK: "false"
+      LT_HPB_URL: ${NEXTCLOUD_TALK_HPB_URL}
+      LT_INTERNAL_SECRET: ${NEXTCLOUD_TALK_INTERNAL_SECRET}
+      LT_MAX_WORKERS: ${NEXTCLOUD_LIVE_TRANSCRIPTION_WORKERS}
+      LT_VOSK_SERVER_URL: ws://127.0.0.1:2702
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL}
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      NVIDIA_VISIBLE_DEVICES: "0"
+      SKIP_CERT_VERIFY: "false"
+    ports:
+      - "${DEBIAN_RTX_IP}:${NEXTCLOUD_LIVE_TRANSCRIPTION_PORT}:${NEXTCLOUD_LIVE_TRANSCRIPTION_PORT}/tcp"
+    volumes:
+      - type: volume
+        source: live-transcription-data
+        target: /data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids:
+                - "0"
+              capabilities:
+                - gpu
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  default:
+    name: antalos-debian-rtx
+
+volumes:
+  harp-certificates:
+  live-transcription-data:
+  translate2-data:
