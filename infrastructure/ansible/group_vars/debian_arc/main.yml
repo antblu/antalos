@@ -1,0 +1,39 @@
+debian_arc_hostname: debian-arc
+debian_arc_ip: 10.30.0.28
+debian_arc_timezone: America/Denver
+
+arc_compose_root: /opt/arc-compose
+arc_render_device: /dev/dri/renderD128
+jellyfin_media_path: /srv/media
+jellyfin_uid: "1100"
+jellyfin_gid: "1100"
+
+immich_machine_learning_version: v3.1.0
+nextcloud_talk_recording_version: latest@sha256:68ef053d0271d202f03b43f41f7bf1369d03b691d67aa5debca741ab363b4ac8
+jellyfin_version: 12.0.20260908-012347
+docling_serve_version: 1.30.0
+intel_pytorch_xpu_image: intel/pytorch:xpu-2.13.0-ubuntu24.04-20260907
+
+immich_machine_learning_port: "3003"
+nextcloud_talk_recording_port: "1234"
+jellyfin_port: "8096"
+docling_serve_port: "5001"
+
+nextcloud_host: nextcloud.antblu.net
+nextcloud_talk_host: talk.antblu.net
+
+arc_host_packages:
+  - ca-certificates
+  - curl
+  - docker-buildx-plugin
+  - docker-ce
+  - docker-ce-cli
+  - docker-compose-plugin
+  - firmware-intel-graphics
+  - intel-gpu-tools
+  - intel-media-va-driver-non-free
+  - libvpl2
+  - pciutils
+  - python3
+  - qemu-guest-agent
+  - vainfo

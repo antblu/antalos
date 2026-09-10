@@ -23,3 +23,7 @@ site/dist/
 site/.astro/
 pnpm-debug.log*
 apps/rustdesk/public-key.txt
+
+# Ansible controller secrets and retry artifacts
+infrastructure/ansible/group_vars/debian_arc/vault.yml
+infrastructure/ansible/*.retry

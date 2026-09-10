@@ -49,7 +49,8 @@ This is an interpretation of the checked-in configuration, assuming the declared
 | Context Chat | Request, update, and indexing: 2 each | Role-specific Services and PDBs preserve process redundancy; all share database/provider dependencies. |
 | Office / Whiteboard | 2 each | Office uses sticky routing; Whiteboard shares Redis and NFS recording state. |
 | Talk | 2 signaling/Janus/TURN pods; 3 NATS nodes | Independent TURN allocations remain pinned to their owning ordinal. |
-| Files / code / recording | Garage + NFS; recorder external | No storage-host failover or external-recorder HA is defined here. |
+| Files / code / recording | Garage + NFS; recorder on `debian-arc` | No storage-host failover or external-recorder HA is defined here. |
+| Live transcription / translation | HaRP and ExApps on `debian-arc` | CPU processing on one VM; the Arc GPU is not a supported accelerator for these ExApps. |
 
 ### How a failure is handled
 

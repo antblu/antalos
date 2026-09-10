@@ -57,7 +57,16 @@ Configure the desired AI provider in Nextcloud’s administration after deployme
 
 Follow the [Talk networking runbook](/admin-guide/nextcloud-talk/). Signaling and TURN endpoints are reapplied by the lifecycle hook, so persist changes in the shared variables and sealed Talk credentials.
 
-Recording runs on an external server. This repository no longer deploys a recorder or configures its registration. Prepare its public/private reachability, TLS, shared secret, storage, and lifecycle independently; then configure it in Talk and test a complete recording and playback workflow.
+Recording runs on the Ansible-managed `debian-arc` VM. The same playbook deploys
+the recorder and writes Talk's `recording_servers` setting without exposing the
+shared secret in Git. Test a complete recording and playback workflow after each
+recorder or Talk upgrade.
+
+The VM also hosts Nextcloud HaRP. Ansible registers it as the default AppAPI
+Docker deploy daemon and deploys `live_transcription` and `translate2`. The
+Kubernetes ingress routes `/exapps/` to HaRP. Both Nextcloud AI apps use CPU on
+this host because their supported accelerators are NVIDIA CUDA; the passed-through
+Intel Arc device is used by Immich and Jellyfin instead.
 
 ## Mail and background work
 

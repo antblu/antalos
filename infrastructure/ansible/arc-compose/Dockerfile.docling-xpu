@@ -1,0 +1,51 @@
+ARG INTEL_PYTORCH_XPU_IMAGE=intel/pytorch:xpu-2.13.0-ubuntu24.04-20260907
+
+FROM ${INTEL_PYTORCH_XPU_IMAGE}
+
+ARG DOCLING_SERVE_VERSION=1.30.0
+
+USER 0
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
+      libatomic1 \
+      libgl1 \
+      libglib2.0-0t64 \
+      libleptonica-dev \
+      libtesseract-dev \
+      tesseract-ocr \
+      tesseract-ocr-eng \
+      tesseract-ocr-osd && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir \
+      "docling-serve[easyocr,rapidocr,tesserocr]==${DOCLING_SERVE_VERSION}" && \
+    mkdir -p /opt/docling/.cache/docling/models && \
+    HF_HUB_DOWNLOAD_TIMEOUT=90 \
+    HF_HUB_ETAG_TIMEOUT=90 \
+    docling-tools models download \
+      -o /opt/docling/.cache/docling/models \
+      layout \
+      tableformer \
+      picture_classifier \
+      rapidocr \
+      easyocr && \
+    groupadd --gid 1001 docling && \
+    useradd \
+      --uid 1001 \
+      --gid 1001 \
+      --home-dir /opt/docling \
+      --shell /usr/sbin/nologin \
+      docling && \
+    chown -R 1001:1001 /opt/docling
+
+ENV DOCLING_SERVE_ARTIFACTS_PATH=/opt/docling/.cache/docling/models
+ENV HOME=/opt/docling
+
+WORKDIR /opt/docling
+
+EXPOSE 5001
+
+USER 1001
+
+CMD ["docling-serve", "run"]

@@ -74,6 +74,15 @@ Losing a Talk pod interrupts the sessions or TURN allocations it owns. New conne
 
 ## External recording
 
-Recording is hosted outside Kubernetes. Manage the recorder’s URL, shared secret, TLS, storage, capacity, and upgrades on that server, then register it in Nextcloud Talk. No in-cluster recorder or recording registration is supplied here. Test recording start, stop, upload, playback, and retention separately from ordinary calls.
+Recording is hosted by the Ansible-managed `debian-arc` VM on `se350-right`. The
+playbook deploys the official AIO recording image, preserves failed uploads in a
+Docker volume, and registers the internal HTTP endpoint and shared secret in
+Talk. The recorder reaches the public Nextcloud URL and the existing HPB directly.
+
+Keep the Ansible-vault recording secret separate from the HPB internal secret.
+The internal secret must match the SealedSecret used by the Talk pods. Test
+recording start, stop, upload, playback, and retention separately from ordinary
+calls. This is one external recorder, so VM or host loss interrupts recording
+until `debian-arc` returns.
 
 See the [official Talk administration documentation](https://nextcloud-talk.readthedocs.io/en/latest/) and the [Nextcloud AIO project](https://github.com/nextcloud/all-in-one) for the selected backend’s requirements.

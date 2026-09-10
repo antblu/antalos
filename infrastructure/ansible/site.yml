@@ -1,0 +1,384 @@
+---
+- name: Provision the Debian Arc Docker services
+  hosts: debian_arc
+  become: true
+  gather_facts: true
+  vars_files:
+    - group_vars/debian_arc/main.yml
+    - group_vars/debian_arc/vault.yml
+  tasks:
+    - name: Require Debian on the Arc VM
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == "Debian"
+          - ansible_distribution_major_version | int >= 13
+        fail_msg: This playbook requires Debian 13 or newer.
+
+    - name: Require protected application secrets
+      ansible.builtin.assert:
+        that:
+          - vault_nextcloud_talk_recording_secret is match('^[0-9a-fA-F]{64}$')
+          - vault_nextcloud_talk_internal_secret is match('^[0-9a-fA-F]{64}$')
+          - vault_docling_api_key is match('^[0-9a-fA-F]{64}$')
+        fail_msg: Populate and encrypt group_vars/debian_arc/vault.yml with three independent 64-character hexadecimal secrets.
+      no_log: true
+
+    - name: Set the VM hostname
+      ansible.builtin.hostname:
+        name: "{{ debian_arc_hostname }}"
+
+    - name: Read the VM timezone
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/timedatectl
+          - show
+          - --property=Timezone
+          - --value
+      register: configured_timezone
+      changed_when: false
+
+    - name: Set the VM timezone
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/timedatectl
+          - set-timezone
+          - "{{ debian_arc_timezone }}"
+      when: configured_timezone.stdout != debian_arc_timezone
+      changed_when: true
+
+    - name: Install Docker and Intel Arc runtime packages
+      ansible.builtin.apt:
+        name: "{{ arc_host_packages }}"
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Enable Docker and the QEMU guest agent
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+      loop:
+        - docker
+        - qemu-guest-agent
+
+    - name: Find the Arc render device
+      ansible.builtin.stat:
+        path: "{{ arc_render_device }}"
+      register: arc_render_device_status
+
+    - name: Require the Arc A310 render device
+      ansible.builtin.assert:
+        that:
+          - arc_render_device_status.stat.exists
+          - arc_render_device_status.stat.ischr | default(false)
+        fail_msg: The Arc A310 is not available at /dev/dri/renderD128. Attach the arctofu PCI mapping and reboot the VM.
+
+    - name: Read the render device kernel driver
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/readlink
+          - --canonicalize
+          - /sys/class/drm/renderD128/device/driver
+      register: arc_kernel_driver
+      changed_when: false
+
+    - name: Require the i915 Arc driver
+      ansible.builtin.assert:
+        that:
+          - arc_kernel_driver.stdout.endswith('/i915')
+        fail_msg: The Arc render node is not bound to the i915 kernel driver.
+
+    - name: Verify host VA-API capabilities
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/vainfo
+          - --display
+          - drm
+          - --device
+          - "{{ arc_render_device }}"
+      changed_when: false
+
+    - name: Create the Jellyfin group
+      ansible.builtin.group:
+        name: jellyfin
+        gid: "{{ jellyfin_gid }}"
+        system: true
+
+    - name: Create the Jellyfin user
+      ansible.builtin.user:
+        name: jellyfin
+        uid: "{{ jellyfin_uid }}"
+        group: jellyfin
+        create_home: false
+        home: /nonexistent
+        shell: /usr/sbin/nologin
+        system: true
+
+    - name: Load the render group
+      ansible.builtin.getent:
+        database: group
+        key: render
+
+    - name: Create Compose and persistent data directories
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - path: "{{ arc_compose_root }}"
+          owner: root
+          group: root
+          mode: "0750"
+        - path: "{{ arc_compose_root }}/data/jellyfin/config/config"
+          owner: "{{ jellyfin_uid }}"
+          group: "{{ jellyfin_gid }}"
+          mode: "0750"
+        - path: "{{ arc_compose_root }}/data/jellyfin/cache"
+          owner: "{{ jellyfin_uid }}"
+          group: "{{ jellyfin_gid }}"
+          mode: "0750"
+        - path: "{{ jellyfin_media_path }}"
+          owner: "{{ jellyfin_uid }}"
+          group: "{{ jellyfin_gid }}"
+          mode: "0750"
+
+    - name: Copy the repository Compose project
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/arc-compose/"
+        dest: "{{ arc_compose_root }}/"
+        owner: root
+        group: root
+        mode: preserve
+
+    - name: Configure Jellyfin QSV on the Arc A310
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/arc-compose/jellyfin-encoding.xml"
+        dest: "{{ arc_compose_root }}/data/jellyfin/config/config/encoding.xml"
+        owner: "{{ jellyfin_uid }}"
+        group: "{{ jellyfin_gid }}"
+        mode: "0640"
+        backup: true
+
+    - name: Write the protected Compose environment
+      ansible.builtin.template:
+        src: arc-compose.env.j2
+        dest: "{{ arc_compose_root }}/.env"
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+    - name: Pull the published service images
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - compose
+          - --project-directory
+          - "{{ arc_compose_root }}"
+          - --file
+          - "{{ arc_compose_root }}/compose.yaml"
+          - pull
+          - immich-machine-learning
+          - nextcloud-talk-recording
+          - jellyfin
+      changed_when: true
+
+    - name: Build the Docling XPU image
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - compose
+          - --project-directory
+          - "{{ arc_compose_root }}"
+          - --file
+          - "{{ arc_compose_root }}/compose.yaml"
+          - build
+          - --pull
+          - docling-server
+      changed_when: true
+
+    - name: Start and wait for all Arc services
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - compose
+          - --project-directory
+          - "{{ arc_compose_root }}"
+          - --file
+          - "{{ arc_compose_root }}/compose.yaml"
+          - up
+          - --detach
+          - --remove-orphans
+          - --wait
+          - --wait-timeout
+          - "900"
+      changed_when: true
+
+    - name: Wait for Jellyfin HTTP health
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ jellyfin_port }}/health"
+        status_code: 200
+      register: jellyfin_health
+      retries: 30
+      delay: 10
+      until: jellyfin_health.status == 200
+
+    - name: Prove Immich can see the Intel OpenVINO GPU
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - exec
+          - immich-machine-learning
+          - python
+          - -c
+          - from openvino import Core; devices = Core().available_devices; assert any(device.startswith('GPU') for device in devices), devices; print(devices)
+      changed_when: false
+
+    - name: Prove Docling can execute on Intel XPU
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - exec
+          - docling-server
+          - python
+          - -c
+          - import torch; assert torch.xpu.is_available(); tensor = torch.arange(16, device='xpu'); assert int(tensor.sum().cpu()) == 120; print(torch.xpu.get_device_name(0))
+      changed_when: false
+
+    - name: Prove Docling can extract content
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ docling_serve_port }}/v1/convert/source"
+        method: POST
+        headers:
+          X-Api-Key: "{{ vault_docling_api_key }}"
+        body_format: json
+        body:
+          options:
+            from_formats:
+              - md
+            to_formats:
+              - text
+            do_ocr: false
+          file_sources:
+            - base64_string: IyBBcmMgR1BVIHNtb2tlCgpEb2NsaW5nIGNvbnRlbnQgZXh0cmFjdGlvbiBpcyBvcGVyYXRpb25hbC4K
+              filename: arc-gpu-smoke.md
+        status_code: 200
+        return_content: true
+        timeout: 300
+      register: docling_conversion
+      failed_when: >-
+        docling_conversion.status != 200 or
+        'Docling content extraction is operational.' not in docling_conversion.content
+      no_log: true
+
+    - name: Prove Jellyfin can encode through Intel VA-API
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - exec
+          - jellyfin
+          - /usr/lib/jellyfin-ffmpeg/ffmpeg
+          - -v
+          - error
+          - -vaapi_device
+          - /dev/dri/renderD128
+          - -f
+          - lavfi
+          - -i
+          - color=size=128x128:rate=30
+          - -vf
+          - format=nv12,hwupload
+          - -frames:v
+          - "30"
+          - -c:v
+          - h264_vaapi
+          - -f
+          - null
+          - -
+      changed_when: false
+
+    - name: Prove Talk Recording selected Intel VA-API
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - exec
+          - nextcloud-talk-recording
+          - /bin/sh
+          - -ec
+          - |
+            grep -q 'h264_vaapi' /conf/recording.conf
+            exec ffmpeg \
+              -v error \
+              -vaapi_device /dev/dri/renderD128 \
+              -f lavfi \
+              -i color=size=128x128:rate=30 \
+              -vf format=nv12,hwupload \
+              -frames:v 30 \
+              -c:v h264_vaapi \
+              -f null \
+              -
+      changed_when: false
+
+- name: Register the Talk recording backend in Nextcloud
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+  vars_files:
+    - group_vars/debian_arc/main.yml
+    - group_vars/debian_arc/vault.yml
+  vars:
+    nextcloud_talk_recording_config:
+      servers:
+        - server: "http://{{ debian_arc_ip }}:{{ nextcloud_talk_recording_port }}/"
+          verify: true
+      secret: "{{ vault_nextcloud_talk_recording_secret }}"
+  tasks:
+    - name: Prove the Nextcloud pod can reach Talk Recording
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - -r
+          - |-
+            $socket = @fsockopen('{{ debian_arc_ip }}', {{ nextcloud_talk_recording_port }}, $errorNumber, $errorMessage, 10);
+            if ($socket === false) {
+                fwrite(STDERR, $errorMessage . PHP_EOL);
+                exit(1);
+            }
+            fclose($socket);
+      changed_when: false
+
+    - name: Write the external recording server configuration
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - config:app:set
+          - spreed
+          - recording_servers
+          - "--value={{ nextcloud_talk_recording_config | to_json }}"
+      no_log: true
+      changed_when: true

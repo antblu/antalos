@@ -1,0 +1,146 @@
+name: antalos-debian-arc
+
+services:
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_MACHINE_LEARNING_VERSION}-openvino
+    container_name: immich-machine-learning
+    restart: unless-stopped
+    environment:
+      MACHINE_LEARNING_DEVICE_IDS: "0"
+    ports:
+      - "${DEBIAN_ARC_IP}:${IMMICH_MACHINE_LEARNING_PORT}:3003/tcp"
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "${RENDER_GID}"
+    device_cgroup_rules:
+      - c 226:* rmw
+    volumes:
+      - type: volume
+        source: immich-model-cache
+        target: /cache
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:3003/ping', timeout=10)
+      interval: 30s
+      timeout: 15s
+      retries: 10
+      start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+
+  nextcloud-talk-recording:
+    image: ghcr.io/nextcloud-releases/aio-talk-recording:${NEXTCLOUD_TALK_RECORDING_VERSION}
+    container_name: nextcloud-talk-recording
+    restart: unless-stopped
+    init: true
+    user: "122"
+    shm_size: 2gb
+    environment:
+      AIO_LOG_LEVEL: warn
+      ALLOW_ALL: "false"
+      HPB_DOMAIN: ${NEXTCLOUD_TALK_HOST}
+      HPB_PATH: /standalone-signaling/
+      HPB_PROTOCOL: https
+      INTERNAL_SECRET: ${NEXTCLOUD_TALK_INTERNAL_SECRET}
+      NC_DOMAIN: ${NEXTCLOUD_HOST}
+      NC_PROTOCOL: https
+      RECORDING_SECRET: ${NEXTCLOUD_TALK_RECORDING_SECRET}
+      SKIP_VERIFY: "false"
+      TZ: ${TIMEZONE}
+    ports:
+      - "${DEBIAN_ARC_IP}:${NEXTCLOUD_TALK_RECORDING_PORT}:1234/tcp"
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "${RENDER_GID}"
+    volumes:
+      - type: volume
+        source: talk-recording-temporary-data
+        target: /tmp
+    healthcheck:
+      test:
+        - CMD
+        - /healthcheck.sh
+      interval: 30s
+      timeout: 30s
+      retries: 10
+      start_period: 30s
+    read_only: true
+    tmpfs:
+      - /conf
+    cap_drop:
+      - NET_RAW
+    security_opt:
+      - no-new-privileges:true
+
+  jellyfin:
+    image: jellyfin/jellyfin:${JELLYFIN_VERSION}
+    container_name: jellyfin
+    restart: unless-stopped
+    network_mode: host
+    user: "${JELLYFIN_UID}:${JELLYFIN_GID}"
+    group_add:
+      - "${RENDER_GID}"
+    environment:
+      JELLYFIN_PublishedServerUrl: http://${DEBIAN_ARC_IP}:8096
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+    volumes:
+      - type: bind
+        source: ./data/jellyfin/config
+        target: /config
+      - type: bind
+        source: ./data/jellyfin/cache
+        target: /cache
+      - type: bind
+        source: ${JELLYFIN_MEDIA_PATH}
+        target: /media
+        read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+  docling-server:
+    image: antalos/docling-serve-xpu:${DOCLING_SERVE_VERSION}
+    container_name: docling-server
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.docling-xpu
+      args:
+        DOCLING_SERVE_VERSION: ${DOCLING_SERVE_VERSION}
+        INTEL_PYTORCH_XPU_IMAGE: ${INTEL_PYTORCH_XPU_IMAGE}
+    environment:
+      DOCLING_DEVICE: xpu
+      DOCLING_SERVE_API_KEY: ${DOCLING_API_KEY}
+      DOCLING_SERVE_ENABLE_UI: "false"
+      DOCLING_SERVE_ENG_KIND: local
+      UVICORN_WORKERS: "1"
+    ports:
+      - "${DEBIAN_ARC_IP}:${DOCLING_SERVE_PORT}:5001/tcp"
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "${RENDER_GID}"
+    device_cgroup_rules:
+      - c 226:* rmw
+    ipc: host
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:5001/ready', timeout=10)
+      interval: 30s
+      timeout: 15s
+      retries: 20
+      start_period: 180s
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  immich-model-cache:
+  talk-recording-temporary-data:
