@@ -2,7 +2,7 @@ debian_arc_hostname: debian-arc
 debian_arc_ip: 10.30.0.28
 debian_arc_timezone: America/Denver
 
-arc_compose_root: /opt/arc-compose
+arc_compose_root: /opt/compose
 arc_render_device: /dev/dri/renderD128
 jellyfin_media_path: /srv/media
 jellyfin_uid: "1100"

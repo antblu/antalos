@@ -13,7 +13,7 @@ set that kernel as GRUB's explicit top-level entry before rebooting and requirin
 can have the same upstream version while GRUB's automatic ordering still selects
 the hardware-trimmed cloud variant.
 
-The Compose source of truth is `arc-compose/compose.yaml`. It runs exactly these
+The Compose source of truth is `compose/compose.yaml`. It runs exactly these
 GPU-enabled services:
 
 - Immich Machine Learning `v3.1.0` with the OpenVINO image and Arc device `0`.
@@ -25,7 +25,7 @@ GPU-enabled services:
   GPU inference.
 
 Docling publishes CPU, CUDA, and AMD deployment paths, but no Intel container.
-`arc-compose/Dockerfile.docling-xpu` therefore layers pinned Docling Serve and
+`compose/Dockerfile.docling-xpu` therefore layers pinned Docling Serve and
 its OCR/model dependencies onto Intel's pinned XPU runtime image. This supplies
 both XPU-enabled PyTorch and the Intel Level Zero compute runtime. The playbook
 proves that the resulting container can execute a tensor operation on the Arc
@@ -74,7 +74,7 @@ ansible-playbook site.yml --ask-vault-pass
 ```
 
 The playbook refuses to deploy without the `i915` render device, copies the
-Compose project to `/opt/arc-compose`, starts all four containers, waits for the
+Compose project to `/opt/compose`, starts all four containers, waits for the
 HTTP services and container health checks, and then runs GPU smoke tests for
 OpenVINO, VA-API, and PyTorch XPU plus a real Docling conversion request. It
 also proves that the Nextcloud pod can reach the recorder before writing Talk's

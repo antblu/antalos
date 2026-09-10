@@ -1,0 +1,727 @@
+---
+- name: Provision the Debian RTX Docker services
+  hosts: debian_rtx
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+    - vars/vault.yml
+  tasks:
+    - name: Require Debian on the RTX VM
+      ansible.builtin.assert:
+        that:
+          - ansible_facts["distribution"] == "Debian"
+          - ansible_facts["distribution_major_version"] | int >= 13
+        fail_msg: This playbook requires Debian 13 or newer.
+
+    - name: Require protected application secrets
+      ansible.builtin.assert:
+        that:
+          - vault_llama_cpp_api_key is match('^[0-9a-fA-F]{64}$')
+          - vault_nextcloud_harp_shared_key is match('^[0-9a-fA-F]{64}$')
+          - vault_nextcloud_translate2_app_secret is match('^[0-9a-fA-F]{64}$')
+          - vault_nextcloud_live_transcription_app_secret is match('^[0-9a-fA-F]{64}$')
+          - vault_nextcloud_talk_internal_secret is match('^[0-9a-fA-F]{64}$')
+          - vault_llama_cpp_api_key != vault_nextcloud_harp_shared_key
+          - vault_nextcloud_harp_shared_key != vault_nextcloud_translate2_app_secret
+          - vault_nextcloud_translate2_app_secret != vault_nextcloud_live_transcription_app_secret
+        fail_msg: >-
+          Edit vars/vault.yml with ansible-vault. Each new value must be a
+          distinct 64-character hexadecimal secret. The Talk internal secret
+          must be the existing signaling clients.internalsecret value.
+
+    - name: Set the VM hostname
+      ansible.builtin.hostname:
+        name: "{{ debian_rtx_hostname }}"
+
+    - name: Read the VM timezone
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/timedatectl
+          - show
+          - --property=Timezone
+          - --value
+      register: configured_timezone
+      changed_when: false
+
+    - name: Set the VM timezone
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/timedatectl
+          - set-timezone
+          - "{{ debian_rtx_timezone }}"
+      when: configured_timezone.stdout != debian_rtx_timezone
+      changed_when: true
+
+    - name: Configure Debian repositories with firmware components
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/debian.sources
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          Types: deb
+          URIs: https://deb.debian.org/debian
+          Suites: {{ ansible_facts["distribution_release"] }} {{ ansible_facts["distribution_release"] }}-updates
+          Components: main contrib non-free non-free-firmware
+          Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+          Types: deb
+          URIs: https://security.debian.org/debian-security
+          Suites: {{ ansible_facts["distribution_release"] }}-security
+          Components: main contrib non-free non-free-firmware
+          Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+    - name: Remove the legacy Debian source list
+      ansible.builtin.file:
+        path: /etc/apt/sources.list
+        state: absent
+
+    - name: Install Docker and NVIDIA host packages
+      ansible.builtin.apt:
+        name: "{{ rtx_host_packages }}"
+        state: present
+        update_cache: true
+
+    - name: Stop tracking the hardware-trimmed cloud kernel
+      ansible.builtin.apt:
+        name: linux-image-cloud-amd64
+        state: absent
+
+    - name: Find installed hardware-capable kernels
+      ansible.builtin.find:
+        paths: /boot
+        patterns:
+          - vmlinuz-*+deb13-amd64
+        file_type: file
+        recurse: false
+      register: standard_kernel_images
+
+    - name: Require an installed hardware-capable kernel
+      ansible.builtin.assert:
+        that:
+          - standard_kernel_images.matched | int > 0
+        fail_msg: >-
+          linux-image-amd64 did not install a standard Debian kernel under
+          /boot.
+
+    - name: Select the newest hardware-capable kernel
+      ansible.builtin.set_fact:
+        standard_kernel_version: >-
+          {{
+            (standard_kernel_images.files | sort(attribute='mtime') | last).path
+            | basename
+            | regex_replace('^vmlinuz-', '')
+          }}
+
+    - name: Make the hardware-capable kernel the GRUB top-level entry
+      ansible.builtin.copy:
+        dest: /etc/default/grub.d/70-antalos-kernel.cfg
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          GRUB_TOP_LEVEL="/boot/vmlinuz-{{ standard_kernel_version }}"
+      register: grub_kernel_selection
+
+    - name: Regenerate GRUB after selecting the hardware-capable kernel
+      ansible.builtin.command:
+        argv:
+          - /usr/sbin/update-grub
+      when: grub_kernel_selection.changed
+      changed_when: true
+
+    - name: Reboot into the selected hardware-capable kernel
+      ansible.builtin.reboot:
+        msg: Rebooting into linux-image-amd64 for NVIDIA RTX 3060 support
+        reboot_timeout: 900
+        post_reboot_delay: 10
+      when: ansible_facts["kernel"] != standard_kernel_version
+      register: kernel_reboot
+
+    - name: Refresh facts after the kernel reboot
+      ansible.builtin.setup:
+        gather_subset:
+          - min
+      when: kernel_reboot.changed
+
+    - name: Require the selected hardware-capable kernel to be running
+      ansible.builtin.assert:
+        that:
+          - ansible_facts["kernel"] == standard_kernel_version
+        fail_msg: >-
+          GRUB did not boot the selected standard Debian kernel
+          {{ standard_kernel_version }}; the running kernel is
+          {{ ansible_facts["kernel"] }}.
+
+    - name: Read the passed-through RTX 3060 PCI device
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/lspci
+          - -D
+          - -n
+          - -d
+          - 10de:2503
+      register: rtx_pci_device
+      changed_when: false
+
+    - name: Require the passed-through RTX 3060 PCI device
+      ansible.builtin.assert:
+        that:
+          - rtx_pci_device.stdout | trim | length > 0
+        fail_msg: >-
+          Debian cannot see PCI device 10de:2503. Confirm VM 120 has hostpci0
+          mapped to rtx-3060 and cold-start the VM.
+
+    - name: Load the NVIDIA kernel driver
+      ansible.builtin.command:
+        argv:
+          - /usr/sbin/modprobe
+          - nvidia
+      changed_when: false
+
+    - name: Create the APT keyring directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Install the NVIDIA Container Toolkit signing key
+      ansible.builtin.get_url:
+        url: https://nvidia.github.io/libnvidia-container/gpgkey
+        dest: /etc/apt/keyrings/nvidia-container-toolkit.asc
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Configure the NVIDIA Container Toolkit repository
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/nvidia-container-toolkit.list
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          deb [signed-by=/etc/apt/keyrings/nvidia-container-toolkit.asc] https://nvidia.github.io/libnvidia-container/stable/deb/$(ARCH) /
+
+    - name: Install the pinned NVIDIA Container Toolkit
+      ansible.builtin.apt:
+        name:
+          - "libnvidia-container1={{ nvidia_container_toolkit_version }}"
+          - "libnvidia-container-tools={{ nvidia_container_toolkit_version }}"
+          - "nvidia-container-toolkit-base={{ nvidia_container_toolkit_version }}"
+          - "nvidia-container-toolkit={{ nvidia_container_toolkit_version }}"
+        state: present
+        update_cache: true
+
+    - name: Configure the NVIDIA runtime for Docker
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/nvidia-ctk
+          - runtime
+          - configure
+          - --runtime=docker
+      register: nvidia_runtime_configuration
+      changed_when: >-
+        'Wrote updated config' in
+        (nvidia_runtime_configuration.stdout + nvidia_runtime_configuration.stderr)
+
+    - name: Enable Docker and the QEMU guest agent
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+      loop:
+        - docker
+        - qemu-guest-agent
+
+    - name: Restart Docker after NVIDIA runtime changes
+      ansible.builtin.systemd_service:
+        name: docker
+        state: restarted
+      when: nvidia_runtime_configuration.changed
+
+    - name: Read the passed-through NVIDIA GPU identity
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/nvidia-smi
+          - --query-gpu=name
+          - --format=csv,noheader
+      register: nvidia_gpu_identity
+      changed_when: false
+
+    - name: Require the RTX 3060 passthrough
+      ansible.builtin.assert:
+        that:
+          - "'RTX 3060' in nvidia_gpu_identity.stdout"
+        fail_msg: >-
+          The RTX 3060 is not visible to Debian. Enable the rtxtofu PCI
+          passthrough mapping, start the VM, and confirm that the NVIDIA driver
+          has bound the device.
+
+    - name: Create Compose, model, secret, and persistent data directories
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "{{ item.mode }}"
+      loop:
+        - path: "{{ rtx_compose_root }}"
+          mode: "0750"
+        - path: "{{ rtx_compose_root }}/secrets"
+          mode: "0700"
+        - path: "{{ rtx_model_root }}"
+          mode: "0750"
+
+    - name: Copy the repository Compose project
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/compose/"
+        dest: "{{ rtx_compose_root }}/"
+        owner: root
+        group: root
+        mode: preserve
+
+    - name: Write the protected Compose environment
+      ansible.builtin.template:
+        src: compose.env.j2
+        dest: "{{ rtx_compose_root }}/.env"
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+    - name: Write the protected llama.cpp API key file
+      ansible.builtin.copy:
+        content: "{{ vault_llama_cpp_api_key }}\n"
+        dest: "{{ rtx_compose_root }}/secrets/llama-api-key"
+        owner: root
+        group: root
+        mode: "0400"
+      no_log: true
+
+    - name: Pull the pinned service images
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - compose
+          - --project-directory
+          - "{{ rtx_compose_root }}"
+          - --file
+          - "{{ rtx_compose_root }}/compose.yaml"
+          - pull
+      changed_when: true
+
+    - name: Start and wait for all RTX services
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - compose
+          - --project-directory
+          - "{{ rtx_compose_root }}"
+          - --file
+          - "{{ rtx_compose_root }}/compose.yaml"
+          - up
+          - --detach
+          - --remove-orphans
+          - --wait
+          - --wait-timeout
+          - "1800"
+      changed_when: true
+
+    - name: Require healthy Nextcloud ExApp containers
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - inspect
+          - --format
+          - "{% raw %}{{.State.Health.Status}}{% endraw %}"
+          - "{{ item }}"
+      register: nextcloud_exapp_health
+      changed_when: false
+      retries: 60
+      delay: 10
+      until: nextcloud_exapp_health.stdout == 'healthy'
+      loop:
+        - translate2
+        - live_transcription
+
+    - name: Prove every inference container can access the RTX 3060
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - exec
+          - "{{ item }}"
+          - nvidia-smi
+          - --query-gpu=name
+          - --format=csv,noheader
+      register: container_gpu_identity
+      changed_when: false
+      failed_when: >-
+        container_gpu_identity.rc != 0 or
+        'RTX 3060' not in container_gpu_identity.stdout
+      loop:
+        - llama-cpp
+        - translate2
+        - live_transcription
+
+- name: Register the RTX ExApps in Nextcloud
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+    - vars/vault.yml
+  vars:
+    nextcloud_translate2_registration:
+      appid: translate2
+      daemon_config_name: "{{ nextcloud_appapi_daemon_name }}"
+      host: translate2
+      name: Local Machine Translation
+      port: "{{ nextcloud_translate2_port | int }}"
+      scopes:
+        - AI_PROVIDERS
+      secret: "{{ vault_nextcloud_translate2_app_secret }}"
+      version: "{{ nextcloud_translate2_version }}"
+    nextcloud_live_transcription_registration:
+      daemon_config_name: "{{ nextcloud_appapi_daemon_name }}"
+      host: live_transcription
+      id: live_transcription
+      name: Live Transcription in Talk
+      port: "{{ nextcloud_live_transcription_port | int }}"
+      secret: "{{ vault_nextcloud_live_transcription_app_secret }}"
+      version: "{{ nextcloud_live_transcription_version }}"
+  tasks:
+    - name: Apply the Nextcloud HaRP ingress resources
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - apply
+          - --filename
+          - "-"
+        stdin: |-
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: nextcloud-appapi-harp
+            namespace: nextcloud
+          spec:
+            ports:
+              - name: exapps
+                port: {{ nextcloud_harp_port | int }}
+                targetPort: exapps
+                protocol: TCP
+          ---
+          apiVersion: discovery.k8s.io/v1
+          kind: EndpointSlice
+          metadata:
+            name: nextcloud-appapi-harp
+            namespace: nextcloud
+            labels:
+              kubernetes.io/service-name: nextcloud-appapi-harp
+          addressType: IPv4
+          ports:
+            - name: exapps
+              port: {{ nextcloud_harp_port | int }}
+              protocol: TCP
+          endpoints:
+            - addresses:
+                - "{{ debian_rtx_ip }}"
+          ---
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: nextcloud-appapi-harp
+            namespace: nextcloud
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.tls: "true"
+          spec:
+            ingressClassName: traefik
+            tls:
+              - secretName: nextcloud-tls
+                hosts:
+                  - "{{ nextcloud_host }}"
+            rules:
+              - host: "{{ nextcloud_host }}"
+                http:
+                  paths:
+                    - path: /exapps
+                      pathType: Prefix
+                      backend:
+                        service:
+                          name: nextcloud-appapi-harp
+                          port:
+                            name: exapps
+      register: nextcloud_harp_ingress_resources
+      changed_when: >-
+        'created' in nextcloud_harp_ingress_resources.stdout or
+        'configured' in nextcloud_harp_ingress_resources.stdout
+
+    - name: Wait for the public Nextcloud ExApp route to reach HaRP
+      ansible.builtin.uri:
+        url: "https://{{ nextcloud_host }}/exapps/app_api/heartbeat"
+        status_code: 401
+      register: nextcloud_harp_ingress_health
+      retries: 60
+      delay: 5
+      until: nextcloud_harp_ingress_health.status == 401
+
+    - name: Prove the Nextcloud pod can reach the RTX HaRP endpoint
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - -r
+          - |-
+            $socket = @fsockopen('{{ debian_rtx_ip }}', {{ nextcloud_harp_port }}, $errorNumber, $errorMessage, 10);
+            if ($socket === false) {
+                fwrite(STDERR, $errorMessage . PHP_EOL);
+                exit(1);
+            }
+            fclose($socket);
+      changed_when: false
+
+    - name: Unregister the previous ExApp instances
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:app:unregister
+          - "{{ item }}"
+          - --silent
+          - --force
+      register: previous_exapp_unregistration
+      changed_when: previous_exapp_unregistration.rc == 0
+      failed_when: false
+      loop:
+        - translate2
+        - live_transcription
+
+    - name: Remove the previous RTX deploy daemon registration
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:daemon:unregister
+          - "{{ nextcloud_appapi_daemon_name }}"
+      register: previous_daemon_unregistration
+      changed_when: previous_daemon_unregistration.rc == 0
+      failed_when: false
+
+    - name: Register the CUDA HaRP manual deploy daemon
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:daemon:register
+          - "{{ nextcloud_appapi_daemon_name }}"
+          - RTX 3060 Compose
+          - manual-install
+          - http
+          - "{{ debian_rtx_ip }}:{{ nextcloud_harp_port }}"
+          - "https://{{ nextcloud_host }}"
+          - "--net={{ nextcloud_compose_network }}"
+          - --harp
+          - "--harp_frp_address={{ debian_rtx_ip }}:{{ nextcloud_harp_frp_port }}"
+          - "--harp_shared_key={{ vault_nextcloud_harp_shared_key }}"
+          - --set-default
+          - --compute_device=cuda
+      changed_when: true
+      no_log: true
+
+    - name: Start Local Machine Translation registration
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:app:register
+          - translate2
+          - "{{ nextcloud_appapi_daemon_name }}"
+          - "--json-info={{ nextcloud_translate2_registration | to_json }}"
+          - --force-scopes
+      async: 900
+      poll: 0
+      register: local_machine_translation_registration_job
+      changed_when: true
+      no_log: true
+
+    - name: Enable Local Machine Translation
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:app:enable
+          - translate2
+      register: local_machine_translation_enablement
+      changed_when: local_machine_translation_enablement.rc == 0
+      retries: 60
+      delay: 5
+      until: local_machine_translation_enablement.rc == 0
+
+    - name: Wait for Local Machine Translation registration
+      ansible.builtin.async_status:
+        jid: "{{ local_machine_translation_registration_job.ansible_job_id }}"
+      register: local_machine_translation_registration_result
+      changed_when: false
+      failed_when: >-
+        local_machine_translation_registration_result.finished and
+        (local_machine_translation_registration_result.rc | default(0)) != 0
+      retries: 180
+      delay: 5
+      until: local_machine_translation_registration_result.finished
+      no_log: true
+
+    - name: Start Live Transcription registration
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:app:register
+          - live_transcription
+          - "{{ nextcloud_appapi_daemon_name }}"
+          - "--json-info={{ nextcloud_live_transcription_registration | to_json }}"
+      async: 900
+      poll: 0
+      register: live_transcription_registration_job
+      changed_when: true
+      no_log: true
+
+    - name: Enable Live Transcription
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:app:enable
+          - live_transcription
+      register: live_transcription_enablement
+      changed_when: live_transcription_enablement.rc == 0
+      retries: 60
+      delay: 5
+      until: live_transcription_enablement.rc == 0
+
+    - name: Wait for Live Transcription registration
+      ansible.builtin.async_status:
+        jid: "{{ live_transcription_registration_job.ansible_job_id }}"
+      register: live_transcription_registration_result
+      changed_when: false
+      failed_when: >-
+        live_transcription_registration_result.finished and
+        (live_transcription_registration_result.rc | default(0)) != 0
+      retries: 180
+      delay: 5
+      until: live_transcription_registration_result.finished
+      no_log: true
+
+    - name: Read the registered Nextcloud ExApps
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:app:list
+      register: registered_nextcloud_exapps
+      changed_when: false
+
+    - name: Require both RTX-backed Nextcloud ExApps
+      ansible.builtin.assert:
+        that:
+          - >-
+            registered_nextcloud_exapps.stdout
+            is regex('(?m)^translate2 .*\[enabled\]$')
+          - >-
+            registered_nextcloud_exapps.stdout
+            is regex('(?m)^live_transcription .*\[enabled\]$')
+        fail_msg: Nextcloud did not retain both RTX-backed ExApps as enabled.

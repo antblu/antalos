@@ -50,7 +50,7 @@ This is an interpretation of the checked-in configuration, assuming the declared
 | Office / Whiteboard | 2 each | Office uses sticky routing; Whiteboard shares Redis and NFS recording state. |
 | Talk | 2 signaling/Janus/TURN pods; 3 NATS nodes | Independent TURN allocations remain pinned to their owning ordinal. |
 | Files / code / recording | Garage + NFS; recorder on `debian-arc` | No storage-host failover or external-recorder HA is defined here. |
-| Live transcription / translation | HaRP and ExApps on `debian-arc` | CPU processing on one VM; the Arc GPU is not a supported accelerator for these ExApps. |
+| Live transcription / translation | HaRP and CUDA ExApps on `debian-rtx` | GPU processing on one VM; loss of the VM removes both AppAPI providers. |
 
 ### How a failure is handled
 

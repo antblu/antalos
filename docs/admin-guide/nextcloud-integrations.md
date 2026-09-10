@@ -62,11 +62,12 @@ the recorder and writes Talk's `recording_servers` setting without exposing the
 shared secret in Git. Test a complete recording and playback workflow after each
 recorder or Talk upgrade.
 
-The VM also hosts Nextcloud HaRP. Ansible registers it as the default AppAPI
-Docker deploy daemon and deploys `live_transcription` and `translate2`. The
-Kubernetes ingress routes `/exapps/` to HaRP. Both Nextcloud AI apps use CPU on
-this host because their supported accelerators are NVIDIA CUDA; the passed-through
-Intel Arc device is used by Immich and Jellyfin instead.
+Nextcloud HaRP and the manually managed `live_transcription` and `translate2`
+containers run on the Ansible-managed `debian-rtx` VM. The Kubernetes ingress
+routes `/exapps/` to that HaRP endpoint. Ansible registers the Compose deployment
+as the default AppAPI daemon, enables both ExApps, and requires both containers
+to see the passed-through RTX 3060 through CUDA. The Arc VM remains responsible
+for Talk recording, Immich machine learning, Jellyfin, and Docling.
 
 ## Mail and background work
 

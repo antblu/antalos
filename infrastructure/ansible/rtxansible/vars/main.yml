@@ -1,0 +1,42 @@
+debian_rtx_hostname: debian-rtx
+debian_rtx_ip: 10.30.0.26
+debian_rtx_timezone: America/Denver
+
+rtx_compose_root: /opt/compose
+rtx_model_root: /srv/llama-models
+nvidia_container_toolkit_version: 1.19.1-1
+
+llama_cpp_image: ghcr.io/ggml-org/llama.cpp:server-cuda-b10884@sha256:5ebb7a55e3d38e5fe185346fcd908033e69c035ad49b33df0066eb7cf4f7b06b
+llama_cpp_port: "8080"
+
+nextcloud_harp_image: ghcr.io/nextcloud/nextcloud-appapi-harp:release@sha256:603fdf5ca2802235fd4e40301476dd2fafff409e84a42f8cb3b8f2e17c22ce39
+nextcloud_harp_port: "8780"
+nextcloud_harp_frp_port: "8782"
+nextcloud_translate2_image: ghcr.io/nextcloud/translate2:2.3.3@sha256:48ff1817287d717e5616922c8da17f79240d5ce41537344f65d3dfcf6a80dc8f
+nextcloud_translate2_version: 2.3.3
+nextcloud_translate2_port: "23001"
+nextcloud_live_transcription_image: ghcr.io/nextcloud-releases/live_transcription:2.1.3-cuda@sha256:8554b98aaa1849e705cd19ec451b1c079a9b0cd64fd1ea461231057ee1b4fb9d
+nextcloud_live_transcription_version: 2.1.3
+nextcloud_live_transcription_port: "23000"
+nextcloud_live_transcription_workers: "1"
+
+nextcloud_host: nextcloud.antblu.net
+nextcloud_talk_host: talk.antblu.net
+nextcloud_appapi_daemon_name: rtx_compose
+nextcloud_compose_network: antalos-debian-rtx
+
+rtx_host_packages:
+  - ca-certificates
+  - curl
+  - docker-buildx-plugin
+  - docker-ce
+  - docker-ce-cli
+  - docker-compose-plugin
+  - gnupg
+  - linux-headers-amd64
+  - linux-image-amd64
+  - nvidia-driver
+  - nvidia-smi
+  - pciutils
+  - python3
+  - qemu-guest-agent

@@ -10,8 +10,8 @@ services:
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
       NVIDIA_VISIBLE_DEVICES: "0"
     command:
-      - --model
-      - /models/${LLAMA_CPP_MODEL_NAME}
+      - --models-dir
+      - /models
       - --host
       - 0.0.0.0
       - --port
@@ -60,6 +60,16 @@ services:
     ports:
       - "${DEBIAN_RTX_IP}:${NEXTCLOUD_HARP_PORT}:8780/tcp"
       - "${DEBIAN_RTX_IP}:${NEXTCLOUD_HARP_FRP_PORT}:8782/tcp"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          test -s /certs/frp/ca.crt &&
+          test -s /certs/frp/client.crt &&
+          test -s /certs/frp/client.key
+      interval: 2s
+      timeout: 2s
+      retries: 30
     volumes:
       - type: volume
         source: harp-certificates
@@ -71,6 +81,9 @@ services:
     image: ${NEXTCLOUD_TRANSLATE2_IMAGE}
     container_name: translate2
     restart: unless-stopped
+    depends_on:
+      appapi-harp:
+        condition: service_healthy
     environment:
       AA_VERSION: "3.2.0"
       APP_DISPLAY_NAME: Local Machine Translation
@@ -82,15 +95,20 @@ services:
       APP_SECRET: ${NEXTCLOUD_TRANSLATE2_APP_SECRET}
       APP_VERSION: ${NEXTCLOUD_TRANSLATE2_VERSION}
       COMPUTE_DEVICE: CUDA
+      HP_FRP_ADDRESS: appapi-harp
+      HP_FRP_PORT: "8782"
+      HP_SHARED_KEY: ${NEXTCLOUD_HARP_SHARED_KEY}
       NEXTCLOUD_URL: ${NEXTCLOUD_URL}
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
       NVIDIA_VISIBLE_DEVICES: "0"
-    ports:
-      - "${DEBIAN_RTX_IP}:${NEXTCLOUD_TRANSLATE2_PORT}:${NEXTCLOUD_TRANSLATE2_PORT}/tcp"
     volumes:
       - type: volume
         source: translate2-data
         target: /data
+      - type: volume
+        source: harp-certificates
+        target: /certs
+        read_only: true
     deploy:
       resources:
         reservations:
@@ -107,6 +125,9 @@ services:
     image: ${NEXTCLOUD_LIVE_TRANSCRIPTION_IMAGE}
     container_name: live_transcription
     restart: unless-stopped
+    depends_on:
+      appapi-harp:
+        condition: service_healthy
     environment:
       AA_VERSION: "3.2.0"
       APP_DISPLAY_NAME: Live Transcription in Talk
@@ -118,6 +139,9 @@ services:
       APP_SECRET: ${NEXTCLOUD_LIVE_TRANSCRIPTION_APP_SECRET}
       APP_VERSION: ${NEXTCLOUD_LIVE_TRANSCRIPTION_VERSION}
       COMPUTE_DEVICE: CUDA
+      HP_FRP_ADDRESS: appapi-harp
+      HP_FRP_PORT: "8782"
+      HP_SHARED_KEY: ${NEXTCLOUD_HARP_SHARED_KEY}
       LT_DISABLE_INTERNAL_VOSK: "false"
       LT_HPB_URL: ${NEXTCLOUD_TALK_HPB_URL}
       LT_INTERNAL_SECRET: ${NEXTCLOUD_TALK_INTERNAL_SECRET}
@@ -127,12 +151,14 @@ services:
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
       NVIDIA_VISIBLE_DEVICES: "0"
       SKIP_CERT_VERIFY: "false"
-    ports:
-      - "${DEBIAN_RTX_IP}:${NEXTCLOUD_LIVE_TRANSCRIPTION_PORT}:${NEXTCLOUD_LIVE_TRANSCRIPTION_PORT}/tcp"
     volumes:
       - type: volume
         source: live-transcription-data
         target: /data
+      - type: volume
+        source: harp-certificates
+        target: /certs
+        read_only: true
     deploy:
       resources:
         reservations:

@@ -168,6 +168,6 @@ variable "rtx_3060_mapping" {
 
 variable "rtx_3060_passthrough_enabled" {
   type        = bool
-  description = "Attach the RTX 3060 after the initial driver bootstrap has completed"
-  default     = false
+  description = "Attach the RTX 3060 to the VM through the existing Proxmox PCI resource mapping"
+  default     = true
 }

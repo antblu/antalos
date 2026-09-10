@@ -274,7 +274,7 @@
 
     - name: Copy the repository Compose project
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/arc-compose/"
+        src: "{{ playbook_dir }}/compose/"
         dest: "{{ arc_compose_root }}/"
         owner: root
         group: root
@@ -282,7 +282,7 @@
 
     - name: Configure Jellyfin QSV on the Arc A310
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/arc-compose/jellyfin-encoding.xml"
+        src: "{{ playbook_dir }}/compose/jellyfin-encoding.xml"
         dest: "{{ arc_compose_root }}/data/jellyfin/config/config/encoding.xml"
         owner: "{{ jellyfin_uid }}"
         group: "{{ jellyfin_gid }}"
@@ -291,7 +291,7 @@
 
     - name: Write the protected Compose environment
       ansible.builtin.template:
-        src: arc-compose.env.j2
+        src: compose.env.j2
         dest: "{{ arc_compose_root }}/.env"
         owner: root
         group: root
