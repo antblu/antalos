@@ -9,13 +9,8 @@ nvidia_container_toolkit_version: 1.19.1-1
 llama_cpp_image: ghcr.io/ggml-org/llama.cpp:server-cuda-b10884@sha256:5ebb7a55e3d38e5fe185346fcd908033e69c035ad49b33df0066eb7cf4f7b06b
 llama_cpp_port: "8080"
 
-nextcloud_translate2_image: ghcr.io/nextcloud/translate2:2.3.3@sha256:48ff1817287d717e5616922c8da17f79240d5ce41537344f65d3dfcf6a80dc8f
-nextcloud_translate2_version: 2.3.3
-nextcloud_translate2_port: "23001"
-
-nextcloud_host: nextcloud.antblu.net
-nextcloud_appapi_daemon_name: rtx_compose
-nextcloud_compose_network: antalos-debian-rtx
+speaches_image: ghcr.io/speaches-ai/speaches:0.9.0-rc.3-cuda-12.6.3@sha256:5c6206a349e90b9a6782342917e72f84fc7cb60e8afd540f6aa625831ac1fd0f
+speaches_port: "8000"
 
 rtx_host_packages:
   - ca-certificates

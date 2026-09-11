@@ -1,0 +1,48 @@
+name: llama-cpp
+
+services:
+  llama-cpp:
+    image: ${LLAMA_CPP_IMAGE}
+    container_name: llama-cpp
+    restart: unless-stopped
+    environment:
+      LLAMA_ARG_API_KEY_FILE: /run/secrets/llama-api-key
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      NVIDIA_VISIBLE_DEVICES: "0"
+    command:
+      - --models-dir
+      - /models
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --ctx-size
+      - "4096"
+      - --parallel
+      - "1"
+      - --n-gpu-layers
+      - "99"
+      - --jinja
+      - --metrics
+    ports:
+      - "${DEBIAN_RTX_IP}:${LLAMA_CPP_PORT}:8080/tcp"
+    volumes:
+      - type: bind
+        source: /srv/llama-models
+        target: /models
+        read_only: true
+      - type: bind
+        source: ./secrets/llama-api-key
+        target: /run/secrets/llama-api-key
+        read_only: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids:
+                - "0"
+              capabilities:
+                - gpu
+    security_opt:
+      - no-new-privileges:true

@@ -1,5 +1,5 @@
 ---
-- name: Provision the Debian RTX translation and llama.cpp services
+- name: Provision the Debian RTX llama.cpp and Speaches services
   hosts: debian_rtx
   become: true
   gather_facts: true
@@ -18,11 +18,9 @@
       ansible.builtin.assert:
         that:
           - vault_llama_cpp_api_key is match('^[0-9a-fA-F]{64}$')
-          - vault_nextcloud_translate2_app_secret is match('^[0-9a-fA-F]{64}$')
-          - vault_llama_cpp_api_key != vault_nextcloud_translate2_app_secret
         fail_msg: >-
-          Edit vars/vault.yml with ansible-vault. Each new value must be a
-          distinct 64-character hexadecimal secret.
+          Edit vars/vault.yml with ansible-vault. The llama.cpp API key must
+          be a 64-character hexadecimal secret.
 
     - name: Set the VM hostname
       ansible.builtin.hostname:
@@ -254,7 +252,7 @@
           passthrough mapping, start the VM, and confirm that the NVIDIA driver
           has bound the device.
 
-    - name: Create Compose, model, secret, and persistent data directories
+    - name: Create Compose, model, and secret directories
       ansible.builtin.file:
         path: "{{ item.path }}"
         state: directory
@@ -269,7 +267,7 @@
         - path: "{{ rtx_model_root }}"
           mode: "0750"
 
-    - name: Copy the repository Compose project
+    - name: Copy the repository Compose definitions
       ansible.builtin.copy:
         src: "{{ playbook_dir }}/compose/"
         dest: "{{ rtx_compose_root }}/"
@@ -295,7 +293,7 @@
         mode: "0400"
       no_log: true
 
-    - name: Pull the pinned service images
+    - name: Pull the pinned Compose images
       ansible.builtin.command:
         argv:
           - /usr/bin/docker
@@ -303,11 +301,14 @@
           - --project-directory
           - "{{ rtx_compose_root }}"
           - --file
-          - "{{ rtx_compose_root }}/compose.yaml"
+          - "{{ rtx_compose_root }}/{{ item }}.yaml"
           - pull
       changed_when: true
+      loop:
+        - llama-cpp
+        - speaches
 
-    - name: Start and wait for the RTX translation and llama.cpp services
+    - name: Start and wait for the RTX Compose services
       ansible.builtin.command:
         argv:
           - /usr/bin/docker
@@ -315,7 +316,7 @@
           - --project-directory
           - "{{ rtx_compose_root }}"
           - --file
-          - "{{ rtx_compose_root }}/compose.yaml"
+          - "{{ rtx_compose_root }}/{{ item }}.yaml"
           - up
           - --detach
           - --remove-orphans
@@ -323,22 +324,23 @@
           - --wait-timeout
           - "1800"
       changed_when: true
+      loop:
+        - llama-cpp
+        - speaches
 
-    - name: Require a healthy Nextcloud Translate container
+    - name: Require a healthy Speaches container
       ansible.builtin.command:
         argv:
           - /usr/bin/docker
           - inspect
           - --format
           - "{% raw %}{{.State.Health.Status}}{% endraw %}"
-          - "{{ item }}"
-      register: nextcloud_exapp_health
+          - speaches
+      register: speaches_health
       changed_when: false
       retries: 60
       delay: 10
-      until: nextcloud_exapp_health.stdout == 'healthy'
-      loop:
-        - translate2
+      until: speaches_health.stdout == 'healthy'
 
     - name: Prove every inference container can access the RTX 3060
       ansible.builtin.command:
@@ -356,210 +358,4 @@
         'RTX 3060' not in container_gpu_identity.stdout
       loop:
         - llama-cpp
-        - translate2
-
-- name: Register Nextcloud Translate on the RTX host
-  hosts: localhost
-  connection: local
-  become: false
-  gather_facts: false
-  vars_files:
-    - vars/main.yml
-    - vars/vault.yml
-  vars:
-    nextcloud_translate2_registration:
-      appid: translate2
-      daemon_config_name: "{{ nextcloud_appapi_daemon_name }}"
-      host: "{{ debian_rtx_ip }}"
-      name: Local Machine Translation
-      port: "{{ nextcloud_translate2_port | int }}"
-      scopes:
-        - AI_PROVIDERS
-      secret: "{{ vault_nextcloud_translate2_app_secret }}"
-      version: "{{ nextcloud_translate2_version }}"
-  tasks:
-    - name: Prove the Nextcloud pod can reach the RTX Translate endpoint
-      ansible.builtin.command:
-        argv:
-          - /home/linuxbrew/.linuxbrew/bin/kubectl
-          - --kubeconfig
-          - "{{ playbook_dir }}/../../../kubeconfig"
-          - --namespace
-          - nextcloud
-          - exec
-          - deployment/nextcloud
-          - --container
-          - nextcloud
-          - --
-          - php
-          - -r
-          - |-
-            $socket = @fsockopen('{{ debian_rtx_ip }}', {{ nextcloud_translate2_port }}, $errorNumber, $errorMessage, 10);
-            if ($socket === false) {
-                fwrite(STDERR, $errorMessage . PHP_EOL);
-                exit(1);
-            }
-            fclose($socket);
-      changed_when: false
-
-    - name: Unregister the previous ExApp instances
-      ansible.builtin.command:
-        argv:
-          - /home/linuxbrew/.linuxbrew/bin/kubectl
-          - --kubeconfig
-          - "{{ playbook_dir }}/../../../kubeconfig"
-          - --namespace
-          - nextcloud
-          - exec
-          - deployment/nextcloud
-          - --container
-          - nextcloud
-          - --
-          - php
-          - occ
-          - app_api:app:unregister
-          - "{{ item }}"
-          - --silent
-          - --force
-      register: previous_exapp_unregistration
-      changed_when: previous_exapp_unregistration.rc == 0
-      failed_when: false
-      loop:
-        - translate2
-
-    - name: Remove the previous RTX deploy daemon registration
-      ansible.builtin.command:
-        argv:
-          - /home/linuxbrew/.linuxbrew/bin/kubectl
-          - --kubeconfig
-          - "{{ playbook_dir }}/../../../kubeconfig"
-          - --namespace
-          - nextcloud
-          - exec
-          - deployment/nextcloud
-          - --container
-          - nextcloud
-          - --
-          - php
-          - occ
-          - app_api:daemon:unregister
-          - "{{ nextcloud_appapi_daemon_name }}"
-      register: previous_daemon_unregistration
-      changed_when: previous_daemon_unregistration.rc == 0
-      failed_when: false
-
-    - name: Register the CUDA manual deploy daemon
-      ansible.builtin.command:
-        argv:
-          - /home/linuxbrew/.linuxbrew/bin/kubectl
-          - --kubeconfig
-          - "{{ playbook_dir }}/../../../kubeconfig"
-          - --namespace
-          - nextcloud
-          - exec
-          - deployment/nextcloud
-          - --container
-          - nextcloud
-          - --
-          - php
-          - occ
-          - app_api:daemon:register
-          - "{{ nextcloud_appapi_daemon_name }}"
-          - RTX 3060 Compose
-          - manual-install
-          - http
-          - "{{ debian_rtx_ip }}"
-          - "https://{{ nextcloud_host }}"
-          - "--net={{ nextcloud_compose_network }}"
-          - --set-default
-          - --compute_device=cuda
-      changed_when: true
-
-    - name: Start Local Machine Translation registration
-      ansible.builtin.command:
-        argv:
-          - /home/linuxbrew/.linuxbrew/bin/kubectl
-          - --kubeconfig
-          - "{{ playbook_dir }}/../../../kubeconfig"
-          - --namespace
-          - nextcloud
-          - exec
-          - deployment/nextcloud
-          - --container
-          - nextcloud
-          - --
-          - php
-          - occ
-          - app_api:app:register
-          - translate2
-          - "{{ nextcloud_appapi_daemon_name }}"
-          - "--json-info={{ nextcloud_translate2_registration | to_json }}"
-          - --force-scopes
-      async: 900
-      poll: 0
-      register: local_machine_translation_registration_job
-      changed_when: true
-      no_log: true
-
-    - name: Enable Local Machine Translation
-      ansible.builtin.command:
-        argv:
-          - /home/linuxbrew/.linuxbrew/bin/kubectl
-          - --kubeconfig
-          - "{{ playbook_dir }}/../../../kubeconfig"
-          - --namespace
-          - nextcloud
-          - exec
-          - deployment/nextcloud
-          - --container
-          - nextcloud
-          - --
-          - php
-          - occ
-          - app_api:app:enable
-          - translate2
-      register: local_machine_translation_enablement
-      changed_when: local_machine_translation_enablement.rc == 0
-      retries: 60
-      delay: 5
-      until: local_machine_translation_enablement.rc == 0
-
-    - name: Wait for Local Machine Translation registration
-      ansible.builtin.async_status:
-        jid: "{{ local_machine_translation_registration_job.ansible_job_id }}"
-      register: local_machine_translation_registration_result
-      changed_when: false
-      failed_when: >-
-        local_machine_translation_registration_result.finished and
-        (local_machine_translation_registration_result.rc | default(0)) != 0
-      retries: 180
-      delay: 5
-      until: local_machine_translation_registration_result.finished
-      no_log: true
-
-    - name: Read the registered Nextcloud ExApps
-      ansible.builtin.command:
-        argv:
-          - /home/linuxbrew/.linuxbrew/bin/kubectl
-          - --kubeconfig
-          - "{{ playbook_dir }}/../../../kubeconfig"
-          - --namespace
-          - nextcloud
-          - exec
-          - deployment/nextcloud
-          - --container
-          - nextcloud
-          - --
-          - php
-          - occ
-          - app_api:app:list
-      register: registered_nextcloud_exapps
-      changed_when: false
-
-    - name: Require the RTX-backed Nextcloud Translate ExApp
-      ansible.builtin.assert:
-        that:
-          - >-
-            registered_nextcloud_exapps.stdout
-            is regex('(?m)^translate2 .*\[enabled\]$')
-        fail_msg: Nextcloud did not retain the RTX-backed Translate ExApp as enabled.
+        - speaches
