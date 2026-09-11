@@ -60,6 +60,7 @@ spec:
               drop:
                 - ALL
               add:
+                - CHOWN
                 - SETGID
                 - SETUID
           ports:
