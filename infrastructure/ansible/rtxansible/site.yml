@@ -1,19 +1,11 @@
 ---
-- name: Provision the Debian RTX Docker services
+- name: Provision the Debian RTX translation and llama.cpp services
   hosts: debian_rtx
   become: true
   gather_facts: true
   vars_files:
     - vars/main.yml
     - vars/vault.yml
-  vars:
-    nextcloud_talk_internal_secret: >-
-      {{ lookup(
-        'ansible.builtin.pipe',
-        '/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig '
-        ~ playbook_dir ~ '/../../../kubeconfig --namespace nextcloud get secret '
-        ~ 'nextcloud-talk --output=jsonpath={.data.internal-secret}'
-      ) | b64decode }}
   tasks:
     - name: Require Debian on the RTX VM
       ansible.builtin.assert:
@@ -26,17 +18,11 @@
       ansible.builtin.assert:
         that:
           - vault_llama_cpp_api_key is match('^[0-9a-fA-F]{64}$')
-          - vault_nextcloud_harp_shared_key is match('^[0-9a-fA-F]{64}$')
           - vault_nextcloud_translate2_app_secret is match('^[0-9a-fA-F]{64}$')
-          - vault_nextcloud_live_transcription_app_secret is match('^[0-9a-fA-F]{64}$')
-          - nextcloud_talk_internal_secret is match('^[0-9a-fA-F]{64}$')
-          - vault_llama_cpp_api_key != vault_nextcloud_harp_shared_key
-          - vault_nextcloud_harp_shared_key != vault_nextcloud_translate2_app_secret
-          - vault_nextcloud_translate2_app_secret != vault_nextcloud_live_transcription_app_secret
+          - vault_llama_cpp_api_key != vault_nextcloud_translate2_app_secret
         fail_msg: >-
           Edit vars/vault.yml with ansible-vault. Each new value must be a
-          distinct 64-character hexadecimal secret. The Talk internal secret
-          is read from the nextcloud-talk Kubernetes Secret.
+          distinct 64-character hexadecimal secret.
 
     - name: Set the VM hostname
       ansible.builtin.hostname:
@@ -321,7 +307,7 @@
           - pull
       changed_when: true
 
-    - name: Start and wait for all RTX services
+    - name: Start and wait for the RTX translation and llama.cpp services
       ansible.builtin.command:
         argv:
           - /usr/bin/docker
@@ -338,21 +324,7 @@
           - "1800"
       changed_when: true
 
-    - name: Require Live Transcription to use the signaling internal secret
-      ansible.builtin.command:
-        argv:
-          - /usr/bin/docker
-          - exec
-          - --env
-          - "EXPECTED_INTERNAL_SECRET={{ nextcloud_talk_internal_secret }}"
-          - live_transcription
-          - /bin/sh
-          - -ec
-          - test "$LT_INTERNAL_SECRET" = "$EXPECTED_INTERNAL_SECRET"
-      changed_when: false
-      no_log: true
-
-    - name: Require healthy Nextcloud ExApp containers
+    - name: Require a healthy Nextcloud Translate container
       ansible.builtin.command:
         argv:
           - /usr/bin/docker
@@ -367,7 +339,6 @@
       until: nextcloud_exapp_health.stdout == 'healthy'
       loop:
         - translate2
-        - live_transcription
 
     - name: Prove every inference container can access the RTX 3060
       ansible.builtin.command:
@@ -386,9 +357,8 @@
       loop:
         - llama-cpp
         - translate2
-        - live_transcription
 
-- name: Register the RTX ExApps in Nextcloud
+- name: Register Nextcloud Translate on the RTX host
   hosts: localhost
   connection: local
   become: false
@@ -397,110 +367,18 @@
     - vars/main.yml
     - vars/vault.yml
   vars:
-    nextcloud_talk_internal_secret: >-
-      {{ lookup(
-        'ansible.builtin.pipe',
-        '/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig '
-        ~ playbook_dir ~ '/../../../kubeconfig --namespace nextcloud get secret '
-        ~ 'nextcloud-talk --output=jsonpath={.data.internal-secret}'
-      ) | b64decode }}
     nextcloud_translate2_registration:
       appid: translate2
       daemon_config_name: "{{ nextcloud_appapi_daemon_name }}"
-      host: translate2
+      host: "{{ debian_rtx_ip }}"
       name: Local Machine Translation
       port: "{{ nextcloud_translate2_port | int }}"
       scopes:
         - AI_PROVIDERS
       secret: "{{ vault_nextcloud_translate2_app_secret }}"
       version: "{{ nextcloud_translate2_version }}"
-    nextcloud_live_transcription_registration:
-      daemon_config_name: "{{ nextcloud_appapi_daemon_name }}"
-      host: live_transcription
-      id: live_transcription
-      name: Live Transcription in Talk
-      port: "{{ nextcloud_live_transcription_port | int }}"
-      secret: "{{ vault_nextcloud_live_transcription_app_secret }}"
-      version: "{{ nextcloud_live_transcription_version }}"
   tasks:
-    - name: Apply the Nextcloud HaRP ingress resources
-      ansible.builtin.command:
-        argv:
-          - /home/linuxbrew/.linuxbrew/bin/kubectl
-          - --kubeconfig
-          - "{{ playbook_dir }}/../../../kubeconfig"
-          - apply
-          - --filename
-          - "-"
-        stdin: |-
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: nextcloud-appapi-harp
-            namespace: nextcloud
-          spec:
-            ports:
-              - name: exapps
-                port: {{ nextcloud_harp_port | int }}
-                targetPort: exapps
-                protocol: TCP
-          ---
-          apiVersion: discovery.k8s.io/v1
-          kind: EndpointSlice
-          metadata:
-            name: nextcloud-appapi-harp
-            namespace: nextcloud
-            labels:
-              kubernetes.io/service-name: nextcloud-appapi-harp
-          addressType: IPv4
-          ports:
-            - name: exapps
-              port: {{ nextcloud_harp_port | int }}
-              protocol: TCP
-          endpoints:
-            - addresses:
-                - "{{ debian_rtx_ip }}"
-          ---
-          apiVersion: networking.k8s.io/v1
-          kind: Ingress
-          metadata:
-            name: nextcloud-appapi-harp
-            namespace: nextcloud
-            annotations:
-              traefik.ingress.kubernetes.io/router.entrypoints: websecure
-              traefik.ingress.kubernetes.io/router.tls: "true"
-          spec:
-            ingressClassName: traefik
-            tls:
-              - secretName: nextcloud-tls
-                hosts:
-                  - "{{ nextcloud_host }}"
-            rules:
-              - host: "{{ nextcloud_host }}"
-                http:
-                  paths:
-                    - path: /exapps
-                      pathType: Prefix
-                      backend:
-                        service:
-                          name: nextcloud-appapi-harp
-                          port:
-                            name: exapps
-      register: nextcloud_harp_ingress_resources
-      changed_when: >-
-        'created' in nextcloud_harp_ingress_resources.stdout or
-        'configured' in nextcloud_harp_ingress_resources.stdout
-
-    - name: Wait for the public Nextcloud ExApp route to reach HaRP
-      ansible.builtin.uri:
-        url: "https://{{ nextcloud_host }}/exapps/app_api/heartbeat"
-        status_code: 401
-      register: nextcloud_harp_ingress_health
-      retries: 60
-      delay: 5
-      until: nextcloud_harp_ingress_health.status == 401
-
-    - name: Prove the Nextcloud pod can reach the RTX HaRP endpoint
+    - name: Prove the Nextcloud pod can reach the RTX Translate endpoint
       ansible.builtin.command:
         argv:
           - /home/linuxbrew/.linuxbrew/bin/kubectl
@@ -516,7 +394,7 @@
           - php
           - -r
           - |-
-            $socket = @fsockopen('{{ debian_rtx_ip }}', {{ nextcloud_harp_port }}, $errorNumber, $errorMessage, 10);
+            $socket = @fsockopen('{{ debian_rtx_ip }}', {{ nextcloud_translate2_port }}, $errorNumber, $errorMessage, 10);
             if ($socket === false) {
                 fwrite(STDERR, $errorMessage . PHP_EOL);
                 exit(1);
@@ -548,7 +426,6 @@
       failed_when: false
       loop:
         - translate2
-        - live_transcription
 
     - name: Remove the previous RTX deploy daemon registration
       ansible.builtin.command:
@@ -571,7 +448,7 @@
       changed_when: previous_daemon_unregistration.rc == 0
       failed_when: false
 
-    - name: Register the CUDA HaRP manual deploy daemon
+    - name: Register the CUDA manual deploy daemon
       ansible.builtin.command:
         argv:
           - /home/linuxbrew/.linuxbrew/bin/kubectl
@@ -591,16 +468,12 @@
           - RTX 3060 Compose
           - manual-install
           - http
-          - "{{ debian_rtx_ip }}:{{ nextcloud_harp_port }}"
+          - "{{ debian_rtx_ip }}"
           - "https://{{ nextcloud_host }}"
           - "--net={{ nextcloud_compose_network }}"
-          - --harp
-          - "--harp_frp_address={{ debian_rtx_ip }}:{{ nextcloud_harp_frp_port }}"
-          - "--harp_shared_key={{ vault_nextcloud_harp_shared_key }}"
           - --set-default
           - --compute_device=cuda
       changed_when: true
-      no_log: true
 
     - name: Start Local Machine Translation registration
       ansible.builtin.command:
@@ -664,71 +537,6 @@
       until: local_machine_translation_registration_result.finished
       no_log: true
 
-    - name: Start Live Transcription registration
-      ansible.builtin.command:
-        argv:
-          - /home/linuxbrew/.linuxbrew/bin/kubectl
-          - --kubeconfig
-          - "{{ playbook_dir }}/../../../kubeconfig"
-          - --namespace
-          - nextcloud
-          - exec
-          - deployment/nextcloud
-          - --container
-          - nextcloud
-          - --
-          - php
-          - occ
-          - app_api:app:register
-          - live_transcription
-          - "{{ nextcloud_appapi_daemon_name }}"
-          - "--json-info={{ nextcloud_live_transcription_registration | to_json }}"
-          - --env
-          - "LT_HPB_URL=wss://{{ nextcloud_talk_host }}/spreed"
-          - --env
-          - "LT_INTERNAL_SECRET={{ nextcloud_talk_internal_secret }}"
-      async: 900
-      poll: 0
-      register: live_transcription_registration_job
-      changed_when: true
-      no_log: true
-
-    - name: Enable Live Transcription
-      ansible.builtin.command:
-        argv:
-          - /home/linuxbrew/.linuxbrew/bin/kubectl
-          - --kubeconfig
-          - "{{ playbook_dir }}/../../../kubeconfig"
-          - --namespace
-          - nextcloud
-          - exec
-          - deployment/nextcloud
-          - --container
-          - nextcloud
-          - --
-          - php
-          - occ
-          - app_api:app:enable
-          - live_transcription
-      register: live_transcription_enablement
-      changed_when: live_transcription_enablement.rc == 0
-      retries: 60
-      delay: 5
-      until: live_transcription_enablement.rc == 0
-
-    - name: Wait for Live Transcription registration
-      ansible.builtin.async_status:
-        jid: "{{ live_transcription_registration_job.ansible_job_id }}"
-      register: live_transcription_registration_result
-      changed_when: false
-      failed_when: >-
-        live_transcription_registration_result.finished and
-        (live_transcription_registration_result.rc | default(0)) != 0
-      retries: 180
-      delay: 5
-      until: live_transcription_registration_result.finished
-      no_log: true
-
     - name: Read the registered Nextcloud ExApps
       ansible.builtin.command:
         argv:
@@ -748,13 +556,10 @@
       register: registered_nextcloud_exapps
       changed_when: false
 
-    - name: Require both RTX-backed Nextcloud ExApps
+    - name: Require the RTX-backed Nextcloud Translate ExApp
       ansible.builtin.assert:
         that:
           - >-
             registered_nextcloud_exapps.stdout
             is regex('(?m)^translate2 .*\[enabled\]$')
-          - >-
-            registered_nextcloud_exapps.stdout
-            is regex('(?m)^live_transcription .*\[enabled\]$')
-        fail_msg: Nextcloud did not retain both RTX-backed ExApps as enabled.
+        fail_msg: Nextcloud did not retain the RTX-backed Translate ExApp as enabled.

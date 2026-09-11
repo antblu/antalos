@@ -25,7 +25,8 @@ Each Proxmox host carries one control-plane VM and one worker VM. This spreads t
 | `talos-worker-left` | `10.30.0.17` | `se350-left` | 10 vCPU, 28 GiB RAM, 300 GB disk; primary workload and local storage node |
 | `talos-worker-right` | `10.30.0.18` | `se350-right` | 10 vCPU, 28 GiB RAM, 300 GB disk; primary workload and local storage node |
 | `talos-worker-rtx` | `10.30.0.16` | `rtx` | 2 vCPU, 4 GiB RAM, 20 GB disk; tainted `quorum:NoSchedule` for lightweight voters |
-| `debian-rtx` | `10.30.0.26` | `rtx` | 4 vCPU, 8 GiB RAM, 650 GB disk; llama.cpp and Nextcloud CUDA ExApps |
+| `debian-left` | `10.30.0.27` | `se350-left` | 4 vCPU, 16 GiB RAM, 128 GB disk; CPU-backed Nextcloud Live Transcription |
+| `debian-rtx` | `10.30.0.26` | `rtx` | 4 vCPU, 8 GiB RAM, 650 GB disk; llama.cpp and CUDA-backed Nextcloud Translate |
 | `debian-arc` | `10.30.0.28` | `se350-right` | 4 vCPU, 8 GiB RAM, 300 GB disk; Talk recording, Immich ML, Jellyfin, and Docling |
 
 The three control-plane nodes form an etcd quorum and can tolerate one control-plane member failure. The configured Kubernetes API endpoint is currently the address of `talos-control-rtx`, not a virtual IP or external load balancer. The control plane therefore has replicated members, but the client endpoint itself remains a single ingress path until a control-plane VIP or load balancer is added.
@@ -83,7 +84,8 @@ The main shared failure domains are:
 - the upstream router, DNS, Proxmox storage, and physical network;
 - intentionally single-instance workloads listed in [Service availability](/infrastructure/availability/);
 - the `debian-arc` VM and its Arc A310 workloads on `se350-right`; and
-- the `debian-rtx` VM and its RTX 3060 workloads on `rtx`.
+- the `debian-left` VM and its CPU-backed Nextcloud Live Transcription workload on `se350-left`;
+- the `debian-rtx` VM and its RTX 3060 llama.cpp and Nextcloud Translate workloads on `rtx`.
 
 High availability keeps a service running through an expected failure. Backups and GitOps make a service recoverable after availability mechanisms are exhausted; they are complementary, not interchangeable.
 

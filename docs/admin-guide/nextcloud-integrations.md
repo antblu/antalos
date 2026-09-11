@@ -62,12 +62,13 @@ the recorder and writes Talk's `recording_servers` setting without exposing the
 shared secret in Git. Test a complete recording and playback workflow after each
 recorder or Talk upgrade.
 
-Nextcloud HaRP and the manually managed `live_transcription` and `translate2`
-containers run on the Ansible-managed `debian-rtx` VM. The Kubernetes ingress
-routes `/exapps/` to that HaRP endpoint. Ansible registers the Compose deployment
-as the default AppAPI daemon, enables both ExApps, and requires both containers
-to see the passed-through RTX 3060 through CUDA. The Arc VM remains responsible
-for Talk recording, Immich machine learning, Jellyfin, and Docling.
+The manually managed `live_transcription` container runs by itself on the
+Ansible-managed `debian-left` VM using its pinned CPU image. The manually
+managed `translate2` container runs beside llama.cpp on `debian-rtx` and uses
+the passed-through RTX 3060 through CUDA. Each ExApp is registered against its
+own direct AppAPI manual deployment on the internal network, so the former HaRP
+container and `/exapps/` ingress are no longer used. The Arc VM remains
+responsible for Talk recording, Immich machine learning, Jellyfin, and Docling.
 
 ## Mail and background work
 

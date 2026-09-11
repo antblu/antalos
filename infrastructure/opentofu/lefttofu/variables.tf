@@ -30,19 +30,19 @@ variable "proxmox_ssh_password" {
 variable "proxmox_node_name" {
   type        = string
   description = "Proxmox node that hosts the VM"
-  default     = "se350-right"
+  default     = "se350-left"
 }
 
 variable "vm_id" {
   type        = number
   description = "Proxmox VM identifier"
-  default     = 121
+  default     = 122
 }
 
 variable "vm_name" {
   type        = string
   description = "VM name and Debian hostname"
-  default     = "debian-arc"
+  default     = "debian-left"
 }
 
 variable "vm_cores" {
@@ -60,7 +60,7 @@ variable "vm_memory" {
 variable "vm_disk_size" {
   type        = number
   description = "VM system disk size in GiB"
-  default     = 300
+  default     = 128
 }
 
 variable "vm_datastore_id" {
@@ -90,13 +90,13 @@ variable "network_bridge" {
 variable "vm_mac_address" {
   type        = string
   description = "Persistent MAC address for the VM network adapter"
-  default     = "bc:24:11:64:0b:45"
+  default     = "bc:24:11:64:0b:40"
 }
 
 variable "vm_ipv4_address" {
   type        = string
   description = "Static IPv4 address and prefix for the VM"
-  default     = "10.30.0.28/24"
+  default     = "10.30.0.27/24"
 }
 
 variable "vm_ipv4_gateway" {
@@ -158,16 +158,4 @@ variable "ssh_public_keys" {
     condition     = length(var.ssh_public_keys) > 0
     error_message = "Provide at least one SSH public key for the Debian administrative account."
   }
-}
-
-variable "arc_a310_mapping" {
-  type        = string
-  description = "Existing Proxmox PCI resource mapping for the Intel Arc A310 device"
-  default     = "arc-a310"
-}
-
-variable "arc_a310_passthrough_enabled" {
-  type        = bool
-  description = "Attach the Arc A310 PCI mapping to debian-arc"
-  default     = true
 }

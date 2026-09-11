@@ -1,0 +1,172 @@
+#cloud-config
+hostname: ${hostname}
+preserve_hostname: false
+manage_etc_hosts: true
+locale: ${locale}
+timezone: ${timezone}
+disable_root: true
+ssh_pwauth: false
+growpart:
+  mode: auto
+  devices:
+    - /
+resize_rootfs: true
+apt:
+  preserve_sources_list: false
+  sources_list: |
+    deb http://deb.debian.org/debian $RELEASE main contrib non-free non-free-firmware
+    deb http://deb.debian.org/debian $RELEASE-updates main contrib non-free non-free-firmware
+    deb http://security.debian.org/debian-security $RELEASE-security main contrib non-free non-free-firmware
+groups:
+  - docker
+users:
+  - default
+  - name: ${username}
+    groups:
+      - adm
+      - docker
+      - sudo
+    shell: /bin/bash
+    lock_passwd: true
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+%{ for ssh_public_key in ssh_public_keys ~}
+      - ${ssh_public_key}
+%{ endfor ~} # type: ignore
+package_update: true
+package_upgrade: false
+packages:
+  - openssh-server
+  - qemu-guest-agent
+write_files:
+  - path: /etc/default/grub.d/60-virtual-console.cfg
+    owner: root:root
+    permissions: "0644"
+    content: |
+      GRUB_CMDLINE_LINUX="console=tty0 fbcon=map:0 consoleblank=0 systemd.show_status=yes"
+      GRUB_CMDLINE_LINUX_DEFAULT=""
+      GRUB_TERMINAL="console"
+  - path: /etc/systemd/system/getty@tty1.service.d/override.conf
+    owner: root:root
+    permissions: "0644"
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart=-/sbin/agetty --autologin ${username} --noclear %I $TERM
+  - path: /etc/ssh/sshd_config.d/60-antalos-hardening.conf
+    owner: root:root
+    permissions: "0644"
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PubkeyAuthentication yes
+      X11Forwarding no
+      AllowAgentForwarding no
+      AllowTcpForwarding yes
+      MaxAuthTries 3
+      LoginGraceTime 30
+  - path: /etc/sysctl.d/60-antalos-hardening.conf
+    owner: root:root
+    permissions: "0644"
+    content: |
+      fs.protected_fifos = 2
+      fs.protected_hardlinks = 1
+      fs.protected_regular = 2
+      fs.protected_symlinks = 1
+      kernel.dmesg_restrict = 1
+      kernel.kptr_restrict = 2
+      net.ipv4.conf.all.accept_redirects = 0
+      net.ipv4.conf.all.log_martians = 1
+      net.ipv4.conf.all.rp_filter = 1
+      net.ipv4.conf.all.send_redirects = 0
+      net.ipv4.conf.default.accept_redirects = 0
+      net.ipv4.conf.default.log_martians = 1
+      net.ipv4.conf.default.rp_filter = 1
+      net.ipv4.conf.default.send_redirects = 0
+      net.ipv4.tcp_syncookies = 1
+      net.ipv6.conf.all.accept_redirects = 0
+      net.ipv6.conf.default.accept_redirects = 0
+  - path: /etc/fail2ban/jail.d/sshd.local
+    owner: root:root
+    permissions: "0644"
+    content: |
+      [sshd]
+      enabled = true
+      backend = systemd
+      bantime = 1h
+      findtime = 10m
+      maxretry = 5
+  - path: /usr/local/sbin/antalos-bootstrap
+    owner: root:root
+    permissions: "0750"
+    content: |
+      #!/bin/sh
+      set -eu
+
+      install -m 0755 -d /etc/apt/keyrings
+      curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+      chmod 0644 /etc/apt/keyrings/docker.asc
+
+      . /etc/os-release
+      architecture="$(dpkg --print-architecture)"
+      cat > /etc/apt/sources.list.d/docker.sources <<EOF
+      Types: deb
+      URIs: https://download.docker.com/linux/debian
+      Suites: $${VERSION_CODENAME}
+      Components: stable
+      Architectures: $${architecture}
+      Signed-By: /etc/apt/keyrings/docker.asc
+      EOF
+
+      apt-get update
+      DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+        acl \
+        apt-transport-https \
+        bash-completion \
+        ca-certificates \
+        curl \
+        fail2ban \
+        firmware-misc-nonfree \
+        git \
+        gnupg \
+        jq \
+        needrestart \
+        nfs-common \
+        pciutils \
+        python3 \
+        python3-apt \
+        python3-docker \
+        python3-venv \
+        rsync \
+        sudo \
+        unzip
+      DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+        containerd.io \
+        docker-buildx-plugin \
+        docker-ce \
+        docker-ce-cli \
+        docker-compose-plugin
+
+      rm -f /etc/default/grub.d/60-serial-console.cfg
+
+      usermod --append --groups docker ${username}
+      systemctl enable --now docker
+      systemctl enable --now fail2ban
+      sysctl --system
+      touch /var/lib/cloud/instance/antalos-bootstrap-complete
+runcmd:
+  - apt-get update
+  - env DEBIAN_FRONTEND=noninteractive apt-get install --yes openssh-server qemu-guest-agent
+  - systemctl daemon-reload
+  - systemctl enable --now getty@tty1.service
+  - systemctl restart getty@tty1.service
+  - systemctl enable --now ssh.service
+  - systemctl enable --now qemu-guest-agent.service
+  - update-grub
+  - /usr/local/sbin/antalos-bootstrap
+final_message: Antalos Debian bootstrap completed after $UPTIME seconds
+power_state:
+  delay: now
+  mode: reboot
+  message: Rebooting after the Antalos Debian bootstrap

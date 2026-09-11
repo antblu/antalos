@@ -116,12 +116,13 @@ Headscale, Headplane, and RustDesk hbbs keep SQLite on local pod storage and cop
 
 Vaultwarden and UrBackup also have single application processes, even though their state persists elsewhere. They return through replacement/restart, not through a ready hot application replica. Document that outage instead of presenting rescheduling as uninterrupted failover.
 
-The two Ansible-managed GPU VMs are explicit singletons. `debian-arc` hosts Talk
-recording, Immich remote machine learning, Jellyfin, and Docling. `debian-rtx`
-hosts llama.cpp plus Nextcloud HaRP and the CUDA live transcription/translation
-ExApps. Losing either VM or its physical host removes that VM's companion paths.
-Kubernetes services can retain their primary functions, but these features
-return only after the affected VM and Docker workloads recover.
+The three Ansible-managed application VMs are explicit singletons. `debian-arc`
+hosts Talk recording, Immich remote machine learning, Jellyfin, and Docling.
+`debian-left` hosts CPU-backed Nextcloud Live Transcription. `debian-rtx` hosts
+llama.cpp and CUDA-backed Nextcloud Translate. Losing one VM or its physical
+host removes only that VM's companion paths. Kubernetes services can retain
+their primary functions, but these features return only after the affected VM
+and Docker workloads recover.
 
 ## Shared failure domains
 

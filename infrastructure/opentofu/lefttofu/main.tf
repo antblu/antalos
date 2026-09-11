@@ -33,8 +33,8 @@ resource "proxmox_virtual_environment_vm" "debian" {
   node_name = var.proxmox_node_name
   vm_id     = var.vm_id
 
-  description     = "Debian 13.6 CUDA host for llama.cpp and Nextcloud Translate; managed by OpenTofu"
-  tags            = ["debian", "gpu", "llama-cpp", "nextcloud-translate", "rtx-3060"]
+  description     = "Debian 13.6 CPU host for Nextcloud Live Transcription; managed by OpenTofu"
+  tags            = ["debian", "nextcloud-transcription"]
   on_boot         = true
   started         = true
   stop_on_destroy = true
@@ -111,18 +111,6 @@ resource "proxmox_virtual_environment_vm" "debian" {
 
   vga {
     type = "std"
-  }
-
-  dynamic "hostpci" {
-    for_each = var.rtx_3060_passthrough_enabled ? [var.rtx_3060_mapping] : []
-
-    content {
-      device  = "hostpci0"
-      mapping = hostpci.value
-      pcie    = true
-      rombar  = true
-      xvga    = false
-    }
   }
 
   tablet_device = false

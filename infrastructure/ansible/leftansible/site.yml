@@ -1,0 +1,413 @@
+---
+- name: Provision Nextcloud Live Transcription on Debian left
+  hosts: debian_left
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+    - vars/vault.yml
+  vars:
+    nextcloud_talk_internal_secret: >-
+      {{ lookup(
+        'ansible.builtin.pipe',
+        '/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig '
+        ~ playbook_dir ~ '/../../../kubeconfig --namespace nextcloud get secret '
+        ~ 'nextcloud-talk --output=jsonpath={.data.internal-secret}'
+      ) | b64decode }}
+  tasks:
+    - name: Require Debian on the left VM
+      ansible.builtin.assert:
+        that:
+          - ansible_facts["distribution"] == "Debian"
+          - ansible_facts["distribution_major_version"] | int >= 13
+        fail_msg: This playbook requires Debian 13 or newer.
+
+    - name: Require protected application secrets
+      ansible.builtin.assert:
+        that:
+          - vault_nextcloud_live_transcription_app_secret is match('^[0-9a-fA-F]{64}$')
+          - nextcloud_talk_internal_secret is match('^[0-9a-fA-F]{64}$')
+          - vault_nextcloud_live_transcription_app_secret != nextcloud_talk_internal_secret
+        fail_msg: >-
+          Edit vars/vault.yml with ansible-vault. The application secret must
+          be a 64-character hexadecimal value distinct from the Talk internal
+          secret read from the nextcloud-talk Kubernetes Secret.
+
+    - name: Set the VM hostname
+      ansible.builtin.hostname:
+        name: "{{ debian_left_hostname }}"
+
+    - name: Read the VM timezone
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/timedatectl
+          - show
+          - --property=Timezone
+          - --value
+      register: configured_timezone
+      changed_when: false
+
+    - name: Set the VM timezone
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/timedatectl
+          - set-timezone
+          - "{{ debian_left_timezone }}"
+      when: configured_timezone.stdout != debian_left_timezone
+      changed_when: true
+
+    - name: Configure Debian repositories with firmware components
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/debian.sources
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          Types: deb
+          URIs: https://deb.debian.org/debian
+          Suites: {{ ansible_facts["distribution_release"] }} {{ ansible_facts["distribution_release"] }}-updates
+          Components: main contrib non-free non-free-firmware
+          Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+          Types: deb
+          URIs: https://security.debian.org/debian-security
+          Suites: {{ ansible_facts["distribution_release"] }}-security
+          Components: main contrib non-free non-free-firmware
+          Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+    - name: Remove the legacy Debian source list
+      ansible.builtin.file:
+        path: /etc/apt/sources.list
+        state: absent
+
+    - name: Install Docker host packages
+      ansible.builtin.apt:
+        name: "{{ left_host_packages }}"
+        state: present
+        update_cache: true
+
+    - name: Enable Docker and the QEMU guest agent
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+      loop:
+        - docker
+        - qemu-guest-agent
+
+    - name: Find containers from the legacy copied RTX Compose project
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - container
+          - list
+          - --all
+          - --quiet
+          - --filter
+          - label=com.docker.compose.project=antalos-debian-rtx
+      register: legacy_rtx_project_containers
+      changed_when: false
+
+    - name: Remove containers from the legacy copied RTX Compose project
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - container
+          - remove
+          - --force
+          - "{{ item }}"
+      loop: "{{ legacy_rtx_project_containers.stdout_lines }}"
+      changed_when: true
+
+    - name: Create the Compose directory
+      ansible.builtin.file:
+        path: "{{ left_compose_root }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0750"
+
+    - name: Copy the repository Compose project
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/compose/"
+        dest: "{{ left_compose_root }}/"
+        owner: root
+        group: root
+        mode: preserve
+
+    - name: Write the protected Compose environment
+      ansible.builtin.template:
+        src: compose.env.j2
+        dest: "{{ left_compose_root }}/.env"
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+    - name: Pull the pinned transcription image
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - compose
+          - --project-directory
+          - "{{ left_compose_root }}"
+          - --file
+          - "{{ left_compose_root }}/compose.yaml"
+          - pull
+      changed_when: true
+
+    - name: Start and wait for Live Transcription
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - compose
+          - --project-directory
+          - "{{ left_compose_root }}"
+          - --file
+          - "{{ left_compose_root }}/compose.yaml"
+          - up
+          - --detach
+          - --remove-orphans
+          - --wait
+          - --wait-timeout
+          - "1800"
+      changed_when: true
+
+    - name: Require Live Transcription to use the signaling internal secret
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - exec
+          - --env
+          - "EXPECTED_INTERNAL_SECRET={{ nextcloud_talk_internal_secret }}"
+          - live_transcription
+          - /bin/sh
+          - -ec
+          - test "$LT_INTERNAL_SECRET" = "$EXPECTED_INTERNAL_SECRET"
+      changed_when: false
+      no_log: true
+
+    - name: Require a healthy Live Transcription container
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - inspect
+          - --format
+          - "{% raw %}{{.State.Health.Status}}{% endraw %}"
+          - live_transcription
+      register: live_transcription_health
+      changed_when: false
+      retries: 60
+      delay: 10
+      until: live_transcription_health.stdout == 'healthy'
+
+- name: Register Live Transcription on the Debian left host
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+    - vars/vault.yml
+  vars:
+    nextcloud_talk_internal_secret: >-
+      {{ lookup(
+        'ansible.builtin.pipe',
+        '/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig '
+        ~ playbook_dir ~ '/../../../kubeconfig --namespace nextcloud get secret '
+        ~ 'nextcloud-talk --output=jsonpath={.data.internal-secret}'
+      ) | b64decode }}
+    nextcloud_live_transcription_registration:
+      daemon_config_name: "{{ nextcloud_appapi_daemon_name }}"
+      host: "{{ debian_left_ip }}"
+      id: live_transcription
+      name: Live Transcription in Talk
+      port: "{{ nextcloud_live_transcription_port | int }}"
+      secret: "{{ vault_nextcloud_live_transcription_app_secret }}"
+      version: "{{ nextcloud_live_transcription_version }}"
+  tasks:
+    - name: Prove the Nextcloud pod can reach the left transcription endpoint
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - -r
+          - |-
+            $socket = @fsockopen('{{ debian_left_ip }}', {{ nextcloud_live_transcription_port }}, $errorNumber, $errorMessage, 10);
+            if ($socket === false) {
+                fwrite(STDERR, $errorMessage . PHP_EOL);
+                exit(1);
+            }
+            fclose($socket);
+      changed_when: false
+
+    - name: Unregister the previous Live Transcription instance
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:app:unregister
+          - live_transcription
+          - --silent
+          - --force
+      register: previous_exapp_unregistration
+      changed_when: previous_exapp_unregistration.rc == 0
+      failed_when: false
+
+    - name: Remove the previous left deploy daemon registration
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:daemon:unregister
+          - "{{ nextcloud_appapi_daemon_name }}"
+      register: previous_daemon_unregistration
+      changed_when: previous_daemon_unregistration.rc == 0
+      failed_when: false
+
+    - name: Register the CPU manual deploy daemon
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:daemon:register
+          - "{{ nextcloud_appapi_daemon_name }}"
+          - Debian Left Compose
+          - manual-install
+          - http
+          - "{{ debian_left_ip }}"
+          - "https://{{ nextcloud_host }}"
+          - "--net={{ nextcloud_compose_network }}"
+          - --compute_device=cpu
+      changed_when: true
+
+    - name: Start Live Transcription registration
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:app:register
+          - live_transcription
+          - "{{ nextcloud_appapi_daemon_name }}"
+          - "--json-info={{ nextcloud_live_transcription_registration | to_json }}"
+          - --env
+          - "LT_HPB_URL=wss://{{ nextcloud_talk_host }}/spreed"
+          - --env
+          - "LT_INTERNAL_SECRET={{ nextcloud_talk_internal_secret }}"
+      async: 900
+      poll: 0
+      register: live_transcription_registration_job
+      changed_when: true
+      no_log: true
+
+    - name: Enable Live Transcription
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:app:enable
+          - live_transcription
+      register: live_transcription_enablement
+      changed_when: live_transcription_enablement.rc == 0
+      retries: 60
+      delay: 5
+      until: live_transcription_enablement.rc == 0
+
+    - name: Wait for Live Transcription registration
+      ansible.builtin.async_status:
+        jid: "{{ live_transcription_registration_job.ansible_job_id }}"
+      register: live_transcription_registration_result
+      changed_when: false
+      failed_when: >-
+        live_transcription_registration_result.finished and
+        (live_transcription_registration_result.rc | default(0)) != 0
+      retries: 180
+      delay: 5
+      until: live_transcription_registration_result.finished
+      no_log: true
+
+    - name: Read the registered Nextcloud ExApps
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - exec
+          - deployment/nextcloud
+          - --container
+          - nextcloud
+          - --
+          - php
+          - occ
+          - app_api:app:list
+      register: registered_nextcloud_exapps
+      changed_when: false
+
+    - name: Require the left-backed Live Transcription ExApp
+      ansible.builtin.assert:
+        that:
+          - >-
+            registered_nextcloud_exapps.stdout
+            is regex('(?m)^live_transcription .*\[enabled\]$')
+        fail_msg: Nextcloud did not retain the left-backed Live Transcription ExApp as enabled.
