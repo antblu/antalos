@@ -57,6 +57,12 @@ variable "vm_memory" {
   default     = 8192
 }
 
+variable "vm_ballooning_minimum" {
+  type        = number
+  description = "Minimum VM memory in MiB when ballooning"
+  default     = 4096
+}
+
 variable "vm_disk_size" {
   type        = number
   description = "VM system disk size in GiB"

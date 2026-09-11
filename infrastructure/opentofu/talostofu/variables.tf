@@ -159,6 +159,12 @@ variable "rtx_worker_vm_memory" {
   default     = 3584
 }
 
+variable "rtx_worker_vm_ballooning_minimum" {
+  type        = number
+  description = "Minimum memory in MiB for the RTX worker VM when ballooning"
+  default     = 1792
+}
+
 variable "rtx_worker_vm_cores" {
   type        = number
   description = "Number of vCPUs for worker VMs"

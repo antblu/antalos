@@ -268,7 +268,7 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
   # --- Memory ---
   memory {
     dedicated = each.key == "rtx" ? var.rtx_worker_vm_memory : var.se350_worker_vm_memory
-    floating  = each.key == "rtx" ? 0 : var.se350_worker_vm_ballooning_minimum
+    floating  = each.key == "rtx" ? var.rtx_worker_vm_ballooning_minimum : var.se350_worker_vm_ballooning_minimum
   }
 
   # --- SCSI Controller ---
