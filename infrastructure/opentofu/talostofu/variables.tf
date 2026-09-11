@@ -138,13 +138,13 @@ variable "se350_worker_vm_memory" {
 variable "se350_worker_vm_ballooning_minimum" {
   type        = number
   description = "Minimum memory in MiB for SE350 worker VMs when ballooning"
-  default     = 4096
+  default     = 8192
 }
 
 variable "se350_worker_vm_cores" {
   type        = number
   description = "Number of vCPUs for worker VMs"
-  default     = 9
+  default     = 10
 }
 
 variable "se350_worker_vm_disk_size" {
@@ -156,7 +156,7 @@ variable "se350_worker_vm_disk_size" {
 variable "rtx_worker_vm_memory" {
   type        = number
   description = "Memory in MiB for worker VMs (28 GiB = 28672 MiB)"
-  default     = 4096
+  default     = 3584
 }
 
 variable "rtx_worker_vm_cores" {

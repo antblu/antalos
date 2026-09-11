@@ -48,7 +48,7 @@ variable "vm_name" {
 variable "vm_cores" {
   type        = number
   description = "Number of VM CPU cores"
-  default     = 3
+  default     = 4
 }
 
 variable "vm_memory" {
