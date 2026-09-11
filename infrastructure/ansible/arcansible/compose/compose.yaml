@@ -10,7 +10,7 @@ services:
     ports:
       - "${DEBIAN_ARC_IP}:${IMMICH_MACHINE_LEARNING_PORT}:3003/tcp"
     devices:
-      - /dev/dri:/dev/dri
+      - /dev/dri/renderD128:/dev/dri/renderD128
     group_add:
       - "${RENDER_GID}"
     device_cgroup_rules:
@@ -54,7 +54,7 @@ services:
     ports:
       - "${DEBIAN_ARC_IP}:${NEXTCLOUD_TALK_RECORDING_PORT}:1234/tcp"
     devices:
-      - /dev/dri:/dev/dri
+      - /dev/dri/renderD128:/dev/dri/renderD128
     group_add:
       - "${RENDER_GID}"
     volumes:

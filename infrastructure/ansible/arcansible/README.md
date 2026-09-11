@@ -32,6 +32,11 @@ proves that the resulting container can execute a tensor operation on the Arc
 GPU. For Immich, it verifies the ONNX Runtime OpenVINO execution provider and
 requires that the provider reports an Intel GPU device.
 
+The playbook enables `antalos-arc-compose.path` for future boots. It waits for
+`/dev/dri/renderD128` before recreating Immich Machine Learning and Nextcloud
+Talk Recording, preventing Docker from capturing an incomplete device set while
+the Arc driver is still initializing.
+
 ## Secrets
 
 Create and encrypt the vault before the first run:

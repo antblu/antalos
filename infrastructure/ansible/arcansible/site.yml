@@ -482,6 +482,47 @@
               -
       changed_when: false
 
+    - name: Install the Arc Compose boot recovery service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/antalos-arc-compose.service
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Recreate Arc containers after the render device is ready
+          Requires=docker.service
+          After=docker.service
+
+          [Service]
+          Type=oneshot
+          WorkingDirectory={{ arc_compose_root }}
+          ExecStart=/usr/bin/docker compose --project-directory {{ arc_compose_root }} --file {{ arc_compose_root }}/compose.yaml up --detach --force-recreate immich-machine-learning nextcloud-talk-recording
+          RemainAfterExit=yes
+
+    - name: Install the Arc render-device path unit
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/antalos-arc-compose.path
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Wait for the Intel Arc render device
+
+          [Path]
+          PathExists={{ arc_render_device }}
+          Unit=antalos-arc-compose.service
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Enable Arc container recovery for future boots
+      ansible.builtin.systemd_service:
+        name: antalos-arc-compose.path
+        enabled: true
+        daemon_reload: true
+
 - name: Register the Talk recording backend in Nextcloud
   hosts: localhost
   connection: local
