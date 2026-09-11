@@ -7,6 +7,30 @@
     - vars/main.yml
     - vars/vault.yml
   tasks:
+    - name: Read the Talk internal secret from Kubernetes
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - get
+          - secret
+          - nextcloud-talk
+          - --output=jsonpath={.data.internal-secret}
+      delegate_to: localhost
+      become: false
+      register: nextcloud_talk_internal_secret_base64
+      changed_when: false
+      no_log: true
+
+    - name: Decode the Talk internal secret
+      ansible.builtin.set_fact:
+        nextcloud_talk_internal_secret: >-
+          {{ nextcloud_talk_internal_secret_base64.stdout | b64decode }}
+      no_log: true
+
     - name: Require Debian on the Arc VM
       ansible.builtin.assert:
         that:
@@ -18,13 +42,13 @@
       ansible.builtin.assert:
         that:
           - vault_nextcloud_talk_recording_secret is match('^[0-9a-fA-F]{64}$')
-          - vault_nextcloud_talk_internal_secret is match('^[0-9a-fA-F]{64}$')
+          - nextcloud_talk_internal_secret is match('^[0-9a-fA-F]{64}$')
           - vault_docling_api_key is match('^[0-9a-fA-F]{64}$')
         fail_msg: >-
           Edit vars/vault.yml with ansible-vault. The recording and Docling
-          values must be newly generated 64-character hexadecimal secrets; the
-          Talk internal value must be the existing signaling internal secret
-          and must also contain exactly 64 hexadecimal characters.
+          values must be newly generated 64-character hexadecimal secrets. The
+          live nextcloud-talk/internal-secret must also contain exactly 64
+          hexadecimal characters.
 
     - name: Set the VM hostname
       ansible.builtin.hostname:

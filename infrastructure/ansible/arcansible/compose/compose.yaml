@@ -43,7 +43,7 @@ services:
       AIO_LOG_LEVEL: warn
       ALLOW_ALL: "false"
       HPB_DOMAIN: ${NEXTCLOUD_TALK_HOST}
-      HPB_PATH: /standalone-signaling/
+      HPB_PATH: ""
       HPB_PROTOCOL: https
       INTERNAL_SECRET: ${NEXTCLOUD_TALK_INTERNAL_SECRET}
       NC_DOMAIN: ${NEXTCLOUD_HOST}

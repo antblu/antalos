@@ -49,11 +49,12 @@ ansible-vault edit vars/vault.yml
 ```
 
 Generate new 64-character hexadecimal values for the recording secret and
-Docling API key with `openssl rand -hex 32`. The Talk internal secret is not a
-new independent value: it must match `clients.internalsecret` on the standalone
-signaling server. The recording secret is shared with Nextcloud's Talk recording
-configuration. Keep all three quoted in the vault and store their originals in
-the password manager; never commit the decrypted vault.
+Docling API key with `openssl rand -hex 32`. The playbook reads the Talk internal
+secret directly from the live `nextcloud-talk` Kubernetes Secret so it cannot
+drift from `clients.internalsecret` on the standalone signaling server. The
+recording secret is shared with Nextcloud's Talk recording configuration. Keep
+both generated values quoted in the vault and store their originals in the
+password manager; never commit the decrypted vault.
 
 For an existing encrypted vault, use only:
 
@@ -61,11 +62,10 @@ For an existing encrypted vault, use only:
 ansible-vault edit vars/vault.yml
 ```
 
-The file must contain these three keys:
+The file must contain these two keys:
 
 ```yaml
 vault_nextcloud_talk_recording_secret: "<64 hexadecimal characters>"
-vault_nextcloud_talk_internal_secret: "<existing 64-character signaling secret>"
 vault_docling_api_key: "<different 64 hexadecimal characters>"
 ```
 
