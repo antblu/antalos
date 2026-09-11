@@ -47,6 +47,16 @@ spec:
         - name: urbackup
           image: uroni/urbackup-server:${URBACKUP_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              sed -i -E 's/^(urbackup:[^:]*:)[0-9]+:[0-9]+:/\1${URBACKUP_PUID}:${URBACKUP_PGID}:/' /etc/passwd
+              sed -i -E 's/^(urbackup:[^:]*:)[0-9]+:/\1${URBACKUP_PGID}:/' /etc/group
+              exec /usr/bin/entrypoint.sh "$@"
+            - --
+          args:
+            - run
           env:
             - name: PUID
               value: "${URBACKUP_PUID}"
@@ -60,7 +70,6 @@ spec:
               drop:
                 - ALL
               add:
-                - CHOWN
                 - SETGID
                 - SETUID
           ports:
