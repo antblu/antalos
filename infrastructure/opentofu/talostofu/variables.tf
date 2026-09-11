@@ -138,7 +138,7 @@ variable "se350_worker_vm_memory" {
 variable "se350_worker_vm_ballooning_minimum" {
   type        = number
   description = "Minimum memory in MiB for SE350 worker VMs when ballooning"
-  default     = 8192
+  default     = 0
 }
 
 variable "se350_worker_vm_cores" {
@@ -162,7 +162,7 @@ variable "rtx_worker_vm_memory" {
 variable "rtx_worker_vm_ballooning_minimum" {
   type        = number
   description = "Minimum memory in MiB for the RTX worker VM when ballooning"
-  default     = 1792
+  default     = 0
 }
 
 variable "rtx_worker_vm_cores" {

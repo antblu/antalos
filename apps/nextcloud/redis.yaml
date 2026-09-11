@@ -367,7 +367,7 @@ spec:
           resources:
             requests:
               cpu: ${NEXTCLOUD_REDIS_QUORUM_CPU_REQUEST}
-              memory: ${NEXTCLOUD_REDIS_QUORUM_MEMORY_REQUEST}
+              memory: ${NEXTCLOUD_REDIS_HAPROXY_MEMORY_REQUEST}
             limits:
               cpu: ${NEXTCLOUD_REDIS_QUORUM_CPU_LIMIT}
               memory: ${NEXTCLOUD_REDIS_QUORUM_MEMORY_LIMIT}
