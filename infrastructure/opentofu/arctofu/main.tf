@@ -59,7 +59,7 @@ resource "proxmox_virtual_environment_vm" "debian" {
 
   memory {
     dedicated = var.vm_memory
-    floating  = 0
+    floating  = var.vm_ballooning_minimum
   }
 
   scsi_hardware = "virtio-scsi-single"

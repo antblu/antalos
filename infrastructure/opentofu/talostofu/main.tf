@@ -265,10 +265,10 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
     type  = "host"
   }
 
-  # --- Memory (ballooning disabled) ---
+  # --- Memory ---
   memory {
     dedicated = each.key == "rtx" ? var.rtx_worker_vm_memory : var.se350_worker_vm_memory
-    floating  = 0
+    floating  = each.key == "rtx" ? 0 : var.se350_worker_vm_ballooning_minimum
   }
 
   # --- SCSI Controller ---

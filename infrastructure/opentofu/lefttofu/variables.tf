@@ -54,7 +54,13 @@ variable "vm_cores" {
 variable "vm_memory" {
   type        = number
   description = "Dedicated VM memory in MiB"
-  default     = 14336
+  default     = 9216
+}
+
+variable "vm_ballooning_minimum" {
+  type        = number
+  description = "Minimum VM memory in MiB when ballooning"
+  default     = 6144
 }
 
 variable "vm_disk_size" {
