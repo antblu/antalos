@@ -54,7 +54,7 @@ variable "vm_cores" {
 variable "vm_memory" {
   type        = number
   description = "Dedicated VM memory in MiB"
-  default     = 16384
+  default     = 14336
 }
 
 variable "vm_disk_size" {
