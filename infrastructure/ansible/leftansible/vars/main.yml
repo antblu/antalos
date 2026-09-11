@@ -4,16 +4,6 @@ debian_left_timezone: America/Denver
 
 left_compose_root: /opt/compose
 
-nextcloud_live_transcription_image: ghcr.io/nextcloud-releases/live_transcription:2.1.3@sha256:ddc5cea3d840a613e62f9490629312fe7ae063c73001e5a5cef652a022c1576c
-nextcloud_live_transcription_version: 2.1.3
-nextcloud_live_transcription_port: "23000"
-nextcloud_live_transcription_workers: "1"
-
-nextcloud_host: nextcloud.antblu.net
-nextcloud_talk_host: talk.antblu.net
-nextcloud_appapi_daemon_name: left_compose
-nextcloud_compose_network: antalos-debian-left
-
 left_host_packages:
   - ca-certificates
   - curl

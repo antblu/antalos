@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-talk-recording
+  namespace: nextcloud
+spec:
+  ports:
+    - name: http
+      port: 1234
+      targetPort: 1234
+      protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: nextcloud-talk-recording
+  namespace: nextcloud
+  labels:
+    kubernetes.io/service-name: nextcloud-talk-recording
+addressType: IPv4
+ports:
+  - name: http
+    port: 1234
+    protocol: TCP
+endpoints:
+  - addresses:
+      - 10.30.0.28
+    conditions:
+      ready: true
+    hostname: debian-arc

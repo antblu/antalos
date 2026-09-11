@@ -493,7 +493,7 @@
   vars:
     nextcloud_talk_recording_config:
       servers:
-        - server: "http://{{ debian_arc_ip }}:{{ nextcloud_talk_recording_port }}/"
+        - server: http://nextcloud-talk-recording.nextcloud.svc.cluster.local:1234/
           verify: true
       secret: "{{ vault_nextcloud_talk_recording_secret }}"
   tasks:
