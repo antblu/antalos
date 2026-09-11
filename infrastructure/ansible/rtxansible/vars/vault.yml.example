@@ -2,4 +2,3 @@ vault_llama_cpp_api_key: replace-with-a-random-64-character-hex-secret
 vault_nextcloud_harp_shared_key: replace-with-a-different-random-64-character-hex-secret
 vault_nextcloud_translate2_app_secret: replace-with-a-different-random-64-character-hex-secret
 vault_nextcloud_live_transcription_app_secret: replace-with-a-different-random-64-character-hex-secret
-vault_nextcloud_talk_internal_secret: replace-with-the-existing-64-character-hex-secret

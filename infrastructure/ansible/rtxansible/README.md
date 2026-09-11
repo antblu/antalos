@@ -37,10 +37,11 @@ ansible-vault edit vars/vault.yml
 
 Generate four different 64-character hexadecimal values with
 `openssl rand -hex 32`: the llama.cpp API key, HaRP shared key, and the two
-ExApp application secrets. The Talk internal secret is not a new value: it must
-match `clients.internalsecret` on the standalone signaling server. Keep the
-values quoted in the vault and retain the originals in the password manager.
-Never commit the decrypted vault.
+ExApp application secrets. The playbook reads the Talk internal secret directly
+from the `internal-secret` key in the `nextcloud-talk` Kubernetes Secret so the
+Live Transcription client always matches signaling's `clients.internalsecret`.
+Keep the vault values quoted, retain the originals in the password manager, and
+never commit the decrypted vault.
 
 For an existing encrypted vault, use only:
 

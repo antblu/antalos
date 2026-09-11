@@ -6,6 +6,14 @@
   vars_files:
     - vars/main.yml
     - vars/vault.yml
+  vars:
+    nextcloud_talk_internal_secret: >-
+      {{ lookup(
+        'ansible.builtin.pipe',
+        '/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig '
+        ~ playbook_dir ~ '/../../../kubeconfig --namespace nextcloud get secret '
+        ~ 'nextcloud-talk --output=jsonpath={.data.internal-secret}'
+      ) | b64decode }}
   tasks:
     - name: Require Debian on the RTX VM
       ansible.builtin.assert:
@@ -21,14 +29,14 @@
           - vault_nextcloud_harp_shared_key is match('^[0-9a-fA-F]{64}$')
           - vault_nextcloud_translate2_app_secret is match('^[0-9a-fA-F]{64}$')
           - vault_nextcloud_live_transcription_app_secret is match('^[0-9a-fA-F]{64}$')
-          - vault_nextcloud_talk_internal_secret is match('^[0-9a-fA-F]{64}$')
+          - nextcloud_talk_internal_secret is match('^[0-9a-fA-F]{64}$')
           - vault_llama_cpp_api_key != vault_nextcloud_harp_shared_key
           - vault_nextcloud_harp_shared_key != vault_nextcloud_translate2_app_secret
           - vault_nextcloud_translate2_app_secret != vault_nextcloud_live_transcription_app_secret
         fail_msg: >-
           Edit vars/vault.yml with ansible-vault. Each new value must be a
           distinct 64-character hexadecimal secret. The Talk internal secret
-          must be the existing signaling clients.internalsecret value.
+          is read from the nextcloud-talk Kubernetes Secret.
 
     - name: Set the VM hostname
       ansible.builtin.hostname:
@@ -330,6 +338,20 @@
           - "1800"
       changed_when: true
 
+    - name: Require Live Transcription to use the signaling internal secret
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - exec
+          - --env
+          - "EXPECTED_INTERNAL_SECRET={{ nextcloud_talk_internal_secret }}"
+          - live_transcription
+          - /bin/sh
+          - -ec
+          - test "$LT_INTERNAL_SECRET" = "$EXPECTED_INTERNAL_SECRET"
+      changed_when: false
+      no_log: true
+
     - name: Require healthy Nextcloud ExApp containers
       ansible.builtin.command:
         argv:
@@ -375,6 +397,13 @@
     - vars/main.yml
     - vars/vault.yml
   vars:
+    nextcloud_talk_internal_secret: >-
+      {{ lookup(
+        'ansible.builtin.pipe',
+        '/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig '
+        ~ playbook_dir ~ '/../../../kubeconfig --namespace nextcloud get secret '
+        ~ 'nextcloud-talk --output=jsonpath={.data.internal-secret}'
+      ) | b64decode }}
     nextcloud_translate2_registration:
       appid: translate2
       daemon_config_name: "{{ nextcloud_appapi_daemon_name }}"
@@ -657,7 +686,7 @@
           - --env
           - "LT_HPB_URL=wss://{{ nextcloud_talk_host }}/spreed"
           - --env
-          - "LT_INTERNAL_SECRET={{ vault_nextcloud_talk_internal_secret }}"
+          - "LT_INTERNAL_SECRET={{ nextcloud_talk_internal_secret }}"
       async: 900
       poll: 0
       register: live_transcription_registration_job
