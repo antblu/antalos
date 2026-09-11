@@ -138,7 +138,7 @@ variable "se350_worker_vm_memory" {
 variable "se350_worker_vm_cores" {
   type        = number
   description = "Number of vCPUs for worker VMs"
-  default     = 10
+  default     = 9
 }
 
 variable "se350_worker_vm_disk_size" {
