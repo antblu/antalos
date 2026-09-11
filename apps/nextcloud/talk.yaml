@@ -157,7 +157,6 @@ data:
     set -eu
     case "$POD_NAME" in
       nextcloud-talk-0) export TALK_PORT=${NEXTCLOUD_TALK_TURN_0_PORT} ;;
-      nextcloud-talk-1) export TALK_PORT=${NEXTCLOUD_TALK_TURN_1_PORT} ;;
       *) echo "No TURN port assigned to $POD_NAME" >&2; exit 1 ;;
     esac
     exec /start.sh /bin/bash /scripts/cluster.sh
@@ -232,7 +231,9 @@ metadata:
   namespace: nextcloud
 spec:
   serviceName: nextcloud-talk-headless
-  replicas: 2
+  # The AIO image couples one signaling server to one local Janus instance.
+  # Multiple replicas require dedicated signaling proxies for cross-Janus media.
+  replicas: 1
   podManagementPolicy: Parallel
   selector:
     matchLabels:
@@ -321,12 +322,6 @@ spec:
         - name: turn-0-udp
           containerPort: ${NEXTCLOUD_TALK_TURN_0_PORT}
           protocol: UDP
-        - name: turn-1-tcp
-          containerPort: ${NEXTCLOUD_TALK_TURN_1_PORT}
-          protocol: TCP
-        - name: turn-1-udp
-          containerPort: ${NEXTCLOUD_TALK_TURN_1_PORT}
-          protocol: UDP
         startupProbe:
           httpGet:
             path: /api/v1/welcome
@@ -407,29 +402,6 @@ spec:
     targetPort: turn-0-udp
     protocol: UDP
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: nextcloud-talk-turn-1
-  namespace: nextcloud
-  annotations:
-    metallb.io/allow-shared-ip: nextcloud-talk-turn
-    metallb.io/loadBalancerIPs: ${NEXTCLOUD_TALK_LOAD_BALANCER_IP}
-spec:
-  type: LoadBalancer
-  externalTrafficPolicy: Cluster
-  selector:
-    statefulset.kubernetes.io/pod-name: nextcloud-talk-1
-  ports:
-  - name: turn-tcp
-    port: ${NEXTCLOUD_TALK_TURN_1_PORT}
-    targetPort: turn-1-tcp
-    protocol: TCP
-  - name: turn-udp
-    port: ${NEXTCLOUD_TALK_TURN_1_PORT}
-    targetPort: turn-1-udp
-    protocol: UDP
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -486,10 +458,6 @@ spec:
     - port: 3478
       protocol: TCP
     - port: 3478
-      protocol: UDP
-    - port: 3479
-      protocol: TCP
-    - port: 3479
       protocol: UDP
     - port: 1024
       endPort: 65535

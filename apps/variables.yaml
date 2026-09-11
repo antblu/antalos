@@ -272,8 +272,9 @@ variables:
   TALOS_WORKER_RIGHT: talos-worker-right
   TALOS_WORKER_RTX: talos-worker-rtx
 
-  # Talk HPB: AIO supplies signaling, Janus and TURN; NATS is clustered separately.
-  NEXTCLOUD_TALK_CONFIG_REVISION: "2"
+  # Talk HPB: one AIO replica couples signaling, Janus and TURN. Multiple Janus
+  # backends require dedicated signaling proxies rather than AIO replicas.
+  NEXTCLOUD_TALK_CONFIG_REVISION: "3"
   NEXTCLOUD_TALK_IMAGE_TAG: latest
   NEXTCLOUD_TALK_NATS_IMAGE_TAG: 2.14.5-alpine
   NEXTCLOUD_TALK_HOST: talk.antblu.net
@@ -286,7 +287,6 @@ variables:
   NEXTCLOUD_TALK_NATS_2_HOST: nextcloud-talk-nats-2.nextcloud-talk-nats.nextcloud.svc.cluster.local
   NEXTCLOUD_TALK_LISTEN_IP: 0.0.0.0
   NEXTCLOUD_TALK_TURN_0_PORT: "3478"
-  NEXTCLOUD_TALK_TURN_1_PORT: "3479"
   NEXTCLOUD_TALK_LOOPBACK_IP: 127.0.0.1
 
 
