@@ -1,0 +1,83 @@
+name: debian-rtx
+
+services:
+  llama-cpp:
+    image: ${LLAMA_CPP_IMAGE}
+    container_name: llama-cpp
+    restart: unless-stopped
+    environment:
+      LLAMA_ARG_API_KEY_FILE: /run/secrets/llama-api-key
+      LLAMA_CACHE: /models
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      NVIDIA_VISIBLE_DEVICES: "0"
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --ctx-size
+      - "8192"
+      - --parallel
+      - "1"
+      - --models-max
+      - "1"
+      - --metrics
+    ports:
+      - "${DEBIAN_RTX_IP}:${LLAMA_CPP_PORT}:8080/tcp"
+    volumes:
+      - type: bind
+        source: /srv/llama-models
+        target: /models
+      - type: bind
+        source: ./secrets/llama-api-key
+        target: /run/secrets/llama-api-key
+        read_only: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids:
+                - "0"
+              capabilities:
+                - gpu
+    security_opt:
+      - no-new-privileges:true
+
+  speaches:
+    image: ${SPEACHES_IMAGE}
+    container_name: speaches
+    restart: unless-stopped
+    environment:
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      NVIDIA_VISIBLE_DEVICES: "0"
+    ports:
+      - "${DEBIAN_RTX_IP}:${SPEACHES_PORT}:8000/tcp"
+    volumes:
+      - type: volume
+        source: huggingface-hub-cache
+        target: /home/ubuntu/.cache/huggingface/hub
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids:
+                - "0"
+              capabilities:
+                - gpu
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - --fail
+        - http://0.0.0.0:8000/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  huggingface-hub-cache:

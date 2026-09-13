@@ -1,4 +1,4 @@
-name: antalos-debian-arc
+name: debian-arc
 
 services:
   immich-machine-learning:
