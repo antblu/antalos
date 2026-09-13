@@ -2,6 +2,14 @@ global:
   affinity:
     podAntiAffinity: hard
 
+dex:
+  startupProbe:
+    enabled: true
+  readinessProbe:
+    enabled: true
+  livenessProbe:
+    enabled: true
+
 configs:
   cm:
     resource.exclusions: |
