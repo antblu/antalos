@@ -10,3 +10,16 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - ${AUTHENTIK_HOST}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ldap-tls
+  namespace: authentik
+spec:
+  secretName: ldap-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - ${LDAP_HOST}

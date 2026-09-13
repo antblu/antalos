@@ -126,6 +126,7 @@ variables:
 
   ARGOCD_HOST: argocd.antblu.net
   AUTHENTIK_HOST: auth.antblu.net
+  LDAP_HOST: ldap.antblu.net
   RANCHER_HOST: rancher.antblu.net
   TRAEFIK_HOST: traefik.antblu.net
   GRAFANA_HOST: grafana.antblu.net

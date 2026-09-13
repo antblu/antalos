@@ -38,6 +38,12 @@ spec:
           web:
             expose:
               default: false
+          ldaps:
+            port: 636
+            expose:
+              default: true
+            exposedPort: 636
+            protocol: TCP
           rustdesk-nat:
             port: 21115
             expose:
