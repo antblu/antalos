@@ -134,6 +134,7 @@ data:
 
 
     def add_model(model_id):
+        short_name = model_id.rsplit("/", 1)[-1]
         payload = {
             "model_name": model_id,
             "litellm_params": {
