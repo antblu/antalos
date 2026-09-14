@@ -141,7 +141,7 @@ data:
     def add_model(model_id):
         short_name = model_id.rsplit("/", 1)[-1]
         payload = {
-            "model_name": model_id,
+            "model_name": short_name,
             "litellm_params": {
                 "model": f"openai/{model_id}",
                 "litellm_credential_name": LITELLM_CREDENTIAL_NAME,
