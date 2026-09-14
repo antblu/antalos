@@ -97,6 +97,11 @@
         path: /etc/apt/sources.list
         state: absent
 
+    - name: Update APT and install the latest system upgrades
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+
     - name: Install Docker and Intel Arc runtime packages
       ansible.builtin.apt:
         name: "{{ arc_host_packages }}"

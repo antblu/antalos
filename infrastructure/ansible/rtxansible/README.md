@@ -1,12 +1,16 @@
 # Debian RTX application node
 
-This Ansible project provisions two independent CUDA Compose projects on
+This Ansible project provisions the CUDA services in one Compose project on
 `debian-rtx` (`10.30.0.26`):
 
-- `llama-cpp.yaml` runs llama.cpp `b10884` in router mode with an authenticated
+- `compose.yaml` runs llama.cpp `b10884` in router mode with an authenticated
   OpenAI-compatible API. Model files remain operator-managed under
   `/srv/llama-models`.
-- `speaches.yaml` runs Speaches `0.9.0-rc.3` with CUDA 12.6.3 and persists its
+- `models.ini` constrains routed models to an 8,192-token context, enables flash
+  attention, and lets llama.cpp fit unset options to the available GPU memory.
+  This prevents model metadata or an ad hoc preset from selecting a context
+  that cannot fit alongside the model on the 12 GB RTX 3060.
+- The same project runs Speaches `0.9.0-rc.3` with CUDA 12.6.3 and persists its
   Hugging Face model cache in a named volume.
 
 Nextcloud Live Transcription and Local Machine Translation are not part of this
@@ -15,9 +19,11 @@ not registered as a Nextcloud AppAPI deployment.
 
 The VM and RTX 3060 PCI passthrough are declared in
 `infrastructure/opentofu/rtxtofu`. The Compose definitions are copied to
-`/opt/compose`. The playbook installs the pinned NVIDIA Container Toolkit,
+`/opt/compose`. The playbook installs the NVIDIA Container Toolkit,
 requires `nvidia-smi` to identify the passed-through GPU as an RTX 3060, and
-proves both containers can access it.
+proves both containers can access it. Host packages, the CUDA driver, and the
+NVIDIA Container Toolkit track the newest versions available from their
+configured stable APT repositories.
 
 ## Secret
 

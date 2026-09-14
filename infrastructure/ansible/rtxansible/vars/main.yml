@@ -4,7 +4,7 @@ debian_rtx_timezone: America/Denver
 
 rtx_compose_root: /opt/compose
 rtx_model_root: /srv/llama-models
-nvidia_container_toolkit_version: 1.19.1-1
+nvidia_cuda_keyring_version: 1.1-1
 
 llama_cpp_image: ghcr.io/ggml-org/llama.cpp:server-cuda-b10884@sha256:5ebb7a55e3d38e5fe185346fcd908033e69c035ad49b33df0066eb7cf4f7b06b
 llama_cpp_port: "8080"
@@ -22,8 +22,6 @@ rtx_host_packages:
   - gnupg
   - linux-headers-amd64
   - linux-image-amd64
-  - nvidia-driver
-  - nvidia-smi
   - pciutils
   - python3
   - qemu-guest-agent

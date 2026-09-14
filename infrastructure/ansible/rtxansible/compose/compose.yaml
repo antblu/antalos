@@ -20,7 +20,7 @@ services:
       - --models-max
       - "1"
       - --models-preset
-      - /models/models.ini
+      - /config/models.ini
       - --metrics
     ports:
       - "${DEBIAN_RTX_IP}:${LLAMA_CPP_PORT}:8080/tcp"
@@ -28,6 +28,10 @@ services:
       - type: bind
         source: /srv/llama-models
         target: /models
+      - type: bind
+        source: ./models.ini
+        target: /config/models.ini
+        read_only: true
       - type: bind
         source: ./secrets/llama-api-key
         target: /run/secrets/llama-api-key

@@ -69,11 +69,42 @@
         path: /etc/apt/sources.list
         state: absent
 
-    - name: Install Docker and NVIDIA host packages
+    - name: Download the NVIDIA CUDA repository keyring package
+      ansible.builtin.get_url:
+        url: >-
+          https://developer.download.nvidia.com/compute/cuda/repos/debian13/x86_64/cuda-keyring_{{ nvidia_cuda_keyring_version }}_all.deb
+        dest: "/tmp/cuda-keyring_{{ nvidia_cuda_keyring_version }}_all.deb"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Enable the official NVIDIA Debian 13 repository
+      ansible.builtin.apt:
+        deb: "/tmp/cuda-keyring_{{ nvidia_cuda_keyring_version }}_all.deb"
+        state: present
+
+    - name: Update APT and install the latest system upgrades
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+
+    - name: Install Docker and base host packages
       ansible.builtin.apt:
         name: "{{ rtx_host_packages }}"
-        state: present
+        state: latest
         update_cache: true
+
+    - name: Allow NVIDIA CUDA driver upgrades
+      ansible.builtin.dpkg_selections:
+        name: nvidia-driver-cuda
+        selection: install
+
+    - name: Install the latest NVIDIA CUDA driver
+      ansible.builtin.apt:
+        name: nvidia-driver-cuda
+        state: latest
+        update_cache: true
+      register: nvidia_driver_installation
 
     - name: Stop tracking the hardware-trimmed cloud kernel
       ansible.builtin.apt:
@@ -123,12 +154,14 @@
       when: grub_kernel_selection.changed
       changed_when: true
 
-    - name: Reboot into the selected hardware-capable kernel
+    - name: Reboot after a kernel selection or NVIDIA driver upgrade
       ansible.builtin.reboot:
-        msg: Rebooting into linux-image-amd64 for NVIDIA RTX 3060 support
+        msg: Rebooting to activate the selected kernel and NVIDIA driver
         reboot_timeout: 900
         post_reboot_delay: 10
-      when: ansible_facts["kernel"] != standard_kernel_version
+      when: >-
+        ansible_facts["kernel"] != standard_kernel_version
+        or nvidia_driver_installation.changed
       register: kernel_reboot
 
     - name: Refresh facts after the kernel reboot
@@ -197,14 +230,14 @@
         content: |
           deb [signed-by=/etc/apt/keyrings/nvidia-container-toolkit.asc] https://nvidia.github.io/libnvidia-container/stable/deb/$(ARCH) /
 
-    - name: Install the pinned NVIDIA Container Toolkit
+    - name: Install the latest NVIDIA Container Toolkit
       ansible.builtin.apt:
         name:
-          - "libnvidia-container1={{ nvidia_container_toolkit_version }}"
-          - "libnvidia-container-tools={{ nvidia_container_toolkit_version }}"
-          - "nvidia-container-toolkit-base={{ nvidia_container_toolkit_version }}"
-          - "nvidia-container-toolkit={{ nvidia_container_toolkit_version }}"
-        state: present
+          - libnvidia-container1
+          - libnvidia-container-tools
+          - nvidia-container-toolkit-base
+          - nvidia-container-toolkit
+        state: latest
         update_cache: true
 
     - name: Configure the NVIDIA runtime for Docker
@@ -301,12 +334,9 @@
           - --project-directory
           - "{{ rtx_compose_root }}"
           - --file
-          - "{{ rtx_compose_root }}/{{ item }}.yaml"
+          - "{{ rtx_compose_root }}/compose.yaml"
           - pull
       changed_when: true
-      loop:
-        - llama-cpp
-        - speaches
 
     - name: Start and wait for the RTX Compose services
       ansible.builtin.command:
@@ -316,7 +346,7 @@
           - --project-directory
           - "{{ rtx_compose_root }}"
           - --file
-          - "{{ rtx_compose_root }}/{{ item }}.yaml"
+          - "{{ rtx_compose_root }}/compose.yaml"
           - up
           - --detach
           - --remove-orphans
@@ -324,9 +354,6 @@
           - --wait-timeout
           - "1800"
       changed_when: true
-      loop:
-        - llama-cpp
-        - speaches
 
     - name: Require a healthy Speaches container
       ansible.builtin.command:

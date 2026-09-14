@@ -80,6 +80,11 @@
         path: /etc/apt/sources.list
         state: absent
 
+    - name: Update APT and install the latest system upgrades
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+
     - name: Install Docker host packages
       ansible.builtin.apt:
         name: "{{ left_host_packages }}"
