@@ -22,11 +22,19 @@ data:
     )
     LOG = logging.getLogger("litellm-model-discovery")
 
-    LITELLM_API_BASE = os.environ["LITELLM_API_BASE"].rstrip("/")
-    LITELLM_MASTER_KEY = os.environ["LITELLM_MASTER_KEY"]
-    UPSTREAM_API_BASE = os.environ["UPSTREAM_API_BASE"].rstrip("/")
-    UPSTREAM_API_KEY = os.environ["UPSTREAM_API_KEY"]
-    LITELLM_CREDENTIAL_NAME = os.environ["LITELLM_CREDENTIAL_NAME"]
+
+    def required_env(name):
+        value = os.environ[name].strip()
+        if not value:
+            raise ValueError(f"required environment variable {name} is empty")
+        return value
+
+
+    LITELLM_API_BASE = required_env("LITELLM_API_BASE").rstrip("/")
+    LITELLM_MASTER_KEY = required_env("LITELLM_MASTER_KEY")
+    UPSTREAM_API_BASE = required_env("UPSTREAM_API_BASE").rstrip("/")
+    UPSTREAM_API_KEY = required_env("UPSTREAM_API_KEY")
+    LITELLM_CREDENTIAL_NAME = required_env("LITELLM_CREDENTIAL_NAME")
     REQUEST_TIMEOUT_SECONDS = 15
     OWNER = "openai-compatible-model-discovery"
     SOURCE = UPSTREAM_API_BASE
