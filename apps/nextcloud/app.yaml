@@ -53,6 +53,8 @@ spec:
                     php occ app_api:app:enable context_chat_backend || true
                     php occ app:enable --no-interaction context_chat
                     php occ config:app:set context_chat request_timeout --value="${CONTEXT_CHAT_REQUEST_TIMEOUT}"
+                    php occ taskprocessing:task-type:set-enabled context_chat:context_chat 1
+                    php occ taskprocessing:task-type:set-enabled context_chat:context_chat_search 1
                   ) &
                   # Replace the managed settings atomically; talk:signaling:add appends duplicates.
                   php occ config:app:set spreed signaling_servers --value="$(php -r '

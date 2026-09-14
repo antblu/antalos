@@ -12,7 +12,9 @@ data:
   APP_PORT: "${CONTEXT_CHAT_BACKEND_PORT}"
   APP_PERSISTENT_STORAGE: /nc_app_context_chat_backend_data
   NEXTCLOUD_URL: https://${NEXTCLOUD_HOST}
-  CC_DOWNLOAD_MODELS_FROM_HF: "true"
+  CC_DOWNLOAD_MODELS_FROM_HF: "false"
+  CC_EM_BASE_URL: ${CONTEXT_CHAT_EMBEDDING_API_BASE}
+  CC_EM_MODEL_NAME: ${CONTEXT_CHAT_EMBEDDING_MODEL_NAME}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -23,17 +25,16 @@ data:
   entrypoint.sh: |-
     #!/bin/sh
     set -eu
-    database_password="$(/opt/venv/bin/python -c 'import os, urllib.parse; print(urllib.parse.quote(os.environ["CONTEXT_CHAT_DATABASE_PASSWORD"], safe=""))')"
-    export EXTERNAL_DB="postgresql+psycopg://ccb:$database_password@${NEXTCLOUD_DATABASE_CLUSTER}-rw.nextcloud.svc.cluster.local:5432/ccb"
-    export CCB_DB_URL="$EXTERNAL_DB"
+    export EXTERNAL_DB="$(/opt/venv/bin/python -c 'import os, urllib.parse; print("postgresql+psycopg://ccb:" + urllib.parse.quote(os.environ["CONTEXT_CHAT_DATABASE_PASSWORD"], safe="") + "@${NEXTCLOUD_DATABASE_CLUSTER}-rw.nextcloud.svc.cluster.local:5432/ccb")')"
+    export CCB_DB_URL="$(/opt/venv/bin/python -c 'import os, urllib.parse; print("postgresql+psycopg://ccb:" + urllib.parse.quote(os.environ["CONTEXT_CHAT_DATABASE_PASSWORD"], safe="") + "@${NEXTCLOUD_DATABASE_CLUSTER}-rw.nextcloud.svc.cluster.local:5432/ccb")')"
     # Each replica has its own emptyDir, so worker roles cannot wait for
     # requestproc to create their configuration on a shared volume.
     cd /app
     export COMPUTE_DEVICE="$(printf '%s' '${CONTEXT_CHAT_COMPUTE_DEVICE}' | tr '[:lower:]' '[:upper:]')"
     ./hwdetect.sh config "$COMPUTE_DEVICE"
-    if [ "$APP_ROLE" = updatesproc ]; then
-      # This role does not use an embedding server. Run the API directly so
-      # an application exit also terminates the container.
+    if [ "$(printenv APP_ROLE)" = updatesproc ] || [ -n "$(printenv CC_EM_BASE_URL)" ]; then
+      # Remote embeddings and the update worker do not need the bundled local
+      # embedding server. Run the API directly so its exit ends the container.
       exec /opt/venv/bin/python -u /app/main.py
     fi
     exec supervisord -c /opt/nextcloud-context-chat/supervisord.conf
@@ -148,6 +149,11 @@ spec:
                 secretKeyRef:
                   name: nextcloud-context-chat
                   key: password
+            - name: CC_EM_APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-context-chat
+                  key: embedding-api-key
           ports:
             - name: http
               containerPort: ${CONTEXT_CHAT_BACKEND_PORT}
@@ -269,6 +275,11 @@ spec:
                 secretKeyRef:
                   name: nextcloud-context-chat
                   key: password
+            - name: CC_EM_APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-context-chat
+                  key: embedding-api-key
           ports:
             - name: http
               containerPort: ${CONTEXT_CHAT_BACKEND_PORT}
@@ -390,6 +401,11 @@ spec:
                 secretKeyRef:
                   name: nextcloud-context-chat
                   key: password
+            - name: CC_EM_APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-context-chat
+                  key: embedding-api-key
           ports:
             - name: http
               containerPort: ${CONTEXT_CHAT_BACKEND_PORT}
