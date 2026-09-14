@@ -11,9 +11,9 @@ This runbook deploys the service from `apps/litellm/` and completes the configur
 
 1. Prepare CNPG, OpenEBS, ingress, and capacity for the RTX Sentinel. Set `LITELLM_*` variables.
 
-2. Reseal `litellm-db-app`, `litellm-app`, and `litellm-redis`. Keep the master key restricted to administration and preserve the salt key across upgrades.
+2. Reseal `litellm-db-app`, `litellm-app`, `litellm-redis`, and `litellm-model-discovery`. The discovery Secret contains the API key used to read the configured OpenAI-compatible endpoint. Keep the master key restricted to administration and preserve the salt key across upgrades.
 
-3. Respect the sync waves: Secrets at -5, database at -3, Redis/config at -1, a single migration Sync hook at 1, then proxies at 2. Do not turn on concurrent schema migration in the proxies.
+3. Respect the sync waves: Secrets at -5, database at -3, Redis/config at -1, a single migration Sync hook at 1, proxies at 2, then model discovery at 3 and 4. Do not turn on concurrent schema migration in the proxies.
 
 ## 2. Reconcile the application
 
@@ -37,11 +37,13 @@ The checked-in deployment uses the credentials in `litellm-app` for its `/ui` ad
 
 ## 4. Connect and operate the service
 
-1. Add provider credentials and model aliases in the UI; database-backed configuration makes them available to both replicas.
+1. Maintain the reusable `llama-cpp` provider credential in LiteLLM. Its API base and key must match `LITELLM_DISCOVERY_API_BASE` and the sealed discovery key.
 
-2. Create a limited virtual key for Open WebUI or another consumer and run a small request with it.
+2. The `litellm-model-discovery` CronJob polls the upstream `/v1/models` endpoint every two minutes. For each previously unseen upstream ID it calls LiteLLM's supported `POST /model/new` management API, keeps the public name unchanged, and routes the deployment as `openai/<upstream-id>` through the reusable credential. It does not update or delete existing models; this prevents a temporary upstream outage or a naming collision from destroying manually managed configuration.
 
-3. Establish a PostgreSQL backup and restore procedure. Restart proxies after changing mounted startup configuration that is not dynamically reloaded.
+3. Create a limited virtual key for Open WebUI or another consumer and run a small request with it.
+
+4. Establish a PostgreSQL backup and restore procedure. Restart proxies after changing mounted startup configuration that is not dynamically reloaded.
 
 ## Availability before maintenance
 
@@ -63,6 +65,8 @@ Before an upgrade, read the release notes for the pinned target and record a rec
 
 If rollout is blocked, inspect `litellm-migrations` before the proxy logs. A Redis `MasterNotFoundError` requires checking all Sentinel endpoints and authentication. A working UI with failing requests usually needs model/provider, permission, quota, or upstream investigation.
 
+For discovery failures, inspect the latest `litellm-model-discovery` Job. The controller fails closed when the upstream response is malformed, when either endpoint is unavailable, or when the running LiteLLM OpenAPI schema no longer advertises `GET /v2/model/info` and `POST /model/new`. Existing LiteLLM models remain untouched. A model-name collision is intentionally treated as already managed; resolve the conflicting deployment manually if its route is wrong.
+
 ## Manifest and upstream reference
 
 - [`app.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/app.yaml)
@@ -72,6 +76,7 @@ If rollout is blocked, inspect `litellm-migrations` before the proxy logs. A Red
 - [`database.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/database.yaml)
 - [`deployment.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/deployment.yaml)
 - [`migration.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/migration.yaml)
+- [`model-discovery.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/model-discovery.yaml)
 - [`redis.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/redis.yaml)
 - [`secrets.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/secrets.yaml)
 

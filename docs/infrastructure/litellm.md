@@ -5,19 +5,21 @@ description: "Backend components, persistence, placement, and failure boundaries
 
 <nav class="guide-switcher" aria-label="LiteLLM guide sections"><a href="/user-guide/litellm/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/litellm/">Infrastructure Explanation</a><a href="/admin-guide/litellm/">Deployment and Admin Guide</a></nav>
 
-Two anti-affined proxy replicas use `litellm-db`, a two-instance CloudNativePG cluster. Redis provides coordination and authentication caching through two persistent data members and three authenticated Sentinel voters, with the third voter on RTX. Clients discover the primary directly from Sentinel, avoiding a single Redis proxy endpoint. Response caching is not enabled. One process runs per proxy pod.
+Two anti-affined proxy replicas use `litellm-db`, a two-instance CloudNativePG cluster. Redis provides coordination and authentication caching through two persistent data members and three authenticated Sentinel voters, with the third voter on RTX. Clients discover the primary directly from Sentinel, avoiding a single Redis proxy endpoint. A CronJob discovers models from the llama.cpp OpenAI-compatible endpoint and adds missing deployments through LiteLLM's database-backed management API. Response caching is not enabled. One process runs per proxy pod.
 
 ## Component boundaries
 
 <figure class="architecture-diagram" aria-label="LiteLLM · component flow">
 <div class="diagram-heading">LiteLLM · component flow</div>
-<ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Consumers</span><ul><li>Open WebUI / API clients</li><li>Virtual key → HTTPS /v1</li></ul></li><li class="diagram-stage"><span class="diagram-label">Gateway</span><ul><li>2 proxy replicas</li><li>One schema-migration hook</li></ul></li><li class="diagram-stage"><span class="diagram-label">Coordination / state</span><ul><li>PostgreSQL · 2 instances</li><li>Redis · 2 data / 3 Sentinels</li><li>Configured model providers</li></ul></li></ol>
+<ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Consumers</span><ul><li>Open WebUI / API clients</li><li>Virtual key → HTTPS /v1</li></ul></li><li class="diagram-stage"><span class="diagram-label">Gateway</span><ul><li>2 proxy replicas</li><li>One schema-migration hook</li><li>Model-discovery CronJob</li></ul></li><li class="diagram-stage"><span class="diagram-label">Coordination / state</span><ul><li>PostgreSQL · 2 instances</li><li>Redis · 2 data / 3 Sentinels</li><li>llama.cpp model catalog</li></ul></li></ol>
 <figcaption>Arrows show the main flow between responsibility groups. Parallel boxes are related components, not interchangeable replicas; the text below defines their individual failure and recovery behavior.</figcaption>
 </figure>
 
 ## State and recovery contract
 
 PostgreSQL stores model configuration, keys, and administration state. Preserve the original `litellm-app` salt key to decrypt stored provider credentials. Redis state is asynchronous; the configuration does not declare an off-cluster PostgreSQL backup.
+
+Discovered models are additive. The controller preserves each upstream ID as the public LiteLLM name and stores `openai/<upstream-id>` as its internal route. It marks its records with discovery metadata but deliberately does not prune missing upstream entries or modify existing names. This makes upstream catalog outages non-destructive and leaves lifecycle removal as an explicit administrator action.
 
 ## Availability and failure behavior
 
@@ -74,6 +76,7 @@ These are operational/design requirements, not changes made to the deployment by
 - [`database.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/database.yaml)
 - [`deployment.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/deployment.yaml)
 - [`migration.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/migration.yaml)
+- [`model-discovery.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/model-discovery.yaml)
 - [`redis.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/redis.yaml)
 - [`secrets.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/secrets.yaml)
 

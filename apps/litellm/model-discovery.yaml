@@ -1,0 +1,279 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-model-discovery
+  namespace: litellm
+  annotations:
+    argocd.argoproj.io/sync-wave: '3'
+data:
+  discover.py: |
+    import json
+    import logging
+    import os
+    import sys
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s %(message)s",
+        level=logging.INFO,
+    )
+    LOG = logging.getLogger("litellm-model-discovery")
+
+    LITELLM_API_BASE = os.environ["LITELLM_API_BASE"].rstrip("/")
+    LITELLM_MASTER_KEY = os.environ["LITELLM_MASTER_KEY"]
+    UPSTREAM_API_BASE = os.environ["UPSTREAM_API_BASE"].rstrip("/")
+    UPSTREAM_API_KEY = os.environ["UPSTREAM_API_KEY"]
+    LITELLM_CREDENTIAL_NAME = os.environ["LITELLM_CREDENTIAL_NAME"]
+    REQUEST_TIMEOUT_SECONDS = 15
+    OWNER = "openai-compatible-model-discovery"
+    SOURCE = UPSTREAM_API_BASE
+
+
+    def request_json(url, headers, method="GET", payload=None):
+        body = None
+        request_headers = dict(headers)
+        if payload is not None:
+            body = json.dumps(payload).encode("utf-8")
+            request_headers["Content-Type"] = "application/json"
+
+        request = urllib.request.Request(
+            url,
+            data=body,
+            headers=request_headers,
+            method=method,
+        )
+        with urllib.request.urlopen(
+            request,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        ) as response:
+            if response.status < 200 or response.status >= 300:
+                raise RuntimeError(f"{method} {url} returned HTTP {response.status}")
+            return json.load(response)
+
+
+    def validate_model_id(value):
+        if not isinstance(value, str):
+            raise ValueError("upstream model id is not a string")
+        model_id = value.strip()
+        if not model_id or len(model_id) > 512:
+            raise ValueError("upstream model id is empty or longer than 512 characters")
+        if any(ord(character) < 32 or ord(character) == 127 for character in model_id):
+            raise ValueError("upstream model id contains a control character")
+        return model_id
+
+
+    def discover_upstream_models():
+        response = request_json(
+            f"{UPSTREAM_API_BASE}/models",
+            headers={"Authorization": f"Bearer {UPSTREAM_API_KEY}"},
+        )
+        if not isinstance(response, dict) or not isinstance(response.get("data"), list):
+            raise ValueError("upstream /models response does not contain a data list")
+
+        model_ids = set()
+        for item in response["data"]:
+            if not isinstance(item, dict) or "id" not in item:
+                raise ValueError("upstream /models contains an item without an id")
+            model_ids.add(validate_model_id(item["id"]))
+        return sorted(model_ids)
+
+
+    def litellm_headers():
+        return {"Authorization": f"Bearer {LITELLM_MASTER_KEY}"}
+
+
+    def verify_supported_api():
+        schema = request_json(
+            f"{LITELLM_API_BASE}/openapi.json",
+            headers={},
+        )
+        paths = schema.get("paths", {}) if isinstance(schema, dict) else {}
+        if "get" not in paths.get("/v2/model/info", {}):
+            raise RuntimeError("LiteLLM does not expose GET /v2/model/info")
+        if "post" not in paths.get("/model/new", {}):
+            raise RuntimeError("LiteLLM does not expose POST /model/new")
+
+
+    def list_litellm_models():
+        page = 1
+        deployments = []
+        while True:
+            query = urllib.parse.urlencode(
+                {
+                    "page": page,
+                    "size": 100,
+                    "exclude_auto_routers": "true",
+                }
+            )
+            response = request_json(
+                f"{LITELLM_API_BASE}/v2/model/info?{query}",
+                headers=litellm_headers(),
+            )
+            data = response.get("data") if isinstance(response, dict) else None
+            if not isinstance(data, list):
+                raise ValueError("LiteLLM /v2/model/info response does not contain a data list")
+            deployments.extend(data)
+
+            total_pages = response.get("total_pages", 1)
+            if not isinstance(total_pages, int) or total_pages < 1:
+                raise ValueError("LiteLLM /v2/model/info returned invalid pagination")
+            if page >= total_pages:
+                return deployments
+            page += 1
+
+
+    def add_model(model_id):
+        payload = {
+            "model_name": model_id,
+            "litellm_params": {
+                "model": f"openai/{model_id}",
+                "litellm_credential_name": LITELLM_CREDENTIAL_NAME,
+            },
+            "model_info": {
+                "model_discovery_managed_by": OWNER,
+                "model_discovery_source": SOURCE,
+                "model_discovery_upstream_id": model_id,
+            },
+        }
+        request_json(
+            f"{LITELLM_API_BASE}/model/new",
+            headers=litellm_headers(),
+            method="POST",
+            payload=payload,
+        )
+
+
+    def main():
+        verify_supported_api()
+        upstream_models = discover_upstream_models()
+        deployments = list_litellm_models()
+        existing_names = {
+            deployment.get("model_name")
+            for deployment in deployments
+            if isinstance(deployment, dict)
+            and isinstance(deployment.get("model_name"), str)
+        }
+
+        added = []
+        for model_id in upstream_models:
+            if model_id in existing_names:
+                continue
+            try:
+                add_model(model_id)
+            except urllib.error.HTTPError as error:
+                # A retried or overlapping run may have created the same model.
+                refreshed_names = {
+                    deployment.get("model_name")
+                    for deployment in list_litellm_models()
+                    if isinstance(deployment, dict)
+                }
+                if model_id in refreshed_names:
+                    LOG.info("model already appeared during reconciliation: %s", model_id)
+                    continue
+                detail = error.read(2048).decode("utf-8", errors="replace")
+                raise RuntimeError(
+                    f"failed to register {model_id}: HTTP {error.code}: {detail}"
+                ) from error
+            added.append(model_id)
+            existing_names.add(model_id)
+
+        LOG.info(
+            "reconciliation complete: upstream=%d existing=%d added=%d",
+            len(upstream_models),
+            len(deployments),
+            len(added),
+        )
+        for model_id in added:
+            LOG.info("registered model: %s", model_id)
+
+
+    if __name__ == "__main__":
+        try:
+            main()
+        except Exception:
+            LOG.exception("model discovery failed")
+            sys.exit(1)
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: litellm-model-discovery
+  namespace: litellm
+  annotations:
+    argocd.argoproj.io/sync-wave: '4'
+spec:
+  schedule: '*/2 * * * *'
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 60
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 120
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: litellm-model-discovery
+            app.kubernetes.io/part-of: litellm
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+          - name: discovery
+            image: ghcr.io/berriai/litellm:${LITELLM_IMAGE_TAG}
+            imagePullPolicy: IfNotPresent
+            command:
+            - python
+            args:
+            - /opt/model-discovery/discover.py
+            env:
+            - name: LITELLM_API_BASE
+              value: http://litellm.litellm.svc.cluster.local:4000
+            - name: LITELLM_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-app
+                  key: master-key
+            - name: UPSTREAM_API_BASE
+              value: ${LITELLM_DISCOVERY_API_BASE}
+            - name: UPSTREAM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-model-discovery
+                  key: upstream-api-key
+            - name: LITELLM_CREDENTIAL_NAME
+              value: ${LITELLM_DISCOVERY_CREDENTIAL_NAME}
+            resources:
+              requests:
+                cpu: 25m
+                memory: 64Mi
+              limits:
+                cpu: 250m
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                - ALL
+            volumeMounts:
+            - name: script
+              mountPath: /opt/model-discovery
+              readOnly: true
+          volumes:
+          - name: script
+            configMap:
+              name: litellm-model-discovery
+              defaultMode: 0444

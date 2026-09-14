@@ -333,6 +333,8 @@ variables:
   LITELLM_REDIS_DATA_0_HOST: litellm-redis-data-0.litellm-redis-data.litellm.svc.cluster.local
   LITELLM_REDIS_DATA_1_HOST: litellm-redis-data-1.litellm-redis-data.litellm.svc.cluster.local
   LITELLM_REDIS_SENTINEL_2_HOST: litellm-redis-sentinel-2.litellm.svc.cluster.local
+  LITELLM_DISCOVERY_API_BASE: https://llama.antblu.net/v1
+  LITELLM_DISCOVERY_CREDENTIAL_NAME: llama-cpp
   GITLAB_S3_BUCKET: gitlabs
 
   # RustDesk OSS: one recoverable hbbs and two independently addressed relays.
