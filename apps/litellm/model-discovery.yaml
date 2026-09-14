@@ -14,6 +14,7 @@ data:
     import urllib.error
     import urllib.parse
     import urllib.request
+    import uuid
 
 
     logging.basicConfig(
@@ -138,6 +139,27 @@ data:
             page += 1
 
 
+    def managed_upstream_ids(deployments):
+        upstream_ids = set()
+        for deployment in deployments:
+            if not isinstance(deployment, dict):
+                continue
+            model_info = deployment.get("model_info")
+            if not isinstance(model_info, dict):
+                continue
+            if (
+                model_info.get("model_discovery_managed_by") == OWNER
+                and model_info.get("model_discovery_source") == SOURCE
+                and isinstance(model_info.get("model_discovery_upstream_id"), str)
+            ):
+                upstream_ids.add(model_info["model_discovery_upstream_id"])
+        return upstream_ids
+
+
+    def deployment_id(model_id):
+        return str(uuid.uuid5(uuid.NAMESPACE_URL, f"{OWNER}:{SOURCE}:{model_id}"))
+
+
     def add_model(model_id):
         short_name = model_id.rsplit("/", 1)[-1]
         payload = {
@@ -147,6 +169,7 @@ data:
                 "litellm_credential_name": LITELLM_CREDENTIAL_NAME,
             },
             "model_info": {
+                "id": deployment_id(model_id),
                 "model_discovery_managed_by": OWNER,
                 "model_discovery_source": SOURCE,
                 "model_discovery_upstream_id": model_id,
@@ -164,6 +187,7 @@ data:
         verify_supported_api()
         upstream_models = discover_upstream_models()
         deployments = list_litellm_models()
+        existing_upstream_ids = managed_upstream_ids(deployments)
         existing_names = {
             deployment.get("model_name")
             for deployment in deployments
@@ -173,18 +197,24 @@ data:
 
         added = []
         for model_id in upstream_models:
-            if model_id in existing_names:
+            short_name = model_id.rsplit("/", 1)[-1]
+            if model_id in existing_upstream_ids or short_name in existing_names:
                 continue
             try:
                 add_model(model_id)
             except urllib.error.HTTPError as error:
                 # A retried or overlapping run may have created the same model.
+                refreshed_deployments = list_litellm_models()
                 refreshed_names = {
                     deployment.get("model_name")
-                    for deployment in list_litellm_models()
+                    for deployment in refreshed_deployments
                     if isinstance(deployment, dict)
                 }
-                if model_id in refreshed_names:
+                refreshed_upstream_ids = managed_upstream_ids(refreshed_deployments)
+                if (
+                    model_id in refreshed_upstream_ids
+                    or short_name in refreshed_names
+                ):
                     LOG.info("model already appeared during reconciliation: %s", model_id)
                     continue
                 detail = error.read(2048).decode("utf-8", errors="replace")
@@ -192,7 +222,8 @@ data:
                     f"failed to register {model_id}: HTTP {error.code}: {detail}"
                 ) from error
             added.append(model_id)
-            existing_names.add(model_id)
+            existing_names.add(short_name)
+            existing_upstream_ids.add(model_id)
 
         LOG.info(
             "reconciliation complete: upstream=%d existing=%d added=%d",

@@ -19,7 +19,7 @@ Two anti-affined proxy replicas use `litellm-db`, a two-instance CloudNativePG c
 
 PostgreSQL stores model configuration, keys, and administration state. Preserve the original `litellm-app` salt key to decrypt stored provider credentials. Redis state is asynchronous; the configuration does not declare an off-cluster PostgreSQL backup.
 
-Discovered models are additive. The controller preserves each upstream ID as the public LiteLLM name and stores `openai/<upstream-id>` as its internal route. It marks its records with discovery metadata but deliberately does not prune missing upstream entries or modify existing names. This makes upstream catalog outages non-destructive and leaves lifecycle removal as an explicit administrator action.
+Discovered models are additive. The controller uses the upstream ID's final path component as the public LiteLLM name and stores `openai/<upstream-id>` as its internal route. It retains the complete upstream ID in discovery metadata and uses that metadata, plus a deterministic deployment ID, to make reconciliation idempotent. It deliberately does not prune missing upstream entries or modify existing names. This makes upstream catalog outages non-destructive and leaves lifecycle removal as an explicit administrator action.
 
 ## Availability and failure behavior
 

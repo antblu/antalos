@@ -39,7 +39,7 @@ The checked-in deployment uses the credentials in `litellm-app` for its `/ui` ad
 
 1. Maintain the reusable `llama-cpp` provider credential in LiteLLM. Its API base and key must match `LITELLM_DISCOVERY_API_BASE` and the sealed discovery key.
 
-2. The `litellm-model-discovery` CronJob polls the upstream `/v1/models` endpoint every two minutes. For each previously unseen upstream ID it calls LiteLLM's supported `POST /model/new` management API, keeps the public name unchanged, and routes the deployment as `openai/<upstream-id>` through the reusable credential. It does not update or delete existing models; this prevents a temporary upstream outage or a naming collision from destroying manually managed configuration.
+2. The `litellm-model-discovery` CronJob polls the upstream `/v1/models` endpoint every two minutes. For each previously unseen upstream ID it calls LiteLLM's supported `POST /model/new` management API, uses the final path component as the public name, and routes the deployment as `openai/<upstream-id>` through the reusable credential. The complete upstream ID is retained in discovery metadata and is the reconciliation identity. It does not update or delete existing models; this prevents a temporary upstream outage or a naming collision from destroying manually managed configuration.
 
 3. Create a limited virtual key for Open WebUI or another consumer and run a small request with it.
 
