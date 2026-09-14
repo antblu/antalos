@@ -322,3 +322,84 @@ spec:
             configMap:
               name: litellm-model-discovery
               defaultMode: 0444
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: litellm-speaches-model-discovery
+  namespace: litellm
+  annotations:
+    argocd.argoproj.io/sync-wave: '4'
+spec:
+  schedule: '*/2 * * * *'
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 60
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 120
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: litellm-speaches-model-discovery
+            app.kubernetes.io/part-of: litellm
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+          - name: discovery
+            image: ghcr.io/berriai/litellm:${LITELLM_IMAGE_TAG}
+            imagePullPolicy: IfNotPresent
+            command:
+            - python
+            args:
+            - /opt/model-discovery/discover.py
+            env:
+            - name: LITELLM_API_BASE
+              value: http://litellm.litellm.svc.cluster.local:4000
+            - name: LITELLM_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-app
+                  key: master-key
+            - name: UPSTREAM_API_BASE
+              value: ${LITELLM_SPEACHES_DISCOVERY_API_BASE}
+            - name: UPSTREAM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-speaches-model-discovery
+                  key: upstream-api-key
+            - name: LITELLM_CREDENTIAL_NAME
+              value: ${LITELLM_SPEACHES_DISCOVERY_CREDENTIAL_NAME}
+            resources:
+              requests:
+                cpu: 25m
+                memory: 64Mi
+              limits:
+                cpu: 250m
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                - ALL
+            volumeMounts:
+            - name: script
+              mountPath: /opt/model-discovery
+              readOnly: true
+          volumes:
+          - name: script
+            configMap:
+              name: litellm-model-discovery
+              defaultMode: 0444

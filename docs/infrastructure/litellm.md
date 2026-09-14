@@ -5,13 +5,13 @@ description: "Backend components, persistence, placement, and failure boundaries
 
 <nav class="guide-switcher" aria-label="LiteLLM guide sections"><a href="/user-guide/litellm/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/litellm/">Infrastructure Explanation</a><a href="/admin-guide/litellm/">Deployment and Admin Guide</a></nav>
 
-Two anti-affined proxy replicas use `litellm-db`, a two-instance CloudNativePG cluster. Redis provides coordination and authentication caching through two persistent data members and three authenticated Sentinel voters, with the third voter on RTX. Clients discover the primary directly from Sentinel, avoiding a single Redis proxy endpoint. A CronJob discovers models from the llama.cpp OpenAI-compatible endpoint and adds missing deployments through LiteLLM's database-backed management API. Response caching is not enabled. One process runs per proxy pod.
+Two anti-affined proxy replicas use `litellm-db`, a two-instance CloudNativePG cluster. Redis provides coordination and authentication caching through two persistent data members and three authenticated Sentinel voters, with the third voter on RTX. Clients discover the primary directly from Sentinel, avoiding a single Redis proxy endpoint. Separate CronJobs discover models from the llama.cpp and Speaches OpenAI-compatible endpoints and add missing deployments through LiteLLM's database-backed management API. Response caching is not enabled. One process runs per proxy pod.
 
 ## Component boundaries
 
 <figure class="architecture-diagram" aria-label="LiteLLM · component flow">
 <div class="diagram-heading">LiteLLM · component flow</div>
-<ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Consumers</span><ul><li>Open WebUI / API clients</li><li>Virtual key → HTTPS /v1</li></ul></li><li class="diagram-stage"><span class="diagram-label">Gateway</span><ul><li>2 proxy replicas</li><li>One schema-migration hook</li><li>Model-discovery CronJob</li></ul></li><li class="diagram-stage"><span class="diagram-label">Coordination / state</span><ul><li>PostgreSQL · 2 instances</li><li>Redis · 2 data / 3 Sentinels</li><li>llama.cpp model catalog</li></ul></li></ol>
+<ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Consumers</span><ul><li>Open WebUI / API clients</li><li>Virtual key → HTTPS /v1</li></ul></li><li class="diagram-stage"><span class="diagram-label">Gateway</span><ul><li>2 proxy replicas</li><li>One schema-migration hook</li><li>Two model-discovery CronJobs</li></ul></li><li class="diagram-stage"><span class="diagram-label">Coordination / state</span><ul><li>PostgreSQL · 2 instances</li><li>Redis · 2 data / 3 Sentinels</li><li>llama.cpp and Speaches catalogs</li></ul></li></ol>
 <figcaption>Arrows show the main flow between responsibility groups. Parallel boxes are related components, not interchangeable replicas; the text below defines their individual failure and recovery behavior.</figcaption>
 </figure>
 

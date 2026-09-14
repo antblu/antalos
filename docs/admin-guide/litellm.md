@@ -37,9 +37,9 @@ The checked-in deployment uses the credentials in `litellm-app` for its `/ui` ad
 
 ## 4. Connect and operate the service
 
-1. Maintain the reusable `llama-cpp` provider credential in LiteLLM. Its API base and key must match `LITELLM_DISCOVERY_API_BASE` and the sealed discovery key.
+1. Maintain the reusable `llama-cpp` and `speaches` provider credentials in LiteLLM. Their API bases and keys must match the corresponding discovery variables and sealed discovery keys.
 
-2. The `litellm-model-discovery` CronJob polls the upstream `/v1/models` endpoint every two minutes. For each previously unseen upstream ID it calls LiteLLM's supported `POST /model/new` management API, uses the final path component as the public name, and routes the deployment as `openai/<upstream-id>` through the reusable credential. The complete upstream ID is retained in discovery metadata and is the reconciliation identity. It does not update or delete existing models; this prevents a temporary upstream outage or a naming collision from destroying manually managed configuration.
+2. The `litellm-model-discovery` and `litellm-speaches-model-discovery` CronJobs poll their respective upstream `/v1/models` endpoints every two minutes. For each previously unseen upstream ID they call LiteLLM's supported `POST /model/new` management API, use the final path component as the public name, and route the deployment as `openai/<upstream-id>` through the matching reusable credential. The complete upstream ID and source API base are retained in discovery metadata and form the reconciliation identity. Neither job updates or deletes existing models; this prevents a temporary upstream outage or a naming collision from destroying manually managed configuration.
 
 3. Create a limited virtual key for Open WebUI or another consumer and run a small request with it.
 
@@ -65,7 +65,7 @@ Before an upgrade, read the release notes for the pinned target and record a rec
 
 If rollout is blocked, inspect `litellm-migrations` before the proxy logs. A Redis `MasterNotFoundError` requires checking all Sentinel endpoints and authentication. A working UI with failing requests usually needs model/provider, permission, quota, or upstream investigation.
 
-For discovery failures, inspect the latest `litellm-model-discovery` Job. The controller fails closed when the upstream response is malformed, when either endpoint is unavailable, or when the running LiteLLM OpenAPI schema no longer advertises `GET /v2/model/info` and `POST /model/new`. Existing LiteLLM models remain untouched. A model-name collision is intentionally treated as already managed; resolve the conflicting deployment manually if its route is wrong.
+For discovery failures, inspect the latest Job created by `litellm-model-discovery` or `litellm-speaches-model-discovery`. The shared controller fails closed when an upstream response is malformed, when either endpoint is unavailable, or when the running LiteLLM OpenAPI schema no longer advertises `GET /v2/model/info` and `POST /model/new`. Existing LiteLLM models remain untouched. A model-name collision is intentionally treated as already managed; resolve the conflicting deployment manually if its route is wrong.
 
 ## Manifest and upstream reference
 

@@ -58,7 +58,7 @@ services:
       LD_LIBRARY_PATH: /lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64
       WHISPER__INFERENCE_DEVICE: cuda
       WHISPER__COMPUTE_TYPE: float16
-
+      LOOPBACK_HOST_URL: "http://127.0.0.1:8000"
       STT_MODEL_TTL: "30"
       TTS_MODEL_TTL: "300"
     ports:
@@ -88,4 +88,3 @@ services:
       start_period: 5s
     security_opt:
       - no-new-privileges:true
-      
