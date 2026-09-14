@@ -210,7 +210,7 @@ metadata:
   name: nextcloud-context-chat-requestproc
   namespace: nextcloud
 spec:
-  minAvailable: 1
+  maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: nextcloud-context-chat-backend
@@ -336,7 +336,7 @@ metadata:
   name: nextcloud-context-chat-updatesproc
   namespace: nextcloud
 spec:
-  minAvailable: 1
+  maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: nextcloud-context-chat-backend
@@ -462,7 +462,7 @@ metadata:
   name: nextcloud-context-chat-indexing
   namespace: nextcloud
 spec:
-  minAvailable: 1
+  maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: nextcloud-context-chat-backend
