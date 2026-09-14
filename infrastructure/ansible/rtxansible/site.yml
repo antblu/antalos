@@ -299,6 +299,8 @@
           mode: "0700"
         - path: "{{ rtx_model_root }}"
           mode: "0750"
+        - path: "{{ rtx_speaches_root }}"
+          mode: "0750"
 
     - name: Copy the repository Compose definitions
       ansible.builtin.copy:

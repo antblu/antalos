@@ -55,11 +55,17 @@ services:
     environment:
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
       NVIDIA_VISIBLE_DEVICES: "0"
+      LD_LIBRARY_PATH: /lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64
+      WHISPER__INFERENCE_DEVICE: cuda
+      WHISPER__COMPUTE_TYPE: float16
+
+      STT_MODEL_TTL: "30"
+      TTS_MODEL_TTL: "300"
     ports:
       - "${DEBIAN_RTX_IP}:${SPEACHES_PORT}:8000/tcp"
     volumes:
-      - type: volume
-        source: huggingface-hub-cache
+      - type: bind
+        source: /srv/speaches-models
         target: /home/ubuntu/.cache/huggingface/hub
     deploy:
       resources:
@@ -82,6 +88,4 @@ services:
       start_period: 5s
     security_opt:
       - no-new-privileges:true
-
-volumes:
-  huggingface-hub-cache:
+      

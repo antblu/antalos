@@ -4,6 +4,7 @@ debian_rtx_timezone: America/Denver
 
 rtx_compose_root: /opt/compose
 rtx_model_root: /srv/llama-models
+rtx_speaches_root: /srv/speaches-models
 nvidia_cuda_keyring_version: 1.1-1
 
 llama_cpp_image: ghcr.io/ggml-org/llama.cpp:server-cuda-b10884@sha256:5ebb7a55e3d38e5fe185346fcd908033e69c035ad49b33df0066eb7cf4f7b06b
