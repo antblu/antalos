@@ -137,7 +137,7 @@ data:
         payload = {
             "model_name": model_id,
             "litellm_params": {
-                "model": f"openai/{model_id}",
+                "model": f"{model_id}",
                 "litellm_credential_name": LITELLM_CREDENTIAL_NAME,
             },
             "model_info": {
