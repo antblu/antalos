@@ -126,9 +126,14 @@ data:
             deployments.extend(data)
 
             total_pages = response.get("total_pages", 1)
-            if not isinstance(total_pages, int) or total_pages < 1:
+            if (
+                not isinstance(total_pages, int)
+                or isinstance(total_pages, bool)
+                or total_pages < 0
+            ):
                 raise ValueError("LiteLLM /v2/model/info returned invalid pagination")
-            if page >= total_pages:
+            # LiteLLM reports total_pages=0 when the model table is empty.
+            if total_pages == 0 or page >= total_pages:
                 return deployments
             page += 1
 
