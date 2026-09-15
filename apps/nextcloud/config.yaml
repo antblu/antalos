@@ -77,10 +77,19 @@ data:
       app_sha512=$3
       app_url=$4
       archive="$work_dir/$app_id.tar.gz"
+      marker="$apps_dir/.$app_id.gitops-sha512"
+      legacy_marker="$apps_dir/$app_id/.gitops-sha512"
 
-      if [ -f "$apps_dir/$app_id/.gitops-sha512" ] &&
-         [ "$(cat "$apps_dir/$app_id/.gitops-sha512")" = "$app_sha512" ]; then
+      if [ -f "$marker" ] &&
+         [ "$(cat "$marker")" = "$app_sha512" ]; then
+        rm -f "$legacy_marker"
         printf 'Keeping %s %s (verified GitOps revision)\n' "$app_id" "$app_version"
+        return
+      fi
+      if [ -f "$legacy_marker" ] &&
+         [ "$(cat "$legacy_marker")" = "$app_sha512" ]; then
+        mv "$legacy_marker" "$marker"
+        printf 'Keeping %s %s (migrated GitOps revision marker)\n' "$app_id" "$app_version"
         return
       fi
       printf 'Installing %s %s\n' "$app_id" "$app_version"
@@ -90,7 +99,7 @@ data:
       printf '%s  %s\n' "$app_sha512" "$archive" | sha512sum -c -
       rm -rf "$apps_dir/$app_id"
       tar -xzf "$archive" -C "$apps_dir"
-      printf '%s\n' "$app_sha512" > "$apps_dir/$app_id/.gitops-sha512"
+      printf '%s\n' "$app_sha512" > "$marker"
     }
 
     install_app announcementcenter "${NEXTCLOUD_ANNOUNCEMENTCENTER_VERSION}" "${NEXTCLOUD_ANNOUNCEMENTCENTER_SHA512}" "${NEXTCLOUD_RELEASES_URL}/announcementcenter/releases/download/v${NEXTCLOUD_ANNOUNCEMENTCENTER_VERSION}/announcementcenter-v${NEXTCLOUD_ANNOUNCEMENTCENTER_VERSION}.tar.gz"
