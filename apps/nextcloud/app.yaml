@@ -168,7 +168,7 @@ spec:
                       install -o 33 -g 33 -m 0644 "$config_file" /target/
                     done
                     install -o 33 -g 33 -m 0644 /source/apps.config.php /target/apps.config.php
-                    install -o 33 -g 33 -m 0440 /source/config.php /target/config.php
+                    install -o 33 -g 33 -m 0640 /source/config.php /target/config.php
                     printf '%s\n' '# Nextcloud data directory' > /data/.ncdata
                     chown 33:33 /data/.ncdata
                     chmod 0440 /data/.ncdata
