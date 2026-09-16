@@ -5,10 +5,15 @@ metadata:
   namespace: argocd
 spec:
   project: default
-  source:
-    repoURL: https://cloudnative-pg.github.io/charts
-    chart: cloudnative-pg
-    targetRevision: ${CNPG_OPERATOR_CHART_VERSION}
+  sources:
+    - repoURL: https://cloudnative-pg.github.io/charts
+      chart: cloudnative-pg
+      targetRevision: ${CNPG_OPERATOR_CHART_VERSION}
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      path: apps/cnpg-operator
+      plugin:
+        name: yaml-envsubst
   destination:
     server: https://kubernetes.default.svc
     namespace: cnpg-system

@@ -1,0 +1,22 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: rancher-fleet
+  namespace: cattle-system
+spec:
+  namespaceSelector:
+    matchNames:
+      - cattle-fleet-system
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - fleet-controller
+          - gitjob
+          - helmops
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

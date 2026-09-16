@@ -17,3 +17,20 @@ spec:
       vm_scrape_params:
         headers:
           - "Host: nextcloud.antblu.net"
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: nextcloud-notify-push
+  namespace: nextcloud
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud
+      app.kubernetes.io/instance: nextcloud
+      app.kubernetes.io/component: app
+  podMetricsEndpoints:
+    - port: notify-metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

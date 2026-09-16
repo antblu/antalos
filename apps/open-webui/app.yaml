@@ -126,6 +126,24 @@ spec:
               value: "false"
             - name: DATABASE_USER_ACTIVE_STATUS_UPDATE_INTERVAL
               value: "120"
+            - name: ENABLE_OTEL
+              value: "true"
+            - name: ENABLE_OTEL_METRICS
+              value: "true"
+            - name: ENABLE_OTEL_TRACES
+              value: "false"
+            - name: ENABLE_OTEL_LOGS
+              value: "false"
+            - name: OTEL_METRICS_EXPORTER_OTLP_ENDPOINT
+              value: ${VICTORIAMETRICS_OTLP_METRICS_ENDPOINT}
+            - name: OTEL_METRICS_EXPORTER_OTLP_PROTOCOL
+              value: http/protobuf
+            - name: OTEL_SERVICE_NAME
+              value: open-webui
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: k8s.namespace.name=open-webui,service.namespace=open-webui
+            - name: OTEL_METRICS_EXPORT_INTERVAL_MILLIS
+              value: "30000"
           affinity:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:

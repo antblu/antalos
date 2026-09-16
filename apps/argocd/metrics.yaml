@@ -1,0 +1,31 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: argocd
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: argocd-redis-ha-haproxy
+  namespace: argocd
+spec:
+  selector:
+    matchLabels:
+      app: redis-ha
+      component: haproxy
+      release: argocd
+  endpoints:
+    - port: http-exporter-port
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

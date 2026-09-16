@@ -24,5 +24,9 @@ data:
         sentinel_password: os.environ/REDIS_PASSWORD
     litellm_settings:
       enable_redis_auth_cache: true
+      callbacks:
+        - prometheus
+      service_callback:
+        - prometheus_system
     router_settings:
       routing_strategy: simple-shuffle

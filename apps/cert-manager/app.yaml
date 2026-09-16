@@ -35,7 +35,7 @@ spec:
       targetRevision: main
       path: apps/cert-manager
       directory:
-        include: 'issuer.yaml'
+        include: '{issuer.yaml,metrics.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager

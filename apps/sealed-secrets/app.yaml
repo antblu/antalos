@@ -6,14 +6,19 @@ metadata:
 spec:
   project: default
 
-  source:
-    repoURL: https://bitnami.github.io/sealed-secrets
-    chart: sealed-secrets
-    targetRevision: ${SEALED_SECRETS_CHART_VERSION}
-    helm:
-      valuesObject:
-        fullnameOverride: sealed-secrets-controller
-        keyRenewPeriod: "0"
+  sources:
+    - repoURL: https://bitnami.github.io/sealed-secrets
+      chart: sealed-secrets
+      targetRevision: ${SEALED_SECRETS_CHART_VERSION}
+      helm:
+        valuesObject:
+          fullnameOverride: sealed-secrets-controller
+          keyRenewPeriod: "0"
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      path: apps/sealed-secrets
+      plugin:
+        name: yaml-envsubst
 
   destination:
     server: https://kubernetes.default.svc

@@ -1,0 +1,27 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: metallb
+  namespace: metallb-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: metallb
+      app.kubernetes.io/name: metallb
+  podMetricsEndpoints:
+    - port: metricshttps
+      scheme: https
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tlsConfig:
+        insecureSkipVerify: true
+    - port: frrmetricshttps
+      scheme: https
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tlsConfig:
+        insecureSkipVerify: true

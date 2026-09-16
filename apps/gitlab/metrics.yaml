@@ -1,0 +1,22 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: gitlab
+  namespace: gitlab
+spec:
+  selector:
+    matchLabels:
+      release: gitlab
+  podMetricsEndpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+    - port: http-metrics-ws
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+    - port: debug
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
