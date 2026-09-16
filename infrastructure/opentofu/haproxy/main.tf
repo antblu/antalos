@@ -61,7 +61,7 @@ resource "proxmox_virtual_environment_vm" "haproxy" {
     trim    = true
 
     wait_for_ip {
-      ipv4 = true
+      disabled = true
     }
   }
 
