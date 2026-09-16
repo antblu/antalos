@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crowdsec-litestream
+  namespace: crowdsec
+data:
+  litestream.yml: |
+    dbs:
+      - path: /var/lib/crowdsec/data/crowdsec.db
+        replica:
+          path: /backup/crowdsec.db
+          sync-interval: 1s

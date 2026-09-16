@@ -1,0 +1,211 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crowdsec
+  namespace: argocd
+spec:
+  project: default
+
+  sources:
+    - repoURL: https://crowdsecurity.github.io/helm-charts
+      chart: crowdsec
+      targetRevision: ${CROWDSEC_CHART_VERSION}
+      helm:
+        valuesObject:
+          container_runtime: containerd
+
+          config:
+            config.yaml.local: |
+              api:
+                server:
+                  auto_registration:
+                    enabled: true
+                    token: "${REGISTRATION_TOKEN}"
+                    allowed_ranges:
+                      - 127.0.0.1/32
+                      - ${KUBERNETES_POD_CIDR}
+              db_config:
+                flush:
+                  agents_autodelete:
+                    login_password: 24h
+
+          secrets:
+            externalSecret:
+              name: crowdsec-bootstrap
+              csLapiSecretKey: csLapiSecret
+              registrationTokenKey: registrationToken
+
+          lapi:
+            # This LAPI is authoritative for the Kubernetes log processor,
+            # AppSec, and Traefik. CrowdSec LAPIs cannot be chained to the
+            # separate OPNsense LAPI at 10.30.0.1:8080.
+            enabled: true
+            replicas: 1
+            strategy:
+              type: Recreate
+            storeCAPICredentialsInSecret: true
+            storeLAPICscliCredentialsInSecret: true
+            extraInitContainers:
+              - name: restore-sqlite
+                image: docker.io/litestream/litestream:${LITESTREAM_IMAGE_TAG}
+                imagePullPolicy: IfNotPresent
+                command:
+                  - /bin/sh
+                  - -ec
+                  - |
+                    litestream restore -config /etc/litestream.yml -if-db-not-exists -if-replica-exists /var/lib/crowdsec/data/crowdsec.db
+                    # A new database must belong to the same user as Litestream.
+                    # SQLite will initialize the empty file on first open.
+                    if [ ! -e /var/lib/crowdsec/data/crowdsec.db ]; then
+                      touch /var/lib/crowdsec/data/crowdsec.db
+                    fi
+                    chmod 0660 /var/lib/crowdsec/data/crowdsec.db
+                securityContext:
+                  runAsUser: 1005
+                  runAsGroup: 1005
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                volumeMounts:
+                  - name: crowdsec-sqlite
+                    mountPath: /var/lib/crowdsec/data
+                  - name: crowdsec-replica
+                    mountPath: /backup
+                  - name: crowdsec-litestream-config
+                    mountPath: /etc/litestream.yml
+                    subPath: litestream.yml
+                    readOnly: true
+                  - name: crowdsec-litestream-tmp
+                    mountPath: /tmp
+              - name: litestream
+                image: docker.io/litestream/litestream:${LITESTREAM_IMAGE_TAG}
+                imagePullPolicy: IfNotPresent
+                restartPolicy: Always
+                command:
+                  - /bin/sh
+                  - -ec
+                  - |
+                    until [ -s /var/lib/crowdsec/data/crowdsec.db ]; do
+                      sleep 1
+                    done
+                    exec litestream replicate -config /etc/litestream.yml
+                securityContext:
+                  runAsUser: 1005
+                  runAsGroup: 1005
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                volumeMounts:
+                  - name: crowdsec-sqlite
+                    mountPath: /var/lib/crowdsec/data
+                  - name: crowdsec-replica
+                    mountPath: /backup
+                  - name: crowdsec-litestream-config
+                    mountPath: /etc/litestream.yml
+                    subPath: litestream.yml
+                    readOnly: true
+                  - name: crowdsec-litestream-tmp
+                    mountPath: /tmp
+            extraVolumes:
+              - name: crowdsec-sqlite
+                emptyDir:
+                  sizeLimit: ${CROWDSEC_LAPI_DATA_STORAGE_SIZE}
+              - name: crowdsec-replica
+                persistentVolumeClaim:
+                  claimName: crowdsec-lapi-data
+              - name: crowdsec-litestream-config
+                configMap:
+                  name: crowdsec-litestream
+              - name: crowdsec-litestream-tmp
+                emptyDir:
+                  sizeLimit: ${CROWDSEC_LITESTREAM_TMP_STORAGE_SIZE}
+            extraVolumeMounts:
+              - name: crowdsec-sqlite
+                mountPath: /var/lib/crowdsec/data
+            env:
+              - name: USE_WAL
+                value: "true"
+              - name: GID
+                value: "1005"
+              - name: TRAEFIK_BOUNCER_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: crowdsec-bootstrap
+                    key: bouncerKey
+            lifecycle:
+              postStart:
+                exec:
+                  command:
+                    - /bin/sh
+                    - -ec
+                    - |
+                      attempts=0
+                      until cscli bouncers list >/dev/null 2>&1; do
+                        attempts=$((attempts + 1))
+                        if [ "$attempts" -ge 60 ]; then
+                          exit 1
+                        fi
+                        sleep 2
+                      done
+                      cscli bouncers inspect traefik >/dev/null 2>&1 || \
+                        cscli bouncers add traefik --key "$TRAEFIK_BOUNCER_KEY"
+            persistentVolume:
+              data:
+                enabled: false
+              config:
+                enabled: false
+
+          agent:
+            enabled: true
+            isDeployment: true
+            replicas: 1
+            strategy:
+              type: Recreate
+            hostVarLog: false
+            acquisition: []
+            additionalAcquisition:
+              - source: victorialogs
+                mode: tail
+                log_level: info
+                url: ${CROWDSEC_VICTORIALOGS_URL}
+                limit: 1000
+                wait_for_ready: 10s
+                max_failure_duration: 5m
+                query: |
+                  kubernetes.pod_namespace:="traefik" AND kubernetes.container_name:="traefik"
+                labels:
+                  type: traefik
+            env:
+              - name: COLLECTIONS
+                value: crowdsecurity/traefik
+
+          appsec:
+            enabled: true
+            replicas: 1
+            strategy:
+              type: Recreate
+            acquisitions:
+              - source: appsec
+                listen_addr: 0.0.0.0:7422
+                path: /
+                appsec_config: crowdsecurity/virtual-patching
+                labels:
+                  type: appsec
+            env:
+              - name: COLLECTIONS
+                value: crowdsecurity/appsec-virtual-patching
+
+    - repoURL: https://github.com/antblu/antalos.git
+      targetRevision: main
+      path: apps/crowdsec
+      plugin:
+        name: yaml-envsubst
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crowdsec
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

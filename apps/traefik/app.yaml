@@ -13,6 +13,10 @@ spec:
       valuesObject:
         deployment:
           replicas: 2
+          additionalVolumes:
+            - name: crowdsec-bouncer-key
+              secret:
+                secretName: crowdsec-bouncer-key
         affinity:
           podAntiAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
@@ -25,6 +29,21 @@ spec:
           rollingUpdate:
             maxSurge: 0
             maxUnavailable: 1
+        additionalVolumeMounts:
+          - name: crowdsec-bouncer-key
+            mountPath: /run/secrets/crowdsec
+            readOnly: true
+        additionalArguments:
+          - --entrypoints.websecure.http.middlewares=traefik-crowdsec-bouncer@kubernetescrd
+        experimental:
+          plugins:
+            crowdsec-bouncer:
+              moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+              version: ${CROWDSEC_BOUNCER_PLUGIN_VERSION}
+        logs:
+          access:
+            enabled: true
+            format: json
         podDisruptionBudget:
           enabled: true
           minAvailable: 1
