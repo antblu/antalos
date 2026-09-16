@@ -40,14 +40,14 @@ variable "haproxy_vms" {
     left = {
       name         = "haproxy-left"
       node         = "se350-left"
-      vmid         = 122
+      vmid         = 127
       ipv4_address = "10.40.0.17"
       mac_address  = "BC:24:11:40:0B:01"
     }
     right = {
       name         = "haproxy-right"
       node         = "se350-right"
-      vmid         = 123
+      vmid         = 128
       ipv4_address = "10.40.0.18"
       mac_address  = "BC:24:11:C4:44:0B"
     }
