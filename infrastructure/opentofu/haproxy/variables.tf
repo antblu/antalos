@@ -63,13 +63,13 @@ variable "vm_cores" {
 variable "vm_memory" {
   type        = number
   description = "Dedicated memory in MiB for each HAProxy VM"
-  default     = 512
+  default     = 256
 }
 
 variable "vm_disk_size" {
   type        = number
   description = "System disk size in GiB for each HAProxy VM"
-  default     = 4
+  default     = 2
 }
 
 variable "vm_datastore_id" {
