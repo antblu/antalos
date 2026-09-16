@@ -1,0 +1,10 @@
+proxmox_endpoint  = "<https://<endpoint:port>"
+proxmox_api_token = "terraform@pam!provider=<api-token>"
+proxmox_insecure  = true
+
+ssh_public_keys = [
+  "<ssh-ed25519-public-key>"
+]
+
+proxmox_ssh_username = "terraform"
+proxmox_ssh_password = "<password-to-terraform>"

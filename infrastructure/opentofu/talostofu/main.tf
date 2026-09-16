@@ -76,14 +76,6 @@ locals {
             dhcpOptions = {
               routeMetric = 1024
             }
-          },
-          {
-            interface = "eth1"
-            dhcp      = true
-
-            dhcpOptions = {
-              routeMetric = 2048
-            }
           }
         ]
       }
@@ -296,14 +288,6 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
   network_device {
     bridge      = var.internal_bridge
     mac_address = each.value.internal_mac
-    firewall    = false
-    model       = "virtio"
-  }
-
-  # --- Network: external bridge (firewall disabled) ---
-  network_device {
-    bridge      = var.external_bridge
-    mac_address = each.value.external_mac
     firewall    = false
     model       = "virtio"
   }

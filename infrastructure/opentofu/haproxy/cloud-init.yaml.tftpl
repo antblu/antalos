@@ -1,0 +1,62 @@
+#cloud-config
+hostname: ${hostname}
+preserve_hostname: false
+manage_etc_hosts: true
+timezone: ${timezone}
+disable_root: true
+ssh_pwauth: false
+users:
+  - default
+  - name: alpine
+    groups:
+      - wheel
+    shell: /bin/ash
+    lock_passwd: true
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+%{ for ssh_public_key in ssh_public_keys ~}
+      - ${ssh_public_key}
+%{ endfor ~}
+package_update: true
+package_upgrade: false
+packages:
+  - haproxy
+  - openssh
+  - qemu-guest-agent
+  - sudo
+write_files:
+  - path: /etc/haproxy/haproxy.cfg
+    owner: root:root
+    permissions: "0644"
+    content: |
+      global
+        log stdout format raw local0
+        maxconn 4096
+
+      defaults
+        log global
+        mode tcp
+        option tcplog
+        timeout connect 5s
+        timeout client 1m
+        timeout server 1m
+
+%{ for port in tcp_ports ~}
+      frontend traefik_${port}
+        bind :${port}
+        default_backend traefik_${port}
+
+      backend traefik_${port}
+        option tcp-check
+        server traefik ${traefik_ip}:${port} check
+
+%{ endfor ~}
+runcmd:
+  - rc-update add haproxy default
+  - rc-update add qemu-guest-agent default
+  - rc-update add sshd default
+  - rc-service qemu-guest-agent start
+  - rc-service sshd start
+  - haproxy -c -f /etc/haproxy/haproxy.cfg
+  - rc-service haproxy restart
+final_message: Alpine HAProxy edge bootstrap completed after $UPTIME seconds

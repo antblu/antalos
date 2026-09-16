@@ -97,12 +97,6 @@ variable "internal_bridge" {
   default     = "internal"
 }
 
-variable "external_bridge" {
-  type        = string
-  description = "Proxmox bridge name for the external network"
-  default     = "external"
-}
-
 # ============================================================
 # Control Plane VM Specs
 # ============================================================
@@ -281,11 +275,9 @@ variable "talos_control_vms" {
 
 variable "talos_worker_vms" {
   type = map(object({
-    node                       = string
-    vmid                       = number
-    internal_mac               = string
-    external_mac               = string
-    external_ignore_dhcp_route = bool
+    node         = string
+    vmid         = number
+    internal_mac = string
   }))
   description = "Map of Talos worker VM configurations"
   default = {
@@ -293,22 +285,16 @@ variable "talos_worker_vms" {
       node          = "rtx"
       vmid          = 119
       internal_mac  = "BC:24:11:81:F8:B9"
-      external_mac  = "BC:24:11:C4:44:1B"
-      external_ignore_dhcp_route = true
     }
     left = {
       node         = "se350-left"
       vmid         = 117
       internal_mac = "BC:24:11:5B:88:F9"
-      external_mac = "BC:24:11:40:0B:01"
-      external_ignore_dhcp_route = true
     }
     right = {
       node         = "se350-right"
       vmid         = 118
       internal_mac = "BC:24:11:81:F8:C9"
-      external_mac = "BC:24:11:C4:44:0B"
-      external_ignore_dhcp_route = true
     }
   }
 }
