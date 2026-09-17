@@ -29,11 +29,18 @@ resource "proxmox_virtual_environment_file" "cloud_init" {
 
   source_raw {
     data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
-      hostname        = each.value.name
-      ssh_public_keys = var.ssh_public_keys
-      timezone        = var.timezone
-      traefik_ip      = var.traefik_ip
-      tcp_ports       = var.traefik_tcp_ports
+      hostname         = each.value.name
+      ssh_public_keys  = var.ssh_public_keys
+      timezone         = var.timezone
+      traefik_ip       = var.traefik_ip
+      tcp_ports        = var.traefik_tcp_ports
+      ipv4_address     = var.haproxy_vms[each.key].ipv4_address
+      peer_ipv4_address = one([
+        for key, vm in var.haproxy_vms : vm.ipv4_address if key != each.key
+      ])
+      floating_ipv4_address = var.floating_ipv4_address
+      network_prefix_length = var.network_prefix_length
+      vrrp_priority         = each.value.vrrp_priority
     })
     file_name = "${each.value.name}-cloud-init.yaml"
   }

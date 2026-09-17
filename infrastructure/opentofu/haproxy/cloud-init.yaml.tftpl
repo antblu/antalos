@@ -21,10 +21,44 @@ package_update: true
 package_upgrade: false
 packages:
   - haproxy
+  - keepalived
+  - keepalived-openrc
   - openssh
   - qemu-guest-agent
   - sudo
 write_files:
+  - path: /etc/keepalived/keepalived.conf
+    owner: root:root
+    permissions: "0644"
+    content: |
+      global_defs {
+        enable_script_security
+      }
+
+      vrrp_script check_haproxy {
+        script "/bin/pidof haproxy"
+        interval 2
+        fall 2
+        rise 2
+      }
+
+      vrrp_instance haproxy_vip {
+        state BACKUP
+        interface eth0
+        virtual_router_id 20
+        priority ${vrrp_priority}
+        advert_int 1
+        unicast_src_ip ${ipv4_address}
+        unicast_peer {
+          ${peer_ipv4_address}
+        }
+        virtual_ipaddress {
+          ${floating_ipv4_address}/${network_prefix_length} dev eth0
+        }
+        track_script {
+          check_haproxy
+        }
+      }
   - path: /etc/haproxy/haproxy.cfg
     owner: root:root
     permissions: "0644"
@@ -53,10 +87,12 @@ write_files:
 %{ endfor ~}
 runcmd:
   - rc-update add haproxy default
+  - rc-update add keepalived default
   - rc-update add qemu-guest-agent default
   - rc-update add sshd default
   - rc-service qemu-guest-agent start
   - rc-service sshd start
   - haproxy -c -f /etc/haproxy/haproxy.cfg
   - rc-service haproxy restart
+  - rc-service keepalived restart
 final_message: Alpine HAProxy edge bootstrap completed after $UPTIME seconds

@@ -29,29 +29,38 @@ variable "proxmox_ssh_password" {
 
 variable "haproxy_vms" {
   type = map(object({
-    name         = string
-    node         = string
-    vmid         = number
-    ipv4_address = string
-    mac_address  = string
+    name          = string
+    node          = string
+    vmid          = number
+    ipv4_address  = string
+    mac_address   = string
+    vrrp_priority = number
   }))
   description = "Two HAProxy VMs using the former left and right Talos worker external identities"
   default = {
     left = {
-      name         = "haproxy-left"
-      node         = "se350-left"
-      vmid         = 127
-      ipv4_address = "10.40.0.17"
-      mac_address  = "BC:24:11:40:0B:01"
+      name          = "haproxy-left"
+      node          = "se350-left"
+      vmid          = 127
+      ipv4_address  = "10.40.0.17"
+      mac_address   = "BC:24:11:40:0B:01"
+      vrrp_priority = 150
     }
     right = {
-      name         = "haproxy-right"
-      node         = "se350-right"
-      vmid         = 128
-      ipv4_address = "10.40.0.18"
-      mac_address  = "BC:24:11:C4:44:0B"
+      name          = "haproxy-right"
+      node          = "se350-right"
+      vmid          = 128
+      ipv4_address  = "10.40.0.18"
+      mac_address   = "BC:24:11:C4:44:0B"
+      vrrp_priority = 100
     }
   }
+}
+
+variable "floating_ipv4_address" {
+  type        = string
+  description = "Floating IPv4 address owned by the active HAProxy VM"
+  default     = "10.40.0.20"
 }
 
 variable "vm_cores" {
@@ -127,13 +136,13 @@ variable "traefik_tcp_ports" {
   description = "Traefik TCP entrypoint ports forwarded by HAProxy"
   default = [
     443,
-    636,
-    21115,
-    21116,
-    21117,
-    21118,
-    21119,
-    21120,
+    # 636,
+    # 21115,
+    # 21116,
+    # 21117,
+    # 21118,
+    # 21119,
+    # 21120,
   ]
 }
 
