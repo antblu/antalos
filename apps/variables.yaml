@@ -52,7 +52,7 @@ variables:
   NEXTCLOUD_IMAGE_TAG: 34.0.4-apache
   NEXTCLOUD_INSTANCE_ID: ocxyyr3nkdoj
   NEXTCLOUD_SERVER_VERSION: 34.0.4.1
-  NEXTCLOUD_CONFIG_REVISION: "12"
+  NEXTCLOUD_CONFIG_REVISION: "13"
   NEXTCLOUD_DATABASE_CLUSTER: nextcloud-db-s3
   # The app export must remain reachable from every worker and writable by uid/gid 33 (www-data).
   # If the NFS mount is not NVME, have the application pod copy those apps from the NFS PVC into an emptyDir at startup and point apps_paths there, instead of current behavior.
@@ -82,6 +82,7 @@ variables:
   # App code is pinned and verified before it is written to the shared volume.
   NEXTCLOUD_RELEASES_URL: https://github.com/nextcloud-releases
   NEXTCLOUD_SIDE_MENU_RELEASES_URL: https://gitnet.fr/deblan/side_menu/releases/download
+  NEXTCLOUD_TASKS_RELEASES_URL: https://github.com/nextcloud/tasks/releases/download
   NEXTCLOUD_ANNOUNCEMENTCENTER_VERSION: 7.5.0
   NEXTCLOUD_ANNOUNCEMENTCENTER_SHA512: ab7a77621b835e381f47739e365a4b376cd1654edd94c123804b1b6fc54ca8f55b43f1cdf9aaf19f8cba2c850d96a769404d594cdb1b3238772678d0bd392a34
   NEXTCLOUD_ASSISTANT_VERSION: 3.5.0
@@ -114,6 +115,8 @@ variables:
   NEXTCLOUD_SIDE_MENU_SHA512: 7ccf1566f3d67e1e015d9a341f7f6aee4c205ecc871334d8be644864c0e23c49b321d8cb02a5a651ec5cfd3ffeeea36dd0c8c0ef0358378438d642342bc2dbe4
   NEXTCLOUD_SPREED_VERSION: 24.0.4
   NEXTCLOUD_SPREED_SHA512: 2f47e1310a3a172b6d2faf97cf8ae4c1da2b824185952dccbcfdae9183e583202f6ccccc59af30ce32a43738e4831684c44a83ac1437e558c5f80d53475d2ebb
+  NEXTCLOUD_TASKS_VERSION: 0.18.1
+  NEXTCLOUD_TASKS_SHA512: 4c4885c527484c73d3ea592a5e202671fb531967cc877dd1415bbbb9713c207b437e9fd89caa8236ad658a43c7cc03e850e5db928b70da38f815b37a9884ac29
   NEXTCLOUD_USER_OIDC_VERSION: 8.11.0
   NEXTCLOUD_USER_OIDC_SHA512: e7447a5e72bc9fc9516dd30ee1139f6779ab4f5a279628643a8b367eb37fb089a2734e4b222fd481a7f2c20445a9ea401e3c8d39a39a66d37e6303f7ab052fc4
   NEXTCLOUD_WHITEBOARD_VERSION: 1.5.9
