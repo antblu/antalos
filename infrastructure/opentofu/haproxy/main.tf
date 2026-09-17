@@ -6,21 +6,20 @@ locals {
   }
 }
 
-resource "proxmox_virtual_environment_file" "alpine_cloud_image" {
+resource "proxmox_download_file" "alpine_cloud_image" {
   for_each = local.haproxy_vms
 
   content_type = "import"
   datastore_id = var.image_datastore_id
   node_name    = each.value.node
-  overwrite    = false
 
-  source_file {
-    path      = var.alpine_cloud_image_url
-    file_name = var.alpine_cloud_image_file_name
-  }
+  url       = var.alpine_cloud_image_url
+  file_name = var.alpine_cloud_image_file_name
+
+  overwrite = false
 }
 
-resource "proxmox_virtual_environment_file" "cloud_init" {
+resource "proxmox_download_file" "cloud_init" {
   for_each = local.haproxy_vms
 
   content_type = "snippets"
@@ -88,7 +87,7 @@ resource "proxmox_virtual_environment_vm" "haproxy" {
   disk {
     datastore_id = var.vm_datastore_id
     interface    = "scsi0"
-    import_from  = proxmox_virtual_environment_file.alpine_cloud_image[each.key].id
+    import_from  = proxmox_download_file.alpine_cloud_image[each.key].id
     size         = var.vm_disk_size
     cache        = "none"
     discard      = "on"
@@ -98,7 +97,7 @@ resource "proxmox_virtual_environment_vm" "haproxy" {
 
   initialization {
     datastore_id      = var.vm_datastore_id
-    user_data_file_id = proxmox_virtual_environment_file.cloud_init[each.key].id
+    user_data_file_id = proxmox_download_file.cloud_init[each.key].id
 
     dns {
       servers = var.vm_dns_servers
