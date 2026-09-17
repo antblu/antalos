@@ -1,36 +1,15 @@
-# Debian left  node
+# Debian left host
 
-The VM is declared in
-`infrastructure/opentofu/lefttofu` with 4 CPU cores and 8GiB of RAM
+The VM is declared in `infrastructure/opentofu/lefttofu` with 4 CPU cores and
+8 GiB of RAM.
 
-The CPU image is pinned by digest and Compose is copied to `/opt/compose`.
+This playbook configures the Debian hostname, timezone, APT repositories,
+system upgrades, Docker host packages, and the QEMU guest agent. It does not
+copy Compose files, create containers, or change Nextcloud registration.
 
-## Secrets
-
-Create and encrypt the vault before the first run:
-
-```bash
-cd infrastructure/ansible/leftansible
-cp vars/vault.yml.example vars/vault.yml
-ansible-vault encrypt vars/vault.yml
-ansible-vault edit vars/vault.yml
-```
-
-Generate one 64-character hexadecimal application secret with
-`openssl rand -hex 32`. To preserve the existing AppAPI identity during the
-migration, reuse the current `vault_nextcloud_live_transcription_app_secret`
-from the RTX vault. The playbook reads the Talk internal secret directly from
-the `nextcloud-talk` Kubernetes Secret; do not copy that secret into this vault.
-
-Keep the vault value quoted, retain it in the password manager, and never
-commit the decrypted vault.
-
-## Provision
-
-Apply `lefttofu` and wait for VM 122 to complete its cloud-init reboot. Migrate
-Live Transcription before replacing the old RTX daemon:
+After applying `lefttofu` and waiting for cloud-init to finish, run:
 
 ```bash
 cd infrastructure/ansible/leftansible
-ansible-playbook site.yml --ask-vault-pass
+ansible-playbook site.yml
 ```

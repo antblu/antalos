@@ -1,8 +1,5 @@
 debian_left_hostname: debian-left
-debian_left_ip: 10.30.0.27
 debian_left_timezone: America/Denver
-
-left_compose_root: /opt/compose
 
 left_host_packages:
   - ca-certificates
