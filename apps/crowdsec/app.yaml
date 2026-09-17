@@ -17,6 +17,8 @@ spec:
           config:
             config.yaml.local: |
               api:
+                client:
+                  unregister_on_exit: true
                 server:
                   auto_registration:
                     enabled: true
@@ -27,7 +29,7 @@ spec:
               db_config:
                 flush:
                   agents_autodelete:
-                    login_password: 24h
+                    login_password: 10m
 
           secrets:
             externalSecret:
