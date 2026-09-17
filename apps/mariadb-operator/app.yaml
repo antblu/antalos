@@ -73,6 +73,8 @@ spec:
             ha:
               enabled: true
               replicas: 2
+            serviceMonitor:
+              enabled: false
             strategy:
               type: RollingUpdate
               rollingUpdate:
