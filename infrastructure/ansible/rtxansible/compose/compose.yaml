@@ -1,27 +1,19 @@
 name: debian-rtx
 
 services:
-  llama-cpp:
-    image: ${LLAMA_CPP_IMAGE}
-    container_name: llama-cpp
+  llama-swap:
+    image: ${LLAMA_SWAP_IMAGE}
+    container_name: llama-swap
     restart: unless-stopped
+    user: "0:0"
     environment:
-      LLAMA_ARG_API_KEY_FILE: /run/secrets/llama-api-key
+      LLAMA_SWAP_CONFIG: /etc/llama-swap/config/config.yaml
+      LLAMA_SWAP_LISTEN: 0.0.0.0:8080
+      LLAMA_SWAP_WATCH_CONFIG: "true"
+      LLAMA_SWAP_API_KEY: ${LLAMA_CPP_API_KEY}
       LLAMA_CACHE: /models
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
       NVIDIA_VISIBLE_DEVICES: "0"
-    command:
-      - --host
-      - 0.0.0.0
-      - --port
-      - "8080"
-      - --parallel
-      - "1"
-      - --models-max
-      - "1"
-      - --models-preset
-      - /config/models.ini
-      - --metrics
     ports:
       - "${DEBIAN_RTX_IP}:${LLAMA_CPP_PORT}:8080/tcp"
     volumes:
@@ -29,12 +21,8 @@ services:
         source: /srv/llama-models
         target: /models
       - type: bind
-        source: ./models.ini
-        target: /config/models.ini
-        read_only: true
-      - type: bind
-        source: ./secrets/llama-api-key
-        target: /run/secrets/llama-api-key
+        source: ./config.yaml
+        target: /etc/llama-swap/config/config.yaml
         read_only: true
     deploy:
       resources:
@@ -45,6 +33,42 @@ services:
                 - "0"
               capabilities:
                 - gpu
+    security_opt:
+      - no-new-privileges:true
+
+  baseline-restorer:
+    image: ${LLAMA_BASELINE_RESTORER_IMAGE}
+    container_name: llama-baseline-restorer
+    restart: unless-stopped
+    depends_on:
+      - llama-swap
+    environment:
+      LLAMA_SWAP_API_KEY: ${LLAMA_CPP_API_KEY}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache curl
+        until curl -fsS http://llama-swap:8080/health >/dev/null; do
+          sleep 2
+        done
+        BIG_SEEN=0
+        while true; do
+          RUNNING="$$(curl -fsS http://llama-swap:8080/running 2>/dev/null)" || {
+            sleep 5
+            continue
+          }
+          if echo "$$RUNNING" | grep -Eq 'unsloth/gemma-4-12B-it-qat-GGUF|yuxinlu1/gemma-4-12B-agentic|HauhauCS/Gemma4-12B|empero-ai/Qwythos-9B'; then
+            BIG_SEEN=1
+          elif [ "$$BIG_SEEN" = "1" ]; then
+            if curl -fsS --max-time 360 -H "Authorization: Bearer $$LLAMA_SWAP_API_KEY" http://llama-swap:8080/upstream/Qwen3-Embedding-0.6B-Q8_0/health >/dev/null &&
+               curl -fsS --max-time 360 -H "Authorization: Bearer $$LLAMA_SWAP_API_KEY" http://llama-swap:8080/upstream/Qwen3-Reranker-0.6B-Q8_0/health >/dev/null &&
+               curl -fsS --max-time 360 -H "Authorization: Bearer $$LLAMA_SWAP_API_KEY" http://llama-swap:8080/upstream/gemma-4-E4B-it-UD-Q4_K_XL/health >/dev/null; then
+              BIG_SEEN=0
+            fi
+          fi
+          sleep 5
+        done
     security_opt:
       - no-new-privileges:true
 

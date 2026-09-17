@@ -1,5 +1,5 @@
 ---
-- name: Provision the Debian RTX llama.cpp and Speaches services
+- name: Provision the Debian RTX llama-swap and Speaches services
   hosts: debian_rtx
   become: true
   gather_facts: true
@@ -19,7 +19,7 @@
         that:
           - vault_llama_cpp_api_key is match('^[0-9a-fA-F]{64}$')
         fail_msg: >-
-          Edit vars/vault.yml with ansible-vault. The llama.cpp API key must
+          Edit vars/vault.yml with ansible-vault. The inference API key must
           be a 64-character hexadecimal secret.
 
     - name: Set the VM hostname
@@ -319,15 +319,6 @@
         mode: "0600"
       no_log: true
 
-    - name: Write the protected llama.cpp API key file
-      ansible.builtin.copy:
-        content: "{{ vault_llama_cpp_api_key }}\n"
-        dest: "{{ rtx_compose_root }}/secrets/llama-api-key"
-        owner: root
-        group: root
-        mode: "0400"
-      no_log: true
-
     - name: Pull the pinned Compose images
       ansible.builtin.command:
         argv:
@@ -386,5 +377,5 @@
         container_gpu_identity.rc != 0 or
         'RTX 3060' not in container_gpu_identity.stdout
       loop:
-        - llama-cpp
+        - llama-swap
         - speaches

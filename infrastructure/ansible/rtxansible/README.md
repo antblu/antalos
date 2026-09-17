@@ -1,29 +1,28 @@
 # Debian RTX application node
 
-This Ansible project provisions the CUDA services in one Compose project on
-`debian-rtx` (`10.30.0.26`):
+This Ansible project provisions llama-swap and Speaches on `debian-rtx`
+(`10.30.0.26`). The Compose and llama-swap configuration are copied from this
+repository to `/opt/compose` on every playbook run. Model files remain under
+`/srv/llama-models`; the playbook does not download the local GGUF files.
 
-- `compose.yaml` runs llama.cpp `b10884` in router mode with an authenticated
-  OpenAI-compatible API. Model files remain operator-managed under
-  `/srv/llama-models`.
-- `models.ini` constrains routed models to an 8,192-token context, enables flash
-  attention, and lets llama.cpp fit unset options to the available GPU memory.
-  This prevents model metadata or an ad hoc preset from selecting a context
-  that cannot fit alongside the model on the 12 GB RTX 3060.
-- The same project runs Speaches `0.9.0-rc.3` with CUDA 12.6.3 and persists its
-  Hugging Face model cache in a named volume.
+llama-swap keeps the Qwen embedding model, Qwen reranker, and Gemma 4 E4B
+loaded together at startup. A request for any of the four other configured
+models unloads that baseline group. Only one of those other models runs at a
+time. Each has a 600-second idle TTL. The baseline-restorer container watches
+for the last large model to stop and loads the three baseline models again.
+A baseline request while a large model is active also swaps the large model
+out. The local Gemma, Qwen, and MTP files in `config.yaml` must already exist
+under `/srv/llama-models`. The Hugging Face model definitions use llama.cpp's
+`--hf-repo` acquisition and cache under that same directory.
 
-Nextcloud Live Transcription and Local Machine Translation are not part of this
-Ansible project. Speaches is a standalone OpenAI-compatible speech API and is
-not registered as a Nextcloud AppAPI deployment.
+The API remains at `http://10.30.0.26:8080/v1` and uses the existing
+`vault_llama_cpp_api_key` value as llama-swap's API key. Speaches remains at
+`http://10.30.0.26:8000`. Both services reserve the RTX 3060 through the
+NVIDIA Container Toolkit. Speaches is separate from llama-swap's model groups
+and can still consume GPU memory while a large model loads.
 
 The VM and RTX 3060 PCI passthrough are declared in
-`infrastructure/opentofu/rtxtofu`. The Compose definitions are copied to
-`/opt/compose`. The playbook installs the NVIDIA Container Toolkit,
-requires `nvidia-smi` to identify the passed-through GPU as an RTX 3060, and
-proves both containers can access it. Host packages, the CUDA driver, and the
-NVIDIA Container Toolkit track the newest versions available from their
-configured stable APT repositories.
+`infrastructure/opentofu/rtxtofu`.
 
 ## Secret
 
@@ -36,10 +35,8 @@ ansible-vault encrypt vars/vault.yml
 ansible-vault edit vars/vault.yml
 ```
 
-Generate the llama.cpp API key with `openssl rand -hex 32`. Keep the value
-quoted, retain it in the password manager, and never commit the decrypted
-vault. Existing Translate and Live Transcription values can be removed from an
-older vault because the playbook no longer reads them.
+Generate the inference API key with `openssl rand -hex 32`. Keep it quoted
+in the vault and do not commit the decrypted vault.
 
 ## Provision
 
@@ -51,9 +48,7 @@ cd infrastructure/ansible/rtxansible
 ansible-playbook site.yml --ask-vault-pass
 ```
 
-The project configuration also prompts for the Debian user's sudo password at
-startup so long-running image pulls cannot outlive a cached sudo credential.
-
-llama.cpp listens on `http://10.30.0.26:8080` and exposes its compatible API
-under `/v1`. Speaches listens on `http://10.30.0.26:8000`; its health endpoint
-is `/health` and its OpenAI-compatible speech endpoints are under `/v1`.
+The project prompts for the Debian user's sudo password at startup. The
+playbook installs the NVIDIA Container Toolkit, checks the passed-through GPU,
+and starts the Compose project. Its normal package and kernel tasks can reboot
+the VM if upgrades require it.

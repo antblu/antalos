@@ -1,0 +1,93 @@
+healthCheckTimeout: 300
+logLevel: info
+globalTTL: 0
+unloadTimeout: 15
+
+apiKeys:
+  - ${env.LLAMA_SWAP_API_KEY}
+
+models:
+  Qwen3-Embedding-0.6B-Q8_0:
+    cmd: >-
+      llama-server --host 127.0.0.1 --port ${PORT}
+      --model /models/Qwen3-Embedding-0.6B-Q8_0.gguf
+      --embedding --pooling last --ctx-size 8192 --n-gpu-layers all
+    ttl: 0
+
+  Qwen3-Reranker-0.6B-Q8_0:
+    cmd: >-
+      llama-server --host 127.0.0.1 --port ${PORT}
+      --model /models/qwen3-reranker-0.6b-q8_0.gguf
+      --reranking --pooling rank --ctx-size 8192 --n-gpu-layers all
+    ttl: 0
+
+  gemma-4-E4B-it-UD-Q4_K_XL:
+    cmd: >-
+      llama-server --host 127.0.0.1 --port ${PORT}
+      --model /models/gemma-4-e4b/gemma-4-E4B-it-UD-Q4_K_XL.gguf
+      --model-draft /models/mtp/mtp-gemma-4-E4B-it.gguf
+      --ctx-size 16384 --spec-type draft-mtp --spec-draft-n-max 4
+      --flash-attn off --n-gpu-layers all
+    ttl: 0
+
+  unsloth/gemma-4-12B-it-qat-GGUF:UD-Q4_K_XL:
+    cmd: >-
+      llama-server --host 127.0.0.1 --port ${PORT}
+      --hf-repo unsloth/gemma-4-12B-it-qat-GGUF:UD-Q4_K_XL
+      --model-draft /models/mtp/mtp-gemma-4-12B-it.gguf
+      --spec-type draft-mtp --spec-draft-n-max 4
+      --ctx-size 131072 --n-gpu-layers all --fit on
+    ttl: 600
+
+  yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M:
+    cmd: >-
+      llama-server --host 127.0.0.1 --port ${PORT}
+      --hf-repo yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M
+      --model-draft /models/mtp/gemma-4-12B-it-MTP-Q8_0.gguf
+      --spec-type draft-mtp --spec-draft-n-max 4
+      --ctx-size 131072 --n-gpu-layers all --fit on
+    ttl: 600
+
+  HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M:
+    cmd: >-
+      llama-server --host 127.0.0.1 --port ${PORT}
+      --hf-repo HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M
+      --model-draft /models/mtp/mtp-gemma-4-12B-it.gguf
+      --spec-type draft-mtp --spec-draft-n-max 4
+      --ctx-size 131072 --n-gpu-layers all --fit on
+    ttl: 600
+
+  empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF:Q5_K_M:
+    cmd: >-
+      llama-server --host 127.0.0.1 --port ${PORT}
+      --hf-repo empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF:Q5_K_M
+      --n-gpu-layers all --fit on
+    ttl: 600
+
+hooks:
+  on_startup:
+    preload:
+      - Qwen3-Embedding-0.6B-Q8_0
+      - Qwen3-Reranker-0.6B-Q8_0
+      - gemma-4-E4B-it-UD-Q4_K_XL
+
+routing:
+  router:
+    use: group
+    settings:
+      groups:
+        baseline:
+          swap: false
+          exclusive: true
+          members:
+            - Qwen3-Embedding-0.6B-Q8_0
+            - Qwen3-Reranker-0.6B-Q8_0
+            - gemma-4-E4B-it-UD-Q4_K_XL
+        large:
+          swap: true
+          exclusive: true
+          members:
+            - unsloth/gemma-4-12B-it-qat-GGUF:UD-Q4_K_XL
+            - yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M
+            - HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M
+            - empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF:Q5_K_M
