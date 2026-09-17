@@ -302,6 +302,14 @@
         - path: "{{ rtx_speaches_root }}"
           mode: "0750"
 
+    - name: Set Speaches model directory ownership and permissions
+      ansible.builtin.file:
+        path: "{{ rtx_speaches_root }}"
+        state: directory
+        owner: "1000"
+        group: "1000"
+        mode: "u+rwX"
+
     - name: Copy the repository Compose definitions
       ansible.builtin.copy:
         src: "{{ playbook_dir }}/compose/"
