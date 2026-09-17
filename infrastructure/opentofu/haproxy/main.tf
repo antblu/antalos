@@ -32,6 +32,7 @@ resource "proxmox_virtual_environment_file" "cloud_init" {
       hostname         = each.value.name
       ssh_public_keys  = var.ssh_public_keys
       timezone         = var.timezone
+      dns_servers      = var.vm_dns_servers
       traefik_ip       = var.traefik_ip
       tcp_ports        = var.traefik_tcp_ports
       ipv4_address     = var.haproxy_vms[each.key].ipv4_address
@@ -59,7 +60,7 @@ resource "proxmox_virtual_environment_vm" "haproxy" {
   started         = true
   stop_on_destroy = true
 
-  bios       = "ovmf"
+  bios       = "seabios"
   boot_order = ["scsi0"]
   machine    = "q35"
 
@@ -95,13 +96,6 @@ resource "proxmox_virtual_environment_vm" "haproxy" {
     ssd          = true
   }
 
-  efi_disk {
-    datastore_id      = var.vm_datastore_id
-    file_format       = "raw"
-    type              = "4m"
-    pre_enrolled_keys = false
-  }
-
   initialization {
     datastore_id      = var.vm_datastore_id
     user_data_file_id = proxmox_virtual_environment_file.cloud_init[each.key].id
@@ -130,7 +124,7 @@ resource "proxmox_virtual_environment_vm" "haproxy" {
   }
 
   vga {
-    type = "serial0"
+    type = "std"
   }
 
   serial_device {}

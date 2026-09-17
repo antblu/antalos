@@ -119,9 +119,11 @@ variable "vm_ipv4_gateway" {
 
 variable "vm_dns_servers" {
   type        = list(string)
-  description = "DNS resolvers for the HAProxy VMs"
+  description = "Public DNS resolvers for HAProxy VM bootstrap on isolated VLAN40"
   default = [
     "10.40.0.1",
+    # "1.1.1.1",
+    # "9.9.9.9",
   ]
 }
 
@@ -159,12 +161,12 @@ variable "ssh_public_keys" {
 
 variable "alpine_cloud_image_url" {
   type        = string
-  description = "Pinned official Alpine GenericCloud UEFI cloud-init image"
-  default     = "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/generic_alpine-3.24.1-x86_64-uefi-cloudinit-r0.qcow2"
+  description = "Pinned official Alpine GenericCloud BIOS cloud-init image"
+  default     = "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/generic_alpine-3.24.1-x86_64-bios-cloudinit-r0.qcow2"
 }
 
 variable "alpine_cloud_image_file_name" {
   type        = string
   description = "File name used for the Alpine cloud image in Proxmox"
-  default     = "generic_alpine-3.24.1-x86_64-uefi-cloudinit-r0.qcow2"
+  default     = "generic_alpine-3.24.1-x86_64-bios-cloudinit-r0.qcow2"
 }

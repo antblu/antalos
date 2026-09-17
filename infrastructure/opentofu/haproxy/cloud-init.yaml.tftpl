@@ -5,6 +5,12 @@ manage_etc_hosts: true
 timezone: ${timezone}
 disable_root: true
 ssh_pwauth: false
+manage_resolv_conf: true
+resolv_conf:
+  nameservers:
+%{ for dns_server in dns_servers ~}
+    - ${dns_server}
+%{ endfor ~}
 users:
   - default
   - name: alpine
@@ -25,8 +31,15 @@ packages:
   - keepalived-openrc
   - openssh
   - qemu-guest-agent
+  - qemu-guest-agent-openrc
   - sudo
 write_files:
+  - path: /usr/local/sbin/console-autologin
+    owner: root:root
+    permissions: "0755"
+    content: |
+      #!/bin/sh
+      exec /bin/login -f alpine
   - path: /etc/keepalived/keepalived.conf
     owner: root:root
     permissions: "0644"
@@ -76,7 +89,7 @@ write_files:
         timeout server 1m
 
 %{ for port in tcp_ports ~}
-      frontend traefik_${port}
+      frontend incoming_${port}
         bind :${port}
         default_backend traefik_${port}
 
@@ -86,6 +99,9 @@ write_files:
 
 %{ endfor ~}
 runcmd:
+  - |
+    sed -i '/^tty1::respawn:/s@.*@tty1::respawn:/sbin/getty -n -l /usr/local/sbin/console-autologin 38400 tty1@' /etc/inittab
+    kill -HUP 1
   - rc-update add haproxy default
   - rc-update add keepalived default
   - rc-update add qemu-guest-agent default
