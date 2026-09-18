@@ -219,3 +219,4 @@ routing:
             - "yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M"
             - "HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M"
             - "empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF:MTP-Q5_K_M"
+            - "mradermacher/OxCoder-9B-i1-GGUF:Q5_K_M"
