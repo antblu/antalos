@@ -40,10 +40,9 @@ spec:
             crowdsec-bouncer:
               moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
               version: ${CROWDSEC_BOUNCER_PLUGIN_VERSION}
-        logs:
-          access:
-            enabled: true
-            format: json
+        accessLog:
+          enabled: true
+          format: json
         podDisruptionBudget:
           enabled: true
           minAvailable: 1
