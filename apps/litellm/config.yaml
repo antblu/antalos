@@ -23,6 +23,7 @@ data:
         password: os.environ/REDIS_PASSWORD
         sentinel_password: os.environ/REDIS_PASSWORD
     litellm_settings:
+      drop_params: true
       enable_redis_auth_cache: true
       callbacks:
         - prometheus
