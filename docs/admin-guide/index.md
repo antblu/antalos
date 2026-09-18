@@ -55,6 +55,7 @@ Build and operate your own Antalos installation. Read the shared setup once, the
 
 ## Detailed procedures
 
+- [Azure edge proxy and home HAProxy routing](/admin-guide/azure-edge/)
 - [Nextcloud identity and companion integrations](/admin-guide/nextcloud-integrations/)
 - [Nextcloud upgrade procedure](/admin-guide/nextcloud-upgrades/)
 - [Nextcloud Talk networking](/admin-guide/nextcloud-talk/)

@@ -98,6 +98,16 @@ write_files:
         server traefik ${traefik_ip}:${port} check
 
 %{ endfor ~}
+%{ for port in mail_tcp_ports ~}
+      frontend incoming_${port}
+        bind :${port}
+        default_backend mail_${port}
+
+      backend mail_${port}
+        option tcp-check
+        server mail ${mail_ip}:${port} check
+
+%{ endfor ~}
 runcmd:
   - |
     sed -i '/^tty1::respawn:/s@.*@tty1::respawn:/sbin/getty -n -l /usr/local/sbin/console-autologin 38400 tty1@' /etc/inittab

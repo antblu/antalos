@@ -16,6 +16,7 @@ kubeconfig
 *.lock.hcl
 sealed-secrets-priv-key.yaml
 AGENTS.md
+infrastructure/azure/cloud-init.yaml
 
 # Documentation site build artifacts
 site/node_modules/

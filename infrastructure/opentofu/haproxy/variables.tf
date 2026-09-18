@@ -148,6 +148,21 @@ variable "traefik_tcp_ports" {
   ]
 }
 
+variable "mail_ip" {
+  type        = string
+  description = "Shared MetalLB address of the Stalwart mail service"
+  default     = "10.30.0.200"
+}
+
+variable "mail_tcp_ports" {
+  type        = list(number)
+  description = "Mail TCP ports forwarded by the home HAProxy VMs"
+  default = [
+    465,
+    993,
+  ]
+}
+
 variable "timezone" {
   type        = string
   description = "Timezone configured by cloud-init"

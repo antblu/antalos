@@ -34,6 +34,8 @@ resource "proxmox_download_file" "cloud_init" {
       dns_servers      = var.vm_dns_servers
       traefik_ip       = var.traefik_ip
       tcp_ports        = var.traefik_tcp_ports
+      mail_ip          = var.mail_ip
+      mail_tcp_ports   = var.mail_tcp_ports
       ipv4_address     = var.haproxy_vms[each.key].ipv4_address
       peer_ipv4_address = one([
         for key, vm in var.haproxy_vms : vm.ipv4_address if key != each.key
