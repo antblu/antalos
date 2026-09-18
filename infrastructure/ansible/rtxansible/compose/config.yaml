@@ -3,7 +3,7 @@
 healthCheckTimeout: 1800
 unloadTimeout: 15
 
-logLevel: info
+logLevel: debug
 logToStdout: both
 logTimeFormat: rfc3339
 
@@ -59,6 +59,9 @@ models:
       --spec-type draft-mtp
       --spec-draft-n-max 4
       --ctx-size 16384
+      --parallel 1
+      --cache-ram 2048
+      --ctx-checkpoints 3
       --flash-attn off
       --n-gpu-layers all
     ttl: 0
@@ -78,6 +81,9 @@ models:
       --hf-file gemma-4-12B-it-qat-UD-Q4_K_XL.gguf
       --spec-type draft-mtp
       --spec-draft-n-max 4
+      --parallel 1
+      --cache-ram 2048
+      --ctx-checkpoints 3
       --ctx-size 131072
       --n-gpu-layers all
     ttl: 600
@@ -94,6 +100,9 @@ models:
       --spec-type draft-mtp
       --spec-draft-n-max 4
       --ctx-size 131072
+      --parallel 1
+      --cache-ram 2048
+      --ctx-checkpoints 3
       --n-gpu-layers all
     ttl: 600
 
@@ -109,6 +118,9 @@ models:
       --spec-type draft-mtp
       --spec-draft-n-max 4
       --ctx-size 131072
+      --parallel 1
+      --cache-ram 2048
+      --ctx-checkpoints 3
       --n-gpu-layers all
     ttl: 600
 
@@ -121,6 +133,8 @@ models:
       --hf-file Qwythos-9B-Claude-Mythos-5-1M-MTP-Q5_K_M.gguf
       --spec-type draft-mtp
       --spec-draft-n-max 4
+      --cache-ram 3584
+      --parallel 1
       --n-gpu-layers all
     ttl: 600
 
@@ -131,9 +145,10 @@ models:
       --port ${PORT}
       --hf-repo mradermacher/OxCoder-9B-i1-GGUF
       --hf-file OxCoder-9B.i1-Q5_K_M.gguf
+      --cache-ram 3584
+      --parallel 1
       --n-gpu-layers all
     ttl: 600
-
 
 # ==============================================================
 # STARTUP
