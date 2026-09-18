@@ -1,111 +1,211 @@
-healthCheckTimeout: 300
-logLevel: info
-globalTTL: 0
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mostlygeek/llama-swap/refs/heads/main/config-schema.json
+
+healthCheckTimeout: 1800
 unloadTimeout: 15
+
+logLevel: info
+logToStdout: both
+logTimeFormat: rfc3339
+
+globalTTL: 0
 
 apiKeys:
   - ${env.LLAMA_SWAP_API_KEY}
 
+
 models:
-  Qwen3-Embedding-0.6B-Q8_0:
+
+  # ============================================================
+  # BASELINE MODELS
+  # These always operate as one group:
+  #   - Qwen Embedding
+  #   - Qwen Reranker
+  #   - Gemma E4B
+  # ============================================================
+
+  "Qwen/Qwen3-Embedding-0.6B:Q8_0":
     cmd: >-
-      llama-server --host 127.0.0.1 --port ${PORT}
-      --model /models/Qwen3-Embedding-0.6B-Q8_0.gguf
+      llama-server
+      --host 127.0.0.1
+      --port ${PORT}
+      --hf-repo Qwen/Qwen3-Embedding-0.6B-GGUF
+      --hf-file Qwen3-Embedding-0.6B-Q8_0.gguf
       --embedding
       --pooling last
       --ctx-size 8192
       --n-gpu-layers all
     ttl: 0
 
-  Qwen3-Reranker-0.6B-Q8_0:
+  "Qwen/Qwen3-Reranker-0.6B:Q8_0":
     cmd: >-
-      llama-server --host 127.0.0.1 --port ${PORT}
-      --model /models/qwen3-reranker-0.6b-q8_0.gguf
+      llama-server
+      --host 127.0.0.1
+      --port ${PORT}
+      --hf-repo ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
+      --hf-file qwen3-reranker-0.6b-q8_0.gguf
       --reranking
       --pooling rank
       --ctx-size 8192
       --n-gpu-layers all
     ttl: 0
 
-  gemma-4-E4B-it-UD-Q4_K_XL:
+  "unsloth/gemma-4-E4B-it-GGUF:UD-Q4_K_XL":
     cmd: >-
-      llama-server --host 127.0.0.1 --port ${PORT}
-      --model /models/gemma-4-e4b/gemma-4-E4B-it-UD-Q4_K_XL.gguf
-      --model-draft /models/mtp/mtp-gemma-4-E4B-it.gguf
-      --ctx-size 16384
+      llama-server
+      --host 127.0.0.1
+      --port ${PORT}
+      --hf-repo unsloth/gemma-4-E4B-it-GGUF
+      --hf-file gemma-4-E4B-it-UD-Q4_K_XL.gguf
       --spec-type draft-mtp
       --spec-draft-n-max 4
+      --ctx-size 16384
       --flash-attn off
       --n-gpu-layers all
     ttl: 0
 
-  unsloth/gemma-4-12B-it-qat-GGUF:UD-Q4_K_XL:
+
+  # ============================================================
+  # LARGE MODELS
+  # Automatically unload after 10 minutes of inactivity.
+  # ============================================================
+
+  "unsloth/gemma-4-12B-it-qat-GGUF:UD-Q4_K_XL":
     cmd: >-
-      llama-server --host 127.0.0.1 --port ${PORT}
-      --hf-repo unsloth/gemma-4-12B-it-qat-GGUF:UD-Q4_K_XL
-      --model-draft /models/mtp/mtp-gemma-4-12B-it.gguf
+      llama-server
+      --host 127.0.0.1
+      --port ${PORT}
+      --hf-repo unsloth/gemma-4-12B-it-qat-GGUF
+      --hf-file gemma-4-12B-it-qat-UD-Q4_K_XL.gguf
       --spec-type draft-mtp
       --spec-draft-n-max 4
       --ctx-size 131072
       --n-gpu-layers all
     ttl: 600
 
-  yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M:
+  "yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M":
     cmd: >-
-      llama-server --host 127.0.0.1 --port ${PORT}
-      --hf-repo yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M
-      --model-draft /models/mtp/gemma-4-12B-it-MTP-Q8_0.gguf
+      llama-server
+      --host 127.0.0.1
+      --port ${PORT}
+      --hf-repo yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF
+      --hf-file gemma4-v2-Q4_K_M.gguf
+      --spec-draft-hf yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF
+      --spec-draft-model MTP/gemma-4-12B-it-MTP-Q8_0.gguf
       --spec-type draft-mtp
       --spec-draft-n-max 4
       --ctx-size 131072
       --n-gpu-layers all
     ttl: 600
 
-  HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M:
+  "HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M":
     cmd: >-
-      llama-server --host 127.0.0.1 --port ${PORT}
-      --hf-repo HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M
-      --model-draft /models/mtp/mtp-gemma-4-12B-it.gguf
+      llama-server
+      --host 127.0.0.1
+      --port ${PORT}
+      --hf-repo HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced
+      --hf-file Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced-Q4_K_M.gguf
+      --spec-draft-hf HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced
+      --spec-draft-model mtp-gemma-4-12B-it.gguf
       --spec-type draft-mtp
       --spec-draft-n-max 4
       --ctx-size 131072
       --n-gpu-layers all
     ttl: 600
 
-  empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF:Q5_K_M:
+  "empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF:MTP-Q5_K_M":
     cmd: >-
-      llama-server --host 127.0.0.1 --port ${PORT}
-      --hf-repo empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF:Q5_K_M
+      llama-server
+      --host 127.0.0.1
+      --port ${PORT}
+      --hf-repo empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF
+      --hf-file Qwythos-9B-Claude-Mythos-5-1M-MTP-Q5_K_M.gguf
       --spec-type draft-mtp
       --spec-draft-n-max 4
       --n-gpu-layers all
     ttl: 600
+
+
+# ==============================================================
+# STARTUP
+#
+# Loading all three members of the baseline group at startup.
+# Because baseline has swap:false, they remain loaded together.
+# ==============================================================
 
 hooks:
   on_startup:
     preload:
-      - Qwen3-Embedding-0.6B-Q8_0
-      - Qwen3-Reranker-0.6B-Q8_0
-      - gemma-4-E4B-it-UD-Q4_K_XL
+      - "Qwen/Qwen3-Embedding-0.6B:Q8_0"
+      - "Qwen/Qwen3-Reranker-0.6B:Q8_0"
+      - "unsloth/gemma-4-E4B-it-GGUF:UD-Q4_K_XL"
+
+
+# ==============================================================
+# ROUTING
+# ==============================================================
 
 routing:
   router:
     use: group
+
     settings:
       groups:
+
+        # ======================================================
+        # BASELINE GROUP
+        #
+        # swap:false:
+        #   Treats these models as models that run together.
+        #   Requesting any baseline member keeps the other
+        #   baseline members loaded as well.
+        #
+        # exclusive:false:
+        #   Baseline requests cannot evict a protected large
+        #   model before its TTL expires.
+        #
+        # persistent:false:
+        #   A large model is allowed to unload the entire
+        #   baseline group.
+        # ======================================================
+
         baseline:
           swap: false
-          exclusive: true
+          exclusive: false
+          persistent: false
+
           members:
-            - Qwen3-Embedding-0.6B-Q8_0
-            - Qwen3-Reranker-0.6B-Q8_0
-            - gemma-4-E4B-it-UD-Q4_K_XL
+            - "Qwen/Qwen3-Embedding-0.6B:Q8_0"
+            - "Qwen/Qwen3-Reranker-0.6B:Q8_0"
+            - "unsloth/gemma-4-E4B-it-GGUF:UD-Q4_K_XL"
+
+
+        # ======================================================
+        # LARGE GROUP
+        #
+        # swap:true:
+        #   Only one large model may run at once.
+        #
+        # exclusive:true:
+        #   Loading a large model unloads the entire baseline
+        #   group.
+        #
+        # persistent:true:
+        #   Baseline requests cannot evict the currently loaded
+        #   large model.
+        #
+        # ttl:600 on each model:
+        #   After 10 minutes without use the active large model
+        #   automatically unloads. The baseline-restorer
+        #   container then reloads all three baseline models.
+        # ======================================================
 
         large:
           swap: true
           exclusive: true
+          persistent: true
+
           members:
-            - unsloth/gemma-4-12B-it-qat-GGUF:UD-Q4_K_XL
-            - yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M
-            - HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M
-            - empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF:Q5_K_M
+            - "unsloth/gemma-4-12B-it-qat-GGUF:UD-Q4_K_XL"
+            - "yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M"
+            - "HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M"
+            - "empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF:MTP-Q5_K_M"

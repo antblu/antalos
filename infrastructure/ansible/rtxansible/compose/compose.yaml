@@ -6,24 +6,32 @@ services:
     container_name: llama-swap
     restart: unless-stopped
     user: "0:0"
+
     environment:
       LLAMA_SWAP_CONFIG: /etc/llama-swap/config/config.yaml
       LLAMA_SWAP_LISTEN: 0.0.0.0:8080
       LLAMA_SWAP_WATCH_CONFIG: "true"
       LLAMA_SWAP_API_KEY: ${LLAMA_CPP_API_KEY}
+
+      # Hugging Face / llama.cpp cache
       LLAMA_CACHE: /models
+
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
       NVIDIA_VISIBLE_DEVICES: "0"
+
     ports:
       - "${DEBIAN_RTX_IP}:${LLAMA_CPP_PORT}:8080/tcp"
+
     volumes:
       - type: bind
         source: /srv/llama-models
         target: /models
+
       - type: bind
         source: ./config.yaml
         target: /etc/llama-swap/config/config.yaml
         read_only: true
+
     deploy:
       resources:
         reservations:
@@ -33,42 +41,118 @@ services:
                 - "0"
               capabilities:
                 - gpu
+
     security_opt:
       - no-new-privileges:true
+
 
   baseline-restorer:
     image: ${LLAMA_BASELINE_RESTORER_IMAGE}
     container_name: llama-baseline-restorer
     restart: unless-stopped
+
     depends_on:
       - llama-swap
+
     environment:
       LLAMA_SWAP_API_KEY: ${LLAMA_CPP_API_KEY}
+
     command:
       - /bin/sh
       - -c
       - |
+        set -u
+
         apk add --no-cache curl
-        until curl -fsS http://llama-swap:8080/health >/dev/null; do
+
+        echo "[restorer] Waiting for llama-swap..."
+
+        until curl -fsS \
+          http://llama-swap:8080/health \
+          >/dev/null; do
           sleep 2
         done
+
+        echo "[restorer] llama-swap is healthy"
+
         BIG_SEEN=0
+
         while true; do
-          RUNNING="$$(curl -fsS http://llama-swap:8080/running 2>/dev/null)" || {
-            sleep 5
-            continue
-          }
-          if echo "$$RUNNING" | grep -Eq 'unsloth/gemma-4-12B-it-qat-GGUF|yuxinlu1/gemma-4-12B-agentic|HauhauCS/Gemma4-12B|empero-ai/Qwythos-9B'; then
-            BIG_SEEN=1
-          elif [ "$$BIG_SEEN" = "1" ]; then
-            if curl -fsS --max-time 360 -H "Authorization: Bearer $$LLAMA_SWAP_API_KEY" http://llama-swap:8080/upstream/Qwen3-Embedding-0.6B-Q8_0/health >/dev/null &&
-               curl -fsS --max-time 360 -H "Authorization: Bearer $$LLAMA_SWAP_API_KEY" http://llama-swap:8080/upstream/Qwen3-Reranker-0.6B-Q8_0/health >/dev/null &&
-               curl -fsS --max-time 360 -H "Authorization: Bearer $$LLAMA_SWAP_API_KEY" http://llama-swap:8080/upstream/gemma-4-E4B-it-UD-Q4_K_XL/health >/dev/null; then
-              BIG_SEEN=0
+
+          RUNNING="$$(curl -fsS \
+            -H "Authorization: Bearer $$LLAMA_SWAP_API_KEY" \
+            http://llama-swap:8080/running \
+            2>/dev/null)" || {
+              echo "[restorer] Failed to query /running"
+              sleep 5
+              continue
+            }
+
+          #
+          # Detect any of the large models.
+          #
+          if echo "$$RUNNING" | grep -Eq \
+            'unsloth/gemma-4-12B-it-qat-GGUF|yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF|HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced|empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF'; then
+
+            if [ "$$BIG_SEEN" = "0" ]; then
+              echo "[restorer] Large model detected"
             fi
+
+            BIG_SEEN=1
+
+          elif [ "$$BIG_SEEN" = "1" ]; then
+
+            #
+            # A large model was running, but has now disappeared.
+            # Its TTL has expired or it was otherwise unloaded.
+            #
+            echo "[restorer] Large model is no longer running"
+            echo "[restorer] Restoring baseline models..."
+
+            echo "[restorer] Loading embedding model..."
+
+            curl -fsS \
+              --max-time 1800 \
+              -H "Authorization: Bearer $$LLAMA_SWAP_API_KEY" \
+              "http://llama-swap:8080/upstream/Qwen/Qwen3-Embedding-0.6B:Q8_0/health" \
+              >/dev/null || {
+                echo "[restorer] Failed to load embedding model"
+                sleep 5
+                continue
+              }
+
+            echo "[restorer] Loading reranker model..."
+
+            curl -fsS \
+              --max-time 1800 \
+              -H "Authorization: Bearer $$LLAMA_SWAP_API_KEY" \
+              "http://llama-swap:8080/upstream/Qwen/Qwen3-Reranker-0.6B:Q8_0/health" \
+              >/dev/null || {
+                echo "[restorer] Failed to load reranker model"
+                sleep 5
+                continue
+              }
+
+            echo "[restorer] Loading E4B model..."
+
+            curl -fsS \
+              --max-time 1800 \
+              -H "Authorization: Bearer $$LLAMA_SWAP_API_KEY" \
+              "http://llama-swap:8080/upstream/unsloth/gemma-4-E4B-it-GGUF:UD-Q4_K_XL/health" \
+              >/dev/null || {
+                echo "[restorer] Failed to load E4B model"
+                sleep 5
+                continue
+              }
+
+            echo "[restorer] Baseline restored"
+
+            BIG_SEEN=0
           fi
+
           sleep 5
         done
+
     security_opt:
       - no-new-privileges:true
 
