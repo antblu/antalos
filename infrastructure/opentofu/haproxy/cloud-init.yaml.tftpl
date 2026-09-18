@@ -33,7 +33,20 @@ packages:
   - qemu-guest-agent
   - qemu-guest-agent-openrc
   - sudo
+  - tailscale
+  - tailscale-openrc
 write_files:
+  - path: /run/headscale-auth-key
+    owner: root:root
+    permissions: "0600"
+    content: |
+      ${headscale_auth_key}
+  - path: /etc/sysctl.d/99-tailscale.conf
+    owner: root:root
+    permissions: "0644"
+    content: |
+      net.ipv4.ip_forward = 1
+      net.ipv6.conf.all.forwarding = 1
   - path: /usr/local/sbin/console-autologin
     owner: root:root
     permissions: "0755"
@@ -121,4 +134,10 @@ runcmd:
   - haproxy -c -f /etc/haproxy/haproxy.cfg
   - rc-service haproxy restart
   - rc-service keepalived restart
+  - rc-update add tailscale default
+  - rc-service tailscale start
+  - sysctl -p /etc/sysctl.d/99-tailscale.conf
+  - |
+    tailscale up --login-server=https://vpn.antblu.net --auth-key=file:/run/headscale-auth-key --advertise-routes=${ipv4_address}/32 --accept-dns=false
+    rm -f /run/headscale-auth-key
 final_message: Alpine HAProxy edge bootstrap completed after $UPTIME seconds

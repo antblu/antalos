@@ -30,6 +30,7 @@ resource "proxmox_download_file" "cloud_init" {
     data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
       hostname         = each.value.name
       ssh_public_keys  = var.ssh_public_keys
+      headscale_auth_key = var.headscale_auth_key
       timezone         = var.timezone
       dns_servers      = var.vm_dns_servers
       traefik_ip       = var.traefik_ip

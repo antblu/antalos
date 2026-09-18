@@ -174,6 +174,12 @@ variable "ssh_public_keys" {
   description = "SSH public keys authorized for the alpine user"
 }
 
+variable "headscale_auth_key" {
+  type        = string
+  description = "Headscale pre-authentication key used when provisioning a replacement HAProxy VM"
+  sensitive   = true
+}
+
 variable "alpine_cloud_image_url" {
   type        = string
   description = "Pinned official Alpine GenericCloud BIOS cloud-init image"

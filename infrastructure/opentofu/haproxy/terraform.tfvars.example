@@ -6,5 +6,7 @@ ssh_public_keys = [
   "<ssh-ed25519-public-key>"
 ]
 
+headscale_auth_key = "<headscale-preauth-key>"
+
 proxmox_ssh_username = "terraform"
 proxmox_ssh_password = "<password-to-terraform>"
