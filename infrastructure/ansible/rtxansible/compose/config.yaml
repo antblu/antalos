@@ -61,7 +61,7 @@ models:
       --ctx-size 16384
       --parallel 1
       --cache-ram 2048
-      --ctx-checkpoints 3
+      --ctx-checkpoints 4
       --flash-attn off
       --n-gpu-layers all
     ttl: 0
@@ -83,7 +83,7 @@ models:
       --spec-draft-n-max 4
       --parallel 1
       --cache-ram 2048
-      --ctx-checkpoints 3
+      --ctx-checkpoints 4
       --ctx-size 131072
       --n-gpu-layers all
     ttl: 600
@@ -102,7 +102,7 @@ models:
       --ctx-size 131072
       --parallel 1
       --cache-ram 2048
-      --ctx-checkpoints 3
+      --ctx-checkpoints 4
       --n-gpu-layers all
     ttl: 600
 
@@ -120,7 +120,7 @@ models:
       --ctx-size 131072
       --parallel 1
       --cache-ram 2048
-      --ctx-checkpoints 3
+      --ctx-checkpoints 4
       --n-gpu-layers all
     ttl: 600
 
