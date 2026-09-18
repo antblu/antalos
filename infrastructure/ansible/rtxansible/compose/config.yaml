@@ -124,6 +124,16 @@ models:
       --n-gpu-layers all
     ttl: 600
 
+  "mradermacher/OxCoder-9B-i1-GGUF:Q5_K_M":
+    cmd: >-
+      llama-server
+      --host 127.0.0.1
+      --port ${PORT}
+      --hf-repo mradermacher/OxCoder-9B-i1-GGUF
+      --hf-file OxCoder-9B.i1-Q5_K_M.gguf
+      --n-gpu-layers all
+    ttl: 600
+
 
 # ==============================================================
 # STARTUP
