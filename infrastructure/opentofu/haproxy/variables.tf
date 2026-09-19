@@ -180,6 +180,18 @@ variable "headscale_auth_key" {
   sensitive   = true
 }
 
+variable "headscale_hostname" {
+  type        = string
+  description = "Headscale control-plane hostname resolved directly inside the home network"
+  default     = "vpn.antblu.net"
+}
+
+variable "headscale_ipv4_address" {
+  type        = string
+  description = "Internal Traefik address used to avoid a Tailscale-dependent public bootstrap path"
+  default     = "10.30.0.200"
+}
+
 variable "alpine_cloud_image_url" {
   type        = string
   description = "Pinned official Alpine GenericCloud BIOS cloud-init image"

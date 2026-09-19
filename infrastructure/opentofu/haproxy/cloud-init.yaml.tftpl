@@ -36,6 +36,12 @@ packages:
   - tailscale
   - tailscale-openrc
 write_files:
+  - path: /etc/hosts
+    owner: root:root
+    permissions: "0644"
+    append: true
+    content: |
+      ${headscale_ipv4_address} ${headscale_hostname}
   - path: /run/headscale-auth-key
     owner: root:root
     permissions: "0600"
@@ -138,6 +144,6 @@ runcmd:
   - rc-service tailscale start
   - sysctl -p /etc/sysctl.d/99-tailscale.conf
   - |
-    tailscale up --login-server=https://vpn.antblu.net --auth-key=file:/run/headscale-auth-key --advertise-routes=${ipv4_address}/32 --accept-dns=false
+    tailscale up --login-server=https://${headscale_hostname} --auth-key=file:/run/headscale-auth-key --advertise-routes=${ipv4_address}/32 --accept-dns=false
     rm -f /run/headscale-auth-key
 final_message: Alpine HAProxy edge bootstrap completed after $UPTIME seconds

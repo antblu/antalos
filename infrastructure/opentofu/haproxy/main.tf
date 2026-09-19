@@ -28,16 +28,18 @@ resource "proxmox_download_file" "cloud_init" {
 
   source_raw {
     data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
-      hostname         = each.value.name
-      ssh_public_keys  = var.ssh_public_keys
-      headscale_auth_key = var.headscale_auth_key
-      timezone         = var.timezone
-      dns_servers      = var.vm_dns_servers
-      traefik_ip       = var.traefik_ip
-      tcp_ports        = var.traefik_tcp_ports
-      mail_ip          = var.mail_ip
-      mail_tcp_ports   = var.mail_tcp_ports
-      ipv4_address     = var.haproxy_vms[each.key].ipv4_address
+      hostname               = each.value.name
+      ssh_public_keys        = var.ssh_public_keys
+      headscale_auth_key     = var.headscale_auth_key
+      headscale_hostname     = var.headscale_hostname
+      headscale_ipv4_address = var.headscale_ipv4_address
+      timezone               = var.timezone
+      dns_servers            = var.vm_dns_servers
+      traefik_ip             = var.traefik_ip
+      tcp_ports              = var.traefik_tcp_ports
+      mail_ip                = var.mail_ip
+      mail_tcp_ports         = var.mail_tcp_ports
+      ipv4_address           = var.haproxy_vms[each.key].ipv4_address
       peer_ipv4_address = one([
         for key, vm in var.haproxy_vms : vm.ipv4_address if key != each.key
       ])
