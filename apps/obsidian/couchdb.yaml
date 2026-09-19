@@ -1,0 +1,135 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: obsidian-couchdb
+  namespace: obsidian
+  labels:
+    app.kubernetes.io/name: obsidian-couchdb
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: obsidian-couchdb
+  ports:
+    - name: http
+      port: 5984
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: obsidian-couchdb
+  namespace: obsidian
+  labels:
+    app.kubernetes.io/name: obsidian-couchdb
+    app.kubernetes.io/part-of: obsidian
+spec:
+  serviceName: obsidian-couchdb
+  replicas: 2
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: obsidian-couchdb
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: obsidian-couchdb
+        app.kubernetes.io/part-of: obsidian
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 5984
+        runAsGroup: 5984
+        fsGroup: 5984
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: obsidian-couchdb
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: couchdb
+          image: couchdb:${COUCHDB_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: COUCHDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: obsidian-couchdb-admin
+                  key: username
+            - name: COUCHDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: obsidian-couchdb-admin
+                  key: password
+          ports:
+            - name: http
+              containerPort: 5984
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            httpGet:
+              path: /_up
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /_up
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /opt/couchdb/data
+            - name: config
+              mountPath: /opt/couchdb/etc/local.d/10-obsidian.ini
+              subPath: 10-obsidian.ini
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: obsidian-couchdb-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: openebs-hostpath
+        resources:
+          requests:
+            storage: ${OBSIDIAN_DATABASE_STORAGE_SIZE}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: obsidian-couchdb
+  namespace: obsidian
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: obsidian-couchdb

@@ -48,6 +48,9 @@ variables:
   HEADSCALE_IMAGE_TAG: v0.29.3
   HEADPLANE_IMAGE_TAG: 0.7.1
   BENTOPDF_IMAGE_TAG: 2.8.7
+  COUCHDB_IMAGE_TAG: 3.5.2
+  COUCHDB_HAPROXY_IMAGE_TAG: 3.2.23-alpine
+  COUCHDB_CURL_IMAGE_TAG: 8.16.0
   LITESTREAM_IMAGE_TAG: 0.5.16
   NEXTCLOUD_IMAGE_TAG: 34.0.4-apache
   NEXTCLOUD_INSTANCE_ID: ocxyyr3nkdoj
@@ -145,6 +148,7 @@ variables:
   OPEN_WEBUI_OIDC_PROVIDER_URL: https://auth.antblu.net/application/o/open-web-ui/.well-known/openid-configuration
   DOCS_HOST: docs.antblu.net
   BENTOPDF_HOST: pdf.antblu.net
+  OBSIDIAN_HOST: obsidian.antblu.net
   EUROOFFICE_HOST: office.antblu.net
   WHITEBOARD_HOST: whiteboard.antblu.net
   MAIL_DOMAIN: antblu.net
@@ -162,6 +166,11 @@ variables:
   HEADPLANE_OIDC_DEFAULT_ROLE: member
   AUTHENTIK_MEDIA_SIZE: 1Gi
   AUTHENTIK_DATABASE_STORAGE_SIZE: 20Gi
+
+  # Obsidian LiveSync: two standalone CouchDB replicas with bidirectional,
+  # asynchronous continuous replication and a primary/backup HTTP endpoint.
+  OBSIDIAN_DATABASE_NAME: obsidian
+  OBSIDIAN_DATABASE_STORAGE_SIZE: 10Gi
 
   NEXTCLOUD_DATABASE_STORAGE_SIZE: 70Gi
   NEXTCLOUD_REDIS_STORAGE_SIZE: 5Gi

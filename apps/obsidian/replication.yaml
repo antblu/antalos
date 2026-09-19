@@ -1,0 +1,78 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: obsidian-couchdb-replication
+  namespace: obsidian
+  labels:
+    app.kubernetes.io/name: obsidian-couchdb-replication
+    app.kubernetes.io/part-of: obsidian
+spec:
+  backoffLimit: 12
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: obsidian-couchdb-replication
+        app.kubernetes.io/part-of: obsidian
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: configure-replication
+          image: curlimages/curl:${COUCHDB_CURL_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: COUCHDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: obsidian-couchdb-admin
+                  key: username
+            - name: COUCHDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: obsidian-couchdb-admin
+                  key: password
+            - name: DATABASE_NAME
+              value: ${OBSIDIAN_DATABASE_NAME}
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              node_0="http://obsidian-couchdb-0.obsidian-couchdb.obsidian.svc.cluster.local:5984"
+              node_1="http://obsidian-couchdb-1.obsidian-couchdb.obsidian.svc.cluster.local:5984"
+
+              until curl --fail --silent --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" "${node_0}/_up" >/dev/null; do
+                sleep 5
+              done
+              until curl --fail --silent --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" "${node_1}/_up" >/dev/null; do
+                sleep 5
+              done
+
+              for node in "${node_0}" "${node_1}"; do
+                curl --fail --silent --show-error --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" -X PUT "${node}/${DATABASE_NAME}" || true
+                curl --fail --silent --show-error --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" -X PUT "${node}/_replicator" || true
+              done
+
+              payload_0=$(printf '{"source":{"url":"%s/%s","auth":{"basic":{"username":"%s","password":"%s"}}},"target":{"url":"%s/%s","auth":{"basic":{"username":"%s","password":"%s"}}},"continuous":true,"create_target":true}' "${node_0}" "${DATABASE_NAME}" "${COUCHDB_USER}" "${COUCHDB_PASSWORD}" "${node_1}" "${DATABASE_NAME}" "${COUCHDB_USER}" "${COUCHDB_PASSWORD}")
+              payload_1=$(printf '{"source":{"url":"%s/%s","auth":{"basic":{"username":"%s","password":"%s"}}},"target":{"url":"%s/%s","auth":{"basic":{"username":"%s","password":"%s"}}},"continuous":true,"create_target":true}' "${node_1}" "${DATABASE_NAME}" "${COUCHDB_USER}" "${COUCHDB_PASSWORD}" "${node_0}" "${DATABASE_NAME}" "${COUCHDB_USER}" "${COUCHDB_PASSWORD}")
+
+              curl --fail --silent --show-error --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" -H "Content-Type: application/json" -X PUT "${node_0}/_replicator/obsidian-to-replica-1" --data "${payload_0}"
+              curl --fail --silent --show-error --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" -H "Content-Type: application/json" -X PUT "${node_1}/_replicator/obsidian-to-replica-0" --data "${payload_1}"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi

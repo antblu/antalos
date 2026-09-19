@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obsidian-haproxy
+  namespace: obsidian
+  labels:
+    app.kubernetes.io/name: obsidian-haproxy
+    app.kubernetes.io/part-of: obsidian
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: obsidian-haproxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: obsidian-haproxy
+        app.kubernetes.io/part-of: obsidian
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 99
+        runAsGroup: 99
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: obsidian-haproxy
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: haproxy
+          image: haproxy:${COUCHDB_HAPROXY_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: config
+              mountPath: /usr/local/etc/haproxy/haproxy.cfg
+              subPath: haproxy.cfg
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: obsidian-haproxy-config
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: obsidian-haproxy
+  namespace: obsidian
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: obsidian-haproxy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: obsidian
+  namespace: obsidian
+  labels:
+    app.kubernetes.io/name: obsidian-haproxy
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: obsidian-haproxy
+  ports:
+    - name: http
+      port: 5984
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: obsidian
+  namespace: obsidian
+  labels:
+    app.kubernetes.io/name: obsidian-haproxy
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - ${OBSIDIAN_HOST}
+      secretName: obsidian-tls
+  rules:
+    - host: ${OBSIDIAN_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: obsidian
+                port:
+                  name: http
