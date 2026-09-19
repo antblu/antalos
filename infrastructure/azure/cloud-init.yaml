@@ -1,0 +1,199 @@
+#cloud-config
+# ${OS_NAME} ${OS_VERSION} (${OS_CODENAME}) on Azure ${OS_ARCHITECTURE}.
+hostname: ${HOSTNAME}
+preserve_hostname: false
+disable_root: true
+ssh_pwauth: false
+users:
+  - name: ${ADMIN_USERNAME}
+    groups:
+      - ${ADMIN_GROUP}
+    shell: ${ADMIN_SHELL}
+    lock_passwd: true
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - ${ADMIN_SSH_PUBLIC_KEY}
+package_update: true
+package_upgrade: false
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - haproxy
+  - nftables
+  - openssh-server
+write_files:
+  - path: /run/headscale-auth-key
+    owner: root:root
+    permissions: '0600'
+    content: '${HEADSCALE_AUTH_KEY}'
+  - path: /etc/nftables.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      #!/usr/sbin/nft -f
+      flush ruleset
+
+      table ip crowdsec {
+        set crowdsec-blacklists {
+          type ipv4_addr
+          flags timeout
+        }
+        chain crowdsec-chain {
+          type filter hook input priority -10; policy accept;
+          ip saddr @crowdsec-blacklists drop
+        }
+      }
+
+      table ip6 crowdsec6 {
+        set crowdsec6-blacklists {
+          type ipv6_addr
+          flags timeout
+        }
+        chain crowdsec6-chain {
+          type filter hook input priority -10; policy accept;
+          ip6 saddr @crowdsec6-blacklists drop
+        }
+      }
+
+      table inet filter {
+        chain input {
+          type filter hook input priority 0; policy drop;
+          iifname "lo" accept
+          ct state established,related accept
+          ct state invalid drop
+          ip protocol icmp accept
+          ip6 nexthdr ipv6-icmp accept
+          tcp dport { ${ALLOWED_TCP_PORTS} } accept
+          udp dport ${TAILSCALE_UDP_PORT} accept
+        }
+        chain forward {
+          type filter hook forward priority 0; policy drop;
+        }
+        chain output {
+          type filter hook output priority 0; policy accept;
+        }
+      }
+  - path: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml.local
+    owner: root:root
+    permissions: '0600'
+    content: |
+      mode: nftables
+      api_url: http://127.0.0.1:8080/
+      nftables:
+        ipv4:
+          enabled: true
+          set-only: true
+          table: crowdsec
+          chain: crowdsec-chain
+        ipv6:
+          enabled: true
+          set-only: true
+          table: crowdsec6
+          chain: crowdsec6-chain
+  - path: /etc/crowdsec/acquis.d/ssh-journal.yaml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      source: journalctl
+      journalctl_filter:
+        - _SYSTEMD_UNIT=ssh.service
+      labels:
+        type: syslog
+  - path: /etc/systemd/system/crowdsec-firewall-bouncer.service.d/nftables.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Unit]
+      Requires=nftables.service
+      After=nftables.service crowdsec.service
+      PartOf=nftables.service
+  - path: /etc/haproxy/haproxy.cfg
+    owner: root:root
+    permissions: '0644'
+    content: |
+      global
+        log stdout format raw local0
+        maxconn ${HAPROXY_MAX_CONNECTIONS}
+
+      defaults
+        log global
+        mode tcp
+        option tcplog
+        timeout connect 5s
+        timeout client 1m
+        timeout server 1m
+
+      frontend incoming_443
+        bind :443
+        default_backend home_443
+
+      backend home_443
+        balance roundrobin
+        option tcp-check
+        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:443 check
+        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:443 check
+      
+      frontend incoming_25
+        bind :25
+        timeout client 5m
+        default_backend home_25
+
+      backend home_25
+        balance roundrobin
+        option tcp-check
+        timeout server 5m
+        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:25 check
+        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:25 check
+
+      frontend incoming_465
+        bind :465
+        default_backend home_465
+
+      backend home_465
+        balance roundrobin
+        option tcp-check
+        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:465 check
+        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:465 check
+
+      frontend incoming_993
+        bind :993
+        default_backend home_993
+
+      backend home_993
+        balance roundrobin
+        option tcp-check
+        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:993 check
+        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:993 check
+runcmd:
+  - |
+    set -eu
+    . /etc/os-release
+    if [ "$ID" != ${OS_ID} ] || [ "$VERSION_CODENAME" != ${OS_CODENAME} ] || [ "$(dpkg --print-architecture)" != ${OS_ARCHITECTURE} ]; then
+      echo 'This cloud-init requires ${OS_NAME} ${OS_VERSION} ${AZURE_ARCHITECTURE} (${OS_ARCHITECTURE}).' >&2
+      exit 1
+    fi
+    systemctl enable --now nftables
+
+    install -d -m 0755 /usr/share/keyrings /etc/apt/keyrings
+    curl -fsSL https://pkgs.tailscale.com/stable/${OS_ID}/${OS_CODENAME}.noarmor.gpg -o /usr/share/keyrings/tailscale-archive-keyring.gpg
+    printf '%s\n' 'deb [arch=${OS_ARCHITECTURE} signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/${OS_ID} ${OS_CODENAME} main' > /etc/apt/sources.list.d/tailscale.list
+    curl -fsSL https://packagecloud.io/crowdsec/crowdsec/gpgkey | gpg --dearmor -o /etc/apt/keyrings/crowdsec_crowdsec-archive-keyring.gpg
+    printf '%s\n' 'deb [arch=${OS_ARCHITECTURE} signed-by=/etc/apt/keyrings/crowdsec_crowdsec-archive-keyring.gpg] https://packagecloud.io/crowdsec/crowdsec/any any main' > /etc/apt/sources.list.d/crowdsec_crowdsec.list
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y tailscale crowdsec
+
+    cscli collections install crowdsecurity/linux crowdsecurity/sshd
+    systemctl enable --now crowdsec
+    systemctl restart crowdsec
+    DEBIAN_FRONTEND=noninteractive apt-get install -y crowdsec-firewall-bouncer-nftables
+    systemctl daemon-reload
+    systemctl enable crowdsec-firewall-bouncer
+    systemctl restart crowdsec-firewall-bouncer
+
+    systemctl enable --now tailscaled
+    tailscale up --login-server=${HEADSCALE_URL} --auth-key=file:/run/headscale-auth-key --accept-routes --accept-dns=false --netfilter-mode=off
+    rm -f /run/headscale-auth-key
+
+    systemctl enable haproxy
+    systemctl restart haproxy
