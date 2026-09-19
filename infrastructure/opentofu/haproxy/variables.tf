@@ -138,10 +138,6 @@ variable "traefik_tcp_ports" {
   description = "Traefik TCP entrypoint ports forwarded by HAProxy"
   default = [
     25,   # SMTP - inbound mail delivery
-    443,  # HTTPS
-    465,  # SMTPS - authenticated client submission
-    587,  # SMTP submission with STARTTLS
-    993,  # IMAPS
     # 636, # LDAPS for Jellyfin
   ]
 }
@@ -156,6 +152,7 @@ variable "mail_tcp_ports" {
   type        = list(number)
   description = "Mail TCP ports forwarded by the home HAProxy VMs"
   default = [
+    25,
     465,
     587,
     993,
