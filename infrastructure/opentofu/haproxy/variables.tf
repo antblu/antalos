@@ -137,7 +137,7 @@ variable "traefik_tcp_ports" {
   type        = list(number)
   description = "Traefik TCP entrypoint ports forwarded by HAProxy"
   default = [
-    25,   # SMTP - inbound mail delivery
+    443,   # HTTPS
     # 636, # LDAPS for Jellyfin
   ]
 }
