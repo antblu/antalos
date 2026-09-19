@@ -156,6 +156,7 @@ variable "mail_tcp_ports" {
     465,
     587,
     993,
+    4190,
   ]
 }
 
