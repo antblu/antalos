@@ -60,6 +60,10 @@ spec:
               secretName: zammad-storage
               secretKey: s3-url
           zammadConfig:
+            initJob:
+              annotations:
+                argocd.argoproj.io/hook: Sync
+                argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
             tmpDirVolume:
               emptyDir:
                 medium: Memory
