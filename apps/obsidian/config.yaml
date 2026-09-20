@@ -68,7 +68,7 @@ data:
       http-request del-header X-Auth-CouchDB-Token
       http-request set-header X-Auth-CouchDB-UserName %[req.hdr(X-authentik-username)] if authentik_user
       http-request set-header X-Auth-CouchDB-Roles _admin if authentik_user
-      http-request set-header X-Auth-CouchDB-Token %[req.hdr(X-authentik-username),hmac(sha256,var(proc.couchdb_proxy_secret)),hex] if authentik_user
+      http-request set-header X-Auth-CouchDB-Token %[req.hdr(X-authentik-username),hmac(sha256,proc.couchdb_proxy_secret),hex] if authentik_user
       default_backend couchdb_replicas
 
     backend couchdb_replicas
