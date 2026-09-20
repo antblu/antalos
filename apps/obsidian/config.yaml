@@ -15,6 +15,11 @@ data:
     [chttpd]
     bind_address = 0.0.0.0
     require_valid_user = true
+    authentication_handlers = {chttpd_auth, cookie_authentication_handler}, {chttpd_auth, proxy_authentication_handler}, {chttpd_auth, default_authentication_handler}
+
+    [chttpd_auth]
+    proxy_use_secret = true
+    hash_algorithms = sha256,sha
 
     [httpd]
     WWW-Authenticate = Basic realm="couchdb"
@@ -35,6 +40,7 @@ data:
   haproxy.cfg: |
     global
       log stdout format raw local0
+      set-var proc.couchdb_proxy_secret env(COUCHDB_PROXY_SECRET_BASE64)
 
     defaults
       log global
@@ -56,6 +62,13 @@ data:
 
     frontend couchdb
       bind :8080
+      acl authentik_user req.hdr(X-authentik-username) -m found
+      http-request del-header X-Auth-CouchDB-UserName
+      http-request del-header X-Auth-CouchDB-Roles
+      http-request del-header X-Auth-CouchDB-Token
+      http-request set-header X-Auth-CouchDB-UserName %[req.hdr(X-authentik-username)] if authentik_user
+      http-request set-header X-Auth-CouchDB-Roles _admin if authentik_user
+      http-request set-header X-Auth-CouchDB-Token %[req.hdr(X-authentik-username),hmac(sha256,var(proc.couchdb_proxy_secret)),hex] if authentik_user
       default_backend couchdb_replicas
 
     backend couchdb_replicas

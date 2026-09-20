@@ -40,6 +40,12 @@ spec:
         - name: haproxy
           image: haproxy:${COUCHDB_HAPROXY_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
+          env:
+            - name: COUCHDB_PROXY_SECRET_BASE64
+              valueFrom:
+                secretKeyRef:
+                  name: obsidian-couchdb-auth
+                  key: proxy-secret-base64
           ports:
             - name: http
               containerPort: 8080
@@ -107,27 +113,89 @@ spec:
       targetPort: http
       protocol: TCP
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: authentik-couchdb
+  namespace: obsidian
+spec:
+  forwardAuth:
+    address: http://authentik-server.authentik.svc.cluster.local/outpost.goauthentik.io/auth/traefik
+    trustForwardHeader: true
+    maxResponseBodySize: 4194304
+    authResponseHeaders:
+      - X-authentik-username
+      - X-authentik-groups
+      - X-authentik-entitlements
+      - X-authentik-email
+      - X-authentik-name
+      - X-authentik-uid
+      - X-authentik-jwt
+      - X-authentik-meta-jwks
+      - X-authentik-meta-outpost
+      - X-authentik-meta-provider
+      - X-authentik-meta-app
+      - X-authentik-meta-version
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentik-embedded-outpost
+  namespace: obsidian
+spec:
+  type: ExternalName
+  externalName: authentik-server.authentik.svc.cluster.local
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
 metadata:
   name: obsidian
   namespace: obsidian
   labels:
     app.kubernetes.io/name: obsidian-haproxy
 spec:
-  ingressClassName: traefik
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`${OBSIDIAN_HOST}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      priority: 100
+      services:
+        - kind: Service
+          name: authentik-embedded-outpost
+          port: 80
+    - kind: Rule
+      match: Host(`${OBSIDIAN_HOST}`)
+      priority: 10
+      middlewares:
+        - name: authentik-couchdb
+      services:
+        - kind: Service
+          name: obsidian
+          port: 5984
   tls:
-    - hosts:
-        - ${OBSIDIAN_HOST}
-      secretName: obsidian-tls
-  rules:
-    - host: ${OBSIDIAN_HOST}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: obsidian
-                port:
-                  name: http
+    secretName: obsidian-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: obsidian-haproxy-ingress
+  namespace: obsidian
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: obsidian-haproxy
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik
+      ports:
+        - port: 8080
+          protocol: TCP

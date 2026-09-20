@@ -70,6 +70,11 @@ spec:
                 secretKeyRef:
                   name: obsidian-couchdb-admin
                   key: password
+            - name: COUCHDB_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: obsidian-couchdb-auth
+                  key: proxy-secret
           ports:
             - name: http
               containerPort: 5984
