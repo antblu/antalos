@@ -56,6 +56,7 @@ spec:
               done
 
               for node in "${node_0}" "${node_1}"; do
+                curl --fail --silent --show-error --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" -X PUT "${node}/_users" || true
                 curl --fail --silent --show-error --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" -X PUT "${node}/${DATABASE_NAME}" || true
                 curl --fail --silent --show-error --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" -X PUT "${node}/_replicator" || true
               done
@@ -63,8 +64,12 @@ spec:
               payload_0=$(printf '{"source":{"url":"%s/%s","auth":{"basic":{"username":"%s","password":"%s"}}},"target":{"url":"%s/%s","auth":{"basic":{"username":"%s","password":"%s"}}},"continuous":true,"create_target":true}' "${node_0}" "${DATABASE_NAME}" "${COUCHDB_USER}" "${COUCHDB_PASSWORD}" "${node_1}" "${DATABASE_NAME}" "${COUCHDB_USER}" "${COUCHDB_PASSWORD}")
               payload_1=$(printf '{"source":{"url":"%s/%s","auth":{"basic":{"username":"%s","password":"%s"}}},"target":{"url":"%s/%s","auth":{"basic":{"username":"%s","password":"%s"}}},"continuous":true,"create_target":true}' "${node_1}" "${DATABASE_NAME}" "${COUCHDB_USER}" "${COUCHDB_PASSWORD}" "${node_0}" "${DATABASE_NAME}" "${COUCHDB_USER}" "${COUCHDB_PASSWORD}")
 
-              curl --fail --silent --show-error --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" -H "Content-Type: application/json" -X PUT "${node_0}/_replicator/obsidian-to-replica-1" --data "${payload_0}"
-              curl --fail --silent --show-error --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" -H "Content-Type: application/json" -X PUT "${node_1}/_replicator/obsidian-to-replica-0" --data "${payload_1}"
+              if ! curl --fail --silent --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" "${node_0}/_replicator/obsidian-to-replica-1" >/dev/null; then
+                curl --fail --silent --show-error --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" -H "Content-Type: application/json" -X PUT "${node_0}/_replicator/obsidian-to-replica-1" --data "${payload_0}"
+              fi
+              if ! curl --fail --silent --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" "${node_1}/_replicator/obsidian-to-replica-0" >/dev/null; then
+                curl --fail --silent --show-error --user "${COUCHDB_USER}:${COUCHDB_PASSWORD}" -H "Content-Type: application/json" -X PUT "${node_1}/_replicator/obsidian-to-replica-0" --data "${payload_1}"
+              fi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

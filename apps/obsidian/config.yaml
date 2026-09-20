@@ -8,6 +8,10 @@ data:
     [couchdb]
     single_node = true
 
+    [cluster]
+    n = 1
+    q = 1
+
     [chttpd]
     bind_address = 0.0.0.0
     require_valid_user = true
@@ -41,12 +45,19 @@ data:
       timeout client 60s
       timeout server 60s
 
+    resolvers kubernetes
+      nameserver coredns 10.96.0.10:53
+      resolve_retries 3
+      timeout resolve 1s
+      timeout retry 1s
+      hold valid 10s
+      hold nx 3s
+      hold other 3s
+
     frontend couchdb
       bind :8080
       default_backend couchdb_replicas
 
     backend couchdb_replicas
-      option httpchk GET /_up
-      http-check expect status 200
-      server couchdb-0 obsidian-couchdb-0.obsidian-couchdb.obsidian.svc.cluster.local:5984 check inter 3s fall 3 rise 2
-      server couchdb-1 obsidian-couchdb-1.obsidian-couchdb.obsidian.svc.cluster.local:5984 check inter 3s fall 3 rise 2 backup
+      server couchdb-0 obsidian-couchdb-0.obsidian-couchdb.obsidian.svc.cluster.local:5984 check inter 3s fall 3 rise 2 resolvers kubernetes init-addr libc,none
+      server couchdb-1 obsidian-couchdb-1.obsidian-couchdb.obsidian.svc.cluster.local:5984 check inter 3s fall 3 rise 2 resolvers kubernetes init-addr libc,none backup

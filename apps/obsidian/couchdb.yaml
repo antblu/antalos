@@ -80,16 +80,14 @@ spec:
               drop:
                 - ALL
           readinessProbe:
-            httpGet:
-              path: /_up
+            tcpSocket:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 6
           livenessProbe:
-            httpGet:
-              path: /_up
+            tcpSocket:
               port: http
             initialDelaySeconds: 30
             periodSeconds: 30
@@ -118,7 +116,7 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
-        storageClassName: openebs-hostpath
+        storageClassName: openebs-local
         resources:
           requests:
             storage: ${OBSIDIAN_DATABASE_STORAGE_SIZE}
