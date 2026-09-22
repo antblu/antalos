@@ -41,6 +41,7 @@ Edit `secrets.yaml` privately and replace the example enrollment key. Edit `vari
 
 Use an explicit substitution list so runtime variables in the embedded shell remain intact:
 
+{% raw %}
 ```bash title="Render from the Azure directory"
 umask 077
 set -a
@@ -53,6 +54,7 @@ substitutions="$(printf '${%s} ' ${variable_names})"
 envsubst "$substitutions" < cloud-init.yaml > cloud-init.rendered.yaml
 chmod 600 cloud-init.rendered.yaml
 ```
+{% endraw %}
 
 Run this only against your own trusted configuration files. Do not print or commit the rendered output. Supply it as the new Azure VM's custom data. The template prepares the guest firewall, installs CrowdSec before the firewall bouncer, joins the private network, and starts HAProxy.
 
