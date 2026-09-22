@@ -269,15 +269,27 @@ spec:
             - name: management
               containerPort: 8080
           readinessProbe:
-            httpGet:
-              path: /healthz/ready
-              port: management
+            exec:
+              command:
+                - curl
+                - --fail
+                - --silent
+                - --show-error
+                - --max-time
+                - "1"
+                - http://127.0.0.1:8080/healthz/ready
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /healthz/live
-              port: management
+            exec:
+              command:
+                - curl
+                - --fail
+                - --silent
+                - --show-error
+                - --max-time
+                - "1"
+                - http://127.0.0.1:8080/healthz/live
             initialDelaySeconds: 15
             periodSeconds: 20
           securityContext:
