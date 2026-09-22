@@ -145,6 +145,8 @@ variables:
   VICTORIALOGS_HOST: logs.antblu.net
   GRAFANA_DATABASE_HOST: grafana-db-rw.monitoring.svc.cluster.local
   MAIL_HOST: mail.antblu.net
+  STALWART_PROXY_TRUSTED_NETWORK_LEFT: 10.40.0.17/32
+  STALWART_PROXY_TRUSTED_NETWORK_RIGHT: 10.40.0.18/32
   NEXTCLOUD_HOST: nextcloud.antblu.net
   OPEN_WEBUI_HOST: ai.antblu.net
   OPEN_WEBUI_OIDC_CLIENT_ID: D9mZ728iVOvT6edf6UvDBjFHl7rbqVxc9p6XKPpo

@@ -119,12 +119,15 @@ write_files:
 %{ endfor ~}
 %{ for port in mail_tcp_ports ~}
       frontend incoming_${port}
-        bind :${port}
+        bind :${port} accept-proxy
         default_backend mail_${port}
 
       backend mail_${port}
+        balance roundrobin
         option tcp-check
-        server mail ${mail_ip}:${port} check
+%{ for name, address in mail_backend_nodes ~}
+        server stalwart_${name} ${address}:${lookup(mail_node_ports, tostring(port), 0)} check send-proxy-v2
+%{ endfor ~}
 
 %{ endfor ~}
 runcmd:

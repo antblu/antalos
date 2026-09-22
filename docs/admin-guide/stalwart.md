@@ -61,9 +61,13 @@ Before an upgrade, read the release notes for the pinned target and record a rec
 
 ## Mail routing and listeners
 
-The public edge and home proxies are documented in [networking](/infrastructure/networking/) and [Azure edge deployment](/admin-guide/azure-edge/). Stalwart shares the declared MetalLB address with web ingress on different ports. SMTP, submission, IMAPS, and ManageSieve need an active Stalwart listener as well as their Service port and upstream forwarding.
+The public edge and home proxies are documented in [networking](/infrastructure/networking/) and [Azure edge deployment](/admin-guide/azure-edge/). Public mail traverses the Azure edge and one of the home HAProxy guests before reaching Stalwart. The Azure edge sends PROXY protocol v2, each home frontend accepts it, and each home backend sends PROXY v2 to a local Talos worker through the dedicated `stalwart-proxy` NodePort Service. Stalwart trusts PROXY headers only from the two home HAProxy addresses declared in `apps/variables.yaml`.
+
+The source-preserving proxy path uses fixed NodePorts: SMTP `30025`, implicit TLS SMTP `30465`, submission `30587`, IMAPS `30993`, and ManageSieve `30190`. Firewall policy must allow both home HAProxy guests to reach those ports on both mail-worker nodes. Keep the shared `stalwart` MetalLB Service for direct internal clients; do not use that Cluster-policy VIP between the home proxies and Stalwart. Doing so source-NATs many public sessions to a cluster address, preventing per-client reputation controls and allowing one automatic block to affect all inbound mail.
 
 When changing listener configuration, inspect the active application configuration after bootstrap and use the service's startup/rollout procedure. A Kubernetes Service mapping alone does not cause Stalwart to bind a port. Preserve the distinction between the HTTPS administration route and the mail-client protocols.
+
+After changing any part of this path, test all five public ports and inspect Stalwart's connection events. The recorded remote address must be the public client address, not an Azure, home HAProxy, pod, or node address. Also inspect blocked-IP records before concluding that a reachable listener can accept mail.
 
 ## Trace a delayed message
 

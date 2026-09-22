@@ -143,8 +143,8 @@ write_files:
         balance roundrobin
         option tcp-check
         timeout server 5m
-        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:25 check
-        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:25 check
+        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:25 check send-proxy-v2
+        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:25 check send-proxy-v2
 
       frontend incoming_465
         bind :465
@@ -153,8 +153,18 @@ write_files:
       backend home_465
         balance roundrobin
         option tcp-check
-        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:465 check
-        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:465 check
+        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:465 check send-proxy-v2
+        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:465 check send-proxy-v2
+
+      frontend incoming_587
+        bind :587
+        default_backend home_587
+
+      backend home_587
+        balance roundrobin
+        option tcp-check
+        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:587 check send-proxy-v2
+        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:587 check send-proxy-v2
 
       frontend incoming_993
         bind :993
@@ -163,8 +173,18 @@ write_files:
       backend home_993
         balance roundrobin
         option tcp-check
-        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:993 check
-        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:993 check
+        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:993 check send-proxy-v2
+        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:993 check send-proxy-v2
+
+      frontend incoming_4190
+        bind :4190
+        default_backend home_4190
+
+      backend home_4190
+        balance roundrobin
+        option tcp-check
+        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:4190 check send-proxy-v2
+        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:4190 check send-proxy-v2
 runcmd:
   - |
     set -eu

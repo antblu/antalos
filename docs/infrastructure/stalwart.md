@@ -7,6 +7,8 @@ description: "Backend components, persistence, placement, and failure boundaries
 
 Two Stalwart replicas share a two-instance PostgreSQL cluster, Garage blob storage, Redis, and Elasticsearch. Redis has two data members and three Sentinel voters, but its HAProxy endpoint is colocated with the RTX quorum pod. Elasticsearch has two data/master members and a third master-only voter. A bootstrap Job applies the initial declarative settings; mail protocol listeners and HTTPS use separate routing paths.
 
+Public mail protocols follow `Azure HAProxy -> home HAProxy -> source-preserving NodePort -> local Stalwart pod`. Both proxy hops use PROXY protocol v2 so Stalwart applies connection limits and reputation to the actual public client. Only the two home HAProxy addresses are trusted to supply PROXY headers. The separate shared MetalLB Service remains the direct internal-client path and does not preserve public source addresses across the additional cluster hop.
+
 ## Component boundaries
 
 <figure class="architecture-diagram" aria-label="Stalwart Mail · component flow">
@@ -29,7 +31,7 @@ This is an interpretation of the checked-in configuration, assuming the declared
 
 | Component | Declared layout | Mechanism |
 | --- | --- | --- |
-| Mail processes | 2 anti-affined Stalwart replicas | Protocol Services can route new sessions to a surviving server. |
+| Mail processes | 2 anti-affined Stalwart replicas | Public protocol traffic targets local endpoints on both mail workers; direct internal clients use the shared MetalLB Service. |
 | PostgreSQL | 2 CNPG members | No synchronous policy is declared; promotion is separate from mail process routing. |
 | Redis data / votes | 2 data + 3 Sentinels | Intended primary election requires working voter communication. |
 | Redis client endpoint | 1 HAProxy in the RTX quorum pod | All configured Redis access depends on this one pod even with healthy data members. |
@@ -38,7 +40,7 @@ This is an interpretation of the checked-in configuration, assuming the declared
 
 ### How a failure is handled
 
-A surviving Stalwart replica can accept a new protocol connection when its database, Redis endpoint, and blob store are available. PostgreSQL promotion and Redis election can interrupt that path. Elasticsearch majority protects master election only; a ready search process does not prove every needed shard has another copy.
+A surviving Stalwart replica can accept a new protocol connection when its database, Redis endpoint, and blob store are available. HAProxy health checks remove a worker NodePort that has no local Stalwart endpoint. PostgreSQL promotion and Redis election can interrupt that path. Elasticsearch majority protects master election only; a ready search process does not prove every needed shard has another copy.
 
 ### Failure scenarios
 

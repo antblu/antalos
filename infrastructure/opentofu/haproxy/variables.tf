@@ -142,10 +142,25 @@ variable "traefik_tcp_ports" {
   ]
 }
 
-variable "mail_ip" {
-  type        = string
-  description = "Shared MetalLB address of the Stalwart mail service"
-  default     = "10.30.0.200"
+variable "mail_backend_nodes" {
+  type        = map(string)
+  description = "Talos workers hosting local Stalwart endpoints for source-preserving NodePort forwarding"
+  default = {
+    left  = "10.30.0.17"
+    right = "10.30.0.18"
+  }
+}
+
+variable "mail_node_ports" {
+  type        = map(number)
+  description = "Stable Stalwart proxy Service NodePorts keyed by public mail port"
+  default = {
+    "25"   = 30025
+    "465"  = 30465
+    "587"  = 30587
+    "993"  = 30993
+    "4190" = 30190
+  }
 }
 
 variable "mail_tcp_ports" {
