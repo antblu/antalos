@@ -108,6 +108,8 @@ spec:
           env:
             - name: DATA_DIR
               value: /app/data
+            - name: UPTIME_KUMA_DB_TYPE
+              value: sqlite
             - name: UPTIME_KUMA_HOST
               value: 0.0.0.0
             - name: UPTIME_KUMA_PORT

@@ -60,8 +60,6 @@ data:
       cat > "$config" <<EOF
     port 26379
     protected-mode no
-    requirepass "$REDIS_PASSWORD"
-    sentinel sentinel-pass "$REDIS_PASSWORD"
     sentinel resolve-hostnames yes
     sentinel announce-hostnames yes
     sentinel announce-ip $POD_DNS
@@ -73,6 +71,7 @@ data:
     sentinel parallel-syncs activepieces 1
     EOF
     fi
+    sed -i '/^requirepass /d; /^sentinel sentinel-pass /d' "$config"
     exec redis-sentinel "$config"
 ---
 apiVersion: v1

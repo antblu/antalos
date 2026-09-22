@@ -63,6 +63,11 @@ spec:
               value: APP
             - name: AP_POSTGRES_POOL_SIZE
               value: "10"
+            - name: AP_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: activepieces-config
+                  key: password
           ports:
             - name: http
               containerPort: 80
@@ -160,8 +165,15 @@ spec:
           env:
             - name: AP_CONTAINER_TYPE
               value: WORKER
+            - name: AP_FRONTEND_URL
+              value: http://activepieces
             - name: AP_POSTGRES_POOL_SIZE
               value: "5"
+            - name: AP_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: activepieces-config
+                  key: password
             - name: AP_WORKER_CONCURRENCY
               value: "1"
             - name: AP_PORT
