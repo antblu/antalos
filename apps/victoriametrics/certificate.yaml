@@ -10,3 +10,16 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - ${GRAFANA_HOST}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: victorialogs-tls
+  namespace: monitoring
+spec:
+  secretName: victorialogs-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - ${VICTORIALOGS_HOST}
