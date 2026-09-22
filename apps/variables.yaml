@@ -413,7 +413,7 @@ variables:
 
   # Invoice Ninja: two web replicas and two queue workers on the untainted
   # workers, with MariaDB and Redis quorum voters on the RTX worker.
-  INVOICENINJA_HOST: invoices.antblu.net
+  INVOICENINJA_HOST: invoice.antblu.net
   INVOICENINJA_DATABASE_HOST: invoiceninja-db.invoiceninja.svc.cluster.local
   INVOICENINJA_DATABASE_STORAGE_SIZE: 20Gi
   INVOICENINJA_REDIS_DATA_0_HOST: invoiceninja-redis-data-0.invoiceninja-redis-data.invoiceninja.svc.cluster.local
