@@ -98,6 +98,7 @@ export default defineConfig({
               label: 'Integration runbooks',
               collapsed: true,
               items: [
+                { label: 'Cal.diy deployment and checks', link: '/admin-guide/cal-diy/' },
                 { label: 'Nextcloud integrations', link: '/admin-guide/nextcloud-integrations/' },
                 { label: 'Nextcloud upgrades', link: '/admin-guide/nextcloud-upgrades/' },
                 { label: 'Nextcloud Talk', link: '/admin-guide/nextcloud-talk/' },

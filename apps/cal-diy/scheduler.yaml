@@ -44,6 +44,7 @@ spec:
                   failures=0
                   run_cron() {
                     if ! curl --fail --silent --show-error \
+                      --connect-timeout 10 --max-time 45 \
                       --request POST \
                       --header "authorization: $CRON_API_KEY" \
                       --header "content-type: application/json" \
@@ -55,17 +56,14 @@ spec:
                   minute=$(date -u +%M)
                   hour=$(date -u +%H)
                   day=$(date -u +%d)
-                  minute_number=$(expr "$minute" + 0)
-                  day_number=$(expr "$day" + 0)
+                  # Strip the leading zero before POSIX shell arithmetic.
+                  # expr exits 1 for zero, which aborts this script under sh -e.
+                  minute_number=${minute#0}
 
                   run_cron webhookTriggers
-                  run_cron checkSmsPrices
 
-                  if [ "$(expr "$minute_number" % 15)" -eq 0 ]; then
+                  if [ "$((minute_number % 15))" -eq 0 ]; then
                     run_cron bookingReminder
-                    run_cron workflows/scheduleEmailReminders
-                    run_cron workflows/scheduleSMSReminders
-                    run_cron workflows/scheduleWhatsappReminders
                   fi
 
                   if [ "$minute" = "00" ]; then
@@ -73,12 +71,7 @@ spec:
                   fi
 
                   if [ "$day" = "01" ] && [ "$hour" = "00" ] && [ "$minute" = "00" ]; then
-                    run_cron downgradeUsers
                     run_cron syncAppMeta
-                  fi
-
-                  if [ "$day_number" -ge 28 ] && [ "$hour" = "23" ] && [ "$minute" = "59" ]; then
-                    run_cron monthlyDigestEmail
                   fi
 
                   exit "$failures"

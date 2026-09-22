@@ -50,6 +50,10 @@ spec:
             value: http://${GARAGE_S3_IP}:${GARAGE_S3_PORT}
           - name: ingress.hosts[0].host
             value: ${INVOICENINJA_HOST}
+          - name: ingress.hosts[0].paths[0].path
+            value: /
+          - name: ingress.hosts[0].paths[0].pathType
+            value: Prefix
           - name: ingress.tls[0].hosts[0]
             value: ${INVOICENINJA_HOST}
         valuesObject:
