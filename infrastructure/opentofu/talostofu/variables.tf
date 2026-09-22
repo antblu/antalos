@@ -144,7 +144,7 @@ variable "se350_worker_vm_cores" {
 variable "se350_worker_vm_disk_size" {
   type        = number
   description = "Disk size in GB for worker VMs"
-  default     = 300
+  default     = 364
 }
 
 variable "rtx_worker_vm_memory" {
