@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: uptime-kuma-backup
+spec:
+  capacity:
+    storage: ${UPTIME_KUMA_NFS_STORAGE_SIZE}
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    name: uptime-kuma-backup
+    namespace: uptime-kuma
+  mountOptions:
+    - nfsvers=3
+    - hard
+    - nolock
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: uptime-kuma-backup
+    volumeAttributes:
+      server: ${NFS_SERVER}
+      share: ${UPTIME_KUMA_NFS_SHARE}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uptime-kuma-backup
+  namespace: uptime-kuma
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: uptime-kuma-backup
+  resources:
+    requests:
+      storage: ${UPTIME_KUMA_NFS_STORAGE_SIZE}

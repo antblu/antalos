@@ -1,0 +1,223 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+  labels:
+    app.kubernetes.io/name: uptime-kuma
+    app.kubernetes.io/part-of: antalos
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: uptime-kuma
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: uptime-kuma
+        app.kubernetes.io/part-of: antalos
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1006
+        runAsGroup: 1006
+        fsGroup: 1006
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: uptime-kuma
+              topologyKey: kubernetes.io/hostname
+      initContainers:
+        - name: restore-sqlite
+          image: docker.io/litestream/litestream:${LITESTREAM_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          args:
+            - restore
+            - -if-db-not-exists
+            - -if-replica-exists
+            - /app/data/kuma.db
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: litestream-config
+              mountPath: /etc/litestream.yml
+              subPath: litestream.yml
+              readOnly: true
+            - name: data
+              mountPath: /app/data
+            - name: backup
+              mountPath: /backup
+            - name: tmp
+              mountPath: /tmp
+        - name: litestream
+          image: docker.io/litestream/litestream:${LITESTREAM_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          restartPolicy: Always
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              until [ -s /app/data/kuma.db ]; do
+                sleep 1
+              done
+              exec litestream replicate
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: litestream-config
+              mountPath: /etc/litestream.yml
+              subPath: litestream.yml
+              readOnly: true
+            - name: data
+              mountPath: /app/data
+            - name: backup
+              mountPath: /backup
+            - name: tmp
+              mountPath: /tmp
+      containers:
+        - name: uptime-kuma
+          image: docker.io/louislam/uptime-kuma:${UPTIME_KUMA_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATA_DIR
+              value: /app/data
+            - name: UPTIME_KUMA_HOST
+              value: 0.0.0.0
+            - name: UPTIME_KUMA_PORT
+              value: "3001"
+          ports:
+            - name: http
+              containerPort: 3001
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: ${UPTIME_KUMA_LOCAL_STORAGE_SIZE}
+        - name: backup
+          persistentVolumeClaim:
+            claimName: uptime-kuma-backup
+        - name: litestream-config
+          configMap:
+            name: uptime-kuma-litestream
+        - name: tmp
+          emptyDir:
+            sizeLimit: ${UPTIME_KUMA_TMP_STORAGE_SIZE}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: uptime-kuma
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+  labels:
+    app.kubernetes.io/name: uptime-kuma
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: uptime-kuma
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+  labels:
+    app.kubernetes.io/name: uptime-kuma
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - ${UPTIME_KUMA_HOST}
+      secretName: uptime-kuma-tls
+  rules:
+    - host: ${UPTIME_KUMA_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: uptime-kuma
+                port:
+                  name: http

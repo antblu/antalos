@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: uptime-kuma-litestream
+  namespace: uptime-kuma
+data:
+  litestream.yml: |
+    dbs:
+      - path: /app/data/kuma.db
+        replica:
+          path: /backup/kuma.db
+          sync-interval: 60s
