@@ -1,0 +1,45 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: activepieces
+  namespace: activepieces
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: activepieces
+      app.kubernetes.io/instance: activepieces
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: activepieces-worker
+  namespace: activepieces
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: activepieces
+      app.kubernetes.io/instance: activepieces-worker
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: activepieces-redis-data
+  namespace: activepieces
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: activepieces-redis-data
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: activepieces-redis-sentinel
+  namespace: activepieces
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      activepieces.antblu.net/sentinel: "true"

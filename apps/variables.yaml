@@ -23,6 +23,8 @@ variables:
   CROWDSEC_BOUNCER_PLUGIN_VERSION: v1.7.0
   VICTORIAMETRICS_CHART_VERSION: 0.91.2
   ZAMMAD_CHART_VERSION: 18.0.4
+  ACTIVEPIECES_CHART_VERSION: 0.3.0
+  ACTIVEPIECES_CHART_SOURCE_REVISION: 0.91.1
 
   DOCS_NODE_IMAGE_TAG: 24.8.0-alpine3.22
   DOCS_NGINX_IMAGE_TAG: 1.29.8-alpine
@@ -45,6 +47,7 @@ variables:
   REDIS_IMAGE_TAG: 8.10.1
   HAPROXY_IMAGE_TAG: 3.2.4-alpine
   ZAMMAD_IMAGE_TAG: 7.1.3-0006
+  ACTIVEPIECES_IMAGE_TAG: 0.91.1
   HEADSCALE_IMAGE_TAG: v0.29.3
   HEADPLANE_IMAGE_TAG: 0.7.1
   BENTOPDF_IMAGE_TAG: 2.8.7
@@ -361,6 +364,16 @@ variables:
   LITELLM_SPEACHES_DISCOVERY_API_BASE: https://speaches.antblu.net/v1
   LITELLM_SPEACHES_DISCOVERY_CREDENTIAL_NAME: speaches
   GITLAB_S3_BUCKET: gitlabs
+
+  # Activepieces: two app replicas, four workers, CNPG, and Redis Sentinel.
+  ACTIVEPIECES_HOST: flows.antblu.net
+  ACTIVEPIECES_DATABASE_HOST: activepieces-db-rw.activepieces.svc.cluster.local
+  ACTIVEPIECES_DATABASE_STORAGE_SIZE: 10Gi
+  ACTIVEPIECES_REDIS_STORAGE_SIZE: 2Gi
+  ACTIVEPIECES_REDIS_DATA_0_HOST: activepieces-redis-data-0.activepieces-redis-data.activepieces.svc.cluster.local
+  ACTIVEPIECES_REDIS_DATA_1_HOST: activepieces-redis-data-1.activepieces-redis-data.activepieces.svc.cluster.local
+  ACTIVEPIECES_REDIS_SENTINEL_2_HOST: activepieces-redis-sentinel-2.activepieces.svc.cluster.local
+  ACTIVEPIECES_S3_BUCKET: activepieces
 
   # RustDesk OSS: one recoverable hbbs and two independently addressed relays.
   RUSTDESK_IMAGE_TAG: 1.1.16
