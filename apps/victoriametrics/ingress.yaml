@@ -1,6 +1,30 @@
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
+  name: authentik-forward-auth
+  namespace: monitoring
+spec:
+  forwardAuth:
+    address: http://authentik-server.authentik.svc.cluster.local/outpost.goauthentik.io/auth/traefik
+    trustForwardHeader: true
+    maxResponseBodySize: 4194304
+    authResponseHeaders:
+      - X-authentik-username
+      - X-authentik-groups
+      - X-authentik-entitlements
+      - X-authentik-email
+      - X-authentik-name
+      - X-authentik-uid
+      - X-authentik-jwt
+      - X-authentik-meta-jwks
+      - X-authentik-meta-outpost
+      - X-authentik-meta-provider
+      - X-authentik-meta-app
+      - X-authentik-meta-version
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
   name: victorialogs-root-redirect
   namespace: monitoring
 spec:
@@ -9,15 +33,35 @@ spec:
     replacement: https://${VICTORIALOGS_HOST}/select/vmui/
     permanent: true
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentik-embedded-outpost
+  namespace: monitoring
+spec:
+  type: ExternalName
+  externalName: authentik-server.authentik.svc.cluster.local
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: victorialogs
+  name: victorialogs-auth
   namespace: monitoring
 spec:
   entryPoints:
     - websecure
   routes:
+    - kind: Rule
+      match: Host(`${VICTORIALOGS_HOST}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      priority: 100
+      services:
+        - kind: Service
+          name: authentik-embedded-outpost
+          port: 80
     - kind: Rule
       match: Host(`${VICTORIALOGS_HOST}`) && Path(`/`)
       priority: 20
@@ -32,7 +76,6 @@ spec:
       priority: 10
       middlewares:
         - name: authentik-forward-auth
-          namespace: traefik
       services:
         - kind: Service
           name: vlselect-victoriametrics-vmks
