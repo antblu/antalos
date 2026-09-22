@@ -90,3 +90,4 @@ data:
       - path: /var/lib/headscale/db.sqlite
         replica:
           path: /backup/db.sqlite
+          sync-interval: 60s

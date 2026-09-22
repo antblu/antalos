@@ -9,7 +9,7 @@ data:
       - path: /data/db_v2.sqlite3
         replica:
           path: /backup/hbbs-db
-          sync-interval: 1s
+          sync-interval: 60s
   start.sh: |
     #!/tools/busybox sh
     set -eu

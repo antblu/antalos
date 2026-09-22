@@ -42,3 +42,4 @@ data:
       - path: /var/lib/headplane/hp_persist.db
         replica:
           path: /backup/headplane-db
+          sync-interval: 60s

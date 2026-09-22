@@ -9,4 +9,4 @@ data:
       - path: /var/lib/crowdsec/data/crowdsec.db
         replica:
           path: /backup/crowdsec.db
-          sync-interval: 1s
+          sync-interval: 60s
