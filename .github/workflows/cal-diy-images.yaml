@@ -4,14 +4,12 @@ on:
   pull_request:
     paths:
       - apps/cal-diy/**
-      - apps/variables.yaml
       - .github/workflows/cal-diy-images.yaml
   push:
     branches:
       - main
     paths:
       - apps/cal-diy/**
-      - apps/variables.yaml
       - .github/workflows/cal-diy-images.yaml
   workflow_dispatch:
 
