@@ -174,7 +174,7 @@ variable "rtx_worker_vm_disk_size" {
 variable "talos_worker_ephemeral_disk_size" {
   type        = string
   description = "Ephemeral disk size in GB for worker VMs"
-  default     = "60GiB"
+  default     = "96GiB"
 }
 
 variable "talos_worker_openebs_disk_size" {

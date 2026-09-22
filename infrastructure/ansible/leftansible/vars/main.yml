@@ -1,8 +1,10 @@
 debian_left_hostname: debian-left
 debian_left_timezone: America/Denver
+left_compose_root: /opt/compose/caddy
 
 left_host_packages:
   - ca-certificates
+  - containerd.io
   - curl
   - docker-buildx-plugin
   - docker-ce
