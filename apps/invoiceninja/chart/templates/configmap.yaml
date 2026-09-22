@@ -28,13 +28,6 @@ data:
   DB_USERNAME: {{ .Values.env.dbUsername | quote }}
   DB_CONNECTION: {{ .Values.env.dbConnection | quote }}
   IN_USER_EMAIL: {{ .Values.env.initialUserEmail | quote }}
-  MAIL_MAILER: {{ .Values.env.mailMailer | quote }}
-  MAIL_HOST: {{ .Values.env.mailHost | quote }}
-  MAIL_PORT: {{ .Values.env.mailPort | quote }}
-  MAIL_USERNAME: {{ .Values.env.mailUsername | quote }}
-  MAIL_ENCRYPTION: {{ .Values.env.mailEncryption | quote }}
-  MAIL_FROM_ADDRESS: {{ .Values.env.mailFromAddress | quote }}
-  MAIL_FROM_NAME: {{ .Values.env.mailFromName | quote }}
   AWS_ACCESS_KEY_ID: {{ .Values.env.s3AccessKeyId | quote }}
   AWS_DEFAULT_REGION: {{ .Values.env.s3Region | quote }}
   AWS_BUCKET: {{ .Values.env.s3Bucket | quote }}

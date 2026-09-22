@@ -26,20 +26,6 @@ spec:
             value: https://${INVOICENINJA_HOST}
           - name: env.initialUserEmail
             value: ${INVOICENINJA_INITIAL_USER_EMAIL}
-          - name: env.mailMailer
-            value: smtp
-          - name: env.mailHost
-            value: ${INVOICENINJA_MAIL_HOST}
-          - name: env.mailPort
-            value: "${INVOICENINJA_MAIL_PORT}"
-          - name: env.mailUsername
-            value: ${INVOICENINJA_MAIL_USERNAME}
-          - name: env.mailEncryption
-            value: ${INVOICENINJA_MAIL_ENCRYPTION}
-          - name: env.mailFromAddress
-            value: ${INVOICENINJA_MAIL_FROM_ADDRESS}
-          - name: env.mailFromName
-            value: ${INVOICENINJA_MAIL_FROM_NAME}
           - name: env.s3AccessKeyId
             value: ${INVOICENINJA_S3_ACCESS_KEY_ID}
           - name: env.s3Region
