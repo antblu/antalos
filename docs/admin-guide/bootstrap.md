@@ -5,6 +5,12 @@ description: "Provision Talos, establish the sealing identity, and bring the Git
 
 Bootstrap works from the infrastructure upward. First decide whether this is a new installation or recovery of an existing one: an existing database or SealedSecret requires its original recovery material.
 
+## Before you begin
+
+Follow [workstation prerequisites](/admin-guide/prerequisites/) and the [repository map](/infrastructure/repository/). Replace repository URLs, machine inputs, application variables, storage endpoints, and identity registrations for your own environment. Refer to the [Talos documentation](https://docs.siderolabs.com/talos/), [OpenTofu documentation](https://opentofu.org/docs/), and [Argo CD documentation](https://argo-cd.readthedocs.io/en/stable/) for the installed versions' prerequisites and supported operations.
+
+The initial cluster can be brought up with private administration access. Azure public ingress and GPU companions have their own deployment sequence; they are not created by `talostofu` or the root application tree.
+
 ## 1. Prepare infrastructure and external storage
 
 Complete the [workstation prerequisites](/admin-guide/prerequisites/). Review the Proxmox hosts, network bridges, VM disks, Talos image, and addresses in the OpenTofu stack. Prepare NFS exports and Garage buckets before starting applications that require them.
@@ -74,4 +80,4 @@ A service is ready for users after its [Deployment and Admin Guide](/admin-guide
 
 ## Repository rendering prerequisite for cert-manager
 
-The current cert-manager Application’s second source uses `directory.include: issuer.yaml`, rather than `yaml-envsubst`. That source neither expands the issuer’s shared-variable placeholders nor discovers a new SealedSecret placed alongside it. Before deploying this part in a fresh fork, change the source to the repository’s `yaml-envsubst` plugin and account for the additional support manifests it will render, or provide an explicitly rendered source containing the issuer and sealed DNS credential. Merely adding a ciphertext file to the directory is insufficient with the current source selection. This guide records the prerequisite; it does not change the application manifest.
+The current cert-manager Application’s second source uses a `directory` source selecting `issuer.yaml` and `metrics.yaml`, rather than `yaml-envsubst`. That source neither expands the issuer’s shared-variable placeholders nor discovers a new SealedSecret placed alongside it. Before deploying this part in a fresh fork, change the source to the repository’s `yaml-envsubst` plugin and account for the additional support manifests it will render, or provide an explicitly rendered source containing the issuer and sealed DNS credential. Merely adding a ciphertext file to the directory is insufficient with the current source selection. This guide records the prerequisite; it does not change the application manifest.

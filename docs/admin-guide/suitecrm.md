@@ -1,9 +1,9 @@
 ---
-title: "SuiteCRM \u00b7 Deployment and Admin Guide"
+title: "SuiteCRM · Operate"
 description: "Deploy SuiteCRM with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="SuiteCRM guide sections"><a href="/user-guide/suitecrm/">Overview and User Guide</a><a href="/infrastructure/suitecrm/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/suitecrm/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="SuiteCRM guide sections"><a href="/user-guide/suitecrm/">Use</a><a href="/infrastructure/suitecrm/">Architecture</a><a aria-current="page" href="/admin-guide/suitecrm/">Operate</a></nav>
 
 This runbook deploys the service from `apps/suitecrm/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

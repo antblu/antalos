@@ -1,15 +1,15 @@
 ---
-title: "RustDesk \u00b7 Overview and User Guide"
+title: "RustDesk · Use"
 description: "What RustDesk does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="RustDesk guide sections"><a aria-current="page" href="/user-guide/rustdesk/">Overview and User Guide</a><a href="/infrastructure/rustdesk/">Infrastructure Explanation</a><a href="/admin-guide/rustdesk/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="RustDesk guide sections"><a aria-current="page" href="/user-guide/rustdesk/">Use</a><a href="/infrastructure/rustdesk/">Architecture</a><a href="/admin-guide/rustdesk/">Operate</a></nav>
 
 RustDesk supplies remote desktop access between enrolled clients. Antalos hosts the open-source rendezvous server and two relay processes. The remote desktop remains on the target device; the server helps peers find each other and relays traffic when a direct connection is unavailable.
 
 ## Access and audience
 
-The public address is defined by `RUSTDESK_HOST` in `apps/variables.yaml`. Use your deployment’s value; Antalos hostnames are examples for a fork.
+For this installation, use [rustdesk.antblu.net](https://rustdesk.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -21,18 +21,18 @@ The public address is defined by `RUSTDESK_HOST` in `apps/variables.yaml`. Use y
 
 4. End the session when finished and review unattended-access settings on shared or retired devices. A server identity key is public configuration; it is not the remote device password.
 
-## When you need an administrator
+## Get help
 
-If IDs resolve but connections fail, inspect the advertised relay endpoint and port routing. If restore loops, inspect NFS access and locks. Fence a partitioned old worker before forced recovery; deleting the lock file does not safely establish single-writer ownership.
+Include the remote-device identifier and whether discovery, connection, authorization, or the active session failed. Never include the unattended-access password. The remote user may need to approve a new session.
 
-## Availability when using this service
+## During an interruption
 
-**Not continuously HA end to end: one recoverable rendezvous server, with two independent native relays.** If hbbs is on the failed node, new rendezvous waits for restart/restore. The surviving relay can serve new native relay sessions once clients can coordinate; sessions on the failed relay reconnect. Some established direct peer connections may remain, but they do not prove new-session availability.
+An interrupted desktop connection does not move seamlessly to another server. Reconnect through the normal client workflow and obtain remote approval where required.
 
-Read [how redundancy and recovery work](/infrastructure/rustdesk/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/rustdesk/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official RustDesk documentation](https://rustdesk.com/docs/en/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official RustDesk documentation](https://rustdesk.com/docs/en/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/rustdesk/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/rustdesk/).

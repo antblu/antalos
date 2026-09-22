@@ -1,16 +1,92 @@
 ---
-title: "Azure edge proxy"
-description: "Bootstrap the Debian Azure proxy and route TCP traffic to the home HAProxy VMs."
+title: Deploy the Azure edge and home proxies
+description: Configure the edge template, its private transport, and the actual forwarding path into Antalos.
 ---
 
-The private `infrastructure/azure/cloud-init.yaml` file is the Debian 13 ARM64 Azure VM user data. It creates the `antblu` SSH account, installs nftables, CrowdSec with the nftables firewall bouncer, Tailscale for Headscale, and HAProxy. Its external APT repositories are limited to `arm64`, and the bootstrap stops if the guest uses another architecture. The file contains a Headscale authentication key and is ignored by Git. Treat the Azure custom data copy as a secret as well.
+The Azure VM is an edge TCP proxy. It accepts selected public connections and forwards them over the private network to the home HAProxy pair. The home proxies forward onward to the appropriate Kubernetes listener. Read [the network architecture](/infrastructure/networking/) before provisioning or changing this path.
 
-The home HAProxy VMs join Headscale and advertise their own addresses as `10.40.0.17/32` and `10.40.0.18/32`. Both routes were approved in Headscale. The Azure Tailscale client accepts those routes and connects to each home VM independently. The Headscale control endpoint at `vpn.antblu.net` remains on the home public IP over TCP 443, so Azure can reach it without the tunnel, including during reconnection. Replacing either home VM requires a valid Headscale pre-authentication key through the sensitive OpenTofu `headscale_auth_key` variable and approval of the replacement node's route. The key is not kept in tracked source files; supplying it to OpenTofu will put it in the private state and Proxmox cloud-init snippet.
+## Configuration ownership
 
-Allow inbound TCP 22, 443, 465, and 993 plus UDP 41641 in the Azure network security group. The guest nftables policy allows those ports and established traffic. CrowdSec owns the blacklist sets used by the guest firewall; its local engine reads SSH journal events and its firewall bouncer applies local and community decisions. HAProxy passes the three TCP streams through without terminating TLS.
+| File or project | Purpose |
+| --- | --- |
+| `infrastructure/azure/cloud-init.yaml` | Committed Debian ARM64 provisioning template |
+| `infrastructure/azure/variables.yaml` | Non-secret OS, identity, listener allowlist, and backend inputs |
+| `infrastructure/azure/secrets.example.yaml` | Required shape for local secret inputs |
+| `infrastructure/azure/secrets.yaml` | Ignored local enrollment credential |
+| `infrastructure/azure/cloud-init.rendered.yaml` | Ignored, sensitive user data supplied to Azure |
+| `infrastructure/opentofu/haproxy/` | Home VM pair, Keepalived, HAProxy, and private-network enrollment |
 
-The Azure proxy distributes each port across both home HAProxy VMs. The home VM cloud-init template sends 443 to Traefik and 465 and 993 to Stalwart. Both services share the MetalLB address `10.30.0.200` on different ports. Updating the OpenTofu template or cloud-init snippet does not rerun cloud-init on an existing VM. Both running home HAProxy configurations were updated separately on September 18, 2026; the template supplies the same listeners when those VMs are replaced.
+The template itself does not contain the enrollment key. Rendering combines it with the local secret file, so the rendered output must be treated as a credential. VM settings stay in these infrastructure projects rather than `apps/variables.yaml`.
 
-Azure reached both home HAProxy VMs on 443, 465, and 993 after route approval. Before cutover, confirm an external connection on each public port. The Azure network security group and public DNS are managed outside this cloud-init file.
+## Prepare the private path
 
-The home firewall must allow TCP 465 and 993 from `10.40.0.17` and `10.40.0.18` to `10.30.0.200`. Both home HAProxy VMs already reach that address on 443 but time out on the mail ports. Until those rules are active, Azure accepts mail connections but cannot complete the TLS handshake to Stalwart.
+Prepare Headscale access before enrolling the Azure node. The home HAProxy template resolves the Headscale hostname to the internal Traefik address so its own enrollment does not depend on a tunnel that has not started.
+
+The current Azure variables select the two home backends by Tailscale address. Use the identities allocated in your installation; do not assume the example addresses follow a replacement VM. Check the expected Headscale enrollment and routing policy when preparing the deployment.
+
+Home HAProxy also declares a floating external-network address. Azure's two individually configured backends do not become a single VIP merely because Keepalived exists on those guests.
+
+## Render the Azure user data
+
+Read `infrastructure/azure/README.md`. Install Mike Farah `yq` v4 and GNU `envsubst`, then work from the Azure directory. For a new local secret file:
+
+```bash title="Prepare private edge inputs"
+cd infrastructure/azure
+umask 077
+cp secrets.example.yaml secrets.yaml
+chmod 600 secrets.yaml
+```
+
+Edit `secrets.yaml` privately and replace the example enrollment key. Edit `variables.yaml` for your hostname, administrator public key, architecture, Headscale URL, backend addresses, and allowed ports. For an existing secret file, edit it without copying over it.
+
+Use an explicit substitution list so runtime variables in the embedded shell remain intact:
+
+```bash title="Render from the Azure directory"
+umask 077
+set -a
+eval "$(yq -o=shell '.' variables.yaml)"
+eval "$(yq -o=shell '.' secrets.yaml)"
+set +a
+
+variable_names="$({ yq -r 'keys | .[]' variables.yaml; yq -r 'keys | .[]' secrets.yaml; } | sort -u)"
+substitutions="$(printf '${%s} ' ${variable_names})"
+envsubst "$substitutions" < cloud-init.yaml > cloud-init.rendered.yaml
+chmod 600 cloud-init.rendered.yaml
+```
+
+Run this only against your own trusted configuration files. Do not print or commit the rendered output. Supply it as the new Azure VM's custom data. The template prepares the guest firewall, installs CrowdSec before the firewall bouncer, joins the private network, and starts HAProxy.
+
+Cloud-init is a provisioning mechanism. Editing the template does not update a running guest. Plan an explicit guest configuration update or a replacement when needed; do not assume that another OpenTofu apply reruns first-boot configuration.
+
+## Match the ports at every boundary
+
+| TCP port | Azure guest allowlist | Azure HAProxy template | Home HAProxy defaults |
+| --- | --- | --- | --- |
+| 22 | Allowed for administration | No service forwarding | Separate administration path |
+| 25 | Allowed | SMTP forwarding | Stalwart forwarding |
+| 443 | Allowed | HTTPS forwarding | Traefik forwarding |
+| 465 | Allowed | Mail submission forwarding | Stalwart forwarding |
+| 587 | Allowed | No listener declared | Stalwart forwarding |
+| 993 | Allowed | IMAPS forwarding | Stalwart forwarding |
+| 4190 | Allowed | No listener declared | Stalwart forwarding |
+
+The UDP allowlist includes the configured Tailscale port. Azure NSG, public DNS, router rules, and home network policy are separate configuration. Permitting a port does not create its proxy frontend, backend, Kubernetes Service, or application listener.
+
+For 587 or 4190 through Azure, the missing proxy listeners are a source prerequisite in addition to the other layers. This guide documents that gap; it does not change the edge deployment or assert those ports currently work.
+
+## Complete deployment
+
+1. Establish the intended Azure NSG and public DNS for your installation.
+2. Provision using the rendered user data and confirm guest initialization completes.
+3. Confirm Azure can reach each configured private backend on each declared forwarding port.
+4. Confirm each home backend reaches the Kubernetes address and the correct service listener.
+5. Exercise the public protocol: HTTPS response, mailbox login, or SMTP transaction as appropriate.
+6. Record the resulting DNS, private backend identities, and recovery procedure with the private infrastructure inventory.
+
+A TCP connection to the first proxy does not prove the downstream TLS handshake or mail transaction succeeds. Outbound relay access from Stalwart is a separate path. Use [mail operations](/admin-guide/stalwart/) for that investigation.
+
+## Maintain the two security systems separately
+
+Azure's CrowdSec engine processes guest events and its nftables bouncer applies decisions at the guest firewall. The [Kubernetes CrowdSec installation](/admin-guide/crowdsec/) uses its own LAPI, log source, and Traefik integration. Updating one does not configure the other.
+
+Keep VM recreation, reboots, storage changes, and disruptive network changes within the repository's approval requirements. Preserve enrollment credentials and private provisioning state in the external recovery set.

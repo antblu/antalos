@@ -1,9 +1,9 @@
 ---
-title: "Zammad \u00b7 Infrastructure Explanation"
+title: "Zammad · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Zammad in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Zammad guide sections"><a href="/user-guide/zammad/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/zammad/">Infrastructure Explanation</a><a href="/admin-guide/zammad/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Zammad guide sections"><a href="/user-guide/zammad/">Use</a><a aria-current="page" href="/infrastructure/zammad/">Architecture</a><a href="/admin-guide/zammad/">Operate</a></nav>
 
 The chart runs two NGINX replicas and two Rails replicas with anti-affinity. Scheduler and WebSocket each have one replica. PostgreSQL uses two CNPG instances; Redis has two data members and a third Sentinel voter; Elasticsearch has two data/master members and an RTX master-only voter. Garage supplies object storage, while chart initialization jobs prepare the application.
 

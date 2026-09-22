@@ -1,9 +1,9 @@
 ---
-title: "Nextcloud \u00b7 Deployment and Admin Guide"
+title: "Nextcloud · Operate"
 description: "Deploy Nextcloud with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="Nextcloud guide sections"><a href="/user-guide/nextcloud/">Overview and User Guide</a><a href="/infrastructure/nextcloud/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/nextcloud/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Nextcloud guide sections"><a href="/user-guide/nextcloud/">Use</a><a href="/infrastructure/nextcloud/">Architecture</a><a aria-current="page" href="/admin-guide/nextcloud/">Operate</a></nav>
 
 This runbook deploys the service from `apps/nextcloud/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

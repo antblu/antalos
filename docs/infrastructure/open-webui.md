@@ -1,9 +1,9 @@
 ---
-title: "Open WebUI \u00b7 Infrastructure Explanation"
+title: "Open WebUI · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Open WebUI in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Open WebUI guide sections"><a href="/user-guide/open-webui/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/open-webui/">Infrastructure Explanation</a><a href="/admin-guide/open-webui/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Open WebUI guide sections"><a href="/user-guide/open-webui/">Use</a><a aria-current="page" href="/infrastructure/open-webui/">Architecture</a><a href="/admin-guide/open-webui/">Operate</a></nav>
 
 Two application replicas share `open-webui-db`, a two-instance PostgreSQL cluster with vector support. Redis has two persistent data nodes and a third Sentinel voter on RTX for distributed coordination. Uploaded objects use Garage. A migration Job handles database changes. The chart is configured with `Recreate`, so upgrades can stop both application replicas even though two run during steady state.
 

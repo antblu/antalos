@@ -1,9 +1,9 @@
 ---
-title: "MariaDB operator \u00b7 Overview and User Guide"
+title: "MariaDB operator · Use"
 description: "What MariaDB operator does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="MariaDB operator guide sections"><a aria-current="page" href="/user-guide/mariadb-operator/">Overview and User Guide</a><a href="/infrastructure/mariadb-operator/">Infrastructure Explanation</a><a href="/admin-guide/mariadb-operator/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="MariaDB operator guide sections"><a aria-current="page" href="/user-guide/mariadb-operator/">Use</a><a href="/infrastructure/mariadb-operator/">Architecture</a><a href="/admin-guide/mariadb-operator/">Operate</a></nav>
 
 The MariaDB operator turns database declarations into managed MariaDB servers, users, grants, and backups. In Antalos it supports SuiteCRM’s Galera database. Database ownership stays with the service directory, making credentials and storage easier to recover together.
 
@@ -19,18 +19,18 @@ This is a platform service with no standalone user-facing website. Its consumers
 
 3. Read PhysicalBackup status to confirm database backup jobs complete; then verify recovery through a separate restore drill.
 
-## When you need an administrator
+## Get help
 
-Webhook errors can block new resources even when SQL remains available. For Galera failures, distinguish operator reconciliation from quorum, state transfer, image compatibility, and volume ownership problems.
+Report the affected application and failed action. Database administration belongs to the service operator; do not change database membership to resolve a user-interface error.
 
-## Availability when using this service
+## During an interruption
 
-**HA management design: replicated operator and webhook; database HA still belongs to each managed MariaDB.** One controller and webhook can remain. If the same worker held a Galera data node, the database separately needs its surviving data member and arbitrator to retain membership.
+An interruption can affect the applications that depend on this platform service. Ask the administrator to identify the affected service and expected recovery path.
 
-Read [how redundancy and recovery work](/infrastructure/mariadb-operator/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/mariadb-operator/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official MariaDB operator documentation](https://github.com/mariadb-operator/mariadb-operator) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official MariaDB operator documentation](https://github.com/mariadb-operator/mariadb-operator) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/mariadb-operator/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/mariadb-operator/).

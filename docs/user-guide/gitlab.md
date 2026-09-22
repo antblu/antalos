@@ -1,15 +1,15 @@
 ---
-title: "GitLab \u00b7 Overview and User Guide"
+title: "GitLab · Use"
 description: "What GitLab does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="GitLab guide sections"><a aria-current="page" href="/user-guide/gitlab/">Overview and User Guide</a><a href="/infrastructure/gitlab/">Infrastructure Explanation</a><a href="/admin-guide/gitlab/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="GitLab guide sections"><a aria-current="page" href="/user-guide/gitlab/">Use</a><a href="/infrastructure/gitlab/">Architecture</a><a href="/admin-guide/gitlab/">Operate</a></nav>
 
 GitLab brings Git repositories, merge requests, issue tracking, a container registry, and CI/CD project configuration into one workspace. Antalos also exposes GitLab’s Kubernetes agent endpoint. Runner execution is a separate integration: a project can define a pipeline before any runner is available to execute it.
 
 ## Access and audience
 
-The public address is defined by `GITLAB_HOST` in `apps/variables.yaml`. Use your deployment’s value; Antalos hostnames are examples for a fork.
+For this installation, use [gitlab.antblu.net](https://gitlab.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -21,18 +21,18 @@ The public address is defined by `GITLAB_HOST` in `apps/variables.yaml`. Use you
 
 4. Use issues for work tracking and the registry for project images. Scope tokens to the project and actions they need; do not use the administrator account for routine automation.
 
-## When you need an administrator
+## Get help
 
-For a stuck initialization, examine the current chart hook and its dependency rather than deleting every old Job. For repository failures, inspect Gitaly and Praefect quorum as well as Rails. For object failures, test the relevant prefix permissions and S3 endpoint.
+Include the project, the action that failed, and the relevant job or error. A clone, push, pipeline, and registry upload follow different paths. Redact access tokens and private repository content from screenshots.
 
-## Availability when using this service
+## During an interruption
 
-**Partially HA as a complete service: extensive replication, with external storage and failover/recovery prerequisites.** Paired application roles, one instance of each PostgreSQL cluster, one Redis data member, and two repository members can remain. Both surviving Sentinel voters must communicate correctly. The remaining worker and RTX also need enough CPU, memory, and disk headroom for degraded operation.
+A brief interruption can affect pushes, pipelines, or repository browsing differently. Check the result of a write before repeating it.
 
-Read [how redundancy and recovery work](/infrastructure/gitlab/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/gitlab/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official GitLab documentation](https://docs.gitlab.com/user/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official GitLab documentation](https://docs.gitlab.com/user/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/gitlab/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/gitlab/).

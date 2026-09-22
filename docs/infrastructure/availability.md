@@ -12,9 +12,9 @@ This reference describes the current repository design. It does not report live 
 ## Which applications are HA?
 
 - **HA serving designs:** the documentation site and BentoPDF have interchangeable stateless replicas; Traefik has two serving proxies; Rancher has a replicated management web tier. These still depend on the shared network/control-plane paths. The docs rollout has a placement limitation described below.
-- **Replicated stateful designs:** LiteLLM, Grafana, and the VictoriaMetrics metrics tier include application/data redundancy and a client path to surviving members. They can have a failover interval and reduced durability/capacity during degradation. They are not guarantees against every whole-host or external-service failure.
-- **Partially HA applications:** Authentik, GitLab, Nextcloud, Open WebUI, SuiteCRM, Stalwart, and Zammad have replicated important components but retain shared dependencies, singleton features, restart/rejoin concerns, or upgrade outages. The scope of each limitation matters more than the replica total.
-- **Not continuously HA:** Headscale, Headplane, Vaultwarden’s application, UrBackup, and RustDesk rendezvous each run one primary application process. Kubernetes restart and persistent backups provide recovery, with an outage. RustDesk’s two native relays improve relay choice but do not make rendezvous HA.
+- **Replicated stateful designs:** Activepieces, LiteLLM, Grafana, and the VictoriaMetrics metrics tier include application/data redundancy and a client path to surviving members. They can have a failover interval and reduced durability/capacity during degradation. They are not guarantees against every whole-host or external-service failure.
+- **Partially HA applications:** Authentik, GitLab, Nextcloud, Obsidian, Open WebUI, SuiteCRM, Stalwart, and Zammad have replicated important components but retain shared dependencies, singleton features, restart/rejoin concerns, or upgrade outages. The scope of each limitation matters more than the replica total.
+- **Not continuously HA:** Headscale, Headplane, Vaultwarden’s application, UrBackup, Uptime Kuma, CrowdSec’s singleton roles, and RustDesk rendezvous each run one primary application process. Kubernetes restart and persistent backups provide recovery, with an outage. RustDesk’s two native relays improve relay choice but do not make rendezvous HA.
 - **Not replicated log storage:** VictoriaLogs has two storage processes holding shards, not two complete copies. Grafana availability must not be used as evidence that all historical logs are available.
 - **External or not established here:** NFS/Garage server HA, public routing/DNS resilience, and the external Talk recorder require their own architecture and evidence.
 
@@ -50,6 +50,10 @@ No service should be described as unconditionally end-to-end HA solely because i
 | [Vaultwarden](/infrastructure/vaultwarden/#availability-and-failure-behavior) | Not HA at the application layer: one vault server; PostgreSQL alone is replicated. | 1 Recreate replica; see the linked component table for the data, routing, and recovery path. |
 | [Grafana / metrics / logs](/infrastructure/victoriametrics/#availability-and-failure-behavior) | Mixed availability: Grafana and metrics have replicated designs; the current log storage is sharded, not redundantly copied. | 2 anti-affined pods + 2 CNPG instances; see the linked component table for the data, routing, and recovery path. |
 | [Zammad](/infrastructure/zammad/#availability-and-failure-behavior) | Partially HA: paired HTTP tiers and data services, with singleton real-time/background roles and Redis/search caveats. | 2 NGINX + 2 Rails replicas; see the linked component table for the data, routing, and recovery path. |
+| [Activepieces](/infrastructure/activepieces/#availability-and-failure-behavior) | Replicated app/data design; upstream integrations and execution retries have separate limits. | 2 app replicas, 4 workers, 2 CNPG instances, 2 Redis data members / 3 Sentinels, external Garage. |
+| [Obsidian LiveSync](/infrastructure/obsidian/#availability-and-failure-behavior) | Partial availability; two independent databases with asynchronous copying. | 2 HAProxy replicas, primary/backup routing, 2 standalone CouchDB members, bidirectional vault replication. |
+| [Uptime Kuma](/infrastructure/uptime-kuma/#availability-and-failure-behavior) | Recoverable singleton with a monitoring gap during replacement. | One process, pod-local SQLite, Litestream replica on external NFS. |
+| [CrowdSec](/infrastructure/crowdsec/#availability-and-failure-behavior) | Singleton LAPI, processor, and AppSec; enforcement impact depends on the consumer. | LAPI SQLite recovery through Litestream; VictoriaLogs and Traefik are separate dependencies. |
 
 ## How the HA mechanisms work
 
@@ -66,7 +70,7 @@ CNPG manages a primary and a streaming standby for each two-instance cluster. Th
 | Application database | Explicit policy in this repository | Durability implication |
 | --- | --- | --- |
 | Authentik, Nextcloud/Context Chat, Stalwart | No synchronous stanza | Default asynchronous replication; recent primary writes may not yet be on the standby. |
-| LiteLLM, Open WebUI, Vaultwarden, Zammad, Grafana | any / 1 / preferred | Requests synchronous acknowledgement while possible, but permits degraded operation without the standby. |
+| Activepieces, LiteLLM, Open WebUI, Vaultwarden, Zammad, Grafana | any / 1 / preferred | Requests synchronous acknowledgement while possible, but permits degraded operation without the standby. |
 | GitLab and Praefect databases | any / 1 / preferred on both clusters | Each database has a separate promotion and degraded-durability boundary. |
 
 These settings do not promise zero loss under every failure sequence. See [CNPG replication and durability](https://cloudnative-pg.io/docs/1.28/replication/) for the mechanisms; use documentation matching the installed operator when administering it.
@@ -77,6 +81,7 @@ Most bespoke Redis layouts use two data members and three Sentinel voters, one v
 
 | Consumer | Client path | Restart/rejoin behavior visible in its manifests |
 | --- | --- | --- |
+| Activepieces | Direct Sentinel discovery | Startup queries existing voters and retains Sentinel configuration on persistent data. |
 | LiteLLM | Direct authenticated Sentinel discovery | Data-side Redis role and Sentinel topology persist; startup queries peers before choosing a role. |
 | GitLab | Direct Sentinel discovery | Sentinel topology persists; initialized data members wait for discovery rather than guessing a primary. |
 | Open WebUI | Direct discovery; Sentinel listener auth follows its client contract | Initial data roles are assigned by ordinal; Sentinel configuration is temporary. |
@@ -116,13 +121,7 @@ Headscale, Headplane, and RustDesk hbbs keep SQLite on local pod storage and cop
 
 Vaultwarden and UrBackup also have single application processes, even though their state persists elsewhere. They return through replacement/restart, not through a ready hot application replica. Document that outage instead of presenting rescheduling as uninterrupted failover.
 
-The three Ansible-managed application VMs are explicit singletons. `debian-arc`
-hosts Talk recording, Immich remote machine learning, Jellyfin, and Docling.
-`debian-left` hosts CPU-backed Nextcloud Live Transcription. `debian-rtx` hosts
-llama.cpp and CUDA-backed Nextcloud Translate. Losing one VM or its physical
-host removes only that VM's companion paths. Kubernetes services can retain
-their primary functions, but these features return only after the affected VM
-and Docker workloads recover.
+The [Debian VM layer](/infrastructure/virtual-machines/) has its own availability limits. Arc hosts recording, Immich Machine Learning, Jellyfin, and Docling. RTX hosts llama-swap and Speaches. The left playbook configures a base Debian host without deploying Compose workloads. Each managed VM endpoint is a singleton; its loss interrupts its consumers' corresponding features. Manually installed applications require a separate inventory.
 
 ## Shared failure domains
 

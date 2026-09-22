@@ -1,9 +1,9 @@
 ---
-title: "cert-manager \u00b7 Deployment and Admin Guide"
+title: "cert-manager · Operate"
 description: "Deploy cert-manager with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="cert-manager guide sections"><a href="/user-guide/cert-manager/">Overview and User Guide</a><a href="/infrastructure/cert-manager/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/cert-manager/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="cert-manager guide sections"><a href="/user-guide/cert-manager/">Use</a><a href="/infrastructure/cert-manager/">Architecture</a><a aria-current="page" href="/admin-guide/cert-manager/">Operate</a></nav>
 
 This runbook deploys the service from `apps/cert-manager/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 
@@ -69,4 +69,4 @@ Inspect Certificate, CertificateRequest, Order, and Challenge in that order. An 
 
 ## Repository rendering prerequisite for cert-manager
 
-The current cert-manager Application’s second source uses `directory.include: issuer.yaml`, rather than `yaml-envsubst`. That source neither expands the issuer’s shared-variable placeholders nor discovers a new SealedSecret placed alongside it. Before deploying this part in a fresh fork, change the source to the repository’s `yaml-envsubst` plugin and account for the additional support manifests it will render, or provide an explicitly rendered source containing the issuer and sealed DNS credential. Merely adding a ciphertext file to the directory is insufficient with the current source selection. This guide records the prerequisite; it does not change the application manifest.
+The current cert-manager Application’s second source uses a `directory` source selecting `issuer.yaml` and `metrics.yaml`, rather than `yaml-envsubst`. That source neither expands the issuer’s shared-variable placeholders nor discovers a new SealedSecret placed alongside it. Before deploying this part in a fresh fork, change the source to the repository’s `yaml-envsubst` plugin and account for the additional support manifests it will render, or provide an explicitly rendered source containing the issuer and sealed DNS credential. Merely adding a ciphertext file to the directory is insufficient with the current source selection. This guide records the prerequisite; it does not change the application manifest.

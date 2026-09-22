@@ -1,43 +1,38 @@
 ---
-title: "Overview and User Guide"
-description: "Learn what each service is for and complete a practical first workflow."
+title: Use the Antalos services
+description: Choose a service, understand account access, and complete a useful first task.
 ---
 
-Learn what each service is for and complete a practical first workflow. Start with [accounts and access](/user-guide/accounts/) if you are new to the platform. Each service links to its official product documentation.
+Start with what you want to do. You do not need to understand the servers or Kubernetes to use these applications. Your administrator supplies the address and grants access; each guide explains the first steps and links to the product's official documentation.
 
-## Applications
+## Choose a task
 
-| Service | Purpose |
+| I want to… | Open this guide |
 | --- | --- |
-| [Authentik](/user-guide/authentik/) | Authentik is the identity service for Antalos. |
-| [BentoPDF](/user-guide/bentopdf/) | BentoPDF provides browser-based PDF tools for merging, splitting, rotating, compressing, and converting documents. |
-| [Antalos documentation](/user-guide/docs/) | This site is the handbook for using, understanding, and operating Antalos. |
-| [GitLab](/user-guide/gitlab/) | GitLab brings Git repositories, merge requests, issue tracking, a container registry, and CI/CD project configuration into one workspace. |
-| [Headscale and Headplane](/user-guide/headscale/) | Headscale coordinates a private network of Tailscale-compatible clients. |
-| [LiteLLM](/user-guide/litellm/) | LiteLLM is the shared API gateway for language-model providers. |
-| [Nextcloud](/user-guide/nextcloud/) | Nextcloud is the collaboration workspace for files, calendars, contacts, notes, shared boards, and conversations. |
-| [Open WebUI](/user-guide/open-webui/) | Open WebUI is the browser interface for chatting with configured AI models and working with uploaded knowledge. |
-| [Rancher](/user-guide/rancher/) | Rancher provides a browser workspace for inspecting Kubernetes clusters, workloads, namespaces, and access. |
-| [RustDesk](/user-guide/rustdesk/) | RustDesk supplies remote desktop access between enrolled clients. |
-| [Stalwart Mail](/user-guide/stalwart/) | Stalwart is Antalos’s mail service. |
-| [SuiteCRM](/user-guide/suitecrm/) | SuiteCRM tracks customer relationships through leads, contacts, accounts, opportunities, activities, and cases. |
-| [UrBackup](/user-guide/urbackup/) | UrBackup manages file and image backups from supported client devices. |
-| [Vaultwarden](/user-guide/vaultwarden/) | Vaultwarden is a self-hosted server compatible with Bitwarden clients. |
-| [Grafana and VictoriaMetrics](/user-guide/victoriametrics/) | Grafana is the dashboard interface for Antalos metrics and logs. |
-| [Zammad](/user-guide/zammad/) | Zammad is a help-desk workspace for tickets, customer conversations, queues, and support history. |
+| Share files, edit documents, or make a call | [Nextcloud](/user-guide/nextcloud/) |
+| Keep Obsidian notes in sync across devices | [Obsidian LiveSync](/user-guide/obsidian/) |
+| Send and receive email | [Stalwart Mail](/user-guide/stalwart/) |
+| Store passwords and use browser autofill | [Vaultwarden](/user-guide/vaultwarden/) |
+| Chat with an AI model | [Open WebUI](/user-guide/open-webui/) |
+| Connect an application to a model API | [LiteLLM](/user-guide/litellm/) |
+| Automate a repeated task | [Activepieces](/user-guide/activepieces/) |
+| Work on code with other people | [GitLab](/user-guide/gitlab/) |
+| Manage customer records or support tickets | [SuiteCRM](/user-guide/suitecrm/) or [Zammad](/user-guide/zammad/) |
+| Work with a PDF | [BentoPDF](/user-guide/bentopdf/) |
+| Connect a device to the private network | [Headscale](/user-guide/headscale/) |
+| Help someone with their computer | [RustDesk](/user-guide/rustdesk/) |
+| See monitored availability or request a restore | [Uptime Kuma](/user-guide/uptime-kuma/) or [UrBackup](/user-guide/urbackup/) |
 
+The [service directory](/user-guide/services/) also includes administrator tools and the services that run behind the scenes.
 
-## Platform services
+## Before your first sign-in
 
-| Service | Purpose |
-| --- | --- |
-| [Argo CD](/user-guide/argocd/) | Argo CD is the delivery controller for Antalos. |
-| [cert-manager](/user-guide/cert-manager/) | cert-manager automates TLS certificate issuance and renewal. |
-| [CloudNativePG](/user-guide/cnpg-operator/) | CloudNativePG manages PostgreSQL clusters for Antalos applications. |
-| [MariaDB operator](/user-guide/mariadb-operator/) | The MariaDB operator turns database declarations into managed MariaDB servers, users, grants, and backups. |
-| [MetalLB](/user-guide/metallb/) | MetalLB assigns and advertises LoadBalancer addresses on the local network. |
-| [Metrics Server](/user-guide/metrics-server/) | Metrics Server supplies recent CPU and memory measurements to the Kubernetes resource-metrics API. |
-| [NFS CSI driver](/user-guide/nfs-driver/) | The NFS CSI driver lets Kubernetes pods mount an existing NFS server. |
-| [OpenEBS](/user-guide/openebs/) | OpenEBS provisions the node-local persistent volumes used by Antalos databases and metrics services. |
-| [Sealed Secrets](/user-guide/sealed-secrets/) | Sealed Secrets allows encrypted Kubernetes credentials to be stored in Git. |
-| [Traefik](/user-guide/traefik/) | Traefik routes external requests to Antalos services. |
+Read [accounts and access](/user-guide/accounts/). Some services redirect to Authentik; others use their own account, a device enrollment, or an API key. Being able to sign in does not automatically give you permission to every project, mailbox, vault, or shared folder.
+
+## If something does not work
+
+Keep the service address, approximate time, and error message. Explain the task you were trying to complete and whether it previously worked. Send those details to your administrator without passwords or tokens. The help section of each guide explains the details that are useful for that service.
+
+## Learn more
+
+Use the **Official documentation** links in each service guide for detailed product instructions. They explain the product's features; this handbook explains the Antalos installation. Features shown in upstream documentation may depend on the version or options your administrator enabled.

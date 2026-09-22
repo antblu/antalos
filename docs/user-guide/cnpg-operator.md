@@ -1,9 +1,9 @@
 ---
-title: "CloudNativePG \u00b7 Overview and User Guide"
+title: "CloudNativePG · Use"
 description: "What CloudNativePG does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="CloudNativePG guide sections"><a aria-current="page" href="/user-guide/cnpg-operator/">Overview and User Guide</a><a href="/infrastructure/cnpg-operator/">Infrastructure Explanation</a><a href="/admin-guide/cnpg-operator/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="CloudNativePG guide sections"><a aria-current="page" href="/user-guide/cnpg-operator/">Use</a><a href="/infrastructure/cnpg-operator/">Architecture</a><a href="/admin-guide/cnpg-operator/">Operate</a></nav>
 
 CloudNativePG manages PostgreSQL clusters for Antalos applications. Application owners declare database instances, storage, bootstrap credentials, and replication policy; the operator manages PostgreSQL members and stable service endpoints.
 
@@ -19,18 +19,18 @@ This is a platform service with no standalone user-facing website. Its consumers
 
 3. Read primary, ready-instance, and replication state before planning maintenance. A second pod is useful only when it is a healthy replica.
 
-## When you need an administrator
+## Get help
 
-For failed members, inspect Cluster conditions, pod placement, PVC events, and PostgreSQL logs. Do not delete the only surviving volume to clear a Pending condition. Determine the current primary before any recovery operation.
+Report the affected application and user-visible database error to its administrator. Application users do not need to operate this database controller directly.
 
-## Availability when using this service
+## During an interruption
 
-**Not explicitly HA as an operator; it manages replicated database clusters with separate availability contracts.** Database serving depends on whether the lost worker held the primary and/or operator. Correlated loss of a primary and the single operator may extend interruption beyond simple standby promotion.
+An interruption can affect the applications that depend on this platform service. Ask the administrator to identify the affected service and expected recovery path.
 
-Read [how redundancy and recovery work](/infrastructure/cnpg-operator/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/cnpg-operator/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official CloudNativePG documentation](https://cloudnative-pg.io/documentation/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official CloudNativePG documentation](https://cloudnative-pg.io/documentation/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/cnpg-operator/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/cnpg-operator/).

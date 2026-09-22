@@ -1,9 +1,9 @@
 ---
-title: "Argo CD \u00b7 Infrastructure Explanation"
+title: "Argo CD · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Argo CD in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Argo CD guide sections"><a href="/user-guide/argocd/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/argocd/">Infrastructure Explanation</a><a href="/admin-guide/argocd/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Argo CD guide sections"><a href="/user-guide/argocd/">Use</a><a aria-current="page" href="/infrastructure/argocd/">Architecture</a><a href="/admin-guide/argocd/">Operate</a></nav>
 
 OpenTofu installs the initial chart; `argocd-self` becomes the steady-state owner. The root app-of-apps reads `apps/` using `yaml-envsubst`, which discovers `app.yaml` files. Child sources render support manifests while excluding `app.yaml`, `values.yaml`, and `variables.yaml`. The bootstrap values define replicated server/controller/repo-server roles and Redis HA with Sentinel.
 

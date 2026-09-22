@@ -1,15 +1,15 @@
 ---
-title: "Traefik \u00b7 Overview and User Guide"
+title: "Traefik · Use"
 description: "What Traefik does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="Traefik guide sections"><a aria-current="page" href="/user-guide/traefik/">Overview and User Guide</a><a href="/infrastructure/traefik/">Infrastructure Explanation</a><a href="/admin-guide/traefik/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Traefik guide sections"><a aria-current="page" href="/user-guide/traefik/">Use</a><a href="/infrastructure/traefik/">Architecture</a><a href="/admin-guide/traefik/">Operate</a></nav>
 
 Traefik routes external requests to Antalos services. HTTP routers match hostnames and paths, middleware adds behavior such as authentication, and TCP/UDP routes expose native protocols. Its dashboard helps operators see which routes and services are active.
 
 ## Access and audience
 
-The public address is defined by `TRAEFIK_HOST` in `apps/variables.yaml`. Use your deployment’s value; Antalos hostnames are examples for a fork.
+For this installation, use [traefik.antblu.net](https://traefik.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -21,18 +21,18 @@ The public address is defined by `TRAEFIK_HOST` in `apps/variables.yaml`. Use yo
 
 4. Keep routing changes in Git; a working route also needs DNS, a reachable LoadBalancer address, and a valid backend.
 
-## When you need an administrator
+## Get help
 
-An HTTP 404 often means no router matched; a 502/503 points toward backend connectivity or readiness. A 404 specifically on the outpost path needs provider and host-route inspection. Examine the layer that generated the response before changing application replicas.
+Report the hostname, time, and browser response. Mention whether authentication completed before the error appeared. Do not change the URL to an IP address to bypass routing or certificate checks.
 
-## Availability when using this service
+## During an interruption
 
-**HA ingress process tier for one serving-node loss; upstream routing and established connections remain separate.** A ready proxy remains on the other worker; endpoint/advertisement detection and surviving throughput set the interruption. The real backend must also survive the same failure.
+An interruption can affect the applications that depend on this platform service. Ask the administrator to identify the affected service and expected recovery path.
 
-Read [how redundancy and recovery work](/infrastructure/traefik/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/traefik/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official Traefik documentation](https://doc.traefik.io/traefik/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official Traefik documentation](https://doc.traefik.io/traefik/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/traefik/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/traefik/).

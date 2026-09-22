@@ -1,9 +1,9 @@
 ---
-title: "MariaDB operator \u00b7 Infrastructure Explanation"
+title: "MariaDB operator · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for MariaDB operator in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="MariaDB operator guide sections"><a href="/user-guide/mariadb-operator/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/mariadb-operator/">Infrastructure Explanation</a><a href="/admin-guide/mariadb-operator/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="MariaDB operator guide sections"><a href="/user-guide/mariadb-operator/">Use</a><a aria-current="page" href="/infrastructure/mariadb-operator/">Architecture</a><a href="/admin-guide/mariadb-operator/">Operate</a></nav>
 
 `app.yaml` defines two Argo Applications: CRDs at sync wave -10 and the operator at -9. The operator and webhook each have two replicas with anti-affinity and disruption budgets. SuiteCRM’s two Galera data members and RTX arbitrator are declared in `apps/suitecrm/`.
 

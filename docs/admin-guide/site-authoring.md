@@ -1,5 +1,5 @@
 ---
-title: "Build and customize this documentation"
+title: "Write and publish documentation"
 description: "Three-part content structure, native Starlight layout, styled diagrams, and the static publishing pipeline."
 ---
 
@@ -34,14 +34,20 @@ Start with block-style frontmatter:
 
 ```yaml title="Page metadata"
 ---
-title: Example service · Overview and User Guide
+title: Example service · Use
 description: What the service does, how to start using it, and where to find its official manual.
 ---
 ```
 
 Use task-based headings, concise introductions, and sequential steps with expected outcomes. Keep current versions in the shared variables reference instead of embedding a historical upgrade as a permanent instruction. Discover pod names in examples; never retain a pod name copied from an incident.
 
-Navigation is **explicitly configured** in `site/astro.config.mjs`. Add the three app links under their corresponding section and update the section index tables. Each application page includes a guide-switcher linking to the same slug in all three folders.
+Shared reading paths and runbook links are configured in `site/astro.config.mjs`. Service groups live in `site/src/navigation.mjs`; `serviceNavigation()` adds the same service slugs to all three perspectives. Add a service to that registry once, create its three pages, and add its row to `docs/user-guide/services.md`.
+
+Section landing pages are task-based reading paths, not repeated application inventories. Keep the directory as the complete list. Each service page includes a guide-switcher labeled **Use**, **Architecture**, and **Operate**, linking to the same slug in all three folders.
+
+User pages should explain access, one useful first workflow, what to report when it fails, and official product documentation. Keep pod names, database elections, and infrastructure repair commands in the architecture or admin guide. Distinguish the product's own manual from a community plugin's documentation, as in Obsidian LiveSync.
+
+Admin pages should state prerequisites, exact configuration ownership, deployment order, manual integration work, and the data needed for recovery. Link to official installation and upgrade guidance for the selected version. Describe checked-in configuration as desired state, and date any separate operational observation.
 
 ## Diagrams that render without a runtime
 
@@ -128,6 +134,6 @@ Deploy a published immutable tag through `DOCS_IMAGE_TAG` for repeatable release
 
 ## Preserve old links
 
-When moving a page, update current navigation and internal links, then add its old URL to `redirects` in `site/astro.config.mjs`. Static Astro output provides a redirect page. The matching exact locations in `site/nginx.conf` provide HTTP 301 redirects for the container deployment, including old URLs with and without a trailing slash.
+When moving a page, update current navigation and internal links, then add its old URL to `redirects` in `site/astro.config.mjs`. Static Astro output provides a redirect page. Existing matching exact locations in `site/nginx.conf` provide HTTP 301 redirects for the container deployment, including old URLs with and without a trailing slash.
 
 Keep these mappings together when moving a route again. Remove the old source only after its content has a destination, so it does not shadow the redirect with a duplicate page.

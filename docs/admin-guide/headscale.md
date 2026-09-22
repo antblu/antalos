@@ -1,9 +1,9 @@
 ---
-title: "Headscale and Headplane \u00b7 Deployment and Admin Guide"
+title: "Headscale and Headplane · Operate"
 description: "Deploy Headscale and Headplane with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="Headscale and Headplane guide sections"><a href="/user-guide/headscale/">Overview and User Guide</a><a href="/infrastructure/headscale/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/headscale/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Headscale and Headplane guide sections"><a href="/user-guide/headscale/">Use</a><a href="/infrastructure/headscale/">Architecture</a><a aria-current="page" href="/admin-guide/headscale/">Operate</a></nav>
 
 This runbook deploys the service from `apps/headscale/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

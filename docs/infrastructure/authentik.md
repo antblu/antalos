@@ -1,9 +1,9 @@
 ---
-title: "Authentik \u00b7 Infrastructure Explanation"
+title: "Authentik · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Authentik in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Authentik guide sections"><a href="/user-guide/authentik/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/authentik/">Infrastructure Explanation</a><a href="/admin-guide/authentik/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Authentik guide sections"><a href="/user-guide/authentik/">Use</a><a aria-current="page" href="/infrastructure/authentik/">Architecture</a><a href="/admin-guide/authentik/">Operate</a></nav>
 
 The official chart runs two server replicas and two worker replicas with required pod anti-affinity. Servers handle browser and protocol requests; workers perform background tasks. Both use the two-instance `authentik-db` CloudNativePG cluster. `media-pvc.yaml` provides shared media from NFS. Traefik sends HTTPS to the server Service, while the embedded outpost supplies forward-auth decisions for protected ingresses.
 

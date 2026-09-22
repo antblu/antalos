@@ -1,9 +1,9 @@
 ---
-title: "NFS CSI driver \u00b7 Infrastructure Explanation"
+title: "NFS CSI driver · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for NFS CSI driver in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="NFS CSI driver guide sections"><a href="/user-guide/nfs-driver/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/nfs-driver/">Infrastructure Explanation</a><a href="/admin-guide/nfs-driver/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="NFS CSI driver guide sections"><a href="/user-guide/nfs-driver/">Use</a><a aria-current="page" href="/infrastructure/nfs-driver/">Architecture</a><a href="/admin-guide/nfs-driver/">Operate</a></nav>
 
 The official CSI chart provides control components and node plugins in `kube-system`. Static application volumes reference exports on the configured NFS endpoint. RWX mounts let different workers access the same files, but application locking and concurrent-write rules still apply.
 

@@ -1,9 +1,9 @@
 ---
-title: "GitLab \u00b7 Deployment and Admin Guide"
+title: "GitLab · Operate"
 description: "Deploy GitLab with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="GitLab guide sections"><a href="/user-guide/gitlab/">Overview and User Guide</a><a href="/infrastructure/gitlab/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/gitlab/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="GitLab guide sections"><a href="/user-guide/gitlab/">Use</a><a href="/infrastructure/gitlab/">Architecture</a><a aria-current="page" href="/admin-guide/gitlab/">Operate</a></nav>
 
 This runbook deploys the service from `apps/gitlab/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

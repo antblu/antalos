@@ -1,9 +1,9 @@
 ---
-title: "Antalos documentation \u00b7 Deployment and Admin Guide"
+title: "Antalos documentation · Operate"
 description: "Deploy Antalos documentation with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="Antalos documentation guide sections"><a href="/user-guide/docs/">Overview and User Guide</a><a href="/infrastructure/docs/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/docs/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Antalos documentation guide sections"><a href="/user-guide/docs/">Use</a><a href="/infrastructure/docs/">Architecture</a><a aria-current="page" href="/admin-guide/docs/">Operate</a></nav>
 
 This runbook deploys the service from `apps/docs/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

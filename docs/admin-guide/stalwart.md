@@ -1,9 +1,9 @@
 ---
-title: "Stalwart Mail \u00b7 Deployment and Admin Guide"
+title: "Stalwart Mail · Operate"
 description: "Deploy Stalwart Mail with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="Stalwart Mail guide sections"><a href="/user-guide/stalwart/">Overview and User Guide</a><a href="/infrastructure/stalwart/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/stalwart/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Stalwart Mail guide sections"><a href="/user-guide/stalwart/">Use</a><a href="/infrastructure/stalwart/">Architecture</a><a aria-current="page" href="/admin-guide/stalwart/">Operate</a></nav>
 
 This runbook deploys the service from `apps/stalwart/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 
@@ -58,6 +58,22 @@ Use the [component-by-component failure contract](/infrastructure/stalwart/#avai
 Back up PostgreSQL, Garage message blobs, sealed credentials, signing material, and declarative bootstrap configuration. Mail identity also depends on external DNS records. Replicated search and cache components are not independent backups of mailboxes.
 
 Before an upgrade, read the release notes for the pinned target and record a recovery point. A previous image tag is not a database rollback after a schema migration. Use [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/) for the platform sequence.
+
+## Mail routing and listeners
+
+The public edge and home proxies are documented in [networking](/infrastructure/networking/) and [Azure edge deployment](/admin-guide/azure-edge/). Stalwart shares the declared MetalLB address with web ingress on different ports. SMTP, submission, IMAPS, and ManageSieve need an active Stalwart listener as well as their Service port and upstream forwarding.
+
+When changing listener configuration, inspect the active application configuration after bootstrap and use the service's startup/rollout procedure. A Kubernetes Service mapping alone does not cause Stalwart to bind a port. Preserve the distinction between the HTTPS administration route and the mail-client protocols.
+
+## Trace a delayed message
+
+1. Identify the submission time and message or queue identifier without collecting credentials.
+2. Establish whether Stalwart accepted the submission and created a queue entry.
+3. Read the delivery attempt and destination or configured relay. A queued message is not yet delivered.
+4. For connection timeouts, inspect reachability from the affected pod and then its node to isolate the network boundary.
+5. After the underlying problem is repaired, confirm a successful delivery result and a recipient-side round trip where available.
+
+Relay authentication, DNS, outbound TCP access, recipient rejection, and local mailbox access can fail independently. Record the actual destination, port, and response rather than treating every delay as an ingress problem.
 
 ## Troubleshooting
 

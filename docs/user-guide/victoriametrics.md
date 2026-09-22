@@ -1,15 +1,15 @@
 ---
-title: "Grafana and VictoriaMetrics \u00b7 Overview and User Guide"
+title: "Grafana and VictoriaMetrics · Use"
 description: "What Grafana and VictoriaMetrics does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="Grafana and VictoriaMetrics guide sections"><a aria-current="page" href="/user-guide/victoriametrics/">Overview and User Guide</a><a href="/infrastructure/victoriametrics/">Infrastructure Explanation</a><a href="/admin-guide/victoriametrics/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Grafana and VictoriaMetrics guide sections"><a aria-current="page" href="/user-guide/victoriametrics/">Use</a><a href="/infrastructure/victoriametrics/">Architecture</a><a href="/admin-guide/victoriametrics/">Operate</a></nav>
 
 Grafana is the dashboard interface for Antalos metrics and logs. VictoriaMetrics collects and stores metrics, while VictoriaLogs serves logs from the configured collectors. Use dashboards to narrow an investigation by service, pod, and time; a summary tile represents its query, not every part of an application.
 
 ## Access and audience
 
-The public address is defined by `GRAFANA_HOST` in `apps/variables.yaml`. Use your deployment’s value; Antalos hostnames are examples for a fork.
+For this installation, use [grafana.antblu.net](https://grafana.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -21,19 +21,19 @@ The public address is defined by `GRAFANA_HOST` in `apps/variables.yaml`. Use yo
 
 4. Use Explore for detailed metrics or logs when the dashboard does not answer the question. Record the query, time range, and affected resource when sharing findings.
 
-## When you need an administrator
+## Get help
 
-For missing data, follow collection, ingestion, storage, then query layers. If Grafana works but a panel is empty, inspect the query labels and time range. If HPA resource metrics are missing, inspect metrics-server; Grafana’s historical metrics pipeline is a separate system.
+Include the dashboard or query, time range, and missing metric or log stream. A working dashboard does not guarantee that every data source has current or complete history.
 
-## Availability when using this service
+## During an interruption
 
-**Mixed availability: Grafana and metrics have replicated designs; the current log storage is sharded, not redundantly copied.** Grafana and metrics can continue with reduced serving capacity and storage redundancy. New writes during degradation cannot acquire two independent local copies while only one storage member is available. Log history on the lost worker may be unavailable until its volume returns or is restored.
+Dashboards, metrics, and logs use separate components. A gap in one source does not necessarily mean every monitored service is down.
 
-Read [how redundancy and recovery work](/infrastructure/victoriametrics/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/victoriametrics/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official Grafana and VictoriaMetrics documentation](https://grafana.com/docs/grafana/latest/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official Grafana and VictoriaMetrics documentation](https://grafana.com/docs/grafana/latest/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/victoriametrics/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/victoriametrics/).
 

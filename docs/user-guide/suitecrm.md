@@ -1,15 +1,15 @@
 ---
-title: "SuiteCRM \u00b7 Overview and User Guide"
+title: "SuiteCRM · Use"
 description: "What SuiteCRM does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="SuiteCRM guide sections"><a aria-current="page" href="/user-guide/suitecrm/">Overview and User Guide</a><a href="/infrastructure/suitecrm/">Infrastructure Explanation</a><a href="/admin-guide/suitecrm/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="SuiteCRM guide sections"><a aria-current="page" href="/user-guide/suitecrm/">Use</a><a href="/infrastructure/suitecrm/">Architecture</a><a href="/admin-guide/suitecrm/">Operate</a></nav>
 
 SuiteCRM tracks customer relationships through leads, contacts, accounts, opportunities, activities, and cases. Antalos uses a custom packaged SuiteCRM image with password login and optional Authentik SAML sign-in. CRM access and record visibility are controlled by roles and security groups inside SuiteCRM.
 
 ## Access and audience
 
-The public address is defined by `SUITECRM_HOST` in `apps/variables.yaml`. Use your deployment’s value; Antalos hostnames are examples for a fork.
+For this installation, use [crm.antblu.net](https://crm.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -21,18 +21,18 @@ The public address is defined by `SUITECRM_HOST` in `apps/variables.yaml`. Use y
 
 4. Move opportunities through the team’s defined sales stages and use saved filters or reports to review assigned work. Ask an administrator before large imports or mass updates.
 
-## When you need an administrator
+## Get help
 
-For database startup failures, inspect Galera quorum, PVC placement, and arbitrator compatibility. NFS permission errors need export-side ownership analysis; recursively changing ownership on populated shared storage can be disruptive. SAML failures require checking assertion signatures, entity IDs, and username mapping.
+Include the record type and action, such as opening a contact, saving an opportunity, or uploading an attachment. Do not repeatedly create the same record when the first save has an uncertain result.
 
-## Availability when using this service
+## During an interruption
 
-**Partially HA: replicated web and Galera data, but background workers and shared files have separate outage paths.** One web and one database member can remain with the arbitrator. Work owned by the single messenger may pause if that pod was on the failed worker. Remaining capacity and NFS availability still bound the user experience.
+Saving records, background tasks, and attachments may recover at different times. Check the existing record before repeating an uncertain save.
 
-Read [how redundancy and recovery work](/infrastructure/suitecrm/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/suitecrm/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official SuiteCRM documentation](https://docs.suitecrm.com/user/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official SuiteCRM documentation](https://docs.suitecrm.com/user/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/suitecrm/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/suitecrm/).

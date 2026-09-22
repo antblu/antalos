@@ -1,9 +1,9 @@
 ---
-title: "OpenEBS \u00b7 Infrastructure Explanation"
+title: "OpenEBS · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for OpenEBS in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="OpenEBS guide sections"><a href="/user-guide/openebs/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/openebs/">Infrastructure Explanation</a><a href="/admin-guide/openebs/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="OpenEBS guide sections"><a href="/user-guide/openebs/">Use</a><a aria-current="page" href="/infrastructure/openebs/">Architecture</a><a href="/admin-guide/openebs/">Operate</a></nav>
 
 The OpenEBS chart enables LocalPV Hostpath and node-deployment mode with base path `/var/mnt/openebs-local`. LVM, ZFS, rawfile, and replicated Mayastor engines are disabled. The namespace permits the host access required by provisioning helpers; ordinary application namespaces do not need that exception.
 

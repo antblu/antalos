@@ -1,15 +1,15 @@
 ---
-title: "Zammad \u00b7 Overview and User Guide"
+title: "Zammad · Use"
 description: "What Zammad does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="Zammad guide sections"><a aria-current="page" href="/user-guide/zammad/">Overview and User Guide</a><a href="/infrastructure/zammad/">Infrastructure Explanation</a><a href="/admin-guide/zammad/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Zammad guide sections"><a aria-current="page" href="/user-guide/zammad/">Use</a><a href="/infrastructure/zammad/">Architecture</a><a href="/admin-guide/zammad/">Operate</a></nav>
 
 Zammad is a help-desk workspace for tickets, customer conversations, queues, and support history. Agents triage incoming work, reply through configured channels, and track ownership and status. Email ingestion and single sign-on need administrator configuration after the Kubernetes deployment is ready.
 
 ## Access and audience
 
-The public address is defined by `ZAMMAD_HOST` in `apps/variables.yaml`. Use your deployment’s value; Antalos hostnames are examples for a fork.
+For this installation, use [support.antblu.net](https://support.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -21,18 +21,18 @@ The public address is defined by `ZAMMAD_HOST` in `apps/variables.yaml`. Use you
 
 4. Set the ticket status or pending time according to the workflow. Search existing tickets and knowledge articles before creating duplicate work.
 
-## When you need an administrator
+## Get help
 
-If Argo remains Progressing while Rails serves traffic, inspect the current init Job, ownerReferences, and hook status. For missing email, inspect scheduler and channel errors. For search failures, inspect Elasticsearch quorum and indexing separately from ticket storage.
+Include the ticket identifier, failed action, and time. If a reply may already have been sent, check the ticket history before sending it again. Keep customer information out of public support reports.
 
-## Availability when using this service
+## During an interruption
 
-**Partially HA: paired HTTP tiers and data services, with singleton real-time/background roles and Redis/search caveats.** One web path and one member of each paired data tier can remain with two voters. Email polling/background tasks or real-time updates can pause depending on singleton placement. Test attachment retrieval separately from ticket-list rendering.
+Ticket pages, background processing, and real-time updates can be interrupted independently. Confirm the ticket history before resending a reply.
 
-Read [how redundancy and recovery work](/infrastructure/zammad/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/zammad/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official Zammad documentation](https://user-docs.zammad.org/en/latest/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official Zammad documentation](https://user-docs.zammad.org/en/latest/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/zammad/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/zammad/).

@@ -523,3 +523,45 @@ h1 {
   .guide-switcher { display: none !important; }
   .architecture-diagram { break-inside: avoid; }
 }
+
+/* Handbook navigation: emphasize the reader's task without moving Starlight's rails. */
+.sl-markdown-content .guide-card {
+  position: relative;
+  border-top: 3px solid var(--sl-color-accent);
+  background:
+    linear-gradient(160deg, var(--antalos-blue-soft), transparent 65%),
+    var(--sl-color-bg-sidebar);
+}
+
+.sl-markdown-content .guide-card strong {
+  max-width: 20ch;
+  font-size: 1.2rem;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+}
+
+.sl-markdown-content .guide-card:focus-visible {
+  outline: 3px solid var(--sl-color-accent);
+  outline-offset: 4px;
+}
+
+.sl-markdown-content .guide-switcher a {
+  flex-basis: 6rem;
+  text-align: center;
+}
+
+.sl-markdown-content table a {
+  text-underline-offset: 0.2em;
+}
+
+@media print {
+  .sl-markdown-content .guide-cards,
+  .sl-markdown-content .architecture-diagram {
+    break-inside: avoid;
+  }
+
+  .sl-markdown-content .guide-card {
+    background: none;
+    box-shadow: none;
+  }
+}

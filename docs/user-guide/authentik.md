@@ -1,15 +1,15 @@
 ---
-title: "Authentik \u00b7 Overview and User Guide"
+title: "Authentik · Use"
 description: "What Authentik does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="Authentik guide sections"><a aria-current="page" href="/user-guide/authentik/">Overview and User Guide</a><a href="/infrastructure/authentik/">Infrastructure Explanation</a><a href="/admin-guide/authentik/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Authentik guide sections"><a aria-current="page" href="/user-guide/authentik/">Use</a><a href="/infrastructure/authentik/">Architecture</a><a href="/admin-guide/authentik/">Operate</a></nav>
 
 Authentik is the identity service for Antalos. It signs users in, enforces access policies, and connects applications to a shared account through OpenID Connect, SAML, or a proxy provider. The application portal shows the services your account is allowed to open; a portal tile does not automatically grant a role inside the destination application.
 
 ## Access and audience
 
-The public address is defined by `AUTHENTIK_HOST` in `apps/variables.yaml`. Use your deployment’s value; Antalos hostnames are examples for a fork.
+For this installation, use [auth.antblu.net](https://auth.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -21,18 +21,18 @@ The public address is defined by `AUTHENTIK_HOST` in `apps/variables.yaml`. Use 
 
 4. Sign out of sensitive applications explicitly when finishing on a shared device; application sessions and the identity-provider session can have different lifetimes.
 
-## When you need an administrator
+## Get help
 
-If authentication loops, compare the requested callback URI with the provider allowlist, then check the issuer, signing keys, and server clock. If a protected hostname returns an outpost 404, inspect the host-specific outpost route and provider assignment before changing the protected application.
+Report where sign-in stopped and whether the problem affects one application or every application. Do not send passwords, recovery codes, or the full address of a login callback.
 
-## Availability when using this service
+## During an interruption
 
-**Partially HA: replicated identity processing and database; external shared media and maintenance limits remain.** One server, one worker, and one database instance can remain. This assumes the healthy members were on different hosts and the surviving worker has enough capacity for the full login/background workload.
+An identity outage can prevent new sign-ins across several services. Existing application sessions may behave differently depending on the service.
 
-Read [how redundancy and recovery work](/infrastructure/authentik/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/authentik/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official Authentik documentation](https://docs.goauthentik.io/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official Authentik documentation](https://docs.goauthentik.io/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/authentik/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/authentik/).

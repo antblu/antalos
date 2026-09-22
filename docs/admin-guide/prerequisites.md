@@ -14,6 +14,8 @@ Deploy from a workstation that can reach Proxmox, the Talos node network, and th
 | talosctl | Configure and recover Talos machines | [Talos documentation](https://docs.siderolabs.com/talos/) |
 | kubectl | Inspect and administer Kubernetes | [kubectl documentation](https://kubernetes.io/docs/reference/kubectl/) |
 | kubeseal | Encrypt credentials for Git | [Sealed Secrets](https://github.com/bitnami/sealed-secrets) |
+| Ansible and Ansible Vault | Configure Debian guests and protect VM integration credentials | [Ansible documentation](https://docs.ansible.com/ansible/latest/) |
+| yq v4 and GNU envsubst | Render Azure cloud-init with its declared inputs | [yq documentation](https://mikefarah.gitbook.io/yq/) and [envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html) |
 | Python 3 | Produce client configuration in the CLI guide | [Python documentation](https://docs.python.org/3/) |
 
 Match CLI compatibility to the cluster and pinned provider versions. The optional documentation development tools are described in the [site authoring guide](/admin-guide/site-authoring/).
@@ -49,4 +51,4 @@ Choose the provider’s certificate-verification setting for your Proxmox trust 
 
 Do not commit `.tfvars`, OpenTofu state, kubeconfig, talosconfig, plaintext Secrets, or controller private keys. An ignored file is still sensitive; restrict file permissions and keep durable encrypted backups.
 
-Continue with [cluster bootstrap](/admin-guide/bootstrap/).
+Continue with [cluster bootstrap](/admin-guide/bootstrap/). The [VM lifecycle guide](/admin-guide/virtual-machines/) and [Azure edge guide](/admin-guide/azure-edge/) cover the infrastructure projects outside Kubernetes. Their playbooks and first-boot templates can change the guest or require a reboot, so plan those steps separately from an application sync.

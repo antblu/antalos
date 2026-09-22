@@ -1,9 +1,9 @@
 ---
-title: "Metrics Server \u00b7 Overview and User Guide"
+title: "Metrics Server · Use"
 description: "What Metrics Server does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="Metrics Server guide sections"><a aria-current="page" href="/user-guide/metrics-server/">Overview and User Guide</a><a href="/infrastructure/metrics-server/">Infrastructure Explanation</a><a href="/admin-guide/metrics-server/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Metrics Server guide sections"><a aria-current="page" href="/user-guide/metrics-server/">Use</a><a href="/infrastructure/metrics-server/">Architecture</a><a href="/admin-guide/metrics-server/">Operate</a></nav>
 
 Metrics Server supplies recent CPU and memory measurements to the Kubernetes resource-metrics API. Horizontal Pod Autoscalers and `kubectl top` use it. Historical dashboards in Grafana use a different collection and storage pipeline.
 
@@ -19,18 +19,18 @@ This is a platform service with no standalone user-facing website. Its consumers
 
 3. Use Grafana for historical analysis; Metrics Server does not provide a long-term time-series database.
 
-## When you need an administrator
+## Get help
 
-For unknown HPA utilization, inspect metrics API availability, kubelet connection errors, and pod resource requests. A working Grafana dashboard does not prove that the resource-metrics API works.
+Report missing resource measurements and the relevant cluster or namespace. This service provides recent resource data; long-term dashboards use the separate monitoring system.
 
-## Availability when using this service
+## During an interruption
 
-**Not explicitly HA: resource-metrics collection can pause until its chart workload recovers.** If the collector was on that worker, resource metrics may be missing. Existing application replicas can keep serving even while some scaling decisions are impaired.
+An interruption can affect the applications that depend on this platform service. Ask the administrator to identify the affected service and expected recovery path.
 
-Read [how redundancy and recovery work](/infrastructure/metrics-server/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/metrics-server/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official Metrics Server documentation](https://github.com/kubernetes-sigs/metrics-server) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official Metrics Server documentation](https://github.com/kubernetes-sigs/metrics-server) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/metrics-server/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/metrics-server/).

@@ -1,9 +1,9 @@
 ---
-title: "UrBackup \u00b7 Infrastructure Explanation"
+title: "UrBackup · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for UrBackup in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="UrBackup guide sections"><a href="/user-guide/urbackup/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/urbackup/">Infrastructure Explanation</a><a href="/admin-guide/urbackup/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="UrBackup guide sections"><a href="/user-guide/urbackup/">Use</a><a aria-current="page" href="/infrastructure/urbackup/">Architecture</a><a href="/admin-guide/urbackup/">Operate</a></nav>
 
 One UrBackup Deployment runs the upstream `uroni/urbackup-server` image. The configuration/database directory `/var/urbackup` and backup data at `/backups` use separate retained NFS volumes. The image starts with the capabilities it needs to switch to the configured `PUID` and `PGID`. HTTPS ingress exposes the web interface behind Authentik; the declared client ports are on a ClusterIP Service.
 

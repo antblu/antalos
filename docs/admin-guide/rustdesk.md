@@ -1,9 +1,9 @@
 ---
-title: "RustDesk \u00b7 Deployment and Admin Guide"
+title: "RustDesk · Operate"
 description: "Deploy RustDesk with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="RustDesk guide sections"><a href="/user-guide/rustdesk/">Overview and User Guide</a><a href="/infrastructure/rustdesk/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/rustdesk/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="RustDesk guide sections"><a href="/user-guide/rustdesk/">Use</a><a href="/infrastructure/rustdesk/">Architecture</a><a aria-current="page" href="/admin-guide/rustdesk/">Operate</a></nav>
 
 This runbook deploys the service from `apps/rustdesk/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

@@ -1,15 +1,15 @@
 ---
-title: "Vaultwarden \u00b7 Overview and User Guide"
+title: "Vaultwarden · Use"
 description: "What Vaultwarden does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="Vaultwarden guide sections"><a aria-current="page" href="/user-guide/vaultwarden/">Overview and User Guide</a><a href="/infrastructure/vaultwarden/">Infrastructure Explanation</a><a href="/admin-guide/vaultwarden/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Vaultwarden guide sections"><a aria-current="page" href="/user-guide/vaultwarden/">Use</a><a href="/infrastructure/vaultwarden/">Architecture</a><a href="/admin-guide/vaultwarden/">Operate</a></nav>
 
 Vaultwarden is a self-hosted server compatible with Bitwarden clients. It synchronizes encrypted vault items, attachments, and organization sharing. Your master password protects the vault; access to the server administration page is a different privilege and does not replace a user’s vault credentials.
 
 ## Access and audience
 
-The public address is defined by `VAULTWARDEN_HOST` in `apps/variables.yaml`. Use your deployment’s value; Antalos hostnames are examples for a fork.
+For this installation, use [vault.antblu.net](https://vault.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -21,19 +21,19 @@ The public address is defined by `VAULTWARDEN_HOST` in `apps/variables.yaml`. Us
 
 4. Use organizations and collections for intentional sharing. Review access and export/backup options according to your team’s policy.
 
-## When you need an administrator
+## Get help
 
-If a native client cannot log in, confirm its custom server URL and TLS trust. Missing invitations may be expected while SMTP is absent. For failed attachment operations, inspect the NFS mount separately from PostgreSQL readiness.
+Report whether you cannot sign in, unlock the vault, synchronize, or autofill. These are different tasks. Keep recovery material private and do not delete the local vault data to resolve a connection error.
 
-## Availability when using this service
+## During an interruption
 
-**Not HA at the application layer: one vault server; PostgreSQL alone is replicated.** Server access stops if the single application pod was there. When only the standby database member is lost, the server may continue with reduced database redundancy; loss of the primary adds promotion/reconnection time.
+The server can be unavailable during maintenance. What remains accessible offline depends on your client and its locally unlocked data; keep your recovery material separately.
 
-Read [how redundancy and recovery work](/infrastructure/vaultwarden/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/vaultwarden/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official Vaultwarden documentation](https://github.com/dani-garcia/vaultwarden/wiki) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official Vaultwarden documentation](https://github.com/dani-garcia/vaultwarden/wiki) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/vaultwarden/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/vaultwarden/).
 

@@ -1,9 +1,9 @@
 ---
-title: "Open WebUI \u00b7 Deployment and Admin Guide"
+title: "Open WebUI · Operate"
 description: "Deploy Open WebUI with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="Open WebUI guide sections"><a href="/user-guide/open-webui/">Overview and User Guide</a><a href="/infrastructure/open-webui/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/open-webui/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Open WebUI guide sections"><a href="/user-guide/open-webui/">Use</a><a href="/infrastructure/open-webui/">Architecture</a><a aria-current="page" href="/admin-guide/open-webui/">Operate</a></nav>
 
 This runbook deploys the service from `apps/open-webui/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

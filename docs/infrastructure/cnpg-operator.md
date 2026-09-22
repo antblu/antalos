@@ -1,9 +1,9 @@
 ---
-title: "CloudNativePG \u00b7 Infrastructure Explanation"
+title: "CloudNativePG · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for CloudNativePG in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="CloudNativePG guide sections"><a href="/user-guide/cnpg-operator/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/cnpg-operator/">Infrastructure Explanation</a><a href="/admin-guide/cnpg-operator/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="CloudNativePG guide sections"><a href="/user-guide/cnpg-operator/">Use</a><a aria-current="page" href="/infrastructure/cnpg-operator/">Architecture</a><a href="/admin-guide/cnpg-operator/">Operate</a></nav>
 
 The operator chart runs in `cnpg-system`, while managed clusters run in application namespaces. Most clusters here have two instances on separate workers and separate OpenEBS LocalPV volumes. PostgreSQL replication supplies redundancy; OpenEBS does not replicate those volumes.
 

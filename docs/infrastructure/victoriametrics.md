@@ -1,9 +1,9 @@
 ---
-title: "Grafana and VictoriaMetrics \u00b7 Infrastructure Explanation"
+title: "Grafana and VictoriaMetrics · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Grafana and VictoriaMetrics in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Grafana and VictoriaMetrics guide sections"><a href="/user-guide/victoriametrics/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/victoriametrics/">Infrastructure Explanation</a><a href="/admin-guide/victoriametrics/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Grafana and VictoriaMetrics guide sections"><a href="/user-guide/victoriametrics/">Use</a><a aria-current="page" href="/infrastructure/victoriametrics/">Architecture</a><a href="/admin-guide/victoriametrics/">Operate</a></nav>
 
 Two vmagent replicas scrape targets. The VictoriaMetrics cluster has two replicas each of vminsert, vmselect, and vmstorage with replication factor two and sample deduplication. VictoriaLogs also has paired insert/select/storage roles, but its storage nodes hold shards rather than redundant copies of all logs. Two Grafana replicas share a two-instance CNPG database. Dashboard ConfigMaps are provisioned from Git; collectors and exporters run near their targets.
 

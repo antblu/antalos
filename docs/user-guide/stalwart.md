@@ -1,15 +1,15 @@
 ---
-title: "Stalwart Mail \u00b7 Overview and User Guide"
+title: "Stalwart Mail · Use"
 description: "What Stalwart Mail does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="Stalwart Mail guide sections"><a aria-current="page" href="/user-guide/stalwart/">Overview and User Guide</a><a href="/infrastructure/stalwart/">Infrastructure Explanation</a><a href="/admin-guide/stalwart/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Stalwart Mail guide sections"><a aria-current="page" href="/user-guide/stalwart/">Use</a><a href="/infrastructure/stalwart/">Architecture</a><a href="/admin-guide/stalwart/">Operate</a></nav>
 
 Stalwart is Antalos’s mail service. It accepts and delivers mail, stores mailbox data, and exposes supported mail and groupware protocols to clients. The HTTPS administration page configures the server; reading mail requires a compatible client or a separately configured webmail application.
 
 ## Access and audience
 
-The public address is defined by `MAIL_HOST` in `apps/variables.yaml`. Use your deployment’s value; Antalos hostnames are examples for a fork.
+For this installation, use [mail.antblu.net](https://mail.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -21,18 +21,18 @@ The public address is defined by `MAIL_HOST` in `apps/variables.yaml`. Use your 
 
 4. When reporting delivery problems, include the approximate time, sender, recipient, and any delivery-status message. Do not include mailbox passwords.
 
-## When you need an administrator
+## Get help
 
-For bootstrap 401 responses, verify the administrator Secret format and the active recovery-auth configuration without printing the credential. For mail delays, inspect queue and delivery errors, DNS, and upstream reachability. A healthy HTTPS page does not prove SMTP delivery.
+Report whether sending, receiving, or signing in failed. Include the approximate time, sender, recipient, and any delivery-status message. Never send your mailbox password. The administration website and mail delivery can have different problems.
 
-## Availability when using this service
+## During an interruption
 
-**Partially HA; loss of the RTX-only Redis proxy is an explicit single-worker failure gap.** One mail replica and data member per paired backend may remain. A failed primary requires promotion/election and client reconnect. The custom Redis configuration’s restart and authentication caveats still apply.
+Mail clients may reconnect during an interruption. An accepted message may still be waiting for delivery; use the delivery result or recipient confirmation before assuming it arrived.
 
-Read [how redundancy and recovery work](/infrastructure/stalwart/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/stalwart/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official Stalwart Mail documentation](https://stalw.art/docs/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official Stalwart Mail documentation](https://stalw.art/docs/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/stalwart/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/stalwart/).

@@ -1,9 +1,9 @@
 ---
-title: "RustDesk \u00b7 Infrastructure Explanation"
+title: "RustDesk · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for RustDesk in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="RustDesk guide sections"><a href="/user-guide/rustdesk/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/rustdesk/">Infrastructure Explanation</a><a href="/admin-guide/rustdesk/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="RustDesk guide sections"><a href="/user-guide/rustdesk/">Use</a><a aria-current="page" href="/infrastructure/rustdesk/">Architecture</a><a href="/admin-guide/rustdesk/">Operate</a></nav>
 
 One `hbbs` Deployment provides rendezvous/ID service. Two `hbbr` StatefulSet pods provide independent relays, with one Service per ordinal. Traefik maps distinct advertised ports to those relay processes so both sides of a session meet at the same relay. The live hbbs SQLite database uses local `emptyDir`; Litestream copies it to an NFS backup and restores it at startup. An NFS lock serializes writers.
 

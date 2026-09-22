@@ -1,9 +1,9 @@
 ---
-title: "MetalLB \u00b7 Deployment and Admin Guide"
+title: "MetalLB · Operate"
 description: "Deploy MetalLB with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="MetalLB guide sections"><a href="/user-guide/metallb/">Overview and User Guide</a><a href="/infrastructure/metallb/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/metallb/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="MetalLB guide sections"><a href="/user-guide/metallb/">Use</a><a href="/infrastructure/metallb/">Architecture</a><a aria-current="page" href="/admin-guide/metallb/">Operate</a></nav>
 
 This runbook deploys the service from `apps/metallb/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

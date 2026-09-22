@@ -1,9 +1,9 @@
 ---
-title: "NFS CSI driver \u00b7 Deployment and Admin Guide"
+title: "NFS CSI driver · Operate"
 description: "Deploy NFS CSI driver with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="NFS CSI driver guide sections"><a href="/user-guide/nfs-driver/">Overview and User Guide</a><a href="/infrastructure/nfs-driver/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/nfs-driver/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="NFS CSI driver guide sections"><a href="/user-guide/nfs-driver/">Use</a><a href="/infrastructure/nfs-driver/">Architecture</a><a aria-current="page" href="/admin-guide/nfs-driver/">Operate</a></nav>
 
 This runbook deploys the service from `apps/nfs-driver/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

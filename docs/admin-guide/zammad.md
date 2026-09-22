@@ -1,9 +1,9 @@
 ---
-title: "Zammad \u00b7 Deployment and Admin Guide"
+title: "Zammad · Operate"
 description: "Deploy Zammad with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="Zammad guide sections"><a href="/user-guide/zammad/">Overview and User Guide</a><a href="/infrastructure/zammad/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/zammad/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Zammad guide sections"><a href="/user-guide/zammad/">Use</a><a href="/infrastructure/zammad/">Architecture</a><a aria-current="page" href="/admin-guide/zammad/">Operate</a></nav>
 
 This runbook deploys the service from `apps/zammad/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

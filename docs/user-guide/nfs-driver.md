@@ -1,9 +1,9 @@
 ---
-title: "NFS CSI driver \u00b7 Overview and User Guide"
+title: "NFS CSI driver · Use"
 description: "What NFS CSI driver does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="NFS CSI driver guide sections"><a aria-current="page" href="/user-guide/nfs-driver/">Overview and User Guide</a><a href="/infrastructure/nfs-driver/">Infrastructure Explanation</a><a href="/admin-guide/nfs-driver/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="NFS CSI driver guide sections"><a aria-current="page" href="/user-guide/nfs-driver/">Use</a><a href="/infrastructure/nfs-driver/">Architecture</a><a href="/admin-guide/nfs-driver/">Operate</a></nav>
 
 The NFS CSI driver lets Kubernetes pods mount an existing NFS server. Antalos uses it for shared application files and Litestream backups. The driver connects storage to pods; it does not create or replicate the external NFS server.
 
@@ -19,18 +19,18 @@ This is a platform service with no standalone user-facing website. Its consumers
 
 3. When access fails, identify the pod UID/GID and the failing operation before changing server-side ownership.
 
-## When you need an administrator
+## Get help
 
-For mount failures, inspect PVC binding, node-plugin events, protocol support, and network reachability. For permission errors, inspect numeric ownership and export mappings. Avoid applying recursive fsGroup changes to populated shared data as a generic fix.
+Report the application, file operation, time, and error. Avoid deleting files or remounting storage to solve an unexplained application issue.
 
-## Availability when using this service
+## During an interruption
 
-**Not HA storage: the CSI path has node coverage, but all declared exports depend on one external endpoint.** Other consumers can continue using a healthy export; single-instance applications still incur restart time. Persistent handles/locks and application recovery rules determine whether a replacement can safely start.
+An interruption can affect the applications that depend on this platform service. Ask the administrator to identify the affected service and expected recovery path.
 
-Read [how redundancy and recovery work](/infrastructure/nfs-driver/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/nfs-driver/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official NFS CSI driver documentation](https://github.com/kubernetes-csi/csi-driver-nfs) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official NFS CSI driver documentation](https://github.com/kubernetes-csi/csi-driver-nfs) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/nfs-driver/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/nfs-driver/).

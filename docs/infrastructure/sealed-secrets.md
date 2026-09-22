@@ -1,9 +1,9 @@
 ---
-title: "Sealed Secrets \u00b7 Infrastructure Explanation"
+title: "Sealed Secrets · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Sealed Secrets in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Sealed Secrets guide sections"><a href="/user-guide/sealed-secrets/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/sealed-secrets/">Infrastructure Explanation</a><a href="/admin-guide/sealed-secrets/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Sealed Secrets guide sections"><a href="/user-guide/sealed-secrets/">Use</a><a aria-current="page" href="/infrastructure/sealed-secrets/">Architecture</a><a href="/admin-guide/sealed-secrets/">Operate</a></nav>
 
 The controller runs in `sealed-secrets` with the name `sealed-secrets-controller`. Argo CD applies encrypted objects; the controller decrypts them and maintains their target Secrets. Bootstrap restores controller key material before application credentials are reconciled.
 

@@ -1,9 +1,9 @@
 ---
-title: "Stalwart Mail \u00b7 Infrastructure Explanation"
+title: "Stalwart Mail · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Stalwart Mail in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Stalwart Mail guide sections"><a href="/user-guide/stalwart/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/stalwart/">Infrastructure Explanation</a><a href="/admin-guide/stalwart/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Stalwart Mail guide sections"><a href="/user-guide/stalwart/">Use</a><a aria-current="page" href="/infrastructure/stalwart/">Architecture</a><a href="/admin-guide/stalwart/">Operate</a></nav>
 
 Two Stalwart replicas share a two-instance PostgreSQL cluster, Garage blob storage, Redis, and Elasticsearch. Redis has two data members and three Sentinel voters, but its HAProxy endpoint is colocated with the RTX quorum pod. Elasticsearch has two data/master members and a third master-only voter. A bootstrap Job applies the initial declarative settings; mail protocol listeners and HTTPS use separate routing paths.
 

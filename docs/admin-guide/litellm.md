@@ -1,9 +1,9 @@
 ---
-title: "LiteLLM \u00b7 Deployment and Admin Guide"
+title: "LiteLLM · Operate"
 description: "Deploy LiteLLM with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="LiteLLM guide sections"><a href="/user-guide/litellm/">Overview and User Guide</a><a href="/infrastructure/litellm/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/litellm/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="LiteLLM guide sections"><a href="/user-guide/litellm/">Use</a><a href="/infrastructure/litellm/">Architecture</a><a aria-current="page" href="/admin-guide/litellm/">Operate</a></nav>
 
 This runbook deploys the service from `apps/litellm/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

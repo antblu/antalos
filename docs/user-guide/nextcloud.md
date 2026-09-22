@@ -1,15 +1,15 @@
 ---
-title: "Nextcloud \u00b7 Overview and User Guide"
+title: "Nextcloud · Use"
 description: "What Nextcloud does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="Nextcloud guide sections"><a aria-current="page" href="/user-guide/nextcloud/">Overview and User Guide</a><a href="/infrastructure/nextcloud/">Infrastructure Explanation</a><a href="/admin-guide/nextcloud/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Nextcloud guide sections"><a aria-current="page" href="/user-guide/nextcloud/">Use</a><a href="/infrastructure/nextcloud/">Architecture</a><a href="/admin-guide/nextcloud/">Operate</a></nav>
 
 Nextcloud is the collaboration workspace for files, calendars, contacts, notes, shared boards, and conversations. Antalos adds document editing, Whiteboard, Talk, push notifications, and Context Chat backends. Access to these tools follows your account and sharing permissions; some integrations also need administrator setup.
 
 ## Access and audience
 
-The public address is defined by `NEXTCLOUD_HOST` in `apps/variables.yaml`. Use your deployment’s value; Antalos hostnames are examples for a fork.
+For this installation, use [nextcloud.antblu.net](https://nextcloud.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -23,18 +23,18 @@ The public address is defined by `NEXTCLOUD_HOST` in `apps/variables.yaml`. Use 
 
 5. Check sync errors and storage notices before deleting local originals. File synchronization also propagates deletions; it is not a substitute for a separate backup.
 
-## When you need an administrator
+## Get help
 
-For a 503 or incomplete rollout, separate database migration, app-code initialization, Redis discovery, and ingress failures. For missing files, verify database and object-store consistency before changing buckets. Read-only configuration requires the controlled maintenance procedure in the upgrade guide.
+Report the feature that failed: file sync, sharing, document editing, a call, or an AI request. Include the time and client error. Keep a local copy of unsynced work and avoid repeatedly uploading or deleting the same file.
 
-## Availability when using this service
+## During an interruption
 
-**Partially HA overall: replicated web and many companions, with shared storage, session, Redis recovery, and upgrade limits.** One copy of each paired role can remain, along with one database instance, one Redis data member, and two voters. The surviving components must reach external storage. An interrupted upload, edit, call, or indexing task may need application-specific retry.
+An interruption can affect file access, calls, or individual integrations differently. Keep unsynced work and follow the client’s retry guidance. A reconnected call or editing session may need to be reopened.
 
-Read [how redundancy and recovery work](/infrastructure/nextcloud/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/nextcloud/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official Nextcloud documentation](https://docs.nextcloud.com/server/latest/user_manual/en/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official Nextcloud documentation](https://docs.nextcloud.com/server/latest/user_manual/en/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/nextcloud/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/nextcloud/).

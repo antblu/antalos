@@ -1,47 +1,37 @@
 ---
-title: "Infrastructure Explanation"
-description: "Understand the backend before changing it."
+title: Understand the Antalos stack
+description: Read the repository, follow service dependencies, and understand the boundaries of availability.
 ---
 
-Understand the backend before changing it. Start with [platform topology](/infrastructure/platform/) and [service availability](/infrastructure/availability/), then follow an application’s request path and recovery contract.
+Antalos combines several systems with different owners. Start with the repository map, then follow the machines, network, and data before reading an individual application's design.
 
-## Understand availability first
+## Read the architecture in order
 
-The [service availability reference](/infrastructure/availability/) classifies every application and platform service and explains the mechanisms behind each claim. It distinguishes serving replicas, database promotion, quorum voters, sharded logs, singleton recovery, physical-host failure, and upgrade outages. The application pages below contain the detailed failure scenarios and remaining improvements.
-
-## Applications
-
-| Service | Purpose |
+| Guide | What you will understand |
 | --- | --- |
-| [Authentik](/infrastructure/authentik/) | Authentik is the identity service for Antalos. |
-| [BentoPDF](/infrastructure/bentopdf/) | BentoPDF provides browser-based PDF tools for merging, splitting, rotating, compressing, and converting documents. |
-| [Antalos documentation](/infrastructure/docs/) | This site is the handbook for using, understanding, and operating Antalos. |
-| [GitLab](/infrastructure/gitlab/) | GitLab brings Git repositories, merge requests, issue tracking, a container registry, and CI/CD project configuration into one workspace. |
-| [Headscale and Headplane](/infrastructure/headscale/) | Headscale coordinates a private network of Tailscale-compatible clients. |
-| [LiteLLM](/infrastructure/litellm/) | LiteLLM is the shared API gateway for language-model providers. |
-| [Nextcloud](/infrastructure/nextcloud/) | Nextcloud is the collaboration workspace for files, calendars, contacts, notes, shared boards, and conversations. |
-| [Open WebUI](/infrastructure/open-webui/) | Open WebUI is the browser interface for chatting with configured AI models and working with uploaded knowledge. |
-| [Rancher](/infrastructure/rancher/) | Rancher provides a browser workspace for inspecting Kubernetes clusters, workloads, namespaces, and access. |
-| [RustDesk](/infrastructure/rustdesk/) | RustDesk supplies remote desktop access between enrolled clients. |
-| [Stalwart Mail](/infrastructure/stalwart/) | Stalwart is Antalos’s mail service. |
-| [SuiteCRM](/infrastructure/suitecrm/) | SuiteCRM tracks customer relationships through leads, contacts, accounts, opportunities, activities, and cases. |
-| [UrBackup](/infrastructure/urbackup/) | UrBackup manages file and image backups from supported client devices. |
-| [Vaultwarden](/infrastructure/vaultwarden/) | Vaultwarden is a self-hosted server compatible with Bitwarden clients. |
-| [Grafana and VictoriaMetrics](/infrastructure/victoriametrics/) | Grafana is the dashboard interface for Antalos metrics and logs. |
-| [Zammad](/infrastructure/zammad/) | Zammad is a help-desk workspace for tickets, customer conversations, queues, and support history. |
+| [Repository and ownership](/infrastructure/repository/) | Which directory changes machines, Kubernetes resources, VM workloads, or this website |
+| [Hosts and Talos](/infrastructure/platform/) | How the physical hosts, control plane, workers, and quorum placement fit together |
+| [Traffic, DNS, and TLS](/infrastructure/networking/) | How the Azure edge, home HAProxy pair, MetalLB, Traefik, and application listeners connect |
+| [Storage and data](/infrastructure/storage/) | Where databases, files, objects, and recoverable SQLite state live |
+| [Debian application VMs](/infrastructure/virtual-machines/) | Which features run outside Kubernetes and how Ansible owns them |
+| [Availability and failure domains](/infrastructure/availability/) | What replicas protect and which shared dependencies can still interrupt a service |
 
+## Read an application's design
 
-## Platform services
+Use the **Architecture** link in the [service directory](/user-guide/services/). Each service guide describes its components, state, and failure behavior. The neighboring **Use** and **Operate** guides explain user impact and administrator actions.
 
-| Service | Purpose |
+For a first example, [Nextcloud](/infrastructure/nextcloud/) shows a web application with PostgreSQL, Redis, object storage, shared files, and VM companions. [Obsidian](/infrastructure/obsidian/) shows why two database processes do not necessarily form a synchronous cluster. [Uptime Kuma](/infrastructure/uptime-kuma/) shows the difference between a restartable singleton and a ready replica.
+
+## Terms used throughout the guides
+
+| Term | Meaning here |
 | --- | --- |
-| [Argo CD](/infrastructure/argocd/) | Argo CD is the delivery controller for Antalos. |
-| [cert-manager](/infrastructure/cert-manager/) | cert-manager automates TLS certificate issuance and renewal. |
-| [CloudNativePG](/infrastructure/cnpg-operator/) | CloudNativePG manages PostgreSQL clusters for Antalos applications. |
-| [MariaDB operator](/infrastructure/mariadb-operator/) | The MariaDB operator turns database declarations into managed MariaDB servers, users, grants, and backups. |
-| [MetalLB](/infrastructure/metallb/) | MetalLB assigns and advertises LoadBalancer addresses on the local network. |
-| [Metrics Server](/infrastructure/metrics-server/) | Metrics Server supplies recent CPU and memory measurements to the Kubernetes resource-metrics API. |
-| [NFS CSI driver](/infrastructure/nfs-driver/) | The NFS CSI driver lets Kubernetes pods mount an existing NFS server. |
-| [OpenEBS](/infrastructure/openebs/) | OpenEBS provisions the node-local persistent volumes used by Antalos databases and metrics services. |
-| [Sealed Secrets](/infrastructure/sealed-secrets/) | Sealed Secrets allows encrypted Kubernetes credentials to be stored in Git. |
-| [Traefik](/infrastructure/traefik/) | Traefik routes external requests to Antalos services. |
+| Desired state | The configuration declared in Git or an infrastructure project |
+| Reconciliation | A controller working to make running resources match desired state |
+| Replica | Another process or data copy; the guide states which |
+| Quorum | Enough voting members to make a coordinated decision |
+| Failure domain | A component whose loss can remove several resources together, such as a physical host |
+| HA | High availability for a specified failure, with stated dependencies |
+| Recovery | Bringing a service back through restart, repair, or restore after interruption |
+
+A workload's replica count is one part of its design. Storage, routing, identity, controller access, and physical placement determine whether the user can still complete a task.

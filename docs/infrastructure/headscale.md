@@ -1,9 +1,9 @@
 ---
-title: "Headscale and Headplane \u00b7 Infrastructure Explanation"
+title: "Headscale and Headplane · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Headscale and Headplane in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Headscale and Headplane guide sections"><a href="/user-guide/headscale/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/headscale/">Infrastructure Explanation</a><a href="/admin-guide/headscale/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Headscale and Headplane guide sections"><a href="/user-guide/headscale/">Use</a><a aria-current="page" href="/infrastructure/headscale/">Architecture</a><a href="/admin-guide/headscale/">Operate</a></nav>
 
 One Headscale StatefulSet and one Headplane Deployment share a hostname but use separate local SQLite databases. Each database lives on disposable local storage with Litestream replication to the shared NFS backup PVC. Startup restores the last backup before serving. Headplane calls the internal Headscale API using a mounted API key; browser login uses OIDC.
 

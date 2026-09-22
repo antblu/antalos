@@ -1,9 +1,9 @@
 ---
-title: "Antalos documentation \u00b7 Infrastructure Explanation"
+title: "Antalos documentation · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Antalos documentation in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Antalos documentation guide sections"><a href="/user-guide/docs/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/docs/">Infrastructure Explanation</a><a href="/admin-guide/docs/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Antalos documentation guide sections"><a href="/user-guide/docs/">Use</a><a aria-current="page" href="/infrastructure/docs/">Architecture</a><a href="/admin-guide/docs/">Operate</a></nav>
 
 Astro Starlight reads Markdown from `docs/` through `site/src/content.config.ts`. The static build is copied into an unprivileged NGINX image and published by GitHub Actions. Two stateless NGINX replicas serve the image on port 8080 behind a Kubernetes Service and Traefik. cert-manager manages `docs-tls`.
 

@@ -1,15 +1,15 @@
 ---
-title: "Headscale and Headplane \u00b7 Overview and User Guide"
+title: "Headscale and Headplane · Use"
 description: "What Headscale and Headplane does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="Headscale and Headplane guide sections"><a aria-current="page" href="/user-guide/headscale/">Overview and User Guide</a><a href="/infrastructure/headscale/">Infrastructure Explanation</a><a href="/admin-guide/headscale/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Headscale and Headplane guide sections"><a aria-current="page" href="/user-guide/headscale/">Use</a><a href="/infrastructure/headscale/">Architecture</a><a href="/admin-guide/headscale/">Operate</a></nav>
 
 Headscale coordinates a private network of Tailscale-compatible clients. It distributes identity and network policy; most application traffic travels between clients rather than through the Headscale server. Headplane provides the browser administration interface for machines, users, and network configuration.
 
 ## Access and audience
 
-The public address is defined by `HEADSCALE_HOST` in `apps/variables.yaml`. Use your deployment’s value; Antalos hostnames are examples for a fork.
+For this installation, use [vpn.antblu.net](https://vpn.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -21,19 +21,19 @@ The public address is defined by `HEADSCALE_HOST` in `apps/variables.yaml`. Use 
 
 4. Administrators use Headplane under `/admin/` to review devices and access. Remove or expire devices that are retired or lost.
 
-## When you need an administrator
+## Get help
 
-If Headscale will not start, check issuer discovery and NFS restore first. If the VPN works but Headplane fails, check its backend API key and separate database. A policy denying a connection can be correct behavior even when both services are healthy.
+Report the affected device, whether it can reach the internet, and which private service is unreachable. Avoid deleting its enrollment to solve an unexplained connection problem; ask the administrator first.
 
-## Availability when using this service
+## During an interruption
 
-**Not continuously HA: Headscale and Headplane each recover by restarting one process.** If it hosts Headscale, registration and control updates stop until recovery. If it hosts Headplane, browser administration stops independently. Already-established client tunnels may continue using existing peer state, but new enrollment, policy distribution, or reconnection must not be assumed available.
+An outage can prevent device enrollment or coordination updates. Report whether an existing private connection still works; do not assume every connection fails in the same way.
 
-Read [how redundancy and recovery work](/infrastructure/headscale/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/headscale/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official Headscale and Headplane documentation](https://headscale.net/stable/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official Headscale and Headplane documentation](https://headscale.net/stable/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/headscale/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/headscale/).
 

@@ -1,9 +1,9 @@
 ---
-title: "Sealed Secrets \u00b7 Deployment and Admin Guide"
+title: "Sealed Secrets · Operate"
 description: "Deploy Sealed Secrets with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="Sealed Secrets guide sections"><a href="/user-guide/sealed-secrets/">Overview and User Guide</a><a href="/infrastructure/sealed-secrets/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/sealed-secrets/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Sealed Secrets guide sections"><a href="/user-guide/sealed-secrets/">Use</a><a href="/infrastructure/sealed-secrets/">Architecture</a><a aria-current="page" href="/admin-guide/sealed-secrets/">Operate</a></nav>
 
 This runbook deploys the service from `apps/sealed-secrets/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

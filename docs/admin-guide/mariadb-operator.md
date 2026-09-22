@@ -1,9 +1,9 @@
 ---
-title: "MariaDB operator \u00b7 Deployment and Admin Guide"
+title: "MariaDB operator · Operate"
 description: "Deploy MariaDB operator with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="MariaDB operator guide sections"><a href="/user-guide/mariadb-operator/">Overview and User Guide</a><a href="/infrastructure/mariadb-operator/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/mariadb-operator/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="MariaDB operator guide sections"><a href="/user-guide/mariadb-operator/">Use</a><a href="/infrastructure/mariadb-operator/">Architecture</a><a aria-current="page" href="/admin-guide/mariadb-operator/">Operate</a></nav>
 
 This runbook deploys the service from `apps/mariadb-operator/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

@@ -1,9 +1,9 @@
 ---
-title: "Grafana and VictoriaMetrics \u00b7 Deployment and Admin Guide"
+title: "Grafana and VictoriaMetrics · Operate"
 description: "Deploy Grafana and VictoriaMetrics with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="Grafana and VictoriaMetrics guide sections"><a href="/user-guide/victoriametrics/">Overview and User Guide</a><a href="/infrastructure/victoriametrics/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/victoriametrics/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Grafana and VictoriaMetrics guide sections"><a href="/user-guide/victoriametrics/">Use</a><a href="/infrastructure/victoriametrics/">Architecture</a><a aria-current="page" href="/admin-guide/victoriametrics/">Operate</a></nav>
 
 This runbook deploys the service from `apps/victoriametrics/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

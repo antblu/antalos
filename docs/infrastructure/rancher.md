@@ -1,9 +1,9 @@
 ---
-title: "Rancher \u00b7 Infrastructure Explanation"
+title: "Rancher · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Rancher in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Rancher guide sections"><a href="/user-guide/rancher/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/rancher/">Infrastructure Explanation</a><a href="/admin-guide/rancher/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Rancher guide sections"><a href="/user-guide/rancher/">Use</a><a aria-current="page" href="/infrastructure/rancher/">Architecture</a><a href="/admin-guide/rancher/">Operate</a></nav>
 
 The Rancher Helm release runs two replicas with required host anti-affinity in `cattle-system`. A second Argo CD Application, `rancher-config`, supplies the TLS certificate from the same service directory. Traefik terminates HTTPS using `rancher-tls`. Rancher depends on the Kubernetes API of this same cluster.
 

@@ -1,9 +1,9 @@
 ---
-title: "OpenEBS \u00b7 Deployment and Admin Guide"
+title: "OpenEBS · Operate"
 description: "Deploy OpenEBS with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="OpenEBS guide sections"><a href="/user-guide/openebs/">Overview and User Guide</a><a href="/infrastructure/openebs/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/openebs/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="OpenEBS guide sections"><a href="/user-guide/openebs/">Use</a><a href="/infrastructure/openebs/">Architecture</a><a aria-current="page" href="/admin-guide/openebs/">Operate</a></nav>
 
 This runbook deploys the service from `apps/openebs/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

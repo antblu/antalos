@@ -1,9 +1,9 @@
 ---
-title: "Vaultwarden \u00b7 Infrastructure Explanation"
+title: "Vaultwarden · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Vaultwarden in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Vaultwarden guide sections"><a href="/user-guide/vaultwarden/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/vaultwarden/">Infrastructure Explanation</a><a href="/admin-guide/vaultwarden/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Vaultwarden guide sections"><a href="/user-guide/vaultwarden/">Use</a><a aria-current="page" href="/infrastructure/vaultwarden/">Architecture</a><a href="/admin-guide/vaultwarden/">Operate</a></nav>
 
 One Vaultwarden application replica uses the chart’s Recreate strategy. PostgreSQL runs as a two-instance CNPG cluster, while `/data` is a retained shared NFS volume. Traefik provides HTTPS using `vaultwarden-tls`. Public signup is disabled and the chart references a sealed administrator token.
 

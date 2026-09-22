@@ -1,9 +1,9 @@
 ---
-title: "cert-manager \u00b7 Overview and User Guide"
+title: "cert-manager · Use"
 description: "What cert-manager does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="cert-manager guide sections"><a aria-current="page" href="/user-guide/cert-manager/">Overview and User Guide</a><a href="/infrastructure/cert-manager/">Infrastructure Explanation</a><a href="/admin-guide/cert-manager/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="cert-manager guide sections"><a aria-current="page" href="/user-guide/cert-manager/">Use</a><a href="/infrastructure/cert-manager/">Architecture</a><a href="/admin-guide/cert-manager/">Operate</a></nav>
 
 cert-manager automates TLS certificate issuance and renewal. Application owners declare a Certificate and reference its generated TLS Secret from ingress. Antalos uses DNS-01 validation through Cloudflare and the `letsencrypt-prod` ClusterIssuer.
 
@@ -19,18 +19,18 @@ This is a platform service with no standalone user-facing website. Its consumers
 
 3. Use certificate status and ACME challenge events to understand issuance. A browser receiving an old certificate may still be reaching the wrong ingress route.
 
-## When you need an administrator
+## Get help
 
-Inspect Certificate, CertificateRequest, Order, and Challenge in that order. An IssuerNotFound error is a resource name/kind problem; a DNS challenge failure requires inspecting token permissions and DNS propagation.
+Report the service hostname, certificate error, and time. Do not bypass the warning or change device trust settings to hide an unexpected certificate problem.
 
-## Availability when using this service
+## During an interruption
 
-**Partially HA: replicated admission webhook; certificate issuance is not fully replicated by the manifest.** Issued sites may remain reachable while new certificate operations pause. Distinguish certificate-controller health from the active certificate served by ingress.
+An interruption can affect the applications that depend on this platform service. Ask the administrator to identify the affected service and expected recovery path.
 
-Read [how redundancy and recovery work](/infrastructure/cert-manager/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/cert-manager/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official cert-manager documentation](https://cert-manager.io/docs/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official cert-manager documentation](https://cert-manager.io/docs/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/cert-manager/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/cert-manager/).

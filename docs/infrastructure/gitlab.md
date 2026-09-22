@@ -1,9 +1,9 @@
 ---
-title: "GitLab \u00b7 Infrastructure Explanation"
+title: "GitLab · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for GitLab in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="GitLab guide sections"><a href="/user-guide/gitlab/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/gitlab/">Infrastructure Explanation</a><a href="/admin-guide/gitlab/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="GitLab guide sections"><a href="/user-guide/gitlab/">Use</a><a aria-current="page" href="/infrastructure/gitlab/">Architecture</a><a href="/admin-guide/gitlab/">Operate</a></nav>
 
 The official chart separates webservice, Sidekiq, Shell, KAS, registry, and toolbox, with two replicas of these serving and support roles. Gitaly and Praefect each have three replicas across the workers; the RTX Gitaly member stores a full repository copy. Two independent two-instance CNPG clusters hold Rails and Praefect data. Redis has two persistent data members and three persistent Sentinel voters. Garage stores object payloads.
 

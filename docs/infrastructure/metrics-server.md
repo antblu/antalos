@@ -1,9 +1,9 @@
 ---
-title: "Metrics Server \u00b7 Infrastructure Explanation"
+title: "Metrics Server · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Metrics Server in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Metrics Server guide sections"><a href="/user-guide/metrics-server/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/metrics-server/">Infrastructure Explanation</a><a href="/admin-guide/metrics-server/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Metrics Server guide sections"><a href="/user-guide/metrics-server/">Use</a><a aria-current="page" href="/infrastructure/metrics-server/">Architecture</a><a href="/admin-guide/metrics-server/">Operate</a></nav>
 
 The official chart runs in `metrics-server` and collects from kubelets through the aggregated API path. The current Application passes `--kubelet-insecure-tls`, which disables kubelet certificate verification for this connection.
 

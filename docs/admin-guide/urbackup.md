@@ -1,9 +1,9 @@
 ---
-title: "UrBackup \u00b7 Deployment and Admin Guide"
+title: "UrBackup · Operate"
 description: "Deploy UrBackup with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="UrBackup guide sections"><a href="/user-guide/urbackup/">Overview and User Guide</a><a href="/infrastructure/urbackup/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/urbackup/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="UrBackup guide sections"><a href="/user-guide/urbackup/">Use</a><a href="/infrastructure/urbackup/">Architecture</a><a aria-current="page" href="/admin-guide/urbackup/">Operate</a></nav>
 
 This runbook deploys the service from `apps/urbackup/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

@@ -1,5 +1,5 @@
 ---
-title: Infrastructure architecture
+title: Hosts and Talos
 description: Physical topology, Talos nodes, networks, storage, and GitOps control paths for the Antalos cluster.
 sidebar:
   order: 1
@@ -17,17 +17,19 @@ Antalos is a six-node Talos Linux Kubernetes cluster distributed across three Pr
 
 Each Proxmox host carries one control-plane VM and one worker VM. This spreads the Kubernetes control plane and the primary worker failure domains across `se350-left`, `se350-right`, and `rtx`.
 
-| Node | Address | Proxmox host | Capacity and role |
+| Guest | Address | Proxmox host | Responsibility |
 | --- | --- | --- | --- |
-| `talos-control-left` | `10.30.0.7` | `se350-left` | 2 vCPU, 4 GiB RAM, 32 GB disk; control plane and etcd |
-| `talos-control-right` | `10.30.0.8` | `se350-right` | 2 vCPU, 4 GiB RAM, 32 GB disk; control plane and etcd |
-| `talos-control-rtx` | `10.30.0.6` | `rtx` | 2 vCPU, 4 GiB RAM, 32 GB disk; control plane, etcd, and bootstrap endpoint |
-| `talos-worker-left` | `10.30.0.17` | `se350-left` | 10 vCPU, 28 GiB RAM, 300 GB disk; primary workload and local storage node |
-| `talos-worker-right` | `10.30.0.18` | `se350-right` | 10 vCPU, 28 GiB RAM, 300 GB disk; primary workload and local storage node |
-| `talos-worker-rtx` | `10.30.0.16` | `rtx` | 2 vCPU, 4 GiB RAM, 20 GB disk; tainted `quorum:NoSchedule` for lightweight voters |
-| `debian-left` | `10.30.0.27` | `se350-left` | 4 vCPU, 16 GiB RAM, 128 GB disk; CPU-backed Nextcloud Live Transcription |
-| `debian-rtx` | `10.30.0.26` | `rtx` | 4 vCPU, 8 GiB RAM, 650 GB disk; llama.cpp and CUDA-backed Nextcloud Translate |
-| `debian-arc` | `10.30.0.28` | `se350-right` | 4 vCPU, 8 GiB RAM, 300 GB disk; Talk recording, Immich ML, Jellyfin, and Docling |
+| `talos-control-left` | `10.30.0.7` | `se350-left` | Kubernetes control plane and etcd |
+| `talos-control-right` | `10.30.0.8` | `se350-right` | Kubernetes control plane and etcd |
+| `talos-control-rtx` | `10.30.0.6` | `rtx` | Control plane, etcd, and configured client API endpoint |
+| `talos-worker-left` | `10.30.0.17` | `se350-left` | Primary application worker and local data volumes |
+| `talos-worker-right` | `10.30.0.18` | `se350-right` | Primary application worker and local data volumes |
+| `talos-worker-rtx` | `10.30.0.16` | `rtx` | Tainted quorum placement and explicitly tolerated workloads |
+| `debian-left` | `10.30.0.27` | `se350-left` | Base Debian guest; current Ansible role does not deploy Compose |
+| `debian-rtx` | `10.30.0.26` | `rtx` | RTX 3060, llama-swap, and Speaches |
+| `debian-arc` | `10.30.0.28` | `se350-right` | Arc A310, recording, Immich ML, Jellyfin, and Docling |
+
+Use the corresponding OpenTofu project's inputs for CPU, RAM, disk sizing, and any private overrides. This table identifies the topology rather than duplicating a capacity snapshot that can drift. The [VM guide](/infrastructure/virtual-machines/) describes the Debian workloads; the [network guide](/infrastructure/networking/) covers the separate home HAProxy guests and Azure edge.
 
 The three control-plane nodes form an etcd quorum and can tolerate one control-plane member failure. The configured Kubernetes API endpoint is currently the address of `talos-control-rtx`, not a virtual IP or external load balancer. The control plane therefore has replicated members, but the client endpoint itself remains a single ingress path until a control-plane VIP or load balancer is added.
 
@@ -47,7 +49,7 @@ The RTX worker is deliberately tainted. Only workloads with the matching tolerat
 | `10.30.0.200` | Shared ingress and mail `LoadBalancer` address |
 | `10.30.0.241` | Nextcloud Talk TURN `LoadBalancer` address |
 
-Control-plane VMs have an internal interface. Workers have internal and external interfaces, with the internal route preferred. MetalLB advertises service addresses on the local network. Traefik terminates HTTPS and routes hostname-based traffic to services. cert-manager obtains certificates from the `letsencrypt-prod` cluster issuer.
+Talos machine endpoints use the internal network. The external home HAProxy identities are separate guests managed by the HAProxy project; do not confuse their addresses with the similarly numbered Talos workers. MetalLB advertises service addresses on the local network. Traefik terminates HTTPS and routes hostname-based traffic to services. cert-manager obtains certificates from the `letsencrypt-prod` cluster issuer.
 
 The MetalLB speaker runs on cluster nodes, so L2 advertisement can move when a speaker or node fails. Traefik has two anti-affined replicas behind the shared ingress address. DNS, the upstream router, and the local network remain outside this repository's availability controls.
 
@@ -68,13 +70,13 @@ OpenEBS is configured only as a local-volume provisioner; the replicated Mayasto
 
 OpenTofu creates the Talos VMs, applies machine configuration, bootstraps etcd, writes `kubeconfig`, and installs the initial Argo CD release. Argo CD then reconciles the root app-of-apps and the service `app.yaml` definitions discovered beneath `apps/`. An empty directory does not deploy a service.
 
-`apps/variables.yaml` is the shared source of hostnames, addresses, node names, chart versions, image tags, and provisioned volume sizes. The `yaml-envsubst` config-management plugin expands those variables before Kubernetes manifests or Helm parameters are applied.
+`apps/variables.yaml` is the shared source of Kubernetes application hostnames, addresses, node names, chart versions, image tags, and provisioned volume sizes. OpenTofu and Ansible retain their own machine and guest inputs. The `yaml-envsubst` config-management plugin expands those variables before Kubernetes manifests or Helm parameters are applied.
 
 Application credentials are committed only as `SealedSecret` ciphertext. The controller's private key is restored during bootstrap and must be backed up outside the cluster. Existing Kubernetes Secrets continue to serve workloads if the controller is unavailable, but new or changed SealedSecrets cannot be decrypted until it returns.
 
 ## Availability boundary
 
-The intended primary failure unit is one Kubernetes or Proxmox node. Replicas, anti-affinity, disruption budgets, database promotion, and quorum voters protect many services from that event. They do not protect against every shared dependency.
+Assess one worker VM and one whole Proxmox host as different failure cases. Replicas, anti-affinity, disruption budgets, database promotion, and quorum voters protect many services from that event. They do not protect against every shared dependency.
 
 The main shared failure domains are:
 
@@ -84,8 +86,8 @@ The main shared failure domains are:
 - the upstream router, DNS, Proxmox storage, and physical network;
 - intentionally single-instance workloads listed in [Service availability](/infrastructure/availability/);
 - the `debian-arc` VM and its Arc A310 workloads on `se350-right`; and
-- the `debian-left` VM and its CPU-backed Nextcloud Live Transcription workload on `se350-left`;
-- the `debian-rtx` VM and its RTX 3060 llama.cpp and Nextcloud Translate workloads on `rtx`.
+- the `debian-left` base VM and any separately managed workloads on it;
+- the `debian-rtx` VM and its RTX 3060 model and speech endpoints on `rtx`.
 
 High availability keeps a service running through an expected failure. Backups and GitOps make a service recoverable after availability mechanisms are exhausted; they are complementary, not interchangeable.
 

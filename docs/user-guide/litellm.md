@@ -1,15 +1,15 @@
 ---
-title: "LiteLLM \u00b7 Overview and User Guide"
+title: "LiteLLM · Use"
 description: "What LiteLLM does, how to use it in Antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="LiteLLM guide sections"><a aria-current="page" href="/user-guide/litellm/">Overview and User Guide</a><a href="/infrastructure/litellm/">Infrastructure Explanation</a><a href="/admin-guide/litellm/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="LiteLLM guide sections"><a aria-current="page" href="/user-guide/litellm/">Use</a><a href="/infrastructure/litellm/">Architecture</a><a href="/admin-guide/litellm/">Operate</a></nav>
 
 LiteLLM is the shared API gateway for language-model providers. Applications call a consistent API while administrators choose upstream models, create scoped virtual keys, and manage access. Installing the gateway does not supply a model or a provider account; those must be configured after deployment.
 
 ## Access and audience
 
-The public address is defined by `LITELLM_HOST` in `apps/variables.yaml`. Use your deployment’s value; Antalos hostnames are examples for a fork.
+For this installation, use [litellm.antblu.net](https://litellm.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -21,18 +21,18 @@ The public address is defined by `LITELLM_HOST` in `apps/variables.yaml`. Use yo
 
 4. Treat authentication failures, budget limits, and upstream availability as separate conditions. Record request identifiers when asking an administrator to investigate.
 
-## When you need an administrator
+## Get help
 
-If rollout is blocked, inspect `litellm-migrations` before the proxy logs. A Redis `MasterNotFoundError` requires checking all Sentinel endpoints and authentication. A working UI with failing requests usually needs model/provider, permission, quota, or upstream investigation.
+Include the model alias, endpoint, time, and redacted error. A rejected key, an unavailable model, and an exhausted provider limit need different fixes. Do not share your API key.
 
-## Availability when using this service
+## During an interruption
 
-**HA design for a single data-worker loss, conditional on healthy control-plane, Sentinel communication, and upstream providers.** One proxy, one PostgreSQL instance, one Redis data member, and two Sentinel voters remain. Availability is reduced while promotion and client reconnection happen; replacement data members remain constrained to the two main workers.
+The API gateway and individual model providers can fail independently. Report the model and error, and check whether a failed request already produced a result before resubmitting it.
 
-Read [how redundancy and recovery work](/infrastructure/litellm/#availability-and-failure-behavior), including upgrade interruptions and external dependencies. These are design expectations, not a live status indicator.
+Administrators can read [the architecture and recovery limits](/infrastructure/litellm/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official LiteLLM documentation](https://docs.litellm.ai/docs/) for the complete feature reference. Select documentation matching the version pinned in `apps/variables.yaml`; upstream “latest” documentation can describe a newer release.
+Use the [official LiteLLM documentation](https://docs.litellm.ai/docs/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
 For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/litellm/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/litellm/).

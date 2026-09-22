@@ -1,9 +1,9 @@
 ---
-title: "LiteLLM \u00b7 Infrastructure Explanation"
+title: "LiteLLM · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for LiteLLM in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="LiteLLM guide sections"><a href="/user-guide/litellm/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/litellm/">Infrastructure Explanation</a><a href="/admin-guide/litellm/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="LiteLLM guide sections"><a href="/user-guide/litellm/">Use</a><a aria-current="page" href="/infrastructure/litellm/">Architecture</a><a href="/admin-guide/litellm/">Operate</a></nav>
 
 Two anti-affined proxy replicas use `litellm-db`, a two-instance CloudNativePG cluster. Redis provides coordination and authentication caching through two persistent data members and three authenticated Sentinel voters, with the third voter on RTX. Clients discover the primary directly from Sentinel, avoiding a single Redis proxy endpoint. Separate CronJobs discover models from the llama.cpp and Speaches OpenAI-compatible endpoints and add missing deployments through LiteLLM's database-backed management API. Response caching is not enabled. One process runs per proxy pod.
 

@@ -1,9 +1,9 @@
 ---
-title: "SuiteCRM \u00b7 Infrastructure Explanation"
+title: "SuiteCRM · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for SuiteCRM in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="SuiteCRM guide sections"><a href="/user-guide/suitecrm/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/suitecrm/">Infrastructure Explanation</a><a href="/admin-guide/suitecrm/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="SuiteCRM guide sections"><a href="/user-guide/suitecrm/">Use</a><a aria-current="page" href="/infrastructure/suitecrm/">Architecture</a><a href="/admin-guide/suitecrm/">Operate</a></nav>
 
 SuiteCRM is deployed as several cooperating Kubernetes workloads rather than one self-contained pod. Two web replicas serve interactive traffic, a singleton messenger consumes asynchronous work, a CronJob starts the SuiteCRM scheduler every minute, and an Argo CD hook Job installs or upgrades the shared application tree. The MariaDB operator manages two Galera data members on the main workers; a `garbd` process on RTX contributes a third vote without storing SQL data.
 

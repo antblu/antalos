@@ -1,9 +1,9 @@
 ---
-title: "Metrics Server \u00b7 Deployment and Admin Guide"
+title: "Metrics Server · Operate"
 description: "Deploy Metrics Server with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="Metrics Server guide sections"><a href="/user-guide/metrics-server/">Overview and User Guide</a><a href="/infrastructure/metrics-server/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/metrics-server/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Metrics Server guide sections"><a href="/user-guide/metrics-server/">Use</a><a href="/infrastructure/metrics-server/">Architecture</a><a aria-current="page" href="/admin-guide/metrics-server/">Operate</a></nav>
 
 This runbook deploys the service from `apps/metrics-server/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

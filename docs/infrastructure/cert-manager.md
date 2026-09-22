@@ -1,9 +1,9 @@
 ---
-title: "cert-manager \u00b7 Infrastructure Explanation"
+title: "cert-manager · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for cert-manager in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="cert-manager guide sections"><a href="/user-guide/cert-manager/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/cert-manager/">Infrastructure Explanation</a><a href="/admin-guide/cert-manager/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="cert-manager guide sections"><a href="/user-guide/cert-manager/">Use</a><a aria-current="page" href="/infrastructure/cert-manager/">Architecture</a><a href="/admin-guide/cert-manager/">Operate</a></nav>
 
 The Helm chart installs certificate controllers, admission webhook, and CA injection. The webhook is explicitly replicated; the other controller replica counts are not increased here. `issuer.yaml` defines staging and production ACME issuers that reference `cloudflare-api-token/api-token`.
 

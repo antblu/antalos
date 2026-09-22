@@ -1,9 +1,9 @@
 ---
-title: "MetalLB \u00b7 Infrastructure Explanation"
+title: "MetalLB · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for MetalLB in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="MetalLB guide sections"><a href="/user-guide/metallb/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/metallb/">Infrastructure Explanation</a><a href="/admin-guide/metallb/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="MetalLB guide sections"><a href="/user-guide/metallb/">Use</a><a aria-current="page" href="/infrastructure/metallb/">Architecture</a><a href="/admin-guide/metallb/">Operate</a></nav>
 
 The chart supplies a controller for allocation and node-level speakers for advertisement. `config/pools.yaml` defines the address pool and L2 advertisement. In L2 mode an elected node advertises a service address and Kubernetes routes traffic to eligible endpoints.
 

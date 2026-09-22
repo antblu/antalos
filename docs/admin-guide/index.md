@@ -1,63 +1,43 @@
 ---
-title: "Deployment and Admin Guide"
-description: "Build and operate your own Antalos installation."
+title: Deploy and operate Antalos
+description: A practical path from an empty environment to a usable, understood, and recoverable Antalos installation.
 ---
 
-Build and operate your own Antalos installation. Read the shared setup once, then use the matching application guide for dependency order, credentials, identity, and the integrations that remain after deployment.
+Use this section to deploy your own installation or operate an existing one. Antalos is an environment-specific repository, so begin by understanding its owners and replacing its inputs. Applying the application tree alone does not create the machines, storage server, public DNS, or user accounts.
 
-## A complete deployment path
+## Deploy your own stack
 
-1. Prepare [workstation tools and access](/admin-guide/prerequisites/).
-2. [Bootstrap the cluster](/admin-guide/bootstrap/) or connect to an existing one with the [CLI guide](/admin-guide/cli/).
-3. Restore or establish the [sealing identity](/admin-guide/secrets/).
-4. Follow the [application deployment workflow](/admin-guide/deploy-an-application/).
-5. Complete the application’s [SSO and integration settings](/admin-guide/single-sign-on/).
-6. Establish [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/).
+| Step | Read and prepare | Outcome before continuing |
+| --- | --- | --- |
+| 1. Understand the design | [Repository map](/infrastructure/repository/), [hosts](/infrastructure/platform/), and [availability](/infrastructure/availability/) | You know the required machines and the design's failure limits |
+| 2. Prepare access and inputs | [Prerequisites](/admin-guide/prerequisites/) and [CLI access](/admin-guide/cli/) | Workstation tools, Proxmox access, network plan, and protected state are ready |
+| 3. Prepare external dependencies | [Storage](/infrastructure/storage/) and [networking](/infrastructure/networking/) | Required exports, buckets, DNS ownership, and routing are available |
+| 4. Bootstrap Kubernetes and GitOps | [Bootstrap the platform](/admin-guide/bootstrap/) | Talos, Kubernetes, sealing identity, and Argo CD are established |
+| 5. Configure application inputs | [Application workflow](/admin-guide/deploy-an-application/) and [sealed credentials](/admin-guide/secrets/) | Manifests use your addresses, supported versions, and credentials |
+| 6. Complete a service | Its **Operate** guide in the [directory](/user-guide/services/) | Database initialization, identity, integrations, and a useful user workflow work together |
+| 7. Add VM and edge features | [VM lifecycle](/admin-guide/virtual-machines/) and [Azure edge](/admin-guide/azure-edge/) | The selected external backends are configured through their own projects |
+| 8. Establish operations | [Routine operations](/admin-guide/operations/) and [recovery](/admin-guide/disaster-recovery/) | You know how to maintain, back up, and restore the installation |
 
+These are dependency stages. They are not a claim that the root app-of-apps automatically waits for every service to become healthy before creating the next one.
 
-## Applications
+## Change an existing installation
 
-| Service | Purpose |
+Find the owning directory in the [repository map](/infrastructure/repository/). Read the service's architecture and admin guide before changing a database, image, replica count, or integration. A Kubernetes manifest change follows GitOps; a Compose edit follows the matching Ansible playbook; a cloud-init edit affects provisioning.
+
+| Change | Runbook |
 | --- | --- |
-| [Authentik](/admin-guide/authentik/) | Authentik is the identity service for Antalos. |
-| [BentoPDF](/admin-guide/bentopdf/) | BentoPDF provides browser-based PDF tools for merging, splitting, rotating, compressing, and converting documents. |
-| [Antalos documentation](/admin-guide/docs/) | This site is the handbook for using, understanding, and operating Antalos. |
-| [GitLab](/admin-guide/gitlab/) | GitLab brings Git repositories, merge requests, issue tracking, a container registry, and CI/CD project configuration into one workspace. |
-| [Headscale and Headplane](/admin-guide/headscale/) | Headscale coordinates a private network of Tailscale-compatible clients. |
-| [LiteLLM](/admin-guide/litellm/) | LiteLLM is the shared API gateway for language-model providers. |
-| [Nextcloud](/admin-guide/nextcloud/) | Nextcloud is the collaboration workspace for files, calendars, contacts, notes, shared boards, and conversations. |
-| [Open WebUI](/admin-guide/open-webui/) | Open WebUI is the browser interface for chatting with configured AI models and working with uploaded knowledge. |
-| [Rancher](/admin-guide/rancher/) | Rancher provides a browser workspace for inspecting Kubernetes clusters, workloads, namespaces, and access. |
-| [RustDesk](/admin-guide/rustdesk/) | RustDesk supplies remote desktop access between enrolled clients. |
-| [Stalwart Mail](/admin-guide/stalwart/) | Stalwart is Antalos’s mail service. |
-| [SuiteCRM](/admin-guide/suitecrm/) | SuiteCRM tracks customer relationships through leads, contacts, accounts, opportunities, activities, and cases. |
-| [UrBackup](/admin-guide/urbackup/) | UrBackup manages file and image backups from supported client devices. |
-| [Vaultwarden](/admin-guide/vaultwarden/) | Vaultwarden is a self-hosted server compatible with Bitwarden clients. |
-| [Grafana and VictoriaMetrics](/admin-guide/victoriametrics/) | Grafana is the dashboard interface for Antalos metrics and logs. |
-| [Zammad](/admin-guide/zammad/) | Zammad is a help-desk workspace for tickets, customer conversations, queues, and support history. |
+| Add or configure an application | [Application workflow](/admin-guide/deploy-an-application/) |
+| Set up sign-in | [SSO and integrations](/admin-guide/single-sign-on/) |
+| Update a Debian workload | [VM lifecycle](/admin-guide/virtual-machines/) |
+| Upgrade Nextcloud | [Nextcloud upgrade procedure](/admin-guide/nextcloud-upgrades/) |
+| Configure Talk, recording, office, or AI | [Nextcloud integrations](/admin-guide/nextcloud-integrations/) |
+| Maintain a worker | [Routine operations](/admin-guide/operations/) |
+| Update the handbook | [Write and publish documentation](/admin-guide/site-authoring/) |
 
+## Investigate or recover
 
-## Platform services
+Start with [Find the failing layer](/admin-guide/troubleshooting/) for an incident. Use [disaster recovery](/admin-guide/disaster-recovery/) when you need to restore state or reconstruct infrastructure. Read the specific service's recovery section before deleting or recreating resources.
 
-| Service | Purpose |
-| --- | --- |
-| [Argo CD](/admin-guide/argocd/) | Argo CD is the delivery controller for Antalos. |
-| [cert-manager](/admin-guide/cert-manager/) | cert-manager automates TLS certificate issuance and renewal. |
-| [CloudNativePG](/admin-guide/cnpg-operator/) | CloudNativePG manages PostgreSQL clusters for Antalos applications. |
-| [MariaDB operator](/admin-guide/mariadb-operator/) | The MariaDB operator turns database declarations into managed MariaDB servers, users, grants, and backups. |
-| [MetalLB](/admin-guide/metallb/) | MetalLB assigns and advertises LoadBalancer addresses on the local network. |
-| [Metrics Server](/admin-guide/metrics-server/) | Metrics Server supplies recent CPU and memory measurements to the Kubernetes resource-metrics API. |
-| [NFS CSI driver](/admin-guide/nfs-driver/) | The NFS CSI driver lets Kubernetes pods mount an existing NFS server. |
-| [OpenEBS](/admin-guide/openebs/) | OpenEBS provisions the node-local persistent volumes used by Antalos databases and metrics services. |
-| [Sealed Secrets](/admin-guide/sealed-secrets/) | Sealed Secrets allows encrypted Kubernetes credentials to be stored in Git. |
-| [Traefik](/admin-guide/traefik/) | Traefik routes external requests to Antalos services. |
+## Use the upstream manuals alongside these guides
 
-
-## Detailed procedures
-
-- [Azure edge proxy and home HAProxy routing](/admin-guide/azure-edge/)
-- [Nextcloud identity and companion integrations](/admin-guide/nextcloud-integrations/)
-- [Nextcloud upgrade procedure](/admin-guide/nextcloud-upgrades/)
-- [Nextcloud Talk networking](/admin-guide/nextcloud-talk/)
-- [RustDesk network and recovery details](/admin-guide/rustdesk-network/)
-- [Build and customize this documentation](/admin-guide/site-authoring/)
+Each service guide links to official documentation. Use it for installation prerequisites, supported configuration, and upgrade procedures matching the selected version. Use Antalos documentation for the exact directory, credentials, dependencies, and integration choices made here.

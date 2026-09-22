@@ -1,9 +1,9 @@
 ---
-title: "Traefik \u00b7 Infrastructure Explanation"
+title: "Traefik · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Traefik in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Traefik guide sections"><a href="/user-guide/traefik/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/traefik/">Infrastructure Explanation</a><a href="/admin-guide/traefik/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Traefik guide sections"><a href="/user-guide/traefik/">Use</a><a aria-current="page" href="/infrastructure/traefik/">Architecture</a><a href="/admin-guide/traefik/">Operate</a></nav>
 
 Two anti-affined Traefik replicas sit behind a MetalLB LoadBalancer. cert-manager supplies TLS Secrets. Forward-auth calls the Authentik server’s embedded outpost. RustDesk uses additional native entry points and a separate UDP Service for its shared numeric TCP/UDP port.
 

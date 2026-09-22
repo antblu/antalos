@@ -62,13 +62,9 @@ the recorder and writes Talk's `recording_servers` setting without exposing the
 shared secret in Git. Test a complete recording and playback workflow after each
 recorder or Talk upgrade.
 
-The manually managed `live_transcription` container runs by itself on the
-Ansible-managed `debian-left` VM using its pinned CPU image. The manually
-managed `translate2` container runs beside llama.cpp on `debian-rtx` and uses
-the passed-through RTX 3060 through CUDA. Each ExApp is registered against its
-own direct AppAPI manual deployment on the internal network, so the former HaRP
-container and `/exapps/` ingress are no longer used. The Arc VM remains
-responsible for Talk recording, Immich machine learning, Jellyfin, and Docling.
+The current `leftansible` playbook configures the Debian base host and does not deploy a transcription container. The current RTX project deploys llama-swap and Speaches. Earlier manually installed transcription or translation ExApps may have their own registration and lifecycle; inventory those separately before changing them. Their former placement is not a declaration of the current managed workload.
+
+Use [Debian application VMs](/infrastructure/virtual-machines/) for the current division of responsibilities and [VM lifecycle](/admin-guide/virtual-machines/) for the deployment procedure. Configure each AI consumer against the provider it actually uses; the presence of a speech endpoint does not automatically register a Nextcloud ExApp.
 
 ## Mail and background work
 

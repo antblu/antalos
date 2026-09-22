@@ -1,9 +1,9 @@
 ---
-title: "BentoPDF \u00b7 Infrastructure Explanation"
+title: "BentoPDF · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for BentoPDF in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="BentoPDF guide sections"><a href="/user-guide/bentopdf/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/bentopdf/">Infrastructure Explanation</a><a href="/admin-guide/bentopdf/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="BentoPDF guide sections"><a href="/user-guide/bentopdf/">Use</a><a aria-current="page" href="/infrastructure/bentopdf/">Architecture</a><a href="/admin-guide/bentopdf/">Operate</a></nav>
 
 `bentopdf.yaml` deploys two stateless NGINX containers from the `bentopdf-simple` image. Required anti-affinity and a disruption budget retain one serving replica during ordinary maintenance. The ingress chains `traefik-authentik-forward-auth` with `bentopdf-headers`; the latter sets COOP and COEP for browser isolation. There is no application database or file-upload PVC in this service.
 

@@ -1,9 +1,9 @@
 ---
-title: "CloudNativePG \u00b7 Deployment and Admin Guide"
+title: "CloudNativePG · Operate"
 description: "Deploy CloudNativePG with Antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
-<nav class="guide-switcher" aria-label="CloudNativePG guide sections"><a href="/user-guide/cnpg-operator/">Overview and User Guide</a><a href="/infrastructure/cnpg-operator/">Infrastructure Explanation</a><a aria-current="page" href="/admin-guide/cnpg-operator/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="CloudNativePG guide sections"><a href="/user-guide/cnpg-operator/">Use</a><a href="/infrastructure/cnpg-operator/">Architecture</a><a aria-current="page" href="/admin-guide/cnpg-operator/">Operate</a></nav>
 
 This runbook deploys the service from `apps/cnpg-operator/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
 

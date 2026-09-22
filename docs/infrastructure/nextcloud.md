@@ -1,9 +1,9 @@
 ---
-title: "Nextcloud \u00b7 Infrastructure Explanation"
+title: "Nextcloud · Architecture"
 description: "Backend components, persistence, placement, and failure boundaries for Nextcloud in Antalos."
 ---
 
-<nav class="guide-switcher" aria-label="Nextcloud guide sections"><a href="/user-guide/nextcloud/">Overview and User Guide</a><a aria-current="page" href="/infrastructure/nextcloud/">Infrastructure Explanation</a><a href="/admin-guide/nextcloud/">Deployment and Admin Guide</a></nav>
+<nav class="guide-switcher" aria-label="Nextcloud guide sections"><a href="/user-guide/nextcloud/">Use</a><a aria-current="page" href="/infrastructure/nextcloud/">Architecture</a><a href="/admin-guide/nextcloud/">Operate</a></nav>
 
 Two Nextcloud web pods each include notify_push. Shared app code comes from the `nextcloud-apps` NFS volume; runtime files are pod-local. A two-instance CNPG cluster stores application metadata and Context Chat data. Garage is the primary file object store. Redis uses two persistent data members, three Sentinel voters, and two HAProxy replicas. Separate deployments run EuroOffice, Whiteboard, and the request/update/indexing roles of Context Chat. Talk has two signaling/Janus/TURN pods and three NATS members.
 
@@ -49,8 +49,8 @@ This is an interpretation of the checked-in configuration, assuming the declared
 | Context Chat | Request, update, and indexing: 2 each | Role-specific Services and PDBs preserve process redundancy; all share database/provider dependencies. |
 | Office / Whiteboard | 2 each | Office uses sticky routing; Whiteboard shares Redis and NFS recording state. |
 | Talk | 2 signaling/Janus/TURN pods; 3 NATS nodes | Independent TURN allocations remain pinned to their owning ordinal. |
-| Live transcription | CPU ExApp on `debian-left` | One direct AppAPI manual deployment; loss of the VM removes transcription. |
-| Local translation | CUDA ExApp on `debian-rtx` | One direct AppAPI manual deployment; loss of the VM or GPU removes translation. |
+| Local model / speech providers | llama-swap and Speaches on `debian-rtx` | Separate VM endpoints; their availability depends on the consuming integration and GPU. |
+| Manually installed ExApps | Outside the current left/RTX playbook workload declarations | Existing transcription or translation registrations require a separate runtime inventory. |
 | Files / code / recording | Garage + NFS; recorder on `debian-arc` | No storage-host failover or external-recorder HA is defined here. |
 
 ### How a failure is handled
