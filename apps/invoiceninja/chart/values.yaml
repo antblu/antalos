@@ -116,14 +116,14 @@ env:
   dbDatabase: ninja
   dbUsername: ninja
   dbConnection: mysql
-  initialUserEmail: antblu@antblu.net
+  initialUserEmail: admin@example.com
   mailMailer: log
   mailHost: smtp.mailtrap.io
   mailPort: "2525"
   mailUsername: "null"
   mailPassword: "null"
   mailEncryption: "null"
-  mailFromAddress: antblu@antblu.net
+  mailFromAddress: admin@example.com
   mailFromName: Invoice Ninja
   s3AccessKeyId: ""
   s3Region: garage
