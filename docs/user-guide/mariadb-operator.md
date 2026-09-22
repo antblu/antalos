@@ -1,11 +1,11 @@
 ---
 title: "MariaDB operator · Use"
-description: "What MariaDB operator does, how to use it in Antalos, and where to find its official documentation."
+description: "What MariaDB operator does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="MariaDB operator guide sections"><a aria-current="page" href="/user-guide/mariadb-operator/">Use</a><a href="/infrastructure/mariadb-operator/">Architecture</a><a href="/admin-guide/mariadb-operator/">Operate</a></nav>
 
-The MariaDB operator turns database declarations into managed MariaDB servers, users, grants, and backups. In Antalos it supports SuiteCRM’s Galera database. Database ownership stays with the service directory, making credentials and storage easier to recover together.
+The MariaDB operator turns database declarations into managed MariaDB servers, users, grants, and backups. In antalos it supports SuiteCRM's Galera database. Database ownership stays with the service directory, making credentials and storage easier to recover together.
 
 ## Access and audience
 
@@ -33,4 +33,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/m
 
 Use the [official MariaDB operator documentation](https://github.com/mariadb-operator/mariadb-operator) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/mariadb-operator/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/mariadb-operator/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/mariadb-operator/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/mariadb-operator/).

@@ -15,7 +15,7 @@ The configured installation address is [status.antblu.net](https://status.antblu
 
 Look for the affected service, the time of its last observation, and any incident or maintenance note. A successful check means that the configured probe succeeded from the monitor's location. It may not test your own network, account, file operation, or mail delivery.
 
-If the page is unavailable, report that separately from the service you were using. The monitoring application runs inside Antalos and can be affected by the same outage.
+If the page is unavailable, report that separately from the service you were using. The monitoring application runs inside antalos and can be affected by the same outage.
 
 ## Request a useful monitor
 

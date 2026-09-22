@@ -1,6 +1,6 @@
 ---
 title: "Traefik · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Traefik in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for Traefik in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="Traefik guide sections"><a href="/user-guide/traefik/">Use</a><a aria-current="page" href="/infrastructure/traefik/">Architecture</a><a href="/admin-guide/traefik/">Operate</a></nav>

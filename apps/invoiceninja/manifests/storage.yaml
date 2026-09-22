@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: galera-invoiceninja-db-0
+  namespace: invoiceninja
+  annotations:
+    argocd.argoproj.io/sync-wave: "-6"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: openebs-local
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: galera-invoiceninja-db-1
+  namespace: invoiceninja
+  annotations:
+    argocd.argoproj.io/sync-wave: "-6"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: openebs-local
+  resources:
+    requests:
+      storage: 100Mi

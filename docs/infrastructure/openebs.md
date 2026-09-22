@@ -1,6 +1,6 @@
 ---
 title: "OpenEBS · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for OpenEBS in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for OpenEBS in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="OpenEBS guide sections"><a href="/user-guide/openebs/">Use</a><a aria-current="page" href="/infrastructure/openebs/">Architecture</a><a href="/admin-guide/openebs/">Operate</a></nav>

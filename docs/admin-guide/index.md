@@ -1,9 +1,9 @@
 ---
-title: Deploy and operate Antalos
-description: A practical path from an empty environment to a usable, understood, and recoverable Antalos installation.
+title: Deploy and operate antalos
+description: A practical path from an empty environment to a usable, understood, and recoverable antalos installation.
 ---
 
-Use this section to deploy your own installation or operate an existing one. Antalos is an environment-specific repository, so begin by understanding its owners and replacing its inputs. Applying the application tree alone does not create the machines, storage server, public DNS, or user accounts.
+Use this section to deploy your own installation or operate an existing one. antalos is an environment-specific repository, so begin by understanding its owners and replacing its inputs. Applying the application tree alone does not create the machines, storage server, public DNS, or user accounts.
 
 ## Deploy your own stack
 
@@ -40,4 +40,4 @@ Start with [Find the failing layer](/admin-guide/troubleshooting/) for an incide
 
 ## Use the upstream manuals alongside these guides
 
-Each service guide links to official documentation. Use it for installation prerequisites, supported configuration, and upgrade procedures matching the selected version. Use Antalos documentation for the exact directory, credentials, dependencies, and integration choices made here.
+Each service guide links to official documentation. Use it for installation prerequisites, supported configuration, and upgrade procedures matching the selected version. Use antalos documentation for the exact directory, credentials, dependencies, and integration choices made here.

@@ -1,6 +1,6 @@
 ---
 title: "Rancher · Operate"
-description: "Deploy Rancher with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Rancher with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="Rancher guide sections"><a href="/user-guide/rancher/">Use</a><a href="/infrastructure/rancher/">Architecture</a><a aria-current="page" href="/admin-guide/rancher/">Operate</a></nav>

@@ -1,6 +1,6 @@
 ---
 title: "Vaultwarden · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Vaultwarden in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for Vaultwarden in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="Vaultwarden guide sections"><a href="/user-guide/vaultwarden/">Use</a><a aria-current="page" href="/infrastructure/vaultwarden/">Architecture</a><a href="/admin-guide/vaultwarden/">Operate</a></nav>

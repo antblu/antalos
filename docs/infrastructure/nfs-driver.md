@@ -1,6 +1,6 @@
 ---
 title: "NFS CSI driver · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for NFS CSI driver in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for NFS CSI driver in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="NFS CSI driver guide sections"><a href="/user-guide/nfs-driver/">Use</a><a aria-current="page" href="/infrastructure/nfs-driver/">Architecture</a><a href="/admin-guide/nfs-driver/">Operate</a></nav>
@@ -31,7 +31,7 @@ This is an interpretation of the checked-in configuration, assuming the declared
 | --- | --- | --- |
 | CSI node plugins | Node-level mounts | Another worker can mount a reachable export. |
 | CSI control components | Chart-managed | Provisioning and new mounts have their own management dependencies. |
-| NFS data service | One declared server endpoint | No replicated NFS servers, failover address, or export fencing is declared by Antalos. |
+| NFS data service | One declared server endpoint | No replicated NFS servers, failover address, or export fencing is declared by antalos. |
 
 ### How a failure is handled
 

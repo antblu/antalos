@@ -1,6 +1,6 @@
 ---
 title: "MetalLB · Operate"
-description: "Deploy MetalLB with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy MetalLB with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="MetalLB guide sections"><a href="/user-guide/metallb/">Use</a><a href="/infrastructure/metallb/">Architecture</a><a aria-current="page" href="/admin-guide/metallb/">Operate</a></nav>

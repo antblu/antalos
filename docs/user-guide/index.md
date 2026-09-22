@@ -1,5 +1,5 @@
 ---
-title: Use the Antalos services
+title: Use the antalos services
 description: Choose a service, understand account access, and complete a useful first task.
 ---
 
@@ -35,4 +35,4 @@ Keep the service address, approximate time, and error message. Explain the task 
 
 ## Learn more
 
-Use the **Official documentation** links in each service guide for detailed product instructions. They explain the product's features; this handbook explains the Antalos installation. Features shown in upstream documentation may depend on the version or options your administrator enabled.
+Use the **Official documentation** links in each service guide for detailed product instructions. They explain the product's features; this handbook explains the antalos installation. Features shown in upstream documentation may depend on the version or options your administrator enabled.

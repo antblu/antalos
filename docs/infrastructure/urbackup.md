@@ -1,6 +1,6 @@
 ---
 title: "UrBackup · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for UrBackup in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for UrBackup in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="UrBackup guide sections"><a href="/user-guide/urbackup/">Use</a><a aria-current="page" href="/infrastructure/urbackup/">Architecture</a><a href="/admin-guide/urbackup/">Operate</a></nav>

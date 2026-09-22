@@ -26,7 +26,7 @@ data:
   cal-diy.yaml: |
     version: 1
     metadata:
-      name: Antalos - Cal.diy OIDC
+      name: antalos - Cal.diy OIDC
     entries:
       - model: authentik_providers_oauth2.oauth2provider
         state: present

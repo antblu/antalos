@@ -1,15 +1,15 @@
 ---
 title: "NFS CSI driver · Use"
-description: "What NFS CSI driver does, how to use it in Antalos, and where to find its official documentation."
+description: "What NFS CSI driver does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="NFS CSI driver guide sections"><a aria-current="page" href="/user-guide/nfs-driver/">Use</a><a href="/infrastructure/nfs-driver/">Architecture</a><a href="/admin-guide/nfs-driver/">Operate</a></nav>
 
-The NFS CSI driver lets Kubernetes pods mount an existing NFS server. Antalos uses it for shared application files and Litestream backups. The driver connects storage to pods; it does not create or replicate the external NFS server.
+The NFS CSI driver lets Kubernetes pods mount an existing NFS server. antalos uses it for shared application files and Litestream backups. The driver connects storage to pods; it does not create or replicate the external NFS server.
 
 ## Access and audience
 
-This is a platform service with no standalone user-facing website. Its consumers use Kubernetes resources or internal endpoints.
+For this installation, use [nfs.antblu.net](https://nfs.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -33,4 +33,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/n
 
 Use the [official NFS CSI driver documentation](https://github.com/kubernetes-csi/csi-driver-nfs) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/nfs-driver/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/nfs-driver/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/nfs-driver/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/nfs-driver/).

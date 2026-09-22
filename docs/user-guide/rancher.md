@@ -1,15 +1,15 @@
 ---
 title: "Rancher · Use"
-description: "What Rancher does, how to use it in Antalos, and where to find its official documentation."
+description: "What Rancher does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="Rancher guide sections"><a aria-current="page" href="/user-guide/rancher/">Use</a><a href="/infrastructure/rancher/">Architecture</a><a href="/admin-guide/rancher/">Operate</a></nav>
 
-Rancher provides a browser workspace for inspecting Kubernetes clusters, workloads, namespaces, and access. In Antalos it runs inside the cluster it manages. Use it to understand current state and investigate workloads, while keeping long-lived desired configuration in the GitOps repository.
+Rancher provides a browser workspace for inspecting Kubernetes clusters, workloads, namespaces, and access. In antalos it runs inside the cluster it manages. Use it to understand current state and investigate workloads, while keeping long-lived desired configuration in the GitOps repository.
 
 ## Access and audience
 
-For this installation, use [rancher.antblu.net](https://rancher.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+For this installation, use [rancher.antblu.net](https://rancher.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -19,7 +19,7 @@ For this installation, use [rancher.antblu.net](https://rancher.antblu.net). If 
 
 3. Use the resource view to understand the Kubernetes objects involved. Record the namespace and object name when escalating an issue.
 
-4. Make persistent changes in the owning Antalos manifest. Argo CD may reconcile a one-off UI change back to the repository value.
+4. Make persistent changes in the owning antalos manifest. Argo CD may reconcile a one-off UI change back to the repository value.
 
 ## Get help
 
@@ -35,4 +35,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/r
 
 Use the [official Rancher documentation](https://ranchermanager.docs.rancher.com/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/rancher/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/rancher/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/rancher/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/rancher/).

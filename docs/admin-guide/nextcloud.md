@@ -1,6 +1,6 @@
 ---
 title: "Nextcloud · Operate"
-description: "Deploy Nextcloud with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Nextcloud with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="Nextcloud guide sections"><a href="/user-guide/nextcloud/">Use</a><a href="/infrastructure/nextcloud/">Architecture</a><a aria-current="page" href="/admin-guide/nextcloud/">Operate</a></nav>

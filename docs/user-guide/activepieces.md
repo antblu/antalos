@@ -31,4 +31,4 @@ A temporary outage can delay work or interrupt an active run. Multiple workers d
 
 ## Official documentation
 
-Use [Activepieces documentation](https://www.activepieces.com/docs/overview/welcome) for flow building and product help. Administrators should also read the [self-hosting options](https://www.activepieces.com/docs/install/overview) and the [Antalos deployment guide](/admin-guide/activepieces/).
+Use [Activepieces documentation](https://www.activepieces.com/docs/overview/welcome) for flow building and product help. Administrators should also read the [self-hosting options](https://www.activepieces.com/docs/install/overview) and the [antalos deployment guide](/admin-guide/activepieces/).

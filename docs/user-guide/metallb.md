@@ -1,6 +1,6 @@
 ---
 title: "MetalLB · Use"
-description: "What MetalLB does, how to use it in Antalos, and where to find its official documentation."
+description: "What MetalLB does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="MetalLB guide sections"><a aria-current="page" href="/user-guide/metallb/">Use</a><a href="/infrastructure/metallb/">Architecture</a><a href="/admin-guide/metallb/">Operate</a></nav>
@@ -33,4 +33,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/m
 
 Use the [official MetalLB documentation](https://metallb.io/usage/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/metallb/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/metallb/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/metallb/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/metallb/).

@@ -1,11 +1,11 @@
 ---
 title: "cert-manager · Use"
-description: "What cert-manager does, how to use it in Antalos, and where to find its official documentation."
+description: "What cert-manager does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="cert-manager guide sections"><a aria-current="page" href="/user-guide/cert-manager/">Use</a><a href="/infrastructure/cert-manager/">Architecture</a><a href="/admin-guide/cert-manager/">Operate</a></nav>
 
-cert-manager automates TLS certificate issuance and renewal. Application owners declare a Certificate and reference its generated TLS Secret from ingress. Antalos uses DNS-01 validation through Cloudflare and the `letsencrypt-prod` ClusterIssuer.
+cert-manager automates TLS certificate issuance and renewal. Application owners declare a Certificate and reference its generated TLS Secret from ingress. antalos uses DNS-01 validation through Cloudflare and the `letsencrypt-prod` ClusterIssuer.
 
 ## Access and audience
 
@@ -33,4 +33,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/c
 
 Use the [official cert-manager documentation](https://cert-manager.io/docs/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/cert-manager/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/cert-manager/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/cert-manager/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/cert-manager/).

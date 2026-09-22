@@ -1,11 +1,11 @@
 ---
 title: Service availability
-description: Which Antalos services are highly available, how failover works, and where single processes, storage, quorum, or upgrades limit availability.
+description: "Which antalos services are highly available, how failover works, and where single processes, storage, quorum, or upgrades limit availability."
 sidebar:
   order: 2
 ---
 
-Antalos has **mixed availability**. Several serving tiers can use a healthy replica after one worker fails. Others must restart a single process or restore a database before serving again. Replicated applications can still lose functionality through shared storage, a singleton proxy, or an unavailable control-plane endpoint.
+antalos has **mixed availability**. Several serving tiers can use a healthy replica after one worker fails. Others must restart a single process or restore a database before serving again. Replicated applications can still lose functionality through shared storage, a singleton proxy, or an unavailable control-plane endpoint.
 
 This reference describes the current repository design. It does not report live readiness, a completed node-loss test, an uptime percentage, or a measured recovery time. Follow each service link for its component counts, failure sequence, upgrade behavior, and remaining work.
 
@@ -180,7 +180,7 @@ Argo CD’s controller replicas are configured with cluster sharding. They do no
 
 **Recovery time (RTO)** is the interruption until the required user workflow works again. **Recovery point (RPO)** describes the data that may be absent after recovery. Neither is established by a pod count, a five-second failure-detection threshold, or a one-second backup interval.
 
-For Antalos, the relevant intervals can include failure detection, voting, promotion, Service updates, rescheduling, image download, NFS locks, restore, replay, warm-up, and client reconnect. Correlated operator/API loss adds another dependency. Do not publish a numeric guarantee without measuring the complete path.
+For antalos, the relevant intervals can include failure detection, voting, promotion, Service updates, rescheduling, image download, NFS locks, restore, replay, warm-up, and client reconnect. Correlated operator/API loss adds another dependency. Do not publish a numeric guarantee without measuring the complete path.
 
 Replication is also not a backup: destructive changes or corruption can reach another live member. A recovery set needs independent database, object, file, and key material. See [disaster recovery](/admin-guide/disaster-recovery/).
 

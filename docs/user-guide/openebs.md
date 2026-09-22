@@ -1,15 +1,15 @@
 ---
 title: "OpenEBS · Use"
-description: "What OpenEBS does, how to use it in Antalos, and where to find its official documentation."
+description: "What OpenEBS does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="OpenEBS guide sections"><a aria-current="page" href="/user-guide/openebs/">Use</a><a href="/infrastructure/openebs/">Architecture</a><a href="/admin-guide/openebs/">Operate</a></nav>
 
-OpenEBS provisions the node-local persistent volumes used by Antalos databases and metrics services. Each volume belongs to one worker. Database replication across separate volumes supplies availability; the local storage layer itself is not configured to replicate data.
+OpenEBS provisions the node-local persistent volumes used by antalos databases and metrics services. Each volume belongs to one worker. Database replication across separate volumes supplies availability; the local storage layer itself is not configured to replicate data.
 
 ## Access and audience
 
-This is a platform service with no standalone user-facing website. Its consumers use Kubernetes resources or internal endpoints.
+For this installation, use [openebs.antblu.net](https://openebs.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -33,4 +33,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/o
 
 Use the [official OpenEBS documentation](https://openebs.io/docs/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/openebs/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/openebs/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/openebs/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/openebs/).

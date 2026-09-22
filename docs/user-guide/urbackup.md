@@ -1,6 +1,6 @@
 ---
 title: "UrBackup · Use"
-description: "What UrBackup does, how to use it in Antalos, and where to find its official documentation."
+description: "What UrBackup does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="UrBackup guide sections"><a aria-current="page" href="/user-guide/urbackup/">Use</a><a href="/infrastructure/urbackup/">Architecture</a><a href="/admin-guide/urbackup/">Operate</a></nav>
@@ -9,7 +9,7 @@ UrBackup manages file and image backups from supported client devices. Its web i
 
 ## Access and audience
 
-For this installation, use [backup.antblu.net](https://backup.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+For this installation, use [backup.antblu.net](https://backup.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -35,4 +35,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/u
 
 Use the [official UrBackup documentation](https://www.urbackup.org/administration_manual.html) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/urbackup/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/urbackup/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/urbackup/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/urbackup/).

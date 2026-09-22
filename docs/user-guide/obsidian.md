@@ -1,15 +1,15 @@
 ---
 title: Obsidian LiveSync · Use
-description: Sync a local Obsidian vault through Antalos and find the official Obsidian and LiveSync instructions.
+description: Sync a local Obsidian vault through antalos and find the official Obsidian and LiveSync instructions.
 ---
 
 <nav class="guide-switcher" aria-label="Obsidian LiveSync guides"><a aria-current="page" href="/user-guide/obsidian/">Use</a><a href="/infrastructure/obsidian/">Architecture</a><a href="/admin-guide/obsidian/">Operate</a></nav>
 
-Obsidian is the notes application on your device. Antalos provides a CouchDB backend for the community **Self-hosted LiveSync** plugin to synchronize your vault. The server address is not a browser editor for your notes.
+Obsidian is the notes application on your device. antalos provides a CouchDB backend for the community **Self-hosted LiveSync** plugin to synchronize your vault. The server address is not a browser editor for your notes.
 
 ## Before connecting a vault
 
-Ask your administrator for the remote address, database name, supported authentication method, and any setup or encryption material. The configured Antalos address is [obsidian.antblu.net](https://obsidian.antblu.net). Opening it in a browser may show sign-in or database administration, rather than your notes.
+Ask your administrator for the remote address, database name, supported authentication method, and any setup or encryption material. The configured antalos address is [obsidian.antblu.net](https://obsidian.antblu.net). Opening it in a browser may show sign-in or database administration, rather than your notes.
 
 The endpoint uses Authentik authorization. A successful browser sign-in does not by itself prove that your device's sync client can authenticate; have the administrator confirm the native-client access path before migrating a vault.
 
@@ -31,4 +31,4 @@ Changes and deletions can synchronize between devices. Retain separate backups a
 
 ## Official documentation
 
-Use [Obsidian Help](https://help.obsidian.md/) for notes and vaults. Use the [Self-hosted LiveSync project documentation](https://github.com/vrtmrz/obsidian-livesync) for the community plugin; it is separate from Obsidian's own Sync service. Administrators can continue to the [Antalos backend guide](/admin-guide/obsidian/).
+Use [Obsidian Help](https://help.obsidian.md/) for notes and vaults. Use the [Self-hosted LiveSync project documentation](https://github.com/vrtmrz/obsidian-livesync) for the community plugin; it is separate from Obsidian's own Sync service. Administrators can continue to the [antalos backend guide](/admin-guide/obsidian/).

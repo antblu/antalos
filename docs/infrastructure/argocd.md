@@ -1,6 +1,6 @@
 ---
 title: "Argo CD · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Argo CD in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for Argo CD in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="Argo CD guide sections"><a href="/user-guide/argocd/">Use</a><a aria-current="page" href="/infrastructure/argocd/">Architecture</a><a href="/admin-guide/argocd/">Operate</a></nav>

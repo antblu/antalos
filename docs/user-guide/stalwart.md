@@ -1,15 +1,15 @@
 ---
 title: "Stalwart Mail · Use"
-description: "What Stalwart Mail does, how to use it in Antalos, and where to find its official documentation."
+description: "What Stalwart Mail does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="Stalwart Mail guide sections"><a aria-current="page" href="/user-guide/stalwart/">Use</a><a href="/infrastructure/stalwart/">Architecture</a><a href="/admin-guide/stalwart/">Operate</a></nav>
 
-Stalwart is Antalos’s mail service. It accepts and delivers mail, stores mailbox data, and exposes supported mail and groupware protocols to clients. The HTTPS administration page configures the server; reading mail requires a compatible client or a separately configured webmail application.
+Stalwart is antalos's mail service. It accepts and delivers mail, stores mailbox data, and exposes supported mail and groupware protocols to clients. The HTTPS administration page configures the server; reading mail requires a compatible client or a separately configured webmail application.
 
 ## Access and audience
 
-For this installation, use [mail.antblu.net](https://mail.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+For this installation, use [mail.antblu.net](https://mail.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -35,4 +35,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/s
 
 Use the [official Stalwart Mail documentation](https://stalw.art/docs/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/stalwart/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/stalwart/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/stalwart/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/stalwart/).

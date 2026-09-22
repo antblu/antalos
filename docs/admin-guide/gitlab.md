@@ -1,6 +1,6 @@
 ---
 title: "GitLab · Operate"
-description: "Deploy GitLab with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy GitLab with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="GitLab guide sections"><a href="/user-guide/gitlab/">Use</a><a href="/infrastructure/gitlab/">Architecture</a><a aria-current="page" href="/admin-guide/gitlab/">Operate</a></nav>

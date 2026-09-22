@@ -1,6 +1,6 @@
 ---
 title: "MetalLB · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for MetalLB in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for MetalLB in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="MetalLB guide sections"><a href="/user-guide/metallb/">Use</a><a aria-current="page" href="/infrastructure/metallb/">Architecture</a><a href="/admin-guide/metallb/">Operate</a></nav>

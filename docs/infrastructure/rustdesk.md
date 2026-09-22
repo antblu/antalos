@@ -1,6 +1,6 @@
 ---
 title: "RustDesk · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for RustDesk in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for RustDesk in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="RustDesk guide sections"><a href="/user-guide/rustdesk/">Use</a><a aria-current="page" href="/infrastructure/rustdesk/">Architecture</a><a href="/admin-guide/rustdesk/">Operate</a></nav>

@@ -1,6 +1,6 @@
 ---
 title: "Authentik · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Authentik in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for Authentik in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="Authentik guide sections"><a href="/user-guide/authentik/">Use</a><a aria-current="page" href="/infrastructure/authentik/">Architecture</a><a href="/admin-guide/authentik/">Operate</a></nav>

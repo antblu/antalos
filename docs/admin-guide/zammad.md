@@ -1,6 +1,6 @@
 ---
 title: "Zammad · Operate"
-description: "Deploy Zammad with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Zammad with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="Zammad guide sections"><a href="/user-guide/zammad/">Use</a><a href="/infrastructure/zammad/">Architecture</a><a aria-current="page" href="/admin-guide/zammad/">Operate</a></nav>

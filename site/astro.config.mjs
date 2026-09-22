@@ -23,8 +23,8 @@ export default defineConfig({
   },
   integrations: [
     starlight({
-      title: 'Antalos',
-      description: 'The Antalos handbook: applications, Proxmox and Talos, Debian workloads, edge routing, and daily operations.',
+      title: 'antalos',
+      description: 'The antalos handbook: applications, Proxmox and Talos, Debian workloads, edge routing, and daily operations.',
       favicon: '/favicon.svg',
       customCss: ['./src/styles/antalos.css'],
       components: {

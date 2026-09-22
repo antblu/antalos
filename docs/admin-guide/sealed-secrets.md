@@ -1,6 +1,6 @@
 ---
 title: "Sealed Secrets · Operate"
-description: "Deploy Sealed Secrets with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Sealed Secrets with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="Sealed Secrets guide sections"><a href="/user-guide/sealed-secrets/">Use</a><a href="/infrastructure/sealed-secrets/">Architecture</a><a aria-current="page" href="/admin-guide/sealed-secrets/">Operate</a></nav>

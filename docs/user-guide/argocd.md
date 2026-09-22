@@ -1,15 +1,15 @@
 ---
 title: "Argo CD · Use"
-description: "What Argo CD does, how to use it in Antalos, and where to find its official documentation."
+description: "What Argo CD does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="Argo CD guide sections"><a aria-current="page" href="/user-guide/argocd/">Use</a><a href="/infrastructure/argocd/">Architecture</a><a href="/admin-guide/argocd/">Operate</a></nav>
 
-Argo CD is the delivery controller for Antalos. It compares the tracked Git revision with Kubernetes and reconciles declared resources. Its interface helps operators distinguish configuration drift from runtime health: Synced means the desired objects match, while Healthy describes resource health.
+Argo CD is the delivery controller for antalos. It compares the tracked Git revision with Kubernetes and reconciles declared resources. Its interface helps operators distinguish configuration drift from runtime health: Synced means the desired objects match, while Healthy describes resource health.
 
 ## Access and audience
 
-For this installation, use [argocd.antblu.net](https://argocd.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+For this installation, use [argocd.antblu.net](https://argocd.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -35,4 +35,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/a
 
 Use the [official Argo CD documentation](https://argo-cd.readthedocs.io/en/stable/user-guide/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/argocd/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/argocd/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/argocd/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/argocd/).

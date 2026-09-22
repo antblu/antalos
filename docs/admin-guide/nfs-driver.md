@@ -1,6 +1,6 @@
 ---
 title: "NFS CSI driver · Operate"
-description: "Deploy NFS CSI driver with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy NFS CSI driver with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="NFS CSI driver guide sections"><a href="/user-guide/nfs-driver/">Use</a><a href="/infrastructure/nfs-driver/">Architecture</a><a aria-current="page" href="/admin-guide/nfs-driver/">Operate</a></nav>

@@ -5,7 +5,7 @@ description: Deploy the automation service and complete its credentials, storage
 
 <nav class="guide-switcher" aria-label="Activepieces guides"><a href="/user-guide/activepieces/">Use</a><a href="/infrastructure/activepieces/">Architecture</a><a aria-current="page" href="/admin-guide/activepieces/">Operate</a></nav>
 
-Follow the [shared application workflow](/admin-guide/deploy-an-application/) and the [official installation documentation](https://www.activepieces.com/docs/install/overview). Antalos deploys custom manifests from `apps/activepieces/` rather than invoking the upstream quick installer.
+Follow the [shared application workflow](/admin-guide/deploy-an-application/) and the [official installation documentation](https://www.activepieces.com/docs/install/overview). antalos deploys custom manifests from `apps/activepieces/` rather than invoking the upstream quick installer.
 
 ## Prerequisites and inputs
 

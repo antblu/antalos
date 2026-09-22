@@ -1,6 +1,6 @@
 ---
 title: "SuiteCRM · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for SuiteCRM in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for SuiteCRM in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="SuiteCRM guide sections"><a href="/user-guide/suitecrm/">Use</a><a aria-current="page" href="/infrastructure/suitecrm/">Architecture</a><a href="/admin-guide/suitecrm/">Operate</a></nav>

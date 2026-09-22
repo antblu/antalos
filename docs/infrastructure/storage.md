@@ -3,7 +3,7 @@ title: Storage and application state
 description: Distinguish local volumes, replicated databases, shared NFS, object storage, and restore-based SQLite services.
 ---
 
-A persistent volume tells Kubernetes where to keep data. It does not automatically create another copy or a backup. Antalos combines application replication with external file and object services, and each has a different recovery path.
+A persistent volume tells Kubernetes where to keep data. It does not automatically create another copy or a backup. antalos combines application replication with external file and object services, and each has a different recovery path.
 
 ## Storage choices in this repository
 

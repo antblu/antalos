@@ -1,6 +1,6 @@
 ---
 title: "UrBackup · Operate"
-description: "Deploy UrBackup with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy UrBackup with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="UrBackup guide sections"><a href="/user-guide/urbackup/">Use</a><a href="/infrastructure/urbackup/">Architecture</a><a aria-current="page" href="/admin-guide/urbackup/">Operate</a></nav>

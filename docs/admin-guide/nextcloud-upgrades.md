@@ -1,6 +1,6 @@
 ---
 title: "Upgrade Nextcloud safely"
-description: "A repeatable migration procedure for Antalos read-only configuration, pod-local runtime, and shared data."
+description: "A repeatable migration procedure for antalos read-only configuration, pod-local runtime, and shared data."
 ---
 
 This deployment generates read-only configuration and uses disposable per-pod runtime files. Upgrading requires a coordinated maintenance window and one database migration owner; changing an image tag alone is insufficient.

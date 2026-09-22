@@ -1,15 +1,15 @@
 ---
 title: "SuiteCRM · Use"
-description: "What SuiteCRM does, how to use it in Antalos, and where to find its official documentation."
+description: "What SuiteCRM does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="SuiteCRM guide sections"><a aria-current="page" href="/user-guide/suitecrm/">Use</a><a href="/infrastructure/suitecrm/">Architecture</a><a href="/admin-guide/suitecrm/">Operate</a></nav>
 
-SuiteCRM tracks customer relationships through leads, contacts, accounts, opportunities, activities, and cases. Antalos uses a custom packaged SuiteCRM image with password login and optional Authentik SAML sign-in. CRM access and record visibility are controlled by roles and security groups inside SuiteCRM.
+SuiteCRM tracks customer relationships through leads, contacts, accounts, opportunities, activities, and cases. antalos uses a custom packaged SuiteCRM image with password login and optional Authentik SAML sign-in. CRM access and record visibility are controlled by roles and security groups inside SuiteCRM.
 
 ## Access and audience
 
-For this installation, use [crm.antblu.net](https://crm.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+For this installation, use [crm.antblu.net](https://crm.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -35,4 +35,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/s
 
 Use the [official SuiteCRM documentation](https://docs.suitecrm.com/user/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/suitecrm/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/suitecrm/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/suitecrm/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/suitecrm/).

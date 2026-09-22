@@ -1,8 +1,8 @@
-# Antalos
+# antalos
 
-Antalos is the configuration repository for a self-hosted platform: Talos Kubernetes on Proxmox, Debian application VMs, and a public/private edge network. OpenTofu provisions machines, Argo CD reconciles Kubernetes applications, and Ansible configures the declared Debian workloads.
+antalos is the configuration repository for a self-hosted platform: Talos Kubernetes on Proxmox, Debian application VMs, and a public/private edge network. OpenTofu provisions machines, Argo CD reconciles Kubernetes applications, and Ansible configures the declared Debian workloads.
 
-**Start with the [Antalos handbook](https://docs.antblu.net).** It separates everyday service use, infrastructure explanations, and deployment/operating procedures.
+**Start with the [antalos handbook](https://docs.antblu.net).** It separates everyday service use, infrastructure explanations, and deployment/operating procedures.
 
 | You want to… | Read |
 | --- | --- |

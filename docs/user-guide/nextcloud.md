@@ -1,15 +1,15 @@
 ---
 title: "Nextcloud · Use"
-description: "What Nextcloud does, how to use it in Antalos, and where to find its official documentation."
+description: "What Nextcloud does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="Nextcloud guide sections"><a aria-current="page" href="/user-guide/nextcloud/">Use</a><a href="/infrastructure/nextcloud/">Architecture</a><a href="/admin-guide/nextcloud/">Operate</a></nav>
 
-Nextcloud is the collaboration workspace for files, calendars, contacts, notes, shared boards, and conversations. Antalos adds document editing, Whiteboard, Talk, push notifications, and Context Chat backends. Access to these tools follows your account and sharing permissions; some integrations also need administrator setup.
+Nextcloud is the collaboration workspace for files, calendars, contacts, notes, shared boards, and conversations. antalos adds document editing, Whiteboard, Talk, push notifications, and Context Chat backends. Access to these tools follows your account and sharing permissions; some integrations also need administrator setup.
 
 ## Access and audience
 
-For this installation, use [nextcloud.antblu.net](https://nextcloud.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+For this installation, use [nextcloud.antblu.net](https://nextcloud.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -37,4 +37,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/n
 
 Use the [official Nextcloud documentation](https://docs.nextcloud.com/server/latest/user_manual/en/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/nextcloud/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/nextcloud/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/nextcloud/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/nextcloud/).

@@ -1,6 +1,6 @@
 ---
 title: "GitLab · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for GitLab in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for GitLab in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="GitLab guide sections"><a href="/user-guide/gitlab/">Use</a><a aria-current="page" href="/infrastructure/gitlab/">Architecture</a><a href="/admin-guide/gitlab/">Operate</a></nav>

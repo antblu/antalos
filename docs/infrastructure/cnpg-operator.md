@@ -1,6 +1,6 @@
 ---
 title: "CloudNativePG · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for CloudNativePG in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for CloudNativePG in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="CloudNativePG guide sections"><a href="/user-guide/cnpg-operator/">Use</a><a aria-current="page" href="/infrastructure/cnpg-operator/">Architecture</a><a href="/admin-guide/cnpg-operator/">Operate</a></nav>

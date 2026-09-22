@@ -5,7 +5,7 @@ description: Understand application workers, PostgreSQL, Redis Sentinel, object 
 
 <nav class="guide-switcher" aria-label="Activepieces guides"><a href="/user-guide/activepieces/">Use</a><a aria-current="page" href="/infrastructure/activepieces/">Architecture</a><a href="/admin-guide/activepieces/">Operate</a></nav>
 
-Antalos separates the HTTP application from flow execution. Two application replicas serve requests and four worker replicas execute jobs. PostgreSQL holds application state, Redis coordinates queued work, and Garage stores files.
+antalos separates the HTTP application from flow execution. Two application replicas serve requests and four worker replicas execute jobs. PostgreSQL holds application state, Redis coordinates queued work, and Garage stores files.
 
 ## Component layout
 
@@ -36,4 +36,4 @@ Recover PostgreSQL, relevant Garage objects, original application encryption/aut
 
 `apps/activepieces/app.yaml` selects the manifest renderer. `activepieces.yaml` defines the app and workers; `database.yaml`, `redis.yaml`, `config.yaml`, and `secrets.yaml` define their dependencies. `ACTIVEPIECES_*` inputs belong in `apps/variables.yaml`.
 
-See the [Activepieces installation documentation](https://www.activepieces.com/docs/install/overview) for supported deployment choices. This repository supplies its own Kubernetes layout, so the upstream quick-install command is not the Antalos deployment procedure.
+See the [Activepieces installation documentation](https://www.activepieces.com/docs/install/overview) for supported deployment choices. This repository supplies its own Kubernetes layout, so the upstream quick-install command is not the antalos deployment procedure.

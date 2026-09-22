@@ -1,6 +1,6 @@
 ---
 title: "Authentik · Operate"
-description: "Deploy Authentik with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Authentik with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="Authentik guide sections"><a href="/user-guide/authentik/">Use</a><a href="/infrastructure/authentik/">Architecture</a><a aria-current="page" href="/admin-guide/authentik/">Operate</a></nav>

@@ -5,7 +5,7 @@ description: Configure the log processor, LAPI, AppSec, and Traefik credentials 
 
 <nav class="guide-switcher" aria-label="CrowdSec guides"><a href="/user-guide/crowdsec/">Use</a><a href="/infrastructure/crowdsec/">Architecture</a><a aria-current="page" href="/admin-guide/crowdsec/">Operate</a></nav>
 
-Start with the [official CrowdSec documentation](https://docs.crowdsec.net/docs/intro/) and [Antalos component layout](/infrastructure/crowdsec/). Configure the Kubernetes system independently from Azure's host firewall integration.
+Start with the [official CrowdSec documentation](https://docs.crowdsec.net/docs/intro/) and [antalos component layout](/infrastructure/crowdsec/). Configure the Kubernetes system independently from Azure's host firewall integration.
 
 ## Prepare dependencies
 

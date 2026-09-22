@@ -31,4 +31,4 @@ VictoriaLogs availability is a detection dependency, and its sharded storage is 
 
 `apps/crowdsec/app.yaml` contains chart configuration and a plugin source for local support manifests. `storage.yaml`, `litestream.yaml`, and sealed credentials complete the declared state. Preserve database backups and the registration/bouncer identity consumed by the integration.
 
-The [official CrowdSec architecture](https://docs.crowdsec.net/docs/intro/) explains the log processor, Local API, and enforcement roles. [Antalos administration](/admin-guide/crowdsec/) maps those roles to deployment work.
+The [official CrowdSec architecture](https://docs.crowdsec.net/docs/intro/) explains the log processor, Local API, and enforcement roles. [antalos administration](/admin-guide/crowdsec/) maps those roles to deployment work.

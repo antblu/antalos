@@ -1,6 +1,6 @@
 ---
 title: "RustDesk · Operate"
-description: "Deploy RustDesk with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy RustDesk with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="RustDesk guide sections"><a href="/user-guide/rustdesk/">Use</a><a href="/infrastructure/rustdesk/">Architecture</a><a aria-current="page" href="/admin-guide/rustdesk/">Operate</a></nav>

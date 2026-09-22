@@ -1,6 +1,6 @@
 ---
 title: "Nextcloud · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Nextcloud in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for Nextcloud in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="Nextcloud guide sections"><a href="/user-guide/nextcloud/">Use</a><a aria-current="page" href="/infrastructure/nextcloud/">Architecture</a><a href="/admin-guide/nextcloud/">Operate</a></nav>

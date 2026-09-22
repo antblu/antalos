@@ -1,6 +1,6 @@
 ---
 title: "SuiteCRM · Operate"
-description: "Deploy SuiteCRM with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy SuiteCRM with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="SuiteCRM guide sections"><a href="/user-guide/suitecrm/">Use</a><a href="/infrastructure/suitecrm/">Architecture</a><a aria-current="page" href="/admin-guide/suitecrm/">Operate</a></nav>

@@ -1,6 +1,6 @@
 ---
 title: "Stalwart Mail · Operate"
-description: "Deploy Stalwart Mail with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Stalwart Mail with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="Stalwart Mail guide sections"><a href="/user-guide/stalwart/">Use</a><a href="/infrastructure/stalwart/">Architecture</a><a aria-current="page" href="/admin-guide/stalwart/">Operate</a></nav>

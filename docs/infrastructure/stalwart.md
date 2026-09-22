@@ -1,6 +1,6 @@
 ---
 title: "Stalwart Mail · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Stalwart Mail in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for Stalwart Mail in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="Stalwart Mail guide sections"><a href="/user-guide/stalwart/">Use</a><a aria-current="page" href="/infrastructure/stalwart/">Architecture</a><a href="/admin-guide/stalwart/">Operate</a></nav>

@@ -1,15 +1,15 @@
 ---
 title: "GitLab · Use"
-description: "What GitLab does, how to use it in Antalos, and where to find its official documentation."
+description: "What GitLab does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="GitLab guide sections"><a aria-current="page" href="/user-guide/gitlab/">Use</a><a href="/infrastructure/gitlab/">Architecture</a><a href="/admin-guide/gitlab/">Operate</a></nav>
 
-GitLab brings Git repositories, merge requests, issue tracking, a container registry, and CI/CD project configuration into one workspace. Antalos also exposes GitLab’s Kubernetes agent endpoint. Runner execution is a separate integration: a project can define a pipeline before any runner is available to execute it.
+GitLab brings Git repositories, merge requests, issue tracking, a container registry, and CI/CD project configuration into one workspace. antalos also exposes GitLab's Kubernetes agent endpoint. Runner execution is a separate integration: a project can define a pipeline before any runner is available to execute it.
 
 ## Access and audience
 
-For this installation, use [gitlab.antblu.net](https://gitlab.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+For this installation, use [gitlab.antblu.net](https://gitlab.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -35,4 +35,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/g
 
 Use the [official GitLab documentation](https://docs.gitlab.com/user/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/gitlab/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/gitlab/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/gitlab/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/gitlab/).

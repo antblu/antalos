@@ -1,9 +1,9 @@
 ---
-title: "Deploy an application from Antalos"
+title: "Deploy an application from antalos"
 description: "The shared workflow for variables, sealed credentials, GitOps reconciliation, and post-deployment configuration."
 ---
 
-An Antalos application is a service directory, its shared variables, and the external dependencies described in its guide. Deployment is complete when the application can perform its intended workflow and its data has a recovery path.
+An antalos application is a service directory, its shared variables, and the external dependencies described in its guide. Deployment is complete when the application can perform its intended workflow and its data has a recovery path.
 
 ## 1. Read the service contract
 

@@ -1,6 +1,6 @@
 ---
 title: "Traefik · Operate"
-description: "Deploy Traefik with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Traefik with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="Traefik guide sections"><a href="/user-guide/traefik/">Use</a><a href="/infrastructure/traefik/">Architecture</a><a aria-current="page" href="/admin-guide/traefik/">Operate</a></nav>

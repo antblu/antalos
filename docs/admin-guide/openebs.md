@@ -1,6 +1,6 @@
 ---
 title: "OpenEBS · Operate"
-description: "Deploy OpenEBS with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy OpenEBS with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="OpenEBS guide sections"><a href="/user-guide/openebs/">Use</a><a href="/infrastructure/openebs/">Architecture</a><a aria-current="page" href="/admin-guide/openebs/">Operate</a></nav>

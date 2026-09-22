@@ -1,6 +1,6 @@
 ---
 title: "Argo CD · Operate"
-description: "Deploy Argo CD with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Argo CD with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="Argo CD guide sections"><a href="/user-guide/argocd/">Use</a><a href="/infrastructure/argocd/">Architecture</a><a aria-current="page" href="/admin-guide/argocd/">Operate</a></nav>

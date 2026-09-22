@@ -1,6 +1,6 @@
 ---
 title: "Vaultwarden · Operate"
-description: "Deploy Vaultwarden with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Vaultwarden with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="Vaultwarden guide sections"><a href="/user-guide/vaultwarden/">Use</a><a href="/infrastructure/vaultwarden/">Architecture</a><a aria-current="page" href="/admin-guide/vaultwarden/">Operate</a></nav>

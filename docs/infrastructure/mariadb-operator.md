@@ -1,6 +1,6 @@
 ---
 title: "MariaDB operator · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for MariaDB operator in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for MariaDB operator in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="MariaDB operator guide sections"><a href="/user-guide/mariadb-operator/">Use</a><a aria-current="page" href="/infrastructure/mariadb-operator/">Architecture</a><a href="/admin-guide/mariadb-operator/">Operate</a></nav>

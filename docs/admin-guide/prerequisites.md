@@ -1,6 +1,6 @@
 ---
 title: "Prepare your workstation"
-description: "Tools, access, and private configuration needed to deploy and administer Antalos."
+description: "Tools, access, and private configuration needed to deploy and administer antalos."
 ---
 
 Deploy from a workstation that can reach Proxmox, the Talos node network, and the Kubernetes API. Keep a working shell and recovery credentials available outside the services you are about to change.

@@ -1,6 +1,6 @@
 ---
 title: Deploy the Azure edge and home proxies
-description: Configure the edge template, its private transport, and the actual forwarding path into Antalos.
+description: Configure the edge template, its private transport, and the actual forwarding path into antalos.
 ---
 
 The Azure VM is an edge TCP proxy. It accepts selected public connections and forwards them over the private network to the home HAProxy pair. The home proxies forward onward to the appropriate Kubernetes listener. Read [the network architecture](/infrastructure/networking/) before provisioning or changing this path.

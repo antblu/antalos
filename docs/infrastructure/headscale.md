@@ -1,6 +1,6 @@
 ---
 title: "Headscale and Headplane · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Headscale and Headplane in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for Headscale and Headplane in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="Headscale and Headplane guide sections"><a href="/user-guide/headscale/">Use</a><a aria-current="page" href="/infrastructure/headscale/">Architecture</a><a href="/admin-guide/headscale/">Operate</a></nav>

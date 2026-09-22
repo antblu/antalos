@@ -1,6 +1,6 @@
 ---
 title: "Metrics Server · Operate"
-description: "Deploy Metrics Server with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Metrics Server with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="Metrics Server guide sections"><a href="/user-guide/metrics-server/">Use</a><a href="/infrastructure/metrics-server/">Architecture</a><a aria-current="page" href="/admin-guide/metrics-server/">Operate</a></nav>

@@ -1,6 +1,6 @@
 ---
 title: "LiteLLM · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for LiteLLM in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for LiteLLM in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="LiteLLM guide sections"><a href="/user-guide/litellm/">Use</a><a aria-current="page" href="/infrastructure/litellm/">Architecture</a><a href="/admin-guide/litellm/">Operate</a></nav>

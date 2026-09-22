@@ -1,6 +1,6 @@
 ---
 title: "Zammad · Use"
-description: "What Zammad does, how to use it in Antalos, and where to find its official documentation."
+description: "What Zammad does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="Zammad guide sections"><a aria-current="page" href="/user-guide/zammad/">Use</a><a href="/infrastructure/zammad/">Architecture</a><a href="/admin-guide/zammad/">Operate</a></nav>
@@ -9,7 +9,7 @@ Zammad is a help-desk workspace for tickets, customer conversations, queues, and
 
 ## Access and audience
 
-For this installation, use [support.antblu.net](https://support.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+For this installation, use [support.antblu.net](https://support.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -35,4 +35,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/z
 
 Use the [official Zammad documentation](https://user-docs.zammad.org/en/latest/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/zammad/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/zammad/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/zammad/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/zammad/).

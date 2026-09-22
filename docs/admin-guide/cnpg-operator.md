@@ -1,6 +1,6 @@
 ---
 title: "CloudNativePG · Operate"
-description: "Deploy CloudNativePG with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy CloudNativePG with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="CloudNativePG guide sections"><a href="/user-guide/cnpg-operator/">Use</a><a href="/infrastructure/cnpg-operator/">Architecture</a><a aria-current="page" href="/admin-guide/cnpg-operator/">Operate</a></nav>

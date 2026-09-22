@@ -1,6 +1,6 @@
 ---
 title: "Sealed Secrets · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Sealed Secrets in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for Sealed Secrets in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="Sealed Secrets guide sections"><a href="/user-guide/sealed-secrets/">Use</a><a aria-current="page" href="/infrastructure/sealed-secrets/">Architecture</a><a href="/admin-guide/sealed-secrets/">Operate</a></nav>

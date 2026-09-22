@@ -1,15 +1,15 @@
 ---
 title: "Authentik · Use"
-description: "What Authentik does, how to use it in Antalos, and where to find its official documentation."
+description: "What Authentik does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="Authentik guide sections"><a aria-current="page" href="/user-guide/authentik/">Use</a><a href="/infrastructure/authentik/">Architecture</a><a href="/admin-guide/authentik/">Operate</a></nav>
 
-Authentik is the identity service for Antalos. It signs users in, enforces access policies, and connects applications to a shared account through OpenID Connect, SAML, or a proxy provider. The application portal shows the services your account is allowed to open; a portal tile does not automatically grant a role inside the destination application.
+Authentik is the identity service for antalos. It signs users in, enforces access policies, and connects applications to a shared account through OpenID Connect, SAML, or a proxy provider. The application portal shows the services your account is allowed to open; a portal tile does not automatically grant a role inside the destination application.
 
 ## Access and audience
 
-For this installation, use [auth.antblu.net](https://auth.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+For this installation, use [auth.antblu.net](https://auth.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -35,4 +35,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/a
 
 Use the [official Authentik documentation](https://docs.goauthentik.io/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/authentik/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/authentik/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/authentik/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/authentik/).

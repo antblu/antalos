@@ -1,6 +1,6 @@
 ---
 title: "BentoPDF · Operate"
-description: "Deploy BentoPDF with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy BentoPDF with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="BentoPDF guide sections"><a href="/user-guide/bentopdf/">Use</a><a href="/infrastructure/bentopdf/">Architecture</a><a aria-current="page" href="/admin-guide/bentopdf/">Operate</a></nav>

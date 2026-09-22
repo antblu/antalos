@@ -1,6 +1,6 @@
 ---
 title: "Open WebUI · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Open WebUI in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for Open WebUI in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="Open WebUI guide sections"><a href="/user-guide/open-webui/">Use</a><a aria-current="page" href="/infrastructure/open-webui/">Architecture</a><a href="/admin-guide/open-webui/">Operate</a></nav>

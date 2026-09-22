@@ -1,15 +1,15 @@
 ---
 title: "Traefik · Use"
-description: "What Traefik does, how to use it in Antalos, and where to find its official documentation."
+description: "What Traefik does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="Traefik guide sections"><a aria-current="page" href="/user-guide/traefik/">Use</a><a href="/infrastructure/traefik/">Architecture</a><a href="/admin-guide/traefik/">Operate</a></nav>
 
-Traefik routes external requests to Antalos services. HTTP routers match hostnames and paths, middleware adds behavior such as authentication, and TCP/UDP routes expose native protocols. Its dashboard helps operators see which routes and services are active.
+Traefik routes external requests to antalos services. HTTP routers match hostnames and paths, middleware adds behavior such as authentication, and TCP/UDP routes expose native protocols. Its dashboard helps operators see which routes and services are active.
 
 ## Access and audience
 
-For this installation, use [traefik.antblu.net](https://traefik.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+For this installation, use [traefik.antblu.net](https://traefik.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -35,4 +35,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/t
 
 Use the [official Traefik documentation](https://doc.traefik.io/traefik/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/traefik/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/traefik/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/traefik/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/traefik/).

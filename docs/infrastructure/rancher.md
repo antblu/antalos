@@ -1,6 +1,6 @@
 ---
 title: "Rancher · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Rancher in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for Rancher in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="Rancher guide sections"><a href="/user-guide/rancher/">Use</a><a aria-current="page" href="/infrastructure/rancher/">Architecture</a><a href="/admin-guide/rancher/">Operate</a></nav>

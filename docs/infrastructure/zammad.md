@@ -1,6 +1,6 @@
 ---
 title: "Zammad · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Zammad in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for Zammad in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="Zammad guide sections"><a href="/user-guide/zammad/">Use</a><a aria-current="page" href="/infrastructure/zammad/">Architecture</a><a href="/admin-guide/zammad/">Operate</a></nav>

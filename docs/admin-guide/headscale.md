@@ -1,6 +1,6 @@
 ---
 title: "Headscale and Headplane · Operate"
-description: "Deploy Headscale and Headplane with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Headscale and Headplane with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="Headscale and Headplane guide sections"><a href="/user-guide/headscale/">Use</a><a href="/infrastructure/headscale/">Architecture</a><a aria-current="page" href="/admin-guide/headscale/">Operate</a></nav>

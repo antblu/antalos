@@ -1,6 +1,6 @@
 ---
 title: "Open WebUI · Operate"
-description: "Deploy Open WebUI with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Open WebUI with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="Open WebUI guide sections"><a href="/user-guide/open-webui/">Use</a><a href="/infrastructure/open-webui/">Architecture</a><a aria-current="page" href="/admin-guide/open-webui/">Operate</a></nav>

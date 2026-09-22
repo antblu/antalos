@@ -1,6 +1,6 @@
 ---
 title: "cert-manager · Operate"
-description: "Deploy cert-manager with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy cert-manager with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="cert-manager guide sections"><a href="/user-guide/cert-manager/">Use</a><a href="/infrastructure/cert-manager/">Architecture</a><a aria-current="page" href="/admin-guide/cert-manager/">Operate</a></nav>

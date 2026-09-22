@@ -1,6 +1,6 @@
 ---
 title: "Sealed Secrets · Use"
-description: "What Sealed Secrets does, how to use it in Antalos, and where to find its official documentation."
+description: "What Sealed Secrets does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="Sealed Secrets guide sections"><a aria-current="page" href="/user-guide/sealed-secrets/">Use</a><a href="/infrastructure/sealed-secrets/">Architecture</a><a href="/admin-guide/sealed-secrets/">Operate</a></nav>
@@ -35,4 +35,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/s
 
 Use the [official Sealed Secrets documentation](https://github.com/bitnami/sealed-secrets) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/sealed-secrets/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/sealed-secrets/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/sealed-secrets/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/sealed-secrets/).

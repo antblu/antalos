@@ -1,6 +1,6 @@
 ---
 title: "MariaDB operator · Operate"
-description: "Deploy MariaDB operator with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy MariaDB operator with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="MariaDB operator guide sections"><a href="/user-guide/mariadb-operator/">Use</a><a href="/infrastructure/mariadb-operator/">Architecture</a><a aria-current="page" href="/admin-guide/mariadb-operator/">Operate</a></nav>

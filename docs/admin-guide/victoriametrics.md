@@ -1,6 +1,6 @@
 ---
 title: "Grafana and VictoriaMetrics · Operate"
-description: "Deploy Grafana and VictoriaMetrics with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Grafana and VictoriaMetrics with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="Grafana and VictoriaMetrics guide sections"><a href="/user-guide/victoriametrics/">Use</a><a href="/infrastructure/victoriametrics/">Architecture</a><a aria-current="page" href="/admin-guide/victoriametrics/">Operate</a></nav>

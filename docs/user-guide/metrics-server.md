@@ -1,6 +1,6 @@
 ---
 title: "Metrics Server · Use"
-description: "What Metrics Server does, how to use it in Antalos, and where to find its official documentation."
+description: "What Metrics Server does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="Metrics Server guide sections"><a aria-current="page" href="/user-guide/metrics-server/">Use</a><a href="/infrastructure/metrics-server/">Architecture</a><a href="/admin-guide/metrics-server/">Operate</a></nav>
@@ -33,4 +33,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/m
 
 Use the [official Metrics Server documentation](https://github.com/kubernetes-sigs/metrics-server) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/metrics-server/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/metrics-server/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/metrics-server/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/metrics-server/).

@@ -1,6 +1,6 @@
 ---
 title: "BentoPDF · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for BentoPDF in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for BentoPDF in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="BentoPDF guide sections"><a href="/user-guide/bentopdf/">Use</a><a aria-current="page" href="/infrastructure/bentopdf/">Architecture</a><a href="/admin-guide/bentopdf/">Operate</a></nav>

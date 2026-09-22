@@ -31,7 +31,7 @@ spec:
           - name: env.mailHost
             value: ${INVOICENINJA_MAIL_HOST}
           - name: env.mailPort
-            value: ${INVOICENINJA_MAIL_PORT}
+            value: "${INVOICENINJA_MAIL_PORT}"
           - name: env.mailEncryption
             value: ${INVOICENINJA_MAIL_ENCRYPTION}
           - name: env.mailFromAddress
@@ -55,8 +55,8 @@ spec:
             replicaCount: 2
             resources:
               requests:
-                cpu: 250m
-                memory: 512Mi
+                cpu: 25m
+                memory: 256Mi
               limits:
                 cpu: "2"
                 memory: 2Gi
@@ -81,8 +81,8 @@ spec:
             replicaCount: 2
             resources:
               requests:
-                cpu: 50m
-                memory: 64Mi
+                cpu: 10m
+                memory: 32Mi
               limits:
                 cpu: 500m
                 memory: 256Mi
@@ -118,6 +118,33 @@ spec:
       path: apps/invoiceninja/manifests
       plugin:
         name: yaml-envsubst
+        env:
+          - name: INVOICENINJA_HOST
+            value: ${INVOICENINJA_HOST}
+          - name: INVOICENINJA_IMAGE_TAG
+            value: ${INVOICENINJA_IMAGE_TAG}
+          - name: INVOICENINJA_MARIADB_IMAGE_TAG
+            value: ${INVOICENINJA_MARIADB_IMAGE_TAG}
+          - name: INVOICENINJA_GARBD_IMAGE_TAG
+            value: ${INVOICENINJA_GARBD_IMAGE_TAG}
+          - name: INVOICENINJA_DATABASE_STORAGE_SIZE
+            value: ${INVOICENINJA_DATABASE_STORAGE_SIZE}
+          - name: INVOICENINJA_REDIS_DATA_0_HOST
+            value: ${INVOICENINJA_REDIS_DATA_0_HOST}
+          - name: INVOICENINJA_REDIS_DATA_1_HOST
+            value: ${INVOICENINJA_REDIS_DATA_1_HOST}
+          - name: INVOICENINJA_REDIS_SENTINEL_2_HOST
+            value: ${INVOICENINJA_REDIS_SENTINEL_2_HOST}
+          - name: INVOICENINJA_REDIS_STORAGE_SIZE
+            value: ${INVOICENINJA_REDIS_STORAGE_SIZE}
+          - name: REDIS_IMAGE_TAG
+            value: ${REDIS_IMAGE_TAG}
+          - name: TALOS_WORKER_LEFT
+            value: ${TALOS_WORKER_LEFT}
+          - name: TALOS_WORKER_RIGHT
+            value: ${TALOS_WORKER_RIGHT}
+          - name: TALOS_WORKER_RTX
+            value: ${TALOS_WORKER_RTX}
   destination:
     server: https://kubernetes.default.svc
     namespace: invoiceninja

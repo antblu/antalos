@@ -1,6 +1,6 @@
 ---
 title: "LiteLLM · Use"
-description: "What LiteLLM does, how to use it in Antalos, and where to find its official documentation."
+description: "What LiteLLM does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="LiteLLM guide sections"><a aria-current="page" href="/user-guide/litellm/">Use</a><a href="/infrastructure/litellm/">Architecture</a><a href="/admin-guide/litellm/">Operate</a></nav>
@@ -9,7 +9,7 @@ LiteLLM is the shared API gateway for language-model providers. Applications cal
 
 ## Access and audience
 
-For this installation, use [litellm.antblu.net](https://litellm.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+For this installation, use [litellm.antblu.net](https://litellm.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -35,4 +35,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/l
 
 Use the [official LiteLLM documentation](https://docs.litellm.ai/docs/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/litellm/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/litellm/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/litellm/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/litellm/).

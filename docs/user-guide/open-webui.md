@@ -1,6 +1,6 @@
 ---
 title: "Open WebUI · Use"
-description: "What Open WebUI does, how to use it in Antalos, and where to find its official documentation."
+description: "What Open WebUI does, how to use it in antalos, and where to find its official documentation."
 ---
 
 <nav class="guide-switcher" aria-label="Open WebUI guide sections"><a aria-current="page" href="/user-guide/open-webui/">Use</a><a href="/infrastructure/open-webui/">Architecture</a><a href="/admin-guide/open-webui/">Operate</a></nav>
@@ -9,7 +9,7 @@ Open WebUI is the browser interface for chatting with configured AI models and w
 
 ## Access and audience
 
-For this installation, use [ai.antblu.net](https://ai.antblu.net). If you use another Antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+For this installation, use [ai.antblu.net](https://ai.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
 
 ## Your first workflow
 
@@ -35,4 +35,4 @@ Administrators can read [the architecture and recovery limits](/infrastructure/o
 
 Use the [official Open WebUI documentation](https://docs.openwebui.com/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
 
-For Antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/open-webui/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/open-webui/).
+For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/open-webui/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/open-webui/).

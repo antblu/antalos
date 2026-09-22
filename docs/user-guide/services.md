@@ -1,6 +1,6 @@
 ---
 title: Service directory
-description: Find every declared Antalos application by purpose, with user, architecture, and operating guides in one place.
+description: Find every declared antalos application by purpose, with user, architecture, and operating guides in one place.
 ---
 
 Use this directory to move between a service's three guides. **Use** explains the workflow, **Architecture** locates its components and data, and **Operate** explains deployment and recovery. The sidebar uses these same groups.

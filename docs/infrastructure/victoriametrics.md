@@ -1,6 +1,6 @@
 ---
 title: "Grafana and VictoriaMetrics · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Grafana and VictoriaMetrics in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for Grafana and VictoriaMetrics in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="Grafana and VictoriaMetrics guide sections"><a href="/user-guide/victoriametrics/">Use</a><a aria-current="page" href="/infrastructure/victoriametrics/">Architecture</a><a href="/admin-guide/victoriametrics/">Operate</a></nav>

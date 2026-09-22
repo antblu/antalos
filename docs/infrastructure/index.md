@@ -1,9 +1,9 @@
 ---
-title: Understand the Antalos stack
+title: Understand the antalos stack
 description: Read the repository, follow service dependencies, and understand the boundaries of availability.
 ---
 
-Antalos combines several systems with different owners. Start with the repository map, then follow the machines, network, and data before reading an individual application's design.
+antalos combines several systems with different owners. Start with the repository map, then follow the machines, network, and data before reading an individual application's design.
 
 ## Read the architecture in order
 

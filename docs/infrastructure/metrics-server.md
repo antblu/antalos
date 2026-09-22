@@ -1,6 +1,6 @@
 ---
 title: "Metrics Server · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Metrics Server in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for Metrics Server in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="Metrics Server guide sections"><a href="/user-guide/metrics-server/">Use</a><a aria-current="page" href="/infrastructure/metrics-server/">Architecture</a><a href="/admin-guide/metrics-server/">Operate</a></nav>

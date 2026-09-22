@@ -39,7 +39,7 @@ jobs:
           --health-retries 5
 
     steps:
-      - name: Check out Antalos
+      - name: Check out antalos
         uses: actions/checkout@v6
 
       - name: Read pinned Cal.diy source and image versions

@@ -5,7 +5,7 @@ description: Deploy the CouchDB sync backend, configure the access boundary, and
 
 <nav class="guide-switcher" aria-label="Obsidian LiveSync guides"><a href="/user-guide/obsidian/">Use</a><a href="/infrastructure/obsidian/">Architecture</a><a aria-current="page" href="/admin-guide/obsidian/">Operate</a></nav>
 
-Read the [LiveSync setup documentation](https://github.com/vrtmrz/obsidian-livesync/blob/main/docs/setup_own_server.md) and [CouchDB replication guide](https://docs.couchdb.org/en/stable/replication/intro.html) alongside the [Antalos architecture](/infrastructure/obsidian/). This installation adds Authentik and HAProxy to the normal database connection path.
+Read the [LiveSync setup documentation](https://github.com/vrtmrz/obsidian-livesync/blob/main/docs/setup_own_server.md) and [CouchDB replication guide](https://docs.couchdb.org/en/stable/replication/intro.html) alongside the [antalos architecture](/infrastructure/obsidian/). This installation adds Authentik and HAProxy to the normal database connection path.
 
 ## Prepare the inputs
 

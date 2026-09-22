@@ -30,7 +30,7 @@ spec:
   secondaryService:
     type: ClusterIP
   metrics:
-    enabled: true
+    enabled: false
   tls:
     enabled: false
   timeZone: America/Denver
@@ -59,8 +59,8 @@ spec:
     minAvailable: 1
   resources:
     requests:
-      cpu: 250m
-      memory: 512Mi
+      cpu: 50m
+      memory: 256Mi
     limits:
       cpu: "2"
       memory: 2Gi
@@ -85,6 +85,7 @@ metadata:
 spec:
   mariaDbRef:
     name: invoiceninja-db
+  name: ninja
   characterSet: utf8mb4
   collate: utf8mb4_unicode_ci
   cleanupPolicy: Skip
@@ -99,6 +100,7 @@ metadata:
 spec:
   mariaDbRef:
     name: invoiceninja-db
+  name: ninja
   passwordSecretKeyRef:
     name: invoiceninja-app
     key: DB_PASSWORD

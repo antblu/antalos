@@ -1,6 +1,6 @@
 ---
 title: "LiteLLM · Operate"
-description: "Deploy LiteLLM with Antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy LiteLLM with antalos manifests, complete identity and integrations, and maintain its data."
 ---
 
 <nav class="guide-switcher" aria-label="LiteLLM guide sections"><a href="/user-guide/litellm/">Use</a><a href="/infrastructure/litellm/">Architecture</a><a aria-current="page" href="/admin-guide/litellm/">Operate</a></nav>

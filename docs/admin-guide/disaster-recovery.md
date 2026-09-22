@@ -1,6 +1,6 @@
 ---
 title: Disaster recovery
-description: Recovery order, required backups, and verification steps for rebuilding the Antalos platform.
+description: Recovery order, required backups, and verification steps for rebuilding the antalos platform.
 sidebar:
   order: 1
 ---

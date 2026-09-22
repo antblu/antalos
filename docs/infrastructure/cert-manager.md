@@ -1,6 +1,6 @@
 ---
 title: "cert-manager · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for cert-manager in Antalos."
+description: "Backend components, persistence, placement, and failure boundaries for cert-manager in antalos."
 ---
 
 <nav class="guide-switcher" aria-label="cert-manager guide sections"><a href="/user-guide/cert-manager/">Use</a><a aria-current="page" href="/infrastructure/cert-manager/">Architecture</a><a href="/admin-guide/cert-manager/">Operate</a></nav>
