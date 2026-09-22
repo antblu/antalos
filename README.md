@@ -64,5 +64,3 @@ Git reconstructs configuration. Recovering an application also requires its data
 Edit content under `docs/`. The content loader in `site/src/content.config.ts` reads those files directly. Shared navigation lives in `site/astro.config.mjs`, and `site/src/navigation.mjs` groups service links across the three guide perspectives.
 
 Follow [site authoring](https://docs.antblu.net/admin-guide/site-authoring/) for content conventions, official-documentation links, local development, and the container publishing path. The GitHub workflow builds the image; `apps/docs/` defines its deployment. A local edit is not automatically a published release.
-
-Follow `AGENTS.md` for repository-specific access, approval, formatting, validation, and commit rules.

@@ -32,6 +32,8 @@ spec:
             value: ${INVOICENINJA_MAIL_HOST}
           - name: env.mailPort
             value: "${INVOICENINJA_MAIL_PORT}"
+          - name: env.mailUsername
+            value: ${INVOICENINJA_MAIL_USERNAME}
           - name: env.mailEncryption
             value: ${INVOICENINJA_MAIL_ENCRYPTION}
           - name: env.mailFromAddress
@@ -70,6 +72,7 @@ spec:
                           values:
                             - ${TALOS_WORKER_LEFT}
                             - ${TALOS_WORKER_RIGHT}
+                            - ${TALOS_WORKER_RTX}
               podAntiAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:
                   - labelSelector:
@@ -96,6 +99,7 @@ spec:
                           values:
                             - ${TALOS_WORKER_LEFT}
                             - ${TALOS_WORKER_RIGHT}
+                            - ${TALOS_WORKER_RTX}
               podAntiAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:
                   - labelSelector:
@@ -103,6 +107,10 @@ spec:
                         app.kubernetes.io/name: invoiceninja
                         app.kubernetes.io/component: nginx
                     topologyKey: kubernetes.io/hostname
+          tolerations:
+            - key: quorum
+              operator: Exists
+              effect: NoSchedule
           ingress:
             enabled: true
             className: traefik

@@ -36,12 +36,17 @@ spec:
                     values:
                       - ${TALOS_WORKER_LEFT}
                       - ${TALOS_WORKER_RIGHT}
+                      - ${TALOS_WORKER_RTX}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
                   app.kubernetes.io/name: invoiceninja-worker
               topologyKey: kubernetes.io/hostname
+      tolerations:
+        - key: quorum
+          operator: Exists
+          effect: NoSchedule
       securityContext:
         seccompProfile:
           type: RuntimeDefault

@@ -32,7 +32,6 @@ data:
   MAIL_HOST: {{ .Values.env.mailHost | quote }}
   MAIL_PORT: {{ .Values.env.mailPort | quote }}
   MAIL_USERNAME: {{ .Values.env.mailUsername | quote }}
-  MAIL_PASSWORD: {{ .Values.env.mailPassword | quote }}
   MAIL_ENCRYPTION: {{ .Values.env.mailEncryption | quote }}
   MAIL_FROM_ADDRESS: {{ .Values.env.mailFromAddress | quote }}
   MAIL_FROM_NAME: {{ .Values.env.mailFromName | quote }}

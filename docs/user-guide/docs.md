@@ -1,9 +1,9 @@
 ---
-title: "Antalos documentation · Use"
+title: "antalos documentation · Use"
 description: "What antalos documentation does, how to use it in antalos, and where to find its official documentation."
 ---
 
-<nav class="guide-switcher" aria-label="Antalos documentation guide sections"><a aria-current="page" href="/user-guide/docs/">Use</a><a href="/infrastructure/docs/">Architecture</a><a href="/admin-guide/docs/">Operate</a></nav>
+<nav class="guide-switcher" aria-label="antalos documentation guide sections"><a aria-current="page" href="/user-guide/docs/">Use</a><a href="/infrastructure/docs/">Architecture</a><a href="/admin-guide/docs/">Operate</a></nav>
 
 This site is the handbook for using, understanding, and operating antalos. Each application has three companion guides: a practical user introduction, an explanation of its backend, and an administrator's deployment runbook. The pages describe repository configuration; live health must be inspected separately.
 
