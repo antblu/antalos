@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cal-diy-tls
+  namespace: cal-diy
+spec:
+  secretName: cal-diy-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - ${CALDIY_HOST}

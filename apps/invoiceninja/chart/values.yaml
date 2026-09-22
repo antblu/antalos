@@ -1,0 +1,137 @@
+nameOverride: ""
+fullnameOverride: ""
+
+app:
+  image:
+    repository: invoiceninja/invoiceninja-debian
+    tag: latest
+    pullPolicy: IfNotPresent
+  busyboxTag: "1.36"
+  replicaCount: 2
+  resources: {}
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    runAsNonRoot: false
+    capabilities:
+      add:
+        - SETGID
+        - SETUID
+        - DAC_OVERRIDE
+        - FOWNER
+        - CHOWN
+      drop:
+        - ALL
+  initSecurityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 65534
+    capabilities:
+      drop:
+        - ALL
+  affinity: {}
+
+nginx:
+  image:
+    repository: nginxinc/nginx-unprivileged
+    tag: alpine
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  containerPort: 8080
+  service:
+    type: ClusterIP
+    port: 80
+  resources: {}
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 101
+    capabilities:
+      drop:
+        - ALL
+  initSecurityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: false
+    capabilities:
+      drop:
+        - ALL
+  affinity: {}
+
+external:
+  databaseHost: invoiceninja-db
+  databasePort: "3306"
+  redisSentinels: invoiceninja-redis-data-0.invoiceninja-redis-data.invoiceninja.svc.cluster.local,invoiceninja-redis-data-1.invoiceninja-redis-data.invoiceninja.svc.cluster.local,invoiceninja-redis-sentinel-2.invoiceninja.svc.cluster.local
+  redisSentinelPorts: 26379,26379,26379
+  redisSentinelService: invoiceninja
+
+persistence:
+  appPublic:
+    enabled: false
+    accessModes:
+      - ReadWriteMany
+    size: 1Gi
+    storageClassName: ""
+  appStorage:
+    enabled: false
+    accessModes:
+      - ReadWriteMany
+    size: 5Gi
+    storageClassName: ""
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: invoiceninja.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+secret:
+  existingSecret: invoiceninja-app
+
+env:
+  appUrl: http://localhost
+  appEnv: production
+  appDebug: "false"
+  requireHttps: "true"
+  phantomjsPdfGeneration: "false"
+  pdfGenerator: snappdf
+  trustedProxies: "*"
+  cacheDriver: redis
+  queueConnection: redis
+  sessionDriver: redis
+  redisQueueConnection: sentinel-default
+  redisCacheConnection: sentinel-cache
+  sessionConnection: sentinel-default
+  filesystemDisk: s3
+  dbDatabase: ninja
+  dbUsername: ninja
+  dbConnection: mysql
+  initialUserEmail: antblu@antblu.net
+  mailMailer: log
+  mailHost: smtp.mailtrap.io
+  mailPort: "2525"
+  mailUsername: "null"
+  mailPassword: "null"
+  mailEncryption: "null"
+  mailFromAddress: antblu@antblu.net
+  mailFromName: Invoice Ninja
+  s3AccessKeyId: ""
+  s3Region: garage
+  s3Bucket: ninja
+  s3Endpoint: http://10.30.0.5:30188
+  s3UsePathStyleEndpoint: "true"
+  isDocker: "true"
+  scoutDriver: "null"
+
+nodeSelector: {}
+tolerations: []

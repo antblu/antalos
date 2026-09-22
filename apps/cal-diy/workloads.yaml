@@ -1,0 +1,339 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cal-diy-web
+  namespace: cal-diy
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  minReadySeconds: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cal-diy
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cal-diy
+        app.kubernetes.io/component: web
+    spec:
+      automountServiceAccountToken: false
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ${TALOS_WORKER_LEFT}
+                      - ${TALOS_WORKER_RIGHT}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: cal-diy
+                  app.kubernetes.io/component: web
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: web
+          image: ${CALDIY_WEB_IMAGE_REPOSITORY}:${CALDIY_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          command:
+            - yarn
+            - start
+          envFrom:
+            - configMapRef:
+                name: cal-diy-config
+          env:
+            - name: DATABASE_USERNAME
+              value: ${CALDIY_DATABASE_USERNAME}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-db
+                  key: password
+            - name: DATABASE_URL
+              value: postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@${CALDIY_DATABASE_HOST}:5432/${CALDIY_DATABASE_NAME}?schema=public
+            - name: DATABASE_DIRECT_URL
+              value: postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@${CALDIY_DATABASE_HOST}:5432/${CALDIY_DATABASE_NAME}?schema=public
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-redis
+                  key: password
+            - name: REDIS_URL
+              value: redis://default:$(REDIS_PASSWORD)@cal-diy-redis.cal-diy.svc.cluster.local:6379/0
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-app
+                  key: nextauth-secret
+            - name: CALENDSO_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-app
+                  key: calendso-encryption-key
+            - name: CRON_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-app
+                  key: cron-api-key
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-app
+                  key: oidc-client-secret
+            - name: VAPID_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-app
+                  key: vapid-private-key
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /auth/login
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /auth/login
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /auth/login
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cal-diy-api
+  namespace: cal-diy
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  minReadySeconds: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cal-diy
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cal-diy
+        app.kubernetes.io/component: api
+    spec:
+      automountServiceAccountToken: false
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ${TALOS_WORKER_LEFT}
+                      - ${TALOS_WORKER_RIGHT}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: cal-diy
+                  app.kubernetes.io/component: api
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: api
+          image: ${CALDIY_API_IMAGE_REPOSITORY}:${CALDIY_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: cal-diy-config
+          env:
+            - name: DATABASE_USERNAME
+              value: ${CALDIY_DATABASE_USERNAME}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-db
+                  key: password
+            - name: DATABASE_URL
+              value: postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@${CALDIY_DATABASE_HOST}:5432/${CALDIY_DATABASE_NAME}?schema=public
+            - name: DATABASE_DIRECT_URL
+              value: postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@${CALDIY_DATABASE_HOST}:5432/${CALDIY_DATABASE_NAME}?schema=public
+            - name: DATABASE_READ_URL
+              value: postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@${CALDIY_DATABASE_HOST}:5432/${CALDIY_DATABASE_NAME}?schema=public
+            - name: DATABASE_WRITE_URL
+              value: postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@${CALDIY_DATABASE_HOST}:5432/${CALDIY_DATABASE_NAME}?schema=public
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-redis
+                  key: password
+            - name: REDIS_URL
+              value: redis://default:$(REDIS_PASSWORD)@cal-diy-redis.cal-diy.svc.cluster.local:6379/0
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-app
+                  key: nextauth-secret
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-api
+                  key: jwt-secret
+            - name: CALCOM_SERVICE_ACCOUNT_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-api
+                  key: calcom-service-account-encryption-key
+            - name: STRIPE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-api
+                  key: stripe-api-key
+            - name: STRIPE_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-api
+                  key: stripe-webhook-secret
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cal-diy-web
+  namespace: cal-diy
+spec:
+  selector:
+    app.kubernetes.io/name: cal-diy
+    app.kubernetes.io/component: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cal-diy-api
+  namespace: cal-diy
+spec:
+  selector:
+    app.kubernetes.io/name: cal-diy
+    app.kubernetes.io/component: api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cal-diy
+  namespace: cal-diy
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - ${CALDIY_HOST}
+      secretName: cal-diy-tls
+  rules:
+    - host: ${CALDIY_HOST}
+      http:
+        paths:
+          - path: /api/v2
+            pathType: Prefix
+            backend:
+              service:
+                name: cal-diy-api
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cal-diy-web
+                port:
+                  name: http

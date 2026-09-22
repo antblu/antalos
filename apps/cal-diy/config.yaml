@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cal-diy-config
+  namespace: cal-diy
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+data:
+  NODE_ENV: production
+  DATABASE_HOST: ${CALDIY_DATABASE_HOST}:5432
+  NEXT_PUBLIC_WEBAPP_URL: https://${CALDIY_HOST}
+  NEXT_PUBLIC_WEBSITE_URL: https://${CALDIY_HOST}
+  NEXT_PUBLIC_API_V2_URL: https://${CALDIY_HOST}/api/v2
+  NEXTAUTH_URL: https://${CALDIY_HOST}
+  ALLOWED_HOSTNAMES: '"${CALDIY_HOST}"'
+  CALCOM_TELEMETRY_DISABLED: "1"
+  NEXT_PUBLIC_LICENSE_CONSENT: agree
+  API_KEY_PREFIX: cal_
+  OIDC_LOGIN_ENABLED: "true"
+  OIDC_CLIENT_ID: ${CALDIY_OIDC_CLIENT_ID}
+  OIDC_ISSUER: ${CALDIY_OIDC_ISSUER}
+  OIDC_PROVIDER_NAME: ${CALDIY_OIDC_PROVIDER_NAME}
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${CALDIY_VAPID_PUBLIC_KEY}
+  ENABLE_ASYNC_TASKER: "false"
+  CRON_ENABLE_APP_SYNC: "false"
+  API_PORT: "80"
+  API_URL: https://${CALDIY_HOST}/api
+  WEB_APP_URL: https://${CALDIY_HOST}
+  REWRITE_API_V2_PREFIX: "1"
+  IS_E2E: "false"
+  USE_POOL: "true"
+  IS_TEAM_BILLING_ENABLED: "false"
+  # Cal Video remains disabled because DAILY_API_KEY is intentionally absent.
+  # Configure this redirect URI in Authentik:
+  # https://${CALDIY_HOST}/api/auth/callback/oidc

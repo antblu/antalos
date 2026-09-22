@@ -1,0 +1,104 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cal-diy-scheduler
+  namespace: cal-diy
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  schedule: "* * * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 30
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: cal-diy
+            app.kubernetes.io/component: scheduler
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values:
+                          - ${TALOS_WORKER_LEFT}
+                          - ${TALOS_WORKER_RIGHT}
+          containers:
+            - name: scheduler
+              image: curlimages/curl:${CALDIY_CURL_IMAGE_TAG}
+              command:
+                - sh
+                - -ec
+                - |
+                  failures=0
+                  run_cron() {
+                    if ! curl --fail --silent --show-error \
+                      --request POST \
+                      --header "authorization: $CRON_API_KEY" \
+                      --header "content-type: application/json" \
+                      "http://cal-diy-web/api/cron/$1"; then
+                      failures=1
+                    fi
+                  }
+
+                  minute=$(date -u +%M)
+                  hour=$(date -u +%H)
+                  day=$(date -u +%d)
+                  minute_number=$(expr "$minute" + 0)
+                  day_number=$(expr "$day" + 0)
+
+                  run_cron webhookTriggers
+                  run_cron checkSmsPrices
+
+                  if [ "$(expr "$minute_number" % 15)" -eq 0 ]; then
+                    run_cron bookingReminder
+                    run_cron workflows/scheduleEmailReminders
+                    run_cron workflows/scheduleSMSReminders
+                    run_cron workflows/scheduleWhatsappReminders
+                  fi
+
+                  if [ "$minute" = "00" ]; then
+                    run_cron changeTimeZone
+                  fi
+
+                  if [ "$day" = "01" ] && [ "$hour" = "00" ] && [ "$minute" = "00" ]; then
+                    run_cron downgradeUsers
+                    run_cron syncAppMeta
+                  fi
+
+                  if [ "$day_number" -ge 28 ] && [ "$hour" = "23" ] && [ "$minute" = "59" ]; then
+                    run_cron monthlyDigestEmail
+                  fi
+
+                  exit "$failures"
+              env:
+                - name: CRON_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: cal-diy-app
+                      key: cron-api-key
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                seccompProfile:
+                  type: RuntimeDefault

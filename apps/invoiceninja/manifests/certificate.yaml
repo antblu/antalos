@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: invoiceninja-tls
+  namespace: invoiceninja
+spec:
+  secretName: invoiceninja-tls
+  dnsNames:
+    - ${INVOICENINJA_HOST}
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer

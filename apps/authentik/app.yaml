@@ -18,10 +18,17 @@ spec:
             volumeMounts:
               - name: media
                 mountPath: /data
+              - name: cal-diy-blueprint
+                mountPath: /blueprints/cal-diy.yaml
+                subPath: cal-diy.yaml
+                readOnly: true
             volumes:
               - name: media
                 persistentVolumeClaim:
                   claimName: authentik-media
+              - name: cal-diy-blueprint
+                configMap:
+                  name: authentik-cal-diy-blueprint
             env:
               - name: AUTHENTIK_POSTGRESQL__HOST
                 value: authentik-db-rw.authentik.svc.cluster.local
@@ -50,6 +57,13 @@ spec:
               # Increment when authentik-email changes so pods reload secret-backed env.
               - name: EMAIL_SECRET_REVISION
                 value: "${AUTHENTIK_EMAIL_SECRET_REVISION}"
+              - name: CALDIY_OIDC_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: authentik-cal-diy-oidc
+                    key: client-secret
+              - name: CALDIY_OIDC_REVISION
+                value: "${AUTHENTIK_CALDIY_OIDC_REVISION}"
 
           authentik:
             existingSecret:

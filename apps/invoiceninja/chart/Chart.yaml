@@ -1,0 +1,11 @@
+apiVersion: v2
+name: invoiceninja
+description: Antalos deployment of the official Invoice Ninja Debian Helm chart
+type: application
+version: 0.1.1
+appVersion: "5"
+home: https://github.com/invoiceninja/dockerfiles
+sources:
+  - https://github.com/invoiceninja/dockerfiles/tree/invoiceninja-0.1.1/charts/invoiceninja
+annotations:
+  antalos.net/upstream-commit: 384684f6a71be110c2c9744fcbf3a42e9c621189

@@ -1,0 +1,120 @@
+name: Build Cal.diy images
+
+on:
+  pull_request:
+    paths:
+      - apps/cal-diy/**
+      - apps/variables.yaml
+      - .github/workflows/cal-diy-images.yaml
+  push:
+    branches:
+      - main
+    paths:
+      - apps/cal-diy/**
+      - apps/variables.yaml
+      - .github/workflows/cal-diy-images.yaml
+  workflow_dispatch:
+
+concurrency:
+  group: cal-diy-images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: cal_build
+          POSTGRES_PASSWORD: cal_build
+          POSTGRES_DB: cal_build
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cal_build -d cal_build"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out Antalos
+        uses: actions/checkout@v6
+
+      - name: Read pinned Cal.diy source and image versions
+        id: versions
+        shell: bash
+        run: |
+          source_repository="$(sed -n 's/^  CALDIY_SOURCE_REPOSITORY: //p' apps/variables.yaml)"
+          source_commit="$(sed -n 's/^  CALDIY_SOURCE_COMMIT: //p' apps/variables.yaml)"
+          image_tag="$(sed -n 's/^  CALDIY_IMAGE_TAG: //p' apps/variables.yaml)"
+          web_repository="$(sed -n 's/^  CALDIY_WEB_IMAGE_REPOSITORY: //p' apps/variables.yaml)"
+          api_repository="$(sed -n 's/^  CALDIY_API_IMAGE_REPOSITORY: //p' apps/variables.yaml)"
+          test -n "$source_repository"
+          test -n "$source_commit"
+          test -n "$image_tag"
+          test -n "$web_repository"
+          test -n "$api_repository"
+          echo "source_repository=$source_repository" >> "$GITHUB_OUTPUT"
+          echo "source_commit=$source_commit" >> "$GITHUB_OUTPUT"
+          echo "image_tag=$image_tag" >> "$GITHUB_OUTPUT"
+          echo "web_repository=$web_repository" >> "$GITHUB_OUTPUT"
+          echo "api_repository=$api_repository" >> "$GITHUB_OUTPUT"
+
+      - name: Check out pinned OIDC-enabled Cal.diy source
+        shell: bash
+        run: |
+          git clone --filter=blob:none "${{ steps.versions.outputs.source_repository }}" cal-diy-source
+          git -C cal-diy-source checkout --detach "${{ steps.versions.outputs.source_commit }}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish Cal.diy web
+        uses: docker/build-push-action@v6
+        with:
+          context: cal-diy-source
+          file: cal-diy-source/Dockerfile
+          network: host
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.versions.outputs.web_repository }}:${{ steps.versions.outputs.image_tag }}
+          build-args: |
+            NEXT_PUBLIC_WEBAPP_URL=https://cal.antblu.net
+            NEXT_PUBLIC_API_V2_URL=https://cal.antblu.net/api/v2
+            NEXT_PUBLIC_LICENSE_CONSENT=agree
+            ORGANIZATIONS_ENABLED=false
+            CALCOM_TELEMETRY_DISABLED=1
+            NEXTAUTH_SECRET=build-only-nextauth-secret
+            CALENDSO_ENCRYPTION_KEY=build-only-encryption-key-0001
+            DATABASE_URL=postgresql://cal_build:cal_build@127.0.0.1:5432/cal_build
+          cache-from: type=gha,scope=cal-diy-web
+          cache-to: type=gha,mode=max,scope=cal-diy-web
+
+      - name: Build and publish Cal.diy API v2
+        uses: docker/build-push-action@v6
+        with:
+          context: cal-diy-source
+          file: cal-diy-source/apps/api/v2/Dockerfile
+          network: host
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.versions.outputs.api_repository }}:${{ steps.versions.outputs.image_tag }}
+          build-args: |
+            DATABASE_URL=postgresql://cal_build:cal_build@127.0.0.1:5432/cal_build
+            DATABASE_DIRECT_URL=postgresql://cal_build:cal_build@127.0.0.1:5432/cal_build
+          cache-from: type=gha,scope=cal-diy-api
+          cache-to: type=gha,mode=max,scope=cal-diy-api

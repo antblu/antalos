@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cal-diy-database-migration
+  namespace: cal-diy
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  parallelism: 1
+  completions: 1
+  backoffLimit: 3
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cal-diy-database-migration
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ${TALOS_WORKER_LEFT}
+                      - ${TALOS_WORKER_RIGHT}
+      containers:
+        - name: migrate
+          image: ${CALDIY_WEB_IMAGE_REPOSITORY}:${CALDIY_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - npx prisma migrate deploy --schema /calcom/packages/prisma/schema.prisma && npx ts-node --transpile-only /calcom/scripts/seed-app-store.ts
+          envFrom:
+            - configMapRef:
+                name: cal-diy-config
+          env:
+            - name: DATABASE_USERNAME
+              value: ${CALDIY_DATABASE_USERNAME}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-db
+                  key: password
+            - name: DATABASE_URL
+              value: postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@${CALDIY_DATABASE_HOST}:5432/${CALDIY_DATABASE_NAME}?schema=public
+            - name: DATABASE_DIRECT_URL
+              value: postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@${CALDIY_DATABASE_HOST}:5432/${CALDIY_DATABASE_NAME}?schema=public
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-app
+                  key: nextauth-secret
+            - name: CALENDSO_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-app
+                  key: calendso-encryption-key
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault

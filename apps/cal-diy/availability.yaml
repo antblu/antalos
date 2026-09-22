@@ -1,0 +1,56 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cal-diy-web
+  namespace: cal-diy
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cal-diy
+      app.kubernetes.io/component: web
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cal-diy-api
+  namespace: cal-diy
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cal-diy
+      app.kubernetes.io/component: api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cal-diy-redis-data
+  namespace: cal-diy
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cal-diy-redis-data
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cal-diy-redis-sentinel
+  namespace: cal-diy
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      cal-diy.antblu.net/sentinel: "true"
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cal-diy-redis-haproxy
+  namespace: cal-diy
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cal-diy-redis-haproxy

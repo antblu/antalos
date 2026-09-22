@@ -23,6 +23,7 @@ variables:
   CROWDSEC_BOUNCER_PLUGIN_VERSION: v1.7.0
   VICTORIAMETRICS_CHART_VERSION: 0.91.2
   ZAMMAD_CHART_VERSION: 18.0.4
+  INVOICENINJA_CHART_VERSION: 0.1.1
 
   DOCS_NODE_IMAGE_TAG: 24.8.0-alpine3.22
   DOCS_NGINX_IMAGE_TAG: 1.29.8-alpine
@@ -45,7 +46,18 @@ variables:
   REDIS_IMAGE_TAG: 8.10.1
   HAPROXY_IMAGE_TAG: 3.2.4-alpine
   ZAMMAD_IMAGE_TAG: 7.1.3-0006
+  INVOICENINJA_IMAGE_TAG: 5.13.26
+  INVOICENINJA_NGINX_IMAGE_TAG: 1.29.8-alpine
+  INVOICENINJA_BUSYBOX_IMAGE_TAG: 1.37.0
+  INVOICENINJA_MARIADB_IMAGE_TAG: 11.8.9
+  INVOICENINJA_GARBD_IMAGE_TAG: 11.8.9-ubi9
   ACTIVEPIECES_IMAGE_TAG: 0.91.1
+  CALDIY_IMAGE_TAG: oidc-64c8693b971c
+  CALDIY_WEB_IMAGE_REPOSITORY: ghcr.io/antblu/cal-diy-web
+  CALDIY_API_IMAGE_REPOSITORY: ghcr.io/antblu/cal-diy-api
+  CALDIY_SOURCE_REPOSITORY: https://github.com/PAtreju/cal.diy.git
+  CALDIY_SOURCE_COMMIT: 64c8693b971c77361655dd36ce61371978ff1287
+  CALDIY_CURL_IMAGE_TAG: 8.16.0
   HEADSCALE_IMAGE_TAG: v0.29.3
   HEADPLANE_IMAGE_TAG: 0.7.1
   UPTIME_KUMA_IMAGE_TAG: 2.5.5-rootless
@@ -381,6 +393,35 @@ variables:
   ACTIVEPIECES_REDIS_DATA_1_HOST: activepieces-redis-data-1.activepieces-redis-data.activepieces.svc.cluster.local
   ACTIVEPIECES_REDIS_SENTINEL_2_HOST: activepieces-redis-sentinel-2.activepieces.svc.cluster.local
   ACTIVEPIECES_S3_BUCKET: activepieces
+
+  # Cal.diy: two web and API v2 replicas, two synchronous CNPG instances,
+  # Redis Sentinel, and generic OIDC from the pinned PAtreju feature branch.
+  CALDIY_HOST: cal.antblu.net
+  CALDIY_DATABASE_HOST: cal-diy-db-rw.cal-diy.svc.cluster.local
+  CALDIY_DATABASE_NAME: caldiy
+  CALDIY_DATABASE_USERNAME: caldiy
+  CALDIY_DATABASE_STORAGE_SIZE: 10Gi
+  CALDIY_REDIS_STORAGE_SIZE: 2Gi
+  CALDIY_REDIS_DATA_0_HOST: cal-diy-redis-data-0.cal-diy-redis-data.cal-diy.svc.cluster.local
+  CALDIY_REDIS_DATA_1_HOST: cal-diy-redis-data-1.cal-diy-redis-data.cal-diy.svc.cluster.local
+  CALDIY_REDIS_SENTINEL_2_HOST: cal-diy-redis-sentinel-2.cal-diy.svc.cluster.local
+  CALDIY_OIDC_CLIENT_ID: 7c85d8131ef6e6968d93aae2684bf544a491d03d
+  CALDIY_OIDC_ISSUER: https://auth.antblu.net/application/o/cal-diy/
+  CALDIY_OIDC_PROVIDER_NAME: antID
+  CALDIY_VAPID_PUBLIC_KEY: BBbFjlT2YlB2CdztdEWrlsXf2lld1-8W-1RxdAuFLQotjxDKqFeF44cGSkIfc2ZQrzM3VxdZuwL19yDYzqLJzAE
+  AUTHENTIK_CALDIY_OIDC_REVISION: "1"
+
+  # Invoice Ninja: two web replicas and two queue workers on the untainted
+  # workers, with MariaDB and Redis quorum voters on the RTX worker.
+  INVOICENINJA_HOST: invoices.antblu.net
+  INVOICENINJA_DATABASE_HOST: invoiceninja-db.invoiceninja.svc.cluster.local
+  INVOICENINJA_DATABASE_STORAGE_SIZE: 20Gi
+  INVOICENINJA_REDIS_DATA_0_HOST: invoiceninja-redis-data-0.invoiceninja-redis-data.invoiceninja.svc.cluster.local
+  INVOICENINJA_REDIS_DATA_1_HOST: invoiceninja-redis-data-1.invoiceninja-redis-data.invoiceninja.svc.cluster.local
+  INVOICENINJA_REDIS_SENTINEL_2_HOST: invoiceninja-redis-sentinel-2.invoiceninja.svc.cluster.local
+  INVOICENINJA_REDIS_STORAGE_SIZE: 2Gi
+  INVOICENINJA_S3_BUCKET: ninja
+  INVOICENINJA_S3_ACCESS_KEY_ID: GK8bbacd3d2f42b8a6dcf19e15
 
   # RustDesk OSS: one recoverable hbbs and two independently addressed relays.
   RUSTDESK_IMAGE_TAG: 1.1.16

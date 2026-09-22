@@ -1,0 +1,135 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "invoiceninja.appServiceName" . }}
+  labels:
+    {{- include "invoiceninja.labels" . | nindent 4 }}
+    app.kubernetes.io/component: app
+spec:
+  replicas: {{ .Values.app.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      {{- include "invoiceninja.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: app
+  template:
+    metadata:
+      labels:
+        {{- include "invoiceninja.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: app
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.app.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: wait-dependencies
+          image: "busybox:{{ .Values.app.busyboxTag }}"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            {{- toYaml .Values.app.initSecurityContext | nindent 12 }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              until nc -z {{ .Values.external.databaseHost }} {{ .Values.external.databasePort }}; do
+                echo "waiting for MariaDB"
+                sleep 2
+              done
+              sentinel=$(printf '%s' '{{ .Values.external.redisSentinels }}' | cut -d, -f1)
+              until nc -z "$sentinel" 26379; do
+                echo "waiting for Redis Sentinel"
+                sleep 2
+              done
+      containers:
+        - name: app
+          image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
+          imagePullPolicy: {{ .Values.app.image.pullPolicy }}
+          ports:
+            - name: fpm
+              containerPort: 9000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "invoiceninja.fullname" . }}-config
+            - secretRef:
+                name: {{ .Values.secret.existingSecret }}
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'REMOTE_ADDR=127.0.0.1 REQUEST_URI=/health REQUEST_METHOD=GET SCRIPT_FILENAME=/var/www/html/public/index.php cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q "{\"status\":\"ok\",\"message\":\"API is healthy\"}"'
+            initialDelaySeconds: 120
+            timeoutSeconds: 10
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'REMOTE_ADDR=127.0.0.1 REQUEST_URI=/health REQUEST_METHOD=GET SCRIPT_FILENAME=/var/www/html/public/index.php cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q "{\"status\":\"ok\",\"message\":\"API is healthy\"}"'
+            initialDelaySeconds: 40
+            timeoutSeconds: 10
+            periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            {{- toYaml .Values.app.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.app.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: app-public
+              mountPath: /var/www/html/public
+            - name: app-storage
+              mountPath: /var/www/html/storage
+            - name: supervisor
+              mountPath: /etc/supervisor/supervisord.conf
+              subPath: supervisord.conf
+              readOnly: true
+      volumes:
+        - name: app-public
+          emptyDir: {}
+        - name: app-storage
+          emptyDir: {}
+        - name: supervisor
+          configMap:
+            name: {{ include "invoiceninja.fullname" . }}-supervisor
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.app.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "invoiceninja.appServiceName" . }}
+  labels:
+    {{- include "invoiceninja.labels" . | nindent 4 }}
+    app.kubernetes.io/component: app
+spec:
+  type: ClusterIP
+  ports:
+    - name: fpm
+      port: 9000
+      targetPort: fpm
+      protocol: TCP
+  selector:
+    {{- include "invoiceninja.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: app
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "invoiceninja.appServiceName" . }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "invoiceninja.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: app
