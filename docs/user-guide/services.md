@@ -46,6 +46,7 @@ These entries describe service definitions in Git. They do not report current de
 
 | Service | Purpose | Guides | Official manual |
 | --- | --- | --- | --- |
+| Renovate | Hourly dependency-update pull requests through the antblu-renovate GitHub App. | [Use](/user-guide/renovate/) · [Architecture](/infrastructure/renovate/) · [Operate](/admin-guide/renovate/) | [Read the manual](https://docs.renovatebot.com/) |
 | Argo CD | Git reconciliation and application delivery. | [Use](/user-guide/argocd/) · [Architecture](/infrastructure/argocd/) · [Operate](/admin-guide/argocd/)  [Read the manual](https://argo-cd.readthedocs.io/en/stable/user-guide/) |
 | Rancher | Kubernetes administration UI. | [Use](/user-guide/rancher/) · [Architecture](/infrastructure/rancher/) · [Operate](/admin-guide/rancher/)  [Read the manual](https://ranchermanager.docs.rancher.com/) |
 | Grafana, metrics, and logs | Dashboards, metrics history, and log queries. | [Use](/user-guide/victoriametrics/) · [Architecture](/infrastructure/victoriametrics/) · [Operate](/admin-guide/victoriametrics/)  [Read the manual](https://grafana.com/docs/grafana/latest/) |

@@ -89,6 +89,10 @@ export const serviceGroups = [
         "label": "Argo CD"
       },
       {
+        "slug": "renovate",
+        "label": "Renovate"
+      },
+      {
         "slug": "rancher",
         "label": "Rancher"
       },

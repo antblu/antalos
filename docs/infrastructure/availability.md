@@ -11,6 +11,8 @@ This reference describes the current repository design. It does not report live 
 
 ## Which applications are HA?
 
+- **Non-HA scheduled jobs:** [Renovate](/infrastructure/renovate/) runs one stateless pod at a time on any eligible node. Interrupted scans retry or wait for the next schedule; there is no replicated running instance or persistent local data.
+
 - **HA serving designs:** the documentation site and BentoPDF have interchangeable stateless replicas; Traefik has two serving proxies; Rancher has a replicated management web tier. These still depend on the shared network/control-plane paths. The docs rollout has a placement limitation described below.
 - **Replicated stateful designs:** Activepieces, LiteLLM, Grafana, and the VictoriaMetrics metrics tier include application/data redundancy and a client path to surviving members. They can have a failover interval and reduced durability/capacity during degradation. They are not guarantees against every whole-host or external-service failure.
 - **Partially HA applications:** Authentik, GitLab, Nextcloud, Obsidian, Open WebUI, SuiteCRM, Stalwart, and Zammad have replicated important components but retain shared dependencies, singleton features, restart/rejoin concerns, or upgrade outages. The scope of each limitation matters more than the replica total.
