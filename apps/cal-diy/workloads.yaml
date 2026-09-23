@@ -181,7 +181,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: api
-          image: ${CALDIY_API_IMAGE_REPOSITORY}:${CALDIY_IMAGE_TAG}
+          image: ${CALDIY_API_IMAGE_REPOSITORY}:${CALDIY_API_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:

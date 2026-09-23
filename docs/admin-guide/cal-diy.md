@@ -11,8 +11,10 @@ PAtreju commit `64c8693b971c77361655dd36ce61371978ff1287` descends from
 (commit `1c193cca8682b33b9866c792186033f7ef886682`), then applies the local
 OIDC fixes in `apps/cal-diy/source-patches/oidc-bootstrap.patch` before building.
 The web deployment and database migration use `ghcr.io/antblu/cal.diy-oidc:OIDC`;
-the API v2 deployment retains its separate image. The image workflow publishes
-its web build to `ghcr.io/antblu/cal-diy-web`, separately from the deployed web image.
+the API v2 deployment retains its published
+`ghcr.io/antblu/cal-diy-api:oidc-64c8693b971c` image. The image workflow
+publishes its web build to `ghcr.io/antblu/cal-diy-web`, separately from the
+deployed web image.
 SMTP is not configured in the current manifests.
 
 ## Deployment and capacity
