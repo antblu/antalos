@@ -9,7 +9,7 @@ Uptime Kuma checks the endpoints configured by an administrator. It can publish 
 
 ## Find the status page
 
-Open [status.antblu.net](https://status.antblu.net) for the published public status page. The administrator configures which monitors appear there. Administrators use [uptime.antblu.net](https://uptime.antblu.net), which requires Authentik access and the Uptime Kuma administrator account.
+Open [status.antblu.net](https://status.antblu.net) for the published public status page. The administrator configures which monitors appear there. Administrators use [uptime.antblu.net](https://uptime.antblu.net), which requires Authentik access. Uptime Kuma's own login is disabled after the initial account setup.
 
 ## Read a result
 
