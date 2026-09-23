@@ -8,11 +8,11 @@ description: Deploy the single Node-RED process and recover its NFS-backed data.
 ## Deploy
 
 1. Verify that `10.30.0.5:/mnt/nvme/node-red` is exported to both eligible workers over NFS 4.1 and writable by UID/GID 1007. Back up the entire directory, including credential encryption metadata, flows, settings, and installed nodes. The PV declaration does not create the export.
-2. Publish `node-red.antblu.net` to the Traefik endpoint. In Authentik, create a proxy provider in **Forward auth (single application)** mode with external host `https://node-red.antblu.net`. Assign it to the embedded outpost and restrict access to intended editors. The manifest includes the outpost callback route.
+2. Publish `flows.antblu.net` to the Traefik endpoint. In Authentik, create an OAuth2/OIDC provider and application with issuer `https://auth.antblu.net/application/o/node-red/`. Allow the exact callback `https://flows.antblu.net/auth/strategy/callback`, use an authorization-code confidential client, and bind only intended editors. Set the client ID and public endpoint values in `apps/variables.yaml`; seal the client secret as `node-red-oidc` key `clientSecret`.
 3. Publish the manifests and `apps/variables.yaml` to the branch tracked by Argo CD, then let the root Application discover `apps/node-red/app.yaml`. Follow the [shared deployment workflow](/admin-guide/deploy-an-application/). Local uncommitted files are not deployment inputs.
-4. Verify the Application is Synced and Healthy, the PVC is Bound, and the single pod is Ready. Open the HTTPS hostname as an allowed and a denied user; confirm the editor is protected and a small flow can be deployed. Check direct in-cluster access is denied by the NetworkPolicy.
+4. Verify the Application is Synced and Healthy, the PVC is Bound, and the single pod is Ready. Open the HTTPS hostname as an allowed and a denied user; confirm Node-RED starts its own OIDC login, the callback works, and a small flow can be deployed. Check direct in-cluster access is denied by the NetworkPolicy. HTTP In endpoints are not covered by `adminAuth`; add their own authorization before exposing sensitive flow endpoints.
 
-Node-RED's default credential secret is generated in its persistent user directory when needed. Keep the original `/data` contents when restoring encrypted flow credentials. Avoid replacing the directory with an empty export during recovery.
+The OIDC strategy package is installed into `/data/.oidc` before Node-RED starts. Its first installation or version change requires npm registry access. Node-RED's flow-credential encryption secret is generated in its persistent user directory when needed. Keep the original `/data` contents when restoring encrypted flow credentials. Avoid replacing the directory with an empty export during recovery.
 
 ## Recover and maintain
 

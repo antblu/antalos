@@ -176,6 +176,16 @@ variables:
   UPTIME_KUMA_HOST: status.antblu.net
   UPTIME_KUMA_ADMIN_HOST: uptime.antblu.net
   NODE_RED_HOST: flows.antblu.net
+  NODE_RED_OIDC_ISSUER: https://auth.antblu.net/application/o/node-red/
+  NODE_RED_OIDC_AUTHORIZATION_URL: https://auth.antblu.net/application/o/authorize/
+  NODE_RED_OIDC_TOKEN_URL: https://auth.antblu.net/application/o/token/
+  NODE_RED_OIDC_USERINFO_URL: https://auth.antblu.net/application/o/userinfo/
+  NODE_RED_OIDC_CALLBACK_URL: https://flows.antblu.net/auth/strategy/callback
+  NODE_RED_OIDC_CLIENT_ID: WNLWs5zbw3HxT5jwVvmsoPu9eyHPZLuH71pZQwFk
+  NODE_RED_OIDC_STRATEGY_NAME: openidconnect
+  NODE_RED_OIDC_LOGIN_LABEL: Sign in with antID
+  NODE_RED_OIDC_SCOPES: profile,email
+  NODE_RED_PASSPORT_OPENIDCONNECT_VERSION: 0.1.2
   HEADSCALE_BASE_DOMAIN: tailnet.antblu.net
   HEADSCALE_OIDC_ISSUER: https://auth.antblu.net/application/o/headscale/
   HEADSCALE_OIDC_CLIENT_ID: 5eTY9Y5chSEM2NGkXkZFXhGOoqL50wacds5NHZgt

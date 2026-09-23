@@ -29,10 +29,62 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        - name: install-oidc-strategy
+          image: docker.io/nodered/node-red:${NODE_RED_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              installed_version="$(node -p "require('/data/.oidc/node_modules/passport-openidconnect/package.json').version" 2>/dev/null || true)"
+              if [ "$installed_version" != "$PASSPORT_OPENIDCONNECT_VERSION" ]; then
+                npm install --prefix /data/.oidc --no-save --omit=dev --no-audit --no-fund "passport-openidconnect@$PASSPORT_OPENIDCONNECT_VERSION"
+              fi
+          env:
+            - name: PASSPORT_OPENIDCONNECT_VERSION
+              value: ${NODE_RED_PASSPORT_OPENIDCONNECT_VERSION}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
       containers:
         - name: node-red
           image: docker.io/nodered/node-red:${NODE_RED_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
+          args:
+            - --settings
+            - /etc/node-red/settings.js
+          env:
+            - name: NODE_PATH
+              value: /data/.oidc/node_modules:/usr/src/node-red/node_modules:/data/node_modules
+            - name: OIDC_ISSUER
+              value: ${NODE_RED_OIDC_ISSUER}
+            - name: OIDC_AUTHORIZATION_URL
+              value: ${NODE_RED_OIDC_AUTHORIZATION_URL}
+            - name: OIDC_TOKEN_URL
+              value: ${NODE_RED_OIDC_TOKEN_URL}
+            - name: OIDC_USERINFO_URL
+              value: ${NODE_RED_OIDC_USERINFO_URL}
+            - name: OIDC_CALLBACK_URL
+              value: ${NODE_RED_OIDC_CALLBACK_URL}
+            - name: OIDC_CLIENT_ID
+              value: ${NODE_RED_OIDC_CLIENT_ID}
+            - name: OIDC_STRATEGY_NAME
+              value: ${NODE_RED_OIDC_STRATEGY_NAME}
+            - name: OIDC_LOGIN_LABEL
+              value: ${NODE_RED_OIDC_LOGIN_LABEL}
+            - name: OIDC_SCOPES
+              value: ${NODE_RED_OIDC_SCOPES}
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: node-red-oidc
+                  key: clientSecret
           ports:
             - name: http
               containerPort: 1880
@@ -73,7 +125,14 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            - name: settings
+              mountPath: /etc/node-red/settings.js
+              subPath: settings.js
+              readOnly: true
       volumes:
+        - name: settings
+          configMap:
+            name: node-red-settings
         - name: data
           persistentVolumeClaim:
             claimName: node-red-data
@@ -102,8 +161,6 @@ metadata:
   namespace: node-red
   labels:
     app.kubernetes.io/name: node-red
-  annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: traefik-authentik-forward-auth@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
@@ -121,35 +178,3 @@ spec:
                 name: node-red
                 port:
                   name: http
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: authentik-embedded-outpost
-  namespace: node-red
-spec:
-  type: ExternalName
-  externalName: authentik-server.authentik.svc.cluster.local
-  ports:
-    - name: http
-      port: 80
-      protocol: TCP
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: node-red-authentik-outpost
-  namespace: node-red
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - kind: Rule
-      match: Host(`${NODE_RED_HOST}`) && PathPrefix(`/outpost.goauthentik.io/`)
-      priority: 100
-      services:
-        - kind: Service
-          name: authentik-embedded-outpost
-          port: 80
-  tls:
-    secretName: node-red-tls
