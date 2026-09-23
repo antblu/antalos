@@ -32,7 +32,7 @@ spec:
                       - ${TALOS_WORKER_RIGHT}
       containers:
         - name: migrate
-          image: ${CALDIY_WEB_IMAGE_REPOSITORY}:${CALDIY_IMAGE_TAG}
+          image: ${CALDIY_WEB_IMAGE_REPOSITORY}:${CALDIY_WEB_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           command:
             - sh

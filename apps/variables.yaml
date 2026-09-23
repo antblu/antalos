@@ -57,7 +57,9 @@ variables:
   INVOICENINJA_GARBD_IMAGE_TAG: 11.8.9-ubi9
   ACTIVEPIECES_IMAGE_TAG: 0.91.1
   CALDIY_IMAGE_TAG: oidc-v6.2.0-bootstrap-1
-  CALDIY_WEB_IMAGE_REPOSITORY: ghcr.io/antblu/cal-diy-web
+  CALDIY_WEB_IMAGE_REPOSITORY: ghcr.io/antblu/cal.diy-oidc
+  CALDIY_WEB_IMAGE_TAG: OIDC
+  CALDIY_BUILD_WEB_IMAGE_REPOSITORY: ghcr.io/antblu/cal-diy-web
   CALDIY_API_IMAGE_REPOSITORY: ghcr.io/antblu/cal-diy-api
   CALDIY_SOURCE_REPOSITORY: https://github.com/PAtreju/cal.diy.git
   CALDIY_SOURCE_COMMIT: 64c8693b971c77361655dd36ce61371978ff1287

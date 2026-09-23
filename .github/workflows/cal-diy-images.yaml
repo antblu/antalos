@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read
       packages: write
@@ -51,7 +51,7 @@ jobs:
           source_repository="$(sed -n 's/^  CALDIY_SOURCE_REPOSITORY: //p' apps/variables.yaml)"
           source_commit="$(sed -n 's/^  CALDIY_SOURCE_COMMIT: //p' apps/variables.yaml)"
           image_tag="$(sed -n 's/^  CALDIY_IMAGE_TAG: //p' apps/variables.yaml)"
-          web_repository="$(sed -n 's/^  CALDIY_WEB_IMAGE_REPOSITORY: //p' apps/variables.yaml)"
+          web_repository="$(sed -n 's/^  CALDIY_BUILD_WEB_IMAGE_REPOSITORY: //p' apps/variables.yaml)"
           api_repository="$(sed -n 's/^  CALDIY_API_IMAGE_REPOSITORY: //p' apps/variables.yaml)"
           test -n "$source_repository"
           test -n "$source_commit"

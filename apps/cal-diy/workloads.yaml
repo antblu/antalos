@@ -43,7 +43,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: web
-          image: ${CALDIY_WEB_IMAGE_REPOSITORY}:${CALDIY_IMAGE_TAG}
+          image: ${CALDIY_WEB_IMAGE_REPOSITORY}:${CALDIY_WEB_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           command:
             - yarn
