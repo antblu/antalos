@@ -1,0 +1,153 @@
+--- a/apps/web/server/lib/auth/login/getServerSideProps.tsx
++++ b/apps/web/server/lib/auth/login/getServerSideProps.tsx
+@@ -75,7 +75,10 @@
+   }
+ 
+   const userExists = await prisma.user.findFirst({ select: { id: true } });
+-  if (!userExists) {
++  const oidcEnabled = process.env.OIDC_LOGIN_ENABLED === "true" &&
++    !!process.env.OIDC_CLIENT_ID && !!process.env.OIDC_CLIENT_SECRET &&
++    !!process.env.OIDC_ISSUER && !!process.env.OIDC_ADMIN_EMAIL;
++  if (!userExists && !oidcEnabled) {
+     // Proceed to new onboarding to create first admin user
+     return {
+       redirect: {
+@@ -89,6 +92,8 @@
+       csrfToken: await getCsrfToken(context),
+       isGoogleLoginEnabled: IS_GOOGLE_LOGIN_ENABLED,
+       isOutlookLoginEnabled: false,
++      isOidcLoginEnabled: oidcEnabled,
++      oidcProviderName: process.env.OIDC_PROVIDER_NAME || "OIDC",
+       totpEmail,
+     },
+   };
+--- a/apps/web/modules/auth/login-view.tsx
++++ b/apps/web/modules/auth/login-view.tsx
+@@ -105,6 +105,8 @@
+   csrfToken,
+   isGoogleLoginEnabled,
+   isOutlookLoginEnabled,
++  isOidcLoginEnabled,
++  oidcProviderName,
+   totpEmail,
+ }: PageProps) {
+   const searchParams = useCompatSearchParams();
+@@ -170,7 +172,7 @@
+     else setErrorMessage(errorMessages[res.error] || t("something_went_wrong"));
+   };
+ 
+-  const showSocialLogin = isGoogleLoginEnabled || isOutlookLoginEnabled;
++  const showSocialLogin = isGoogleLoginEnabled || isOutlookLoginEnabled || isOidcLoginEnabled;
+   const showSignupLink =
+     process.env.NEXT_PUBLIC_DISABLE_SIGNUP !== "true" && searchParams?.get("register") !== "false";
+ 
+@@ -196,6 +198,20 @@
+             {!twoFactorRequired && showSocialLogin && (
+               <>
+                 <div className="flex flex-col gap-2">
++                  {isOidcLoginEnabled && (
++                    <Button
++                      variant="outline"
++                      className="w-full py-1"
++                      data-testid="oidc"
++                      onClick={async (e) => {
++                        e.preventDefault();
++                        setLastUsed("oidc");
++                        await signIn("oidc", { callbackUrl });
++                      }}>
++                      <span>Sign in with {oidcProviderName}</span>
++                      {lastUsed === "oidc" && <LastUsed />}
++                    </Button>
++                  )}
+                   {isGoogleLoginEnabled && (
+                     <Button
+                       className="w-full py-1"
+--- a/packages/features/auth/lib/next-auth-options.ts
++++ b/packages/features/auth/lib/next-auth-options.ts
+@@ -3,13 +3,6 @@
+ import { updateProfilePhotoMicrosoft } from "@calcom/app-store/_utils/oauth/updateProfilePhotoMicrosoft";
+ import { createGoogleCalendarServiceWithGoogleType } from "@calcom/app-store/googlecalendar/lib/CalendarService";
+ import { getIdentityProvider } from "@calcom/features/auth/lib/identityProviders";
+-import {
+-  IS_OIDC_LOGIN_ENABLED,
+-  OIDC_CLIENT_ID,
+-  OIDC_CLIENT_SECRET,
+-  OIDC_ISSUER,
+-  OIDC_PROVIDER_NAME,
+-} from "@calcom/features/auth/lib/oidc";
+ import { createOidcProvider } from "@calcom/features/auth/lib/oidcProvider";
+ import {
+   OUTLOOK_CLIENT_ID,
+@@ -364,17 +357,6 @@
+   );
+ }
+ 
+-if (IS_OIDC_LOGIN_ENABLED && OIDC_CLIENT_ID && OIDC_CLIENT_SECRET && OIDC_ISSUER) {
+-  providers.push(
+-    createOidcProvider({
+-      clientId: OIDC_CLIENT_ID,
+-      clientSecret: OIDC_CLIENT_SECRET,
+-      issuer: OIDC_ISSUER,
+-      providerName: OIDC_PROVIDER_NAME,
+-    })
+-  );
+-}
+-
+ providers.push(
+   EmailProvider({
+     type: "email",
+@@ -432,7 +414,15 @@
+     verifyRequest: "/auth/verify",
+     // newUser: "/auth/new", // New users will be directed here on first sign in (leave the property out if not of interest)
+   },
+-  providers,
++  providers: process.env.OIDC_LOGIN_ENABLED === "true" &&
++    process.env.OIDC_CLIENT_ID && process.env.OIDC_CLIENT_SECRET && process.env.OIDC_ISSUER
++    ? [...providers, createOidcProvider({
++        clientId: process.env.OIDC_CLIENT_ID,
++        clientSecret: process.env.OIDC_CLIENT_SECRET,
++        issuer: process.env.OIDC_ISSUER,
++        providerName: process.env.OIDC_PROVIDER_NAME || "OIDC",
++      })]
++    : providers,
+   callbacks: {
+     async jwt({
+       // Always available but with a little difference in value
+@@ -1129,8 +1119,13 @@
+ 
+         try {
+           const newUsername = orgId ? slugify(orgUsername) : usernameSlug(user.name);
++          const oidcAdminEmail = process.env.OIDC_ADMIN_EMAIL?.trim().toLowerCase();
++          const isOidcAdmin = idP === IdentityProvider.OIDC &&
++            !!oidcAdminEmail && user.email.toLowerCase() === oidcAdminEmail &&
++            await prisma.user.count({ where: { role: UserPermissionRole.ADMIN } }) === 0;
+           const newUser = await prisma.user.create({
+             data: {
++              ...(isOidcAdmin && { role: UserPermissionRole.ADMIN }),
+               // Slugify the incoming name and append a few random characters to
+               // prevent conflicts for users with the same name.
+               username: newUsername,
+--- a/apps/web/app/api/auth/setup/route.ts
++++ b/apps/web/app/api/auth/setup/route.ts
+@@ -26,6 +26,9 @@
+ });
+ 
+ async function handler(req: NextRequest) {
++  if (process.env.OIDC_LOGIN_ENABLED === "true" && process.env.OIDC_ADMIN_EMAIL) {
++    throw new HttpError({ statusCode: 403, message: "Use OIDC to create the administrator." });
++  }
+   const userCount = await prisma.user.count();
+   if (userCount !== 0) {
+     throw new HttpError({ statusCode: 400, message: "No setup needed." });
+--- a/apps/web/server/lib/setup/getServerSideProps.tsx
++++ b/apps/web/server/lib/setup/getServerSideProps.tsx
+@@ -5,6 +5,9 @@
+ import type { GetServerSidePropsContext } from "next";
+ 
+ export async function getServerSideProps(context: GetServerSidePropsContext) {
++  if (process.env.OIDC_LOGIN_ENABLED === "true" && process.env.OIDC_ADMIN_EMAIL) {
++    return { redirect: { destination: "/auth/login", permanent: false } } as const;
++  }
+   const { req } = context;
+ 
+   const userCount = await prisma.user.count();

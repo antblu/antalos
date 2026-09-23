@@ -5,8 +5,12 @@ description: Deployment dependencies and functional acceptance checks.
 
 Cal.diy is configured at `https://cal.antblu.net`. Manifests live in
 `apps/cal-diy/`, shared settings in `apps/variables.yaml`, and image builds in
-`.github/workflows/cal-diy-images.yaml`. The pinned PAtreju source adds generic
-OIDC through Authentik. SMTP is not configured in the current manifests.
+`.github/workflows/cal-diy-images.yaml`. The image workflow checks that pinned
+PAtreju commit `64c8693b971c77361655dd36ce61371978ff1287` descends from
+[upstream Cal.diy v6.2.0](https://github.com/calcom/cal.diy/releases/tag/v6.2.0)
+(commit `1c193cca8682b33b9866c792186033f7ef886682`), then applies the local
+OIDC fixes in `apps/cal-diy/source-patches/oidc-bootstrap.patch` before building.
+SMTP is not configured in the current manifests.
 
 ## Deployment and capacity
 
@@ -56,8 +60,20 @@ and reference those keys from the workload. Use an authorized sender and verify
 actual delivery, not just SMTP connectivity.
 
 The OIDC redirect URI is `https://cal.antblu.net/api/auth/callback/oidc`.
-Preserve existing authentication and encryption secrets. Calendar providers,
-payments, and conferencing need their own credentials and user authorization.
+The first Cal.diy administrator is the verified Authentik identity
+`admin@antblu.net` (`CALDIY_OIDC_ADMIN_EMAIL`). With that value set, the login page
+shows **Sign in with antID** even when the Cal.diy user table is empty. The
+matching OIDC identity receives the first administrator role after successful
+Authentik login; other OIDC users receive normal user roles. The password-based
+first-run setup endpoint is disabled in this mode. The URL shown next to the
+username field on the old setup form is a fixed prefix, not a username value.
+
+The OIDC provider is added from runtime environment variables, so the client
+secret stays out of the image build. Confirm that `/api/auth/providers` lists
+`oidc` after rollout, then complete an Authentik login and check the resulting
+Cal.diy user role. Preserve existing authentication and encryption secrets.
+Calendar providers, payments, and conferencing need their own credentials and
+user authorization.
 Cal Video is intentionally disabled without `DAILY_API_KEY`.
 
 ## Acceptance checks
@@ -65,7 +81,7 @@ Cal Video is intentionally disabled without `DAILY_API_KEY`.
 1. Verify published source, Argo sync completion, migrations, both CNPG instances,
    Redis replication/Sentinel, and all web/API replicas separately.
 2. Verify public DNS, trusted TLS, login, API routing, and a complete Authentik
-   login and return to Cal.diy.
+   login and return to Cal.diy; confirm the designated identity is an administrator.
 3. With an authorized test account, connect the intended calendar, configure
    timezone and availability, and confirm busy events prevent conflicting bookings.
 4. With permission to send test notifications, create, reschedule, and cancel a
@@ -82,3 +98,12 @@ of allocatable memory requested. Web/API workloads and service TLS had not
 been created. Public HTTPS failed certificate verification; a diagnostic request
 ignoring trust returned 404. This snapshot does not establish later health or
 successful user transactions.
+
+### Live diagnostic snapshot: 23 September 2026
+
+Argo reported Synced and Healthy with two ready web pods, two ready API pods,
+and two ready PostgreSQL instances. The Cal.diy database had zero users.
+Public `/auth/login` redirected to `/auth/setup?step=1`, and
+`/api/auth/providers` listed only `credentials` and `email`. These observations
+precede publication of the OIDC bootstrap patch and do not establish a
+successful OIDC login.

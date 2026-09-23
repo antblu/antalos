@@ -56,7 +56,7 @@ variables:
   INVOICENINJA_MARIADB_IMAGE_TAG: 11.8.9
   INVOICENINJA_GARBD_IMAGE_TAG: 11.8.9-ubi9
   ACTIVEPIECES_IMAGE_TAG: 0.91.1
-  CALDIY_IMAGE_TAG: oidc-64c8693b971c
+  CALDIY_IMAGE_TAG: oidc-v6.2.0-bootstrap-1
   CALDIY_WEB_IMAGE_REPOSITORY: ghcr.io/antblu/cal-diy-web
   CALDIY_API_IMAGE_REPOSITORY: ghcr.io/antblu/cal-diy-api
   CALDIY_SOURCE_REPOSITORY: https://github.com/PAtreju/cal.diy.git
@@ -401,7 +401,8 @@ variables:
   ACTIVEPIECES_S3_BUCKET: activepieces
 
   # Cal.diy: two web and API v2 replicas, two synchronous CNPG instances,
-  # Redis Sentinel, and generic OIDC from the pinned PAtreju feature branch.
+  # Redis Sentinel, and generic OIDC from a v6.2.0-based PAtreju fork
+  # with the local bootstrap patch applied during the image build.
   CALDIY_HOST: cal.antblu.net
   CALDIY_DATABASE_HOST: cal-diy-db-rw.cal-diy.svc.cluster.local
   CALDIY_DATABASE_NAME: caldiy
@@ -414,6 +415,8 @@ variables:
   CALDIY_OIDC_CLIENT_ID: 7c85d8131ef6e6968d93aae2684bf544a491d03d
   CALDIY_OIDC_ISSUER: https://auth.antblu.net/application/o/cal-diy/
   CALDIY_OIDC_PROVIDER_NAME: antID
+  # Set to the verified Authentik email that may claim the first Cal.diy admin role.
+  CALDIY_OIDC_ADMIN_EMAIL: admin@antblu.net
   CALDIY_VAPID_PUBLIC_KEY: BBbFjlT2YlB2CdztdEWrlsXf2lld1-8W-1RxdAuFLQotjxDKqFeF44cGSkIfc2ZQrzM3VxdZuwL19yDYzqLJzAE
   AUTHENTIK_CALDIY_OIDC_REVISION: "1"
 

@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - apps/cal-diy/**
+      - apps/variables.yaml
       - .github/workflows/cal-diy-images.yaml
   push:
     branches:
       - main
     paths:
       - apps/cal-diy/**
+      - apps/variables.yaml
       - .github/workflows/cal-diy-images.yaml
   workflow_dispatch:
 
@@ -67,6 +69,16 @@ jobs:
         run: |
           git clone --filter=blob:none "${{ steps.versions.outputs.source_repository }}" cal-diy-source
           git -C cal-diy-source checkout --detach "${{ steps.versions.outputs.source_commit }}"
+
+      - name: Verify upstream v6.2.0 ancestry and apply local OIDC fixes
+        shell: bash
+        run: |
+          git -C cal-diy-source remote add upstream https://github.com/calcom/cal.diy.git
+          git -C cal-diy-source fetch --filter=blob:none upstream tag v6.2.0
+          test "$(git -C cal-diy-source rev-parse v6.2.0^{commit})" = "1c193cca8682b33b9866c792186033f7ef886682"
+          git -C cal-diy-source merge-base --is-ancestor v6.2.0 HEAD
+          git -C cal-diy-source apply --check ../apps/cal-diy/source-patches/oidc-bootstrap.patch
+          git -C cal-diy-source apply ../apps/cal-diy/source-patches/oidc-bootstrap.patch
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
