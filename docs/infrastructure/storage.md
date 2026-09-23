@@ -19,6 +19,10 @@ A persistent volume tells Kubernetes where to keep data. It does not automatical
 
 `openebs-local` provisions local storage. Mayastor replication is not enabled by the OpenEBS application. A lost node cannot simply attach that node's LocalPV to another worker.
 
+The Talos configuration for `talos-worker-left` and `talos-worker-right` places the 96 GiB `EPHEMERAL` volume on a dedicated 100 GB virtual disk. OpenEBS local data stays on the original system disk. Changing this declaration does not move an already provisioned `EPHEMERAL` volume; that migration requires a worker maintenance operation and a verified backup. The RTX worker is not part of this disk layout.
+
+For an existing worker, verify an off-node VM backup and restore before wiping only the old `EPHEMERAL` system volume. Reboot and confirm that `EPHEMERAL` is 96 GiB on the new disk and `u-openebs-local` remains mounted from the original system disk with its PV directories. Wiping `EPHEMERAL` also removes cached container images; allow image pulls and application data members to recover before repeating maintenance on the other worker.
+
 A two-instance PostgreSQL cluster protects data through database replication and promotion. Redis data members use Redis replication; Sentinel voters decide roles. Obsidian's independent CouchDB servers use continuous database replication. Those mechanisms have different consistency and recovery behavior even though all can use local volumes.
 
 Read the [availability guide](/infrastructure/availability/) before treating a second process as a second complete dataset. Elasticsearch replica allocation and VictoriaLogs sharding deserve particular attention.

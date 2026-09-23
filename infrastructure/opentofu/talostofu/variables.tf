@@ -147,6 +147,12 @@ variable "se350_worker_vm_disk_size" {
   default     = 364
 }
 
+variable "se350_worker_ephemeral_vm_disk_size" {
+  type        = number
+  description = "Dedicated disk size in GB for EPHEMERAL on each SE350 worker VM"
+  default     = 100
+}
+
 variable "rtx_worker_vm_memory" {
   type        = number
   description = "Memory in MiB for worker VMs (28 GiB = 28672 MiB)"
