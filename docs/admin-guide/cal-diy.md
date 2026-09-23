@@ -6,10 +6,8 @@ description: Deployment dependencies and functional acceptance checks.
 Cal.diy is configured at `https://cal.antblu.net`. Manifests live in
 `apps/cal-diy/`, with shared settings in `apps/variables.yaml`. The web deployment
 and database migration use `ghcr.io/antblu/cal.diy-oidc:OIDC`; the API v2
-deployment uses `ghcr.io/antblu/cal-diy-api:oidc-64c8693b971c`. The repository's
-`.github/workflows/cal-diy-images.yaml` builds a separate web image at
-`ghcr.io/antblu/cal-diy-web`; its local OIDC patch is not present in the deployed
-`cal.diy-oidc:OIDC` image.
+deployment uses `ghcr.io/antblu/cal-diy-api:oidc-64c8693b971c`. The web image
+is maintained in the Cal.diy fork.
 SMTP is not configured in the current manifests.
 
 ## Deployment and capacity
@@ -113,5 +111,4 @@ Argo reported Synced and Healthy with two ready web pods, two ready API pods,
 and two ready PostgreSQL instances. The Cal.diy database had zero users.
 Public `/auth/login` redirected to `/auth/setup?step=1`, and
 `/api/auth/providers` listed only `credentials` and `email`. These observations
-precede publication of the OIDC bootstrap patch and do not establish a
-successful OIDC login.
+do not establish a successful OIDC login.
