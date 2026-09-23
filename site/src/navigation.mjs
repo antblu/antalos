@@ -36,6 +36,10 @@ export const serviceGroups = [
       {
         "slug": "bentopdf",
         "label": "BentoPDF"
+      },
+      {
+        "slug": "node-red",
+        "label": "Node-RED"
       }
     ]
   },

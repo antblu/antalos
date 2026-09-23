@@ -54,6 +54,7 @@ No service should be described as unconditionally end-to-end HA solely because i
 | [Zammad](/infrastructure/zammad/#availability-and-failure-behavior) | Partially HA: paired HTTP tiers and data services, with singleton real-time/background roles and Redis/search caveats. | 2 NGINX + 2 Rails replicas; see the linked component table for the data, routing, and recovery path. |
 | [Obsidian LiveSync](/infrastructure/obsidian/#availability-and-failure-behavior) | Partial availability; two independent databases with asynchronous copying. | 2 HAProxy replicas, primary/backup routing, 2 standalone CouchDB members, bidirectional vault replication. |
 | [Uptime Kuma](/infrastructure/uptime-kuma/#availability-and-failure-behavior) | Recoverable singleton with a monitoring gap during replacement. | One process, pod-local SQLite, Litestream replica on external NFS. |
+| [Node-RED](/infrastructure/node-red/#availability-and-failure-behavior) | Recoverable singleton with an automation gap during replacement. | One process, persistent `/data` on external NFS; in-memory context and in-flight messages are lost. |
 | [CrowdSec](/infrastructure/crowdsec/#availability-and-failure-behavior) | Singleton LAPI, processor, and AppSec; enforcement impact depends on the consumer. | LAPI SQLite recovery through Litestream; VictoriaLogs and Traefik are separate dependencies. |
 
 ## How the HA mechanisms work

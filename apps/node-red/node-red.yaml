@@ -1,0 +1,155 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-red
+  namespace: node-red
+  labels:
+    app.kubernetes.io/name: node-red
+    app.kubernetes.io/part-of: antalos
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: node-red
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: node-red
+        app.kubernetes.io/part-of: antalos
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1007
+        runAsGroup: 1007
+        fsGroup: 1007
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: node-red
+          image: docker.io/nodered/node-red:${NODE_RED_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 1880
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: node-red-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-red
+  namespace: node-red
+  labels:
+    app.kubernetes.io/name: node-red
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: node-red
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: node-red
+  namespace: node-red
+  labels:
+    app.kubernetes.io/name: node-red
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authentik-forward-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - ${NODE_RED_HOST}
+      secretName: node-red-tls
+  rules:
+    - host: ${NODE_RED_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: node-red
+                port:
+                  name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentik-embedded-outpost
+  namespace: node-red
+spec:
+  type: ExternalName
+  externalName: authentik-server.authentik.svc.cluster.local
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: node-red-authentik-outpost
+  namespace: node-red
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`${NODE_RED_HOST}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      priority: 100
+      services:
+        - kind: Service
+          name: authentik-embedded-outpost
+          port: 80
+  tls:
+    secretName: node-red-tls

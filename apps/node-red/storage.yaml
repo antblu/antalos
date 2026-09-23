@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: node-red-data
+spec:
+  capacity:
+    storage: ${NODE_RED_DATA_STORAGE_SIZE}
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    name: node-red-data
+    namespace: node-red
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: node-red-data
+    volumeAttributes:
+      server: ${NFS_SERVER}
+      share: ${NODE_RED_NFS_SHARE}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: node-red-data
+  namespace: node-red
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: node-red-data
+  resources:
+    requests:
+      storage: ${NODE_RED_DATA_STORAGE_SIZE}
