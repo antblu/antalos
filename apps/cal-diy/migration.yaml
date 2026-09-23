@@ -37,7 +37,7 @@ spec:
           command:
             - sh
             - -ec
-            - npx prisma migrate deploy --schema /calcom/packages/prisma/schema.prisma && npx ts-node --transpile-only /calcom/scripts/seed-app-store.ts
+            - npx prisma migrate deploy --schema /calcom/packages/prisma/schema.prisma
           envFrom:
             - configMapRef:
                 name: cal-diy-config

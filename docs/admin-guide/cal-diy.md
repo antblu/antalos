@@ -13,7 +13,7 @@ OIDC through Authentik. SMTP is not configured in the current manifests.
 Argo CD reconciles `main`; local changes must be published through the repository
 workflow to affect deployment. Sync proceeds through secrets at wave -5,
 the database operator's namespace-scoped Role bind permission at -4,
-PostgreSQL at -3, configuration at -2, Redis at -1, the migration/app-store seed
+PostgreSQL at -3, configuration at -2, Redis at -1, the database migration
 Sync hook at 0, web/API at 1, and the scheduler at 2. Keep migrations in Sync.
 
 The Role and RoleBinding in `apps/cal-diy/cnpg-rbac.yaml` allow the CloudNativePG
