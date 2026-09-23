@@ -421,7 +421,7 @@ variables:
   # Set to the verified Authentik email that may claim the first Cal.diy admin role.
   CALDIY_OIDC_ADMIN_EMAIL: admin@antblu.net
   CALDIY_VAPID_PUBLIC_KEY: BBbFjlT2YlB2CdztdEWrlsXf2lld1-8W-1RxdAuFLQotjxDKqFeF44cGSkIfc2ZQrzM3VxdZuwL19yDYzqLJzAE
-  AUTHENTIK_CALDIY_OIDC_REVISION: "2"
+  AUTHENTIK_CALDIY_OIDC_REVISION: "3"
 
   # Invoice Ninja: two web replicas and two queue workers on the untainted
   # workers, with MariaDB and Redis quorum voters on the RTX worker.
