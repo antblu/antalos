@@ -10,12 +10,15 @@ Use `apps/uptime-kuma/` for the deployment and the [official wiki](https://githu
 ## Deploy and configure
 
 1. Prepare the NFS backup export and permissions expected by `storage.yaml`; the pod uses UID/GID 1006.
-2. Set `UPTIME_KUMA_*` inputs for the hostname, image, and storage limits. Review the certificate and ingress.
-3. Reconcile the Application through the [shared workflow](/admin-guide/deploy-an-application/).
-4. Establish the intended administrator account and recovery access through the installed version's setup.
-5. Add monitors with the correct target, probe type, expected result, and interval.
-6. Configure notification targets and publish only the intended monitor set on status pages.
-7. Exercise an authorized notification test and confirm the recipient receives it.
+2. Set `UPTIME_KUMA_HOST` to the public status hostname and `UPTIME_KUMA_ADMIN_HOST` to the administrator hostname. Review the image and storage inputs and the certificate covering both names.
+3. In Authentik, create an application named **Uptime Kuma** with a **Proxy Provider** in **Forward auth (single application)** mode. Set **External host** to `https://uptime.antblu.net`, assign the application to the embedded outpost, and bind only the intended administrators through an access policy. No internal host, OIDC client, or scope mapping is needed for this mode.
+4. Reconcile the Application through the [shared workflow](/admin-guide/deploy-an-application/) and ensure both hostnames resolve to the Traefik edge.
+5. Open `https://uptime.antblu.net`, complete Authentik sign-in, and establish the intended Uptime Kuma administrator account and recovery access through the installed version's setup. Authentik's ingress check does not replace Kuma's own administrator login.
+6. Add monitors with the correct target, probe type, expected result, and interval. Configure notification targets.
+7. Create and publish a Uptime Kuma status page containing only the intended public monitor set. In that page's settings sidebar, add `status.antblu.net` as a domain name. Kuma uses the request host to show that page at the public root.
+8. Confirm that an unauthenticated browser sees the published page at `https://status.antblu.net`, cannot reach the dashboard or login API through that host, and is redirected to Authentik at `https://uptime.antblu.net`. Check the outpost callback, an allowed administrator, and a denied identity. Exercise an authorized notification test and confirm the recipient receives it.
+
+The public Traefik route permits only the status page, its static files, and its published status API using GET or HEAD. Other paths on `status.antblu.net` have no route to Kuma. Changes to Kuma's public page asset or API paths may require updating that allowlist.
 
 ## Choose checks that answer a question
 
