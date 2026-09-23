@@ -46,8 +46,9 @@ spec:
           image: ${CALDIY_WEB_IMAGE_REPOSITORY}:${CALDIY_WEB_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           command:
-            - yarn
-            - start
+            - sh
+            - -ec
+            - scripts/replace-placeholder.sh "$BUILT_NEXT_PUBLIC_WEBAPP_URL" "$NEXT_PUBLIC_WEBAPP_URL"; exec yarn start
           envFrom:
             - configMapRef:
                 name: cal-diy-config

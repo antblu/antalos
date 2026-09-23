@@ -4,17 +4,12 @@ description: Deployment dependencies and functional acceptance checks.
 ---
 
 Cal.diy is configured at `https://cal.antblu.net`. Manifests live in
-`apps/cal-diy/`, shared settings in `apps/variables.yaml`, and image builds in
-`.github/workflows/cal-diy-images.yaml`. The image workflow checks that pinned
-PAtreju commit `64c8693b971c77361655dd36ce61371978ff1287` descends from
-[upstream Cal.diy v6.2.0](https://github.com/calcom/cal.diy/releases/tag/v6.2.0)
-(commit `1c193cca8682b33b9866c792186033f7ef886682`), then applies the local
-OIDC fixes in `apps/cal-diy/source-patches/oidc-bootstrap.patch` before building.
-The web deployment and database migration use `ghcr.io/antblu/cal.diy-oidc:OIDC`;
-the API v2 deployment retains its published
-`ghcr.io/antblu/cal-diy-api:oidc-64c8693b971c` image. The image workflow
-publishes its web build to `ghcr.io/antblu/cal-diy-web`, separately from the
-deployed web image.
+`apps/cal-diy/`, with shared settings in `apps/variables.yaml`. The web deployment
+and database migration use `ghcr.io/antblu/cal.diy-oidc:OIDC`; the API v2
+deployment uses `ghcr.io/antblu/cal-diy-api:oidc-64c8693b971c`. The repository's
+`.github/workflows/cal-diy-images.yaml` builds a separate web image at
+`ghcr.io/antblu/cal-diy-web`; its local OIDC patch is not present in the deployed
+`cal.diy-oidc:OIDC` image.
 SMTP is not configured in the current manifests.
 
 ## Deployment and capacity
@@ -65,18 +60,26 @@ and reference those keys from the workload. Use an authorized sender and verify
 actual delivery, not just SMTP connectivity.
 
 The OIDC redirect URI is `https://cal.antblu.net/api/auth/callback/oidc`.
-The first Cal.diy administrator is the verified Authentik identity
-`admin@antblu.net` (`CALDIY_OIDC_ADMIN_EMAIL`). With that value set, the login page
-shows **Sign in with antID** even when the Cal.diy user table is empty. The
-matching OIDC identity receives the first administrator role after successful
-Authentik login; other OIDC users receive normal user roles. The password-based
-first-run setup endpoint is disabled in this mode. The URL shown next to the
-username field on the old setup form is a fixed prefix, not a username value.
+Authentik and Cal.diy use separate SealedSecrets containing the same confidential
+client secret. Rotating it also increments `AUTHENTIK_CALDIY_OIDC_REVISION` to
+reload Authentik's secret-backed environment. The OIDC provider is configured
+from runtime environment variables, so the client secret stays out of the image
+build.
 
-The OIDC provider is added from runtime environment variables, so the client
-secret stays out of the image build. Confirm that `/api/auth/providers` lists
-`oidc` after rollout, then complete an Authentik login and check the resulting
-Cal.diy user role. Preserve existing authentication and encryption secrets.
+`NEXT_PUBLIC_WEBAPP_URL` and `NEXT_PUBLIC_WEBSITE_URL` both resolve to
+`https://cal.antblu.net`. The deployed web image was built with a
+`http://localhost:3000` default; the web container runs the image's static URL
+replacement script before `yarn start`. This updates the URL prefix displayed on
+the first-run administrator setup form. The image's full start script also runs
+migrations and seed data, which remain owned by the separate migration hook.
+
+The current `OIDC` image supports JIT creation for verified OIDC users. With an
+empty Cal.diy user table, `/auth/login` still redirects to password setup, and
+`CALDIY_OIDC_ADMIN_EMAIL` does not assign the first administrator role in this
+image. Complete initial administrator setup before relying on the OIDC login
+flow. Confirm that `/api/auth/providers` lists `oidc`, then complete an
+Authentik login and check the resulting Cal.diy user role. Preserve existing
+authentication and encryption secrets.
 Calendar providers, payments, and conferencing need their own credentials and
 user authorization.
 Cal Video is intentionally disabled without `DAILY_API_KEY`.
