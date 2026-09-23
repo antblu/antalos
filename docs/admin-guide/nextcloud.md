@@ -49,9 +49,9 @@ The repository installs `user_oidc`, but does not create its Authentik provider 
 
 **Partially HA overall: replicated web and many companions, with shared storage, session, Redis recovery, and upgrade limits.**
 
-Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy uses maxSurge 1 and maxUnavailable 0: hard anti-affinity can stall its replacement with only two eligible workers. Major Nextcloud upgrades still require the documented isolated maintenance and single-owner schema migration procedure.
+Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy uses maxSurge 1 and maxUnavailable 0. Its `quorum:NoSchedule` toleration makes the RTX worker eligible for a third anti-affined pod during replacement, subject to available node capacity. Major Nextcloud upgrades still require the documented isolated maintenance and single-owner schema migration procedure.
 
-Establish Redis election and safe rejoin behavior, correct the HAProxy rollout capacity constraint, protect shared storage, and exercise file/office/Talk workflows during degraded operation. A warm web replica does not make the whole Nextcloud suite outage-free.
+Establish Redis election and safe rejoin behavior, protect shared storage, and exercise file/office/Talk workflows during degraded operation. A warm web replica does not make the whole Nextcloud suite outage-free.
 
 Use the [component-by-component failure contract](/infrastructure/nextcloud/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
 

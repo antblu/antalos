@@ -346,6 +346,10 @@ spec:
                 matchLabels:
                   app.kubernetes.io/name: nextcloud-redis-haproxy
               topologyKey: kubernetes.io/hostname
+      tolerations:
+        - key: quorum
+          operator: Exists
+          effect: NoSchedule
       containers:
         - name: haproxy
           image: haproxy:${HAPROXY_IMAGE_TAG}

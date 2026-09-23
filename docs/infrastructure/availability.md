@@ -151,7 +151,7 @@ The NFS and Garage defaults reference the same external host address. Its loss c
 | Configuration | Effect | Current examples |
 | --- | --- | --- |
 | 2 replicas, zero surge, one unavailable | Replaces one pod without needing a third anti-affined placement; leaves reduced capacity | LiteLLM proxies, BentoPDF, Traefik, Nextcloud web, SuiteCRM web, Grafana |
-| 2 replicas, one surge, zero unavailable, hard anti-affinity | Can stall if both eligible nodes already hold old replicas | Documentation serving pods, Nextcloud Redis HAProxy |
+| 2 replicas, one surge, zero unavailable, hard anti-affinity | Needs a third eligible node with capacity for a replacement pod; Nextcloud Redis HAProxy tolerates the RTX worker taint for this placement | Documentation serving pods, Nextcloud Redis HAProxy |
 | Recreate application | Can stop the full application during an upgrade regardless of steady-state replicas | Open WebUI, Vaultwarden; also single Headplane and Stalwart’s Redis proxy |
 | PDB minimum 1 on a singleton | Blocks ordinary eviction; does not make a hot replacement or prevent its workload-controller update | RustDesk hbbs, UrBackup |
 | Chart defaults without explicit overrides | Requires the actual chart policy before claiming a particular maintenance guarantee | Rancher and several platform controllers |

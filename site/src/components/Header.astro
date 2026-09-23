@@ -36,7 +36,7 @@ import antalosLogo from '../logoantalos.png';
 <style>
   .header {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, min(40vw, 30rem)) minmax(0, 1fr);
     align-items: center;
     padding: 1.5rem 2rem;
     border-bottom: 1px solid var(--sl-color-border-default);
@@ -66,7 +66,13 @@ import antalosLogo from '../logoantalos.png';
   }
 
   .search-group {
+    width: 100%;
     justify-self: center;
+  }
+
+  .search-group :global(site-search),
+  .search-group :global(site-search button) {
+    width: 100%;
   }
 
   .header-actions {
