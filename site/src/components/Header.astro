@@ -21,10 +21,10 @@ import antalosLogo from '../logoantalos.png';
       />
     </a>
   </div>
-  <div class="sl-flex print:hidden">
+  <div class="search-group">
     <Search />
   </div>
-  <div class="sl-hidden md:sl-flex print:hidden right-group">
+  <div class="header-actions">
     <div class="sl-flex social-icons">
       <SocialIcons />
     </div>
@@ -57,27 +57,35 @@ import antalosLogo from '../logoantalos.png';
     width: auto;
   }
 
-  .sl-flex {
+  .sl-flex,
+  .search-group,
+  .header-actions {
     display: flex;
     align-items: center;
     gap: 1rem;
   }
 
-  .print:hidden {
-    display: none;
+  .header-actions {
+    margin-inline-start: auto;
   }
 
-  .sl-hidden {
-    display: none;
-  }
+  @media (max-width: 767px) {
+    .header {
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding: 1rem;
+    }
 
-  @media (min-width: 768px) {
-    .sl-hidden.md:sl-flex {
-      display: flex;
+    .search-group {
+      order: 3;
+      width: 100%;
     }
   }
 
-  .print:hidden.right-group {
-    display: none;
+  @media print {
+    .search-group,
+    .header-actions {
+      display: none;
+    }
   }
 </style>
