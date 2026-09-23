@@ -15,7 +15,6 @@ Start with what you want to do. You do not need to understand the servers or Kub
 | Store passwords and use browser autofill | [Vaultwarden](/user-guide/vaultwarden/) |
 | Chat with an AI model | [Open WebUI](/user-guide/open-webui/) |
 | Connect an application to a model API | [LiteLLM](/user-guide/litellm/) |
-| Automate a repeated task | [Activepieces](/user-guide/activepieces/) |
 | Work on code with other people | [GitLab](/user-guide/gitlab/) |
 | Manage customer records or support tickets | [SuiteCRM](/user-guide/suitecrm/) or [Zammad](/user-guide/zammad/) |
 | Work with a PDF | [BentoPDF](/user-guide/bentopdf/) |

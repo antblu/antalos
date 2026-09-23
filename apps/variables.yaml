@@ -55,7 +55,6 @@ variables:
   INVOICENINJA_BUSYBOX_IMAGE_TAG: 1.37.0
   INVOICENINJA_MARIADB_IMAGE_TAG: 11.8.9
   INVOICENINJA_GARBD_IMAGE_TAG: 11.8.9-ubi9
-  ACTIVEPIECES_IMAGE_TAG: 0.91.1
   CALDIY_WEB_IMAGE_REPOSITORY: ghcr.io/antblu/cal.diy-oidc
   CALDIY_WEB_IMAGE_TAG: OIDC
   CALDIY_API_IMAGE_REPOSITORY: ghcr.io/antblu/cal-diy-api
@@ -388,16 +387,6 @@ variables:
   LITELLM_SPEACHES_DISCOVERY_API_BASE: https://speaches.antblu.net/v1
   LITELLM_SPEACHES_DISCOVERY_CREDENTIAL_NAME: speaches
   GITLAB_S3_BUCKET: gitlabs
-
-  # Activepieces: two app replicas, four workers, CNPG, and Redis Sentinel.
-  ACTIVEPIECES_HOST: flows.antblu.net
-  ACTIVEPIECES_DATABASE_HOST: activepieces-db-rw.activepieces.svc.cluster.local
-  ACTIVEPIECES_DATABASE_STORAGE_SIZE: 10Gi
-  ACTIVEPIECES_REDIS_STORAGE_SIZE: 2Gi
-  ACTIVEPIECES_REDIS_DATA_0_HOST: activepieces-redis-data-0.activepieces-redis-data.activepieces.svc.cluster.local
-  ACTIVEPIECES_REDIS_DATA_1_HOST: activepieces-redis-data-1.activepieces-redis-data.activepieces.svc.cluster.local
-  ACTIVEPIECES_REDIS_SENTINEL_2_HOST: activepieces-redis-sentinel-2.activepieces.svc.cluster.local
-  ACTIVEPIECES_S3_BUCKET: activepieces
 
   # Cal.diy: two web and API v2 replicas, two synchronous CNPG instances,
   # Redis Sentinel, and generic OIDC from a v6.2.0-based PAtreju fork

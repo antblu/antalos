@@ -22,10 +22,6 @@ export const serviceGroups = [
     "label": "Work and automation",
     "services": [
       {
-        "slug": "activepieces",
-        "label": "Activepieces"
-      },
-      {
         "slug": "gitlab",
         "label": "GitLab"
       },
