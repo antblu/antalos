@@ -232,6 +232,45 @@ spec:
       targetPort: http
       protocol: TCP
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentik-embedded-outpost
+  namespace: activepieces
+spec:
+  type: ExternalName
+  externalName: authentik-server.authentik.svc.cluster.local
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: activepieces
+  namespace: activepieces
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`${ACTIVEPIECES_HOST}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      priority: 1000
+      services:
+        - kind: Service
+          name: authentik-embedded-outpost
+          port: 80
+    - kind: Rule
+      match: Host(`${ACTIVEPIECES_HOST}`) && PathPrefix(`/api/v1/webhooks/`)
+      priority: 900
+      services:
+        - kind: Service
+          name: activepieces
+          port: 80
+  tls:
+    secretName: activepieces-tls
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -240,6 +279,7 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-authentik-forward-auth@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:

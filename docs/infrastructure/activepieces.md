@@ -12,6 +12,7 @@ antalos separates the HTTP application from flow execution. Two application repl
 | Component | Declared layout | Responsibility |
 | --- | --- | --- |
 | Application | 2 replicas; required host anti-affinity on the main workers | UI, API, and incoming requests |
+| Browser ingress | Traefik and Authentik forward-auth | Protects the UI and API; outpost callbacks and incoming webhooks have dedicated routes |
 | Workers | 4 replicas; preferred host anti-affinity on the main workers | Execute flows with per-worker concurrency set to one |
 | PostgreSQL | 2 CNPG instances on separate main workers | Application state; preferred synchronous policy |
 | Redis | 2 persistent data members and 3 Sentinel voters | Queue/coordination and direct Sentinel primary discovery |

@@ -9,7 +9,7 @@ Activepieces connects applications into a flow: something triggers it, then it p
 
 ## Open Activepieces
 
-Open [Activepieces](https://flows.antblu.net) for this installation, or the address your administrator supplied. Ask for access to the appropriate workspace and connected accounts. An integration needs its own permission to act in the connected service.
+Open [Activepieces](https://flows.antblu.net) for this installation, or the address your administrator supplied. Sign in through Authentik, then use your Activepieces account and workspace access. Ask for access to the appropriate workspace and connected accounts. An integration needs its own permission to act in the connected service.
 
 ## Create a first flow
 
