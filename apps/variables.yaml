@@ -202,6 +202,7 @@ variables:
   NEXTCLOUD_REDIS_QUORUM_MEMORY_REQUEST: 32Mi
   NEXTCLOUD_REDIS_QUORUM_MEMORY_LIMIT: 256Mi
   NEXTCLOUD_REDIS_HAPROXY_MEMORY_REQUEST: 128Mi
+  NEXTCLOUD_REDIS_HAPROXY_CONFIG_REVISION: "1"
 
   # Open WebUI: two stateless app replicas, one replicated CNPG database with
   # pgvector, and two Redis data nodes plus a quorum-only Sentinel on RTX.

@@ -269,7 +269,7 @@ spec:
   routes:
     - kind: Rule
       match: >-
-        Host(`${UPTIME_KUMA_HOST}`) && Method(`GET`, `HEAD`) &&
+        Host(`${UPTIME_KUMA_HOST}`) && (Method(`GET`) || Method(`HEAD`)) &&
         (Path(`/`) || Path(`/status`) || PathPrefix(`/status/`) ||
         PathPrefix(`/assets/`) || PathPrefix(`/api/status-page/`) ||
         Path(`/api/entry-page`) || PathPrefix(`/upload/`) ||

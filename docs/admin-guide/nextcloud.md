@@ -65,6 +65,8 @@ Before an upgrade, read the release notes for the pinned target and record a rec
 
 For a 503 or incomplete rollout, separate database migration, app-code initialization, Redis discovery, and ingress failures. For missing files, verify database and object-store consistency before changing buckets. Read-only configuration requires the controlled maintenance procedure in the upgrade guide.
 
+If `/status.php` succeeds but `/login` intermittently returns 500, inspect both `nextcloud-redis-haproxy` endpoints and Nextcloud Redis errors. A HAProxy pod can accept TCP connections while its `redis-primary` backend has no available server. The HAProxy health endpoint on port 8404 reports 503 in that state, so Kubernetes removes it from the Service and restarts it if the failure persists. Confirm the login path after both proxies become ready.
+
 ## Manifest and upstream reference
 
 - [`app.yaml`](https://github.com/antblu/antalos/blob/main/apps/nextcloud/app.yaml)

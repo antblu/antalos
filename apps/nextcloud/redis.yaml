@@ -45,6 +45,12 @@ data:
       bind :6379
       default_backend redis-primary
 
+    frontend redis-health
+      bind :8404
+      mode http
+      monitor-uri /healthz
+      monitor fail if { nbsrv(redis-primary) lt 1 }
+
     backend redis-primary
       option tcp-check
       tcp-check send AUTH\ __REDIS_PASSWORD__\r\n
@@ -330,6 +336,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: nextcloud-redis-haproxy
+      annotations:
+        config.antblu.net/revision: "${NEXTCLOUD_REDIS_HAPROXY_CONFIG_REVISION}"
     spec:
       affinity:
         podAntiAffinity:
@@ -355,13 +363,15 @@ spec:
             - name: redis
               containerPort: 6379
           readinessProbe:
-            tcpSocket:
-              port: redis
+            httpGet:
+              path: /healthz
+              port: 8404
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
-            tcpSocket:
-              port: redis
+            httpGet:
+              path: /healthz
+              port: 8404
             initialDelaySeconds: 15
             periodSeconds: 20
           resources:
