@@ -39,7 +39,7 @@ No service should be described as unconditionally end-to-end HA solely because i
 | [Authentik](/infrastructure/authentik/#availability-and-failure-behavior) | Partially HA: replicated identity processing and database; external shared media and maintenance limits remain. | 2; required anti-affinity; see the linked component table for the data, routing, and recovery path. |
 | [BentoPDF](/infrastructure/bentopdf/#availability-and-failure-behavior) | HA static serving tier; access depends on the shared identity and ingress services. | 2 stateless pods on separate nodes; see the linked component table for the data, routing, and recovery path. |
 | [Documentation](/infrastructure/docs/#availability-and-failure-behavior) | HA static serving tier for node loss; current zero-unavailable rollout can be blocked by placement. | 2 stateless replicas; required host anti-affinity; see the linked component table for the data, routing, and recovery path. |
-| [GitLab](/infrastructure/gitlab/#availability-and-failure-behavior) | Partially HA as a complete service: extensive replication, with external storage and failover/recovery prerequisites. | Webservice, Sidekiq, Shell, KAS, registry, toolbox: 2 each; see the linked component table for the data, routing, and recovery path. |
+| [GitLab](/infrastructure/gitlab/#availability-and-failure-behavior) | Partially HA overall; repository access depends on one standalone Gitaly pod and local volume. | Webservice, Sidekiq, Shell, KAS, registry, toolbox: 2 each; see the linked component table for the data, routing, and recovery path. |
 | [Headscale / Headplane](/infrastructure/headscale/#availability-and-failure-behavior) | Not continuously HA: Headscale and Headplane each recover by restarting one process. | 1 StatefulSet pod; see the linked component table for the data, routing, and recovery path. |
 | [LiteLLM](/infrastructure/litellm/#availability-and-failure-behavior) | HA design for a single data-worker loss, conditional on healthy control-plane, Sentinel communication, and upstream providers. | 2 anti-affined replicas on the main workers; see the linked component table for the data, routing, and recovery path. |
 | [Nextcloud](/infrastructure/nextcloud/#availability-and-failure-behavior) | Partially HA overall: replicated web and many companions, with shared storage, session, Redis recovery, and upgrade limits. | 2 anti-affined web-sidecar pairs; see the linked component table for the data, routing, and recovery path. |
@@ -73,7 +73,7 @@ CNPG manages a primary and a streaming standby for each two-instance cluster. Th
 | --- | --- | --- |
 | Authentik, Nextcloud/Context Chat, Stalwart | No synchronous stanza | Default asynchronous replication; recent primary writes may not yet be on the standby. |
 | Activepieces, LiteLLM, Open WebUI, Vaultwarden, Zammad, Grafana | any / 1 / preferred | Requests synchronous acknowledgement while possible, but permits degraded operation without the standby. |
-| GitLab and Praefect databases | any / 1 / preferred on both clusters | Each database has a separate promotion and degraded-durability boundary. |
+| GitLab Rails database | any / 1 / preferred | The active Rails database has a promotion and degraded-durability boundary. A retired Praefect database remains for recovery but is not in the request path. |
 
 These settings do not promise zero loss under every failure sequence. See [CNPG replication and durability](https://cloudnative-pg.io/docs/1.28/replication/) for the mechanisms; use documentation matching the installed operator when administering it.
 
@@ -102,14 +102,13 @@ Keep data, replica, voter, and client authentication consistent. Password-only S
 | SuiteCRM Galera | garbd on RTX | Membership majority with one surviving data node | A SQL-serving process or third database copy |
 | Redis | Sentinel on RTX | Election voting | Another Redis dataset |
 | Elasticsearch | Master-only node on RTX | Master-election majority | Replica shards for indices |
-| GitLab repository tier | Full Gitaly member on RTX | Another repository data copy managed through Praefect | Availability of either PostgreSQL cluster or Garage |
 | Talk messaging | Third NATS Core member | Redundant messaging connectivity | Persisted call media or a durable user-data quorum |
 
 Galera’s connected majority can retain its Primary Component after a member loss; forced rebootstrap during a partition is a different recovery operation. See [Galera quorum](https://mariadb.com/docs/galera-cluster/galera-architecture/quorum-control-with-weighted-votes).
 
 Elasticsearch also needs appropriate replica shards allocated across data nodes. Two data processes and a tiebreaker protect election, but do not by themselves establish a second copy of every index. See [Elastic’s small-cluster resilience guidance](https://www.elastic.co/docs/deploy-manage/production-guidance/availability-and-resilience/resilience-in-small-clusters).
 
-Praefect routes and coordinates repository replication using its metadata database and repository state; three Praefect processes should not be described as an independent Raft quorum. See [Gitaly Cluster architecture](https://docs.gitlab.com/administration/gitaly/praefect/).
+GitLab now uses one standalone Gitaly pod on a main worker. The former Praefect database and local Gitaly volumes are retained for recovery during migration; they do not provide active repository failover. See [Gitaly on Kubernetes](https://docs.gitlab.com/administration/gitaly/kubernetes/).
 
 ### Metrics replication versus log sharding
 
