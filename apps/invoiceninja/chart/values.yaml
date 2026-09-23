@@ -116,7 +116,7 @@ env:
   dbDatabase: ninja
   dbUsername: ninja
   dbConnection: mysql
-  initialUserEmail: admin@example.com
+  initialUserEmail: ""
   s3AccessKeyId: ""
   s3Region: garage
   s3Bucket: ninja
