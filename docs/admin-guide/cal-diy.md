@@ -22,12 +22,15 @@ namespace. If the Cluster reports that it cannot create `cal-diy-db`'s
 RoleBinding, verify this grant and the operator's service account before retrying
 database reconciliation.
 
-Each main worker needs 850 millicores and 2304 MiB of memory requests for one
+Each main worker currently reserves 850 millicores and 832 MiB for one
 database, web, API, Redis/Sentinel, and Redis proxy replica. The RTX worker also
 hosts a 25-millicore, 32-MiB Sentinel voter. Allow additional capacity for the
-migration hook (250 millicores, 1 GiB) and scheduler (10 millicores, 32 MiB).
-Required anti-affinity requires space on both main workers. Do not lower
-requests merely to bypass scheduling failures.
+migration hook (250 millicores, 64 MiB) and scheduler (10 millicores, 32 MiB).
+Required anti-affinity requires space on both main workers. The 32-MiB web and
+API requests are an emergency capacity workaround: observed usage during recovery
+was about 720 MiB per web pod and 680 MiB for an API pod. Expand worker capacity
+and restore realistic requests before relying on these reservations for safe
+rollouts or failure recovery.
 
 The two CNPG instances use preferred synchronous durability. Redis has two data
 members and three Sentinel voters. Availability still depends on capacity,
