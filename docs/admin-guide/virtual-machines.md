@@ -22,7 +22,7 @@ Apply the reviewed plan when ready. Use `arctofu` for Arc or `lefttofu` for the 
 
 | VM | Read first | Inputs to prepare |
 | --- | --- | --- |
-| Left | `infrastructure/ansible/leftansible/README.md` | Inventory and base-host settings |
+| Left | `infrastructure/ansible/leftansible/README.md` | Inventory, NFS export, and media Compose credentials |
 | RTX | `infrastructure/ansible/rtxansible/README.md` | Inventory, VM variables, encrypted vault, Compose model definitions, required local models |
 | Arc | `infrastructure/ansible/arcansible/README.md` | Inventory, encrypted vault, media storage, and access to the Nextcloud Talk Secret |
 
@@ -37,7 +37,7 @@ cd infrastructure/ansible/rtxansible
 ansible-playbook site.yml --ask-vault-pass
 ```
 
-Arc uses the same command from `arcansible/`. Left runs `ansible-playbook site.yml` from `leftansible/` and configures the base host only.
+Arc uses the same command from `arcansible/`. Left runs `ansible-playbook site.yml` from `leftansible/`, mounts the shared media export, and copies the Caddy and media Compose projects without starting them.
 
 Read the playbook before a maintenance run. These playbooks can install packages, change kernels, restart containers, run their own checks, and in some cases reboot. Arc also reads the Kubernetes Talk Secret and writes Nextcloud recording configuration. A run is more than copying a Compose file.
 
@@ -48,7 +48,7 @@ Read the playbook before a maintenance run. These playbooks can install packages
 | llama-swap / Speaches | Match endpoints and credentials in [LiteLLM](/admin-guide/litellm/), then select a discovered model in the consuming application |
 | Talk recording | Keep the recorder secret and Talk internal secret aligned; use [Nextcloud integrations](/admin-guide/nextcloud-integrations/) |
 | Immich Machine Learning | Register the remote endpoint in the separately managed Immich server |
-| Jellyfin | Prepare the intended media mount and configure libraries and access |
+| Jellyfin / media stack | Prepare the `10.30.0.5:/mnt/warm/jellyfin` NFS export for UID:GID `1008:1008`, fill the protected Debian Left media environment, then configure each application and test a representative import or encode |
 | Docling | Configure the client endpoint and its `X-Api-Key` credential |
 
 Successful container startup does not finish an application integration. Use a small representative request through the actual consumer after deployment.

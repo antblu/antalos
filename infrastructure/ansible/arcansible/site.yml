@@ -7,30 +7,6 @@
     - vars/main.yml
     - vars/vault.yml
   tasks:
-    - name: Read the Talk internal secret from Kubernetes
-      ansible.builtin.command:
-        argv:
-          - /home/linuxbrew/.linuxbrew/bin/kubectl
-          - --kubeconfig
-          - "{{ playbook_dir }}/../../../kubeconfig"
-          - --namespace
-          - nextcloud
-          - get
-          - secret
-          - nextcloud-talk
-          - --output=jsonpath={.data.internal-secret}
-      delegate_to: localhost
-      become: false
-      register: nextcloud_talk_internal_secret_base64
-      changed_when: false
-      no_log: true
-
-    - name: Decode the Talk internal secret
-      ansible.builtin.set_fact:
-        nextcloud_talk_internal_secret: >-
-          {{ nextcloud_talk_internal_secret_base64.stdout | b64decode }}
-      no_log: true
-
     - name: Require Debian on the Arc VM
       ansible.builtin.assert:
         that:
@@ -42,13 +18,10 @@
       ansible.builtin.assert:
         that:
           - vault_nextcloud_talk_recording_secret is match('^[0-9a-fA-F]{64}$')
-          - nextcloud_talk_internal_secret is match('^[0-9a-fA-F]{64}$')
           - vault_docling_api_key is match('^[0-9a-fA-F]{64}$')
         fail_msg: >-
           Edit vars/vault.yml with ansible-vault. The recording and Docling
-          values must be newly generated 64-character hexadecimal secrets. The
-          live nextcloud-talk/internal-secret must also contain exactly 64
-          hexadecimal characters.
+          values must be newly generated 64-character hexadecimal secrets.
 
     - name: Set the VM hostname
       ansible.builtin.hostname:
@@ -271,10 +244,67 @@
         shell: /usr/sbin/nologin
         system: true
 
-    - name: Load the render group
-      ansible.builtin.getent:
-        database: group
-        key: render
+    - name: Create the media group
+      ansible.builtin.group:
+        name: media
+        gid: "{{ media_gid }}"
+        system: true
+
+    - name: Create the media user
+      ansible.builtin.user:
+        name: media
+        uid: "{{ media_uid }}"
+        group: media
+        create_home: false
+        home: /nonexistent
+        shell: /usr/sbin/nologin
+        system: true
+
+    - name: Create the shared media mountpoint
+      ansible.builtin.file:
+        path: "{{ jellyfin_media_path }}"
+        state: directory
+
+    - name: Persist the shared media NFS mount
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '^[^# ]+ /mnt/warm/jellyfin '
+        line: "{{ jellyfin_media_export }} {{ jellyfin_media_path }} nfs4 rw,hard,_netdev,x-systemd.requires=network-online.target 0 0"
+        state: present
+
+    - name: Check whether shared media is mounted
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/findmnt
+          - --noheadings
+          - --output
+          - SOURCE
+          - --target
+          - "{{ jellyfin_media_path }}"
+      register: jellyfin_media_mount
+      changed_when: false
+      failed_when: false
+
+    - name: Mount shared media
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/mount
+          - "{{ jellyfin_media_path }}"
+      when: jellyfin_media_mount.stdout != jellyfin_media_export
+      changed_when: true
+
+    - name: Require the intended shared media export
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/findmnt
+          - --noheadings
+          - --output
+          - SOURCE
+          - --target
+          - "{{ jellyfin_media_path }}"
+      register: jellyfin_media_mount_final
+      changed_when: false
+      failed_when: jellyfin_media_mount_final.stdout != jellyfin_media_export
 
     - name: Create Compose and persistent data directories
       ansible.builtin.file:
@@ -296,10 +326,37 @@
           owner: "{{ jellyfin_uid }}"
           group: "{{ jellyfin_gid }}"
           mode: "0750"
-        - path: "{{ jellyfin_media_path }}"
-          owner: "{{ jellyfin_uid }}"
-          group: "{{ jellyfin_gid }}"
+        - path: "{{ arc_compose_root }}/data/trailarr"
+          owner: "{{ media_uid }}"
+          group: "{{ media_gid }}"
           mode: "0750"
+        - path: "{{ arc_compose_root }}/data/tdarr/server"
+          owner: "{{ media_uid }}"
+          group: "{{ media_gid }}"
+          mode: "0750"
+        - path: "{{ arc_compose_root }}/data/tdarr/configs"
+          owner: "{{ media_uid }}"
+          group: "{{ media_gid }}"
+          mode: "0750"
+        - path: "{{ arc_compose_root }}/data/tdarr/logs"
+          owner: "{{ media_uid }}"
+          group: "{{ media_gid }}"
+          mode: "0750"
+        - path: "{{ arc_compose_root }}/data/tdarr/temp"
+          owner: "{{ media_uid }}"
+          group: "{{ media_gid }}"
+          mode: "0750"
+
+    - name: Give Jellyfin access to its existing local state after UID migration
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ jellyfin_uid }}"
+        group: "{{ jellyfin_gid }}"
+        recurse: true
+      loop:
+        - "{{ arc_compose_root }}/data/jellyfin/config"
+        - "{{ arc_compose_root }}/data/jellyfin/cache"
 
     - name: Copy the repository Compose project
       ansible.builtin.copy:
@@ -317,6 +374,55 @@
         group: "{{ jellyfin_gid }}"
         mode: "0640"
         backup: true
+
+    - name: Load the render group for Compose
+      ansible.builtin.getent:
+        database: group
+        key: render
+
+    - name: Save the render group ID for Compose
+      ansible.builtin.set_fact:
+        arc_render_gid: "{{ ansible_facts.getent_group.render[1] }}"
+
+    - name: Load the video group for Compose
+      ansible.builtin.getent:
+        database: group
+        key: video
+
+    - name: Save the video group ID for Compose
+      ansible.builtin.set_fact:
+        arc_video_gid: "{{ ansible_facts.getent_group.video[1] }}"
+
+    - name: Read the Talk internal secret for Compose
+      ansible.builtin.command:
+        argv:
+          - /home/linuxbrew/.linuxbrew/bin/kubectl
+          - --kubeconfig
+          - "{{ playbook_dir }}/../../../kubeconfig"
+          - --namespace
+          - nextcloud
+          - get
+          - secret
+          - nextcloud-talk
+          - --output=jsonpath={.data.internal-secret}
+      delegate_to: localhost
+      become: false
+      register: nextcloud_talk_internal_secret_base64
+      changed_when: false
+      no_log: true
+
+    - name: Decode the Talk internal secret for Compose
+      ansible.builtin.set_fact:
+        nextcloud_talk_internal_secret: >-
+          {{ nextcloud_talk_internal_secret_base64.stdout | b64decode }}
+      no_log: true
+
+    - name: Require the Talk internal secret for Compose
+      ansible.builtin.assert:
+        that:
+          - nextcloud_talk_internal_secret is match('^[0-9a-fA-F]{64}$')
+        fail_msg: The live nextcloud-talk/internal-secret must contain exactly 64 hexadecimal characters.
+      no_log: true
 
     - name: Write the protected Compose environment
       ansible.builtin.template:
@@ -340,6 +446,8 @@
           - immich-machine-learning
           - nextcloud-talk-recording
           - jellyfin
+          - trailarr
+          - tdarr
       changed_when: true
 
     - name: Build the Docling XPU image
@@ -381,6 +489,71 @@
       retries: 30
       delay: 10
       until: jellyfin_health.status == 200
+
+    - name: Prove Trailarr can access the Arc VA-API device
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - exec
+          - trailarr
+          - vainfo
+          - --display
+          - drm
+          - --device
+          - /dev/dri/renderD128
+      changed_when: false
+
+    - name: Prove Trailarr can encode H.264 on the Arc A310
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - exec
+          - trailarr
+          - ffmpeg
+          - -v
+          - error
+          - -vaapi_device
+          - /dev/dri/renderD128
+          - -f
+          - lavfi
+          - -i
+          - color=size=128x128:rate=30
+          - -vf
+          - format=nv12,hwupload
+          - -frames:v
+          - "30"
+          - -c:v
+          - h264_vaapi
+          - -f
+          - "null"
+          - "-"
+      changed_when: false
+
+    - name: Prove Tdarr can encode H.264 on the Arc A310
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - exec
+          - tdarr
+          - ffmpeg
+          - -v
+          - error
+          - -vaapi_device
+          - /dev/dri/renderD128
+          - -f
+          - lavfi
+          - -i
+          - color=size=128x128:rate=30
+          - -vf
+          - format=nv12,hwupload
+          - -frames:v
+          - "30"
+          - -c:v
+          - h264_vaapi
+          - -f
+          - "null"
+          - "-"
+      changed_when: false
 
     - name: Prove Immich can see the Intel OpenVINO GPU
       ansible.builtin.command:
@@ -526,7 +699,7 @@
           [Service]
           Type=oneshot
           WorkingDirectory={{ arc_compose_root }}
-          ExecStart=/usr/bin/docker compose --project-directory {{ arc_compose_root }} --file {{ arc_compose_root }}/compose.yaml up --detach --force-recreate immich-machine-learning nextcloud-talk-recording
+          ExecStart=/usr/bin/docker compose --project-directory {{ arc_compose_root }} --file {{ arc_compose_root }}/compose.yaml up --detach --force-recreate immich-machine-learning nextcloud-talk-recording trailarr tdarr
           RemainAfterExit=yes
 
     - name: Install the Arc render-device path unit

@@ -9,11 +9,13 @@ The Debian VMs run beside the Talos cluster. OpenTofu owns their virtual hardwar
 
 | VM | Provisioning | Guest configuration | Declared responsibility |
 | --- | --- | --- | --- |
-| `debian-left` | `infrastructure/opentofu/lefttofu/` | `infrastructure/ansible/leftansible/` | Base Debian host, packages, Docker prerequisites, and guest agent; the playbook does not deploy Compose |
+| `debian-left` | `infrastructure/opentofu/lefttofu/` | `infrastructure/ansible/leftansible/` | Docker host, Caddy and media Compose projects, and shared NFS media mount; the playbook copies both projects without starting them |
 | `debian-rtx` | `infrastructure/opentofu/rtxtofu/` | `infrastructure/ansible/rtxansible/` | RTX 3060 passthrough, NVIDIA runtime, llama-swap, and Speaches |
-| `debian-arc` | `infrastructure/opentofu/arctofu/` | `infrastructure/ansible/arcansible/` | Intel Arc A310, Talk recording, Immich Machine Learning, Jellyfin, and Docling |
+| `debian-arc` | `infrastructure/opentofu/arctofu/` | `infrastructure/ansible/arcansible/` | Intel Arc A310, Talk recording, Immich Machine Learning, Jellyfin, Trailarr, Tdarr, and Docling |
 
-Files remaining under a project's `compose/` directory do not prove its current playbook deploys them. In particular, the left playbook is now a base-host role. Older manually installed transcription or translation containers require a separate inventory before making claims about their current runtime state.
+The left playbook copies its Compose projects but does not start them. Older
+manually installed transcription or translation containers require a separate
+inventory before making claims about their current runtime state.
 
 ## RTX model and speech services
 
@@ -29,10 +31,11 @@ LiteLLM can discover the model and speech endpoints, while Open WebUI and other 
 | --- | --- |
 | Talk recording | Recorder and shared secret must agree with Nextcloud; the Arc playbook configures `recording_servers` |
 | Immich Machine Learning | Remote inference endpoint for an Immich server managed elsewhere |
-| Jellyfin | Media server with Intel acceleration and a separately prepared `/srv/media` directory |
+| Jellyfin | Media server with Intel acceleration and the shared NFS media mount |
+| Trailarr / Tdarr | Trailer management and media encoding against the same NFS media tree; Tdarr scratch space is VM local |
 | Docling | Document-conversion API using the declared Intel XPU image and its API key |
 
-The guest needs a working Intel render device before GPU containers start. The project includes boot ordering and kernel/device preparation for that purpose. Image versions and runtime options live in the VM project itself.
+Both media VMs mount `10.30.0.5:/mnt/warm/jellyfin` at `/mnt/warm/jellyfin` and use UID:GID `1008:1008` for media access. Application state and transcode scratch space remain local to each VM. Debian Left owns the Arr, request, subtitle, music, and Jellyfin companion applications in a separate media Compose project. The guest needs a working Intel render device before GPU containers start. The project includes boot ordering and kernel/device preparation for that purpose. Image versions and runtime options live in the VM project itself.
 
 ## Availability and recovery
 

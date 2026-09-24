@@ -1,0 +1,14 @@
+crontab: !ENV ${CRONTAB}
+timezone: !ENV ${TZ}
+
+jellyfin:
+  server_url: !ENV ${JELLYFIN_SERVER_URL}
+  api_key: !ENV ${JELLYFIN_API_KEY}
+  user_id: !ENV ${JELLYFIN_USER_ID}
+
+plugins:
+  imdb_chart:
+    enabled: false
+    list_ids:
+      - top
+    clear_collection: false

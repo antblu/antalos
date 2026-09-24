@@ -1,0 +1,381 @@
+name: antalos-media
+
+services:
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
+    container_name: seerr
+    restart: unless-stopped
+    init: true
+    environment:
+      TZ: ${TZ}
+      PORT: "5055"
+    ports:
+      - "${LEFT_IP}:5055:5055"
+    volumes:
+      - seerr-config:/app/config
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    environment:
+      PUID: "1008"
+      PGID: "1008"
+      TZ: ${TZ}
+    ports:
+      - "${LEFT_IP}:8989:8989"
+    volumes:
+      - sonarr-config:/config
+      - type: bind
+        source: ${MEDIA_PATH}
+        target: /media
+        bind:
+          create_host_path: false
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+    environment:
+      PUID: "1008"
+      PGID: "1008"
+      TZ: ${TZ}
+    ports:
+      - "${LEFT_IP}:7878:7878"
+    volumes:
+      - radarr-config:/config
+      - type: bind
+        source: ${MEDIA_PATH}
+        target: /media
+        bind:
+          create_host_path: false
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    restart: unless-stopped
+    environment:
+      PUID: "1008"
+      PGID: "1008"
+      TZ: ${TZ}
+    ports:
+      - "${LEFT_IP}:9696:9696"
+    volumes:
+      - prowlarr-config:/config
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
+    environment:
+      PUID: "1008"
+      PGID: "1008"
+      TZ: ${TZ}
+      WEBUI_PORT: "8081"
+      TORRENTING_PORT: "6881"
+    ports:
+      - "${LEFT_IP}:8081:8081"
+      - "${LEFT_IP}:6881:6881"
+      - "${LEFT_IP}:6881:6881/udp"
+    volumes:
+      - qbittorrent-config:/config
+      - type: bind
+        source: ${MEDIA_PATH}
+        target: /media
+        bind:
+          create_host_path: false
+
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr:8
+    container_name: recyclarr
+    restart: unless-stopped
+    user: "1008:1008"
+    environment:
+      TZ: ${TZ}
+      CRON_SCHEDULE: "0 4 * * *"
+    volumes:
+      - recyclarr-config:/config
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    restart: unless-stopped
+    environment:
+      PUID: "1008"
+      PGID: "1008"
+      TZ: ${TZ}
+    ports:
+      - "${LEFT_IP}:6767:6767"
+    volumes:
+      - bazarr-config:/config
+      - type: bind
+        source: ${MEDIA_PATH}
+        target: /media
+        bind:
+          create_host_path: false
+
+  subgen:
+    image: mccloud/subgen:cpu
+    container_name: subgen
+    restart: unless-stopped
+    environment:
+      TRANSCRIBE_DEVICE: cpu
+      WHISPER_MODEL: base
+      WHISPER_THREADS: "2"
+      CONCURRENT_TRANSCRIPTIONS: "1"
+      WEBHOOKPORT: "9000"
+      MODEL_PATH: /subgen/models
+    ports:
+      - "${LEFT_IP}:9000:9000"
+    volumes:
+      - subgen-models:/subgen/models
+      - type: bind
+        source: ${MEDIA_PATH}
+        target: /media
+        read_only: true
+        bind:
+          create_host_path: false
+
+  autopulse:
+    image: ghcr.io/dan-online/autopulse:stable
+    container_name: autopulse
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      PUID: "1008"
+      PGID: "1008"
+      AUTOPULSE__APP__DATABASE_URL: sqlite:///app/data/autopulse.db
+      AUTOPULSE__AUTH__USERNAME: ${AUTOPULSE_USERNAME}
+      AUTOPULSE__AUTH__PASSWORD: ${AUTOPULSE_PASSWORD}
+    ports:
+      - "${LEFT_IP}:2875:2875"
+    volumes:
+      - autopulse-data:/app/data
+      - ./autopulse/config.yaml:/app/config.yaml:ro
+      - type: bind
+        source: ${MEDIA_PATH}
+        target: /media
+        read_only: true
+        bind:
+          create_host_path: false
+
+  maintainerr:
+    image: ghcr.io/maintainerr/maintainerr:latest
+    container_name: maintainerr
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+    ports:
+      - "${LEFT_IP}:6246:6246"
+    volumes:
+      - maintainerr-data:/opt/data
+
+  jellyfin-auto-collections:
+    image: ghcr.io/ghomashudson/jellyfin-auto-collections:latest
+    container_name: jellyfin-auto-collections
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      CRONTAB: "0 5 * * *"
+      JELLYFIN_SERVER_URL: http://${ARC_IP}:8096
+      JELLYFIN_API_KEY: ${JELLYFIN_API_KEY}
+      JELLYFIN_USER_ID: ${JELLYFIN_USER_ID}
+    volumes:
+      - jellyfin-auto-collections-config:/app/config
+
+  pixelfin:
+    image: ghcr.io/nothing2obvi/pixelfin:latest
+    container_name: pixelfin
+    restart: unless-stopped
+    ports:
+      - "${LEFT_IP}:1280:1280"
+    volumes:
+      - pixelfin-data:/app/data
+      - pixelfin-output:/app/output
+
+  streamystats:
+    image: ghcr.io/fredrikburmester/streamystats-aio:latest
+    container_name: streamystats
+    restart: unless-stopped
+    environment:
+      SESSION_SECRET: ${STREAMYSTATS_SESSION_SECRET}
+      POSTGRES_PASSWORD: ${STREAMYSTATS_POSTGRES_PASSWORD}
+    ports:
+      - "${LEFT_IP}:3000:3000"
+    volumes:
+      - streamystats-data:/var/lib/postgresql/data
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    restart: unless-stopped
+    environment:
+      PUID: "1008"
+      PGID: "1008"
+      TZ: ${TZ}
+    ports:
+      - "${LEFT_IP}:8686:8686"
+    volumes:
+      - lidarr-config:/config
+      - type: bind
+        source: ${MEDIA_PATH}
+        target: /media
+        bind:
+          create_host_path: false
+
+  audiomuse-redis:
+    image: redis:7-alpine
+    container_name: audiomuse-redis
+    restart: unless-stopped
+    volumes:
+      - audiomuse-redis-data:/data
+
+  audiomuse-postgres:
+    image: postgres:15-alpine
+    container_name: audiomuse-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: audiomuse
+      POSTGRES_PASSWORD: ${AUDIOMUSE_POSTGRES_PASSWORD}
+      POSTGRES_DB: audiomusedb
+    volumes:
+      - audiomuse-postgres-data:/var/lib/postgresql/data
+
+  audiomuse-ai:
+    image: ghcr.io/neptunehub/audiomuse-ai:latest
+    container_name: audiomuse-ai
+    restart: unless-stopped
+    depends_on:
+      - audiomuse-redis
+      - audiomuse-postgres
+    environment:
+      SERVICE_TYPE: flask
+      TZ: ${TZ}
+      POSTGRES_USER: audiomuse
+      POSTGRES_PASSWORD: ${AUDIOMUSE_POSTGRES_PASSWORD}
+      POSTGRES_DB: audiomusedb
+      POSTGRES_HOST: audiomuse-postgres
+      POSTGRES_PORT: "5432"
+      REDIS_URL: redis://audiomuse-redis:6379/0
+      TEMP_DIR: /app/temp_audio
+    ports:
+      - "${LEFT_IP}:8000:8000"
+    volumes:
+      - audiomuse-flask-temp:/app/temp_audio
+      - audiomuse-flask-plugins:/app/plugin/installed
+
+  audiomuse-worker:
+    image: ghcr.io/neptunehub/audiomuse-ai:latest
+    container_name: audiomuse-worker
+    restart: unless-stopped
+    depends_on:
+      - audiomuse-redis
+      - audiomuse-postgres
+    environment:
+      SERVICE_TYPE: worker
+      TZ: ${TZ}
+      POSTGRES_USER: audiomuse
+      POSTGRES_PASSWORD: ${AUDIOMUSE_POSTGRES_PASSWORD}
+      POSTGRES_DB: audiomusedb
+      POSTGRES_HOST: audiomuse-postgres
+      POSTGRES_PORT: "5432"
+      REDIS_URL: redis://audiomuse-redis:6379/0
+      TEMP_DIR: /app/temp_audio
+    volumes:
+      - audiomuse-worker-temp:/app/temp_audio
+      - audiomuse-worker-plugins:/app/plugin/installed
+
+  multi-scrobbler:
+    image: foxxmd/multi-scrobbler:latest
+    container_name: multi-scrobbler
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      PUID: "1008"
+      PGID: "1008"
+      BASE_URL: http://${LEFT_IP}:9078
+    ports:
+      - "${LEFT_IP}:9078:9078"
+    volumes:
+      - multi-scrobbler-config:/config
+
+  explo:
+    image: ghcr.io/lumepart/explo:latest
+    container_name: explo
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      PUID: "1008"
+      PGID: "1008"
+      WEB_UI: "true"
+      UI_USERNAME: ${EXPLO_USERNAME}
+      UI_PASSWORD: ${EXPLO_PASSWORD}
+    ports:
+      - "${LEFT_IP}:7288:7288"
+    volumes:
+      - ./explo/.env:/opt/explo/.env:ro
+      - explo-config:/opt/explo/config
+      - type: bind
+        source: ${MEDIA_PATH}
+        target: /media
+        bind:
+          create_host_path: false
+
+  ytdlp2strm:
+    build:
+      context: .
+      dockerfile: ytdlp2strm/Dockerfile
+    image: antalos/ytdlp2strm:local
+    container_name: ytdlp2strm
+    restart: unless-stopped
+    user: "1008:1008"
+    environment:
+      AM_I_IN_A_DOCKER_CONTAINER: "Yes"
+      DOCKER_PORT: "5005"
+    ports:
+      - "${LEFT_IP}:5005:5000"
+    volumes:
+      - ytdlp2strm-config:/opt/ytdlp2STRM/config
+      - type: bind
+        source: ${MEDIA_PATH}
+        target: /media
+        bind:
+          create_host_path: false
+
+  cliparr:
+    image: ghcr.io/techsquidtv/cliparr:latest
+    container_name: cliparr
+    restart: unless-stopped
+    environment:
+      APP_KEY: ${CLIPARR_APP_KEY}
+    ports:
+      - "${LEFT_IP}:7171:7171"
+    volumes:
+      - cliparr-data:/data
+
+volumes:
+  seerr-config:
+  sonarr-config:
+  radarr-config:
+  prowlarr-config:
+  qbittorrent-config:
+  recyclarr-config:
+  bazarr-config:
+  subgen-models:
+  autopulse-data:
+  maintainerr-data:
+  jellyfin-auto-collections-config:
+  pixelfin-data:
+  pixelfin-output:
+  streamystats-data:
+  lidarr-config:
+  audiomuse-redis-data:
+  audiomuse-postgres-data:
+  audiomuse-flask-temp:
+  audiomuse-flask-plugins:
+  audiomuse-worker-temp:
+  audiomuse-worker-plugins:
+  multi-scrobbler-config:
+  explo-config:
+  ytdlp2strm-config:
+  cliparr-data:

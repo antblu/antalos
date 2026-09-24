@@ -124,3 +124,81 @@
         owner: root
         group: root
         mode: preserve
+
+    - name: Create the shared media mountpoint
+      ansible.builtin.file:
+        path: "{{ left_media_path }}"
+        state: directory
+
+    - name: Persist the shared media NFS mount
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '^[^# ]+ /mnt/warm/jellyfin '
+        line: "{{ left_media_export }} {{ left_media_path }} nfs4 rw,hard,_netdev,x-systemd.requires=network-online.target 0 0"
+        state: present
+
+    - name: Check whether shared media is mounted
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/findmnt
+          - --noheadings
+          - --output
+          - SOURCE
+          - --target
+          - "{{ left_media_path }}"
+      register: left_media_mount
+      changed_when: false
+      failed_when: false
+
+    - name: Mount shared media
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/mount
+          - "{{ left_media_path }}"
+      when: left_media_mount.stdout != left_media_export
+      changed_when: true
+
+    - name: Require the intended shared media export
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/findmnt
+          - --noheadings
+          - --output
+          - SOURCE
+          - --target
+          - "{{ left_media_path }}"
+      register: left_media_mount_final
+      changed_when: false
+      failed_when: left_media_mount_final.stdout != left_media_export
+
+    - name: Create the media Compose directory
+      ansible.builtin.file:
+        path: "{{ left_media_compose_root }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0750"
+
+    - name: Deploy the media Compose project
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/media/"
+        dest: "{{ left_media_compose_root }}/"
+        owner: root
+        group: root
+        mode: preserve
+
+    - name: Allow Explo to read its protected configuration
+      ansible.builtin.file:
+        path: "{{ left_media_compose_root }}/explo/.env"
+        state: file
+        owner: root
+        group: "1008"
+        mode: "0640"
+
+    - name: Allow autopulse to read its protected configuration
+      ansible.builtin.file:
+        path: "{{ left_media_compose_root }}/autopulse/config.yaml"
+        state: file
+        owner: root
+        group: "1008"
+        mode: "0640"

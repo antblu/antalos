@@ -1,6 +1,9 @@
 debian_left_hostname: debian-left
 debian_left_timezone: America/Denver
 left_compose_root: /opt/compose/caddy
+left_media_compose_root: /opt/compose/media
+left_media_path: /mnt/warm/jellyfin
+left_media_export: 10.30.0.5:/mnt/warm/jellyfin
 
 left_host_packages:
   - ca-certificates
@@ -11,5 +14,6 @@ left_host_packages:
   - docker-ce-cli
   - docker-compose-plugin
   - gnupg
+  - nfs-common
   - python3
   - qemu-guest-agent

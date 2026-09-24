@@ -1,0 +1,10 @@
+app:
+  hostname: 0.0.0.0
+  port: 2875
+  database_url: sqlite:///app/data/autopulse.db
+
+opts:
+  check_path: true
+
+# Add Sonarr/Radarr/Lidarr triggers and a Jellyfin target after obtaining API keys.
+# Keep credentials in the protected deployed copy, not in this repository.

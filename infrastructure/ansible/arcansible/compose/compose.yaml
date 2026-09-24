@@ -1,4 +1,4 @@
-name: debian-arc
+name: antalos-debian-arc
 
 services:
   immich-machine-learning:
@@ -85,6 +85,7 @@ services:
     user: "${JELLYFIN_UID}:${JELLYFIN_GID}"
     group_add:
       - "${RENDER_GID}"
+      - "${MEDIA_GID}"
     environment:
       JELLYFIN_PublishedServerUrl: http://${DEBIAN_ARC_IP}:8096
     devices:
@@ -100,8 +101,84 @@ services:
         source: ${JELLYFIN_MEDIA_PATH}
         target: /media
         read_only: true
+        bind:
+          create_host_path: false
     security_opt:
       - no-new-privileges:true
+
+  trailarr:
+    image: nandyalu/trailarr:latest
+    container_name: trailarr
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE}
+      PUID: ${MEDIA_UID}
+      PGID: ${MEDIA_GID}
+    ports:
+      - "${DEBIAN_ARC_IP}:7889:7889/tcp"
+    volumes:
+      - type: bind
+        source: ./data/trailarr
+        target: /config
+      - type: bind
+        source: ${JELLYFIN_MEDIA_PATH}
+        target: /media
+        bind:
+          create_host_path: false
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "${RENDER_GID}"
+      - "${VIDEO_GID}"
+    device_cgroup_rules:
+      - c 226:* rmw
+
+  tdarr:
+    image: ghcr.io/haveagitgat/tdarr:latest
+    container_name: tdarr
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE}
+      PUID: ${MEDIA_UID}
+      PGID: ${MEDIA_GID}
+      serverIP: 0.0.0.0
+      serverPort: "8266"
+      webUIPort: "8265"
+      internalNode: "true"
+      inContainer: "true"
+      nodeName: arc-a310
+      serverURL: http://127.0.0.1:8266
+      ffmpegVersion: "7"
+      transcodegpuWorkers: "1"
+      transcodecpuWorkers: "0"
+    ports:
+      - "${DEBIAN_ARC_IP}:8265:8265/tcp"
+      - "${DEBIAN_ARC_IP}:8266:8266/tcp"
+    volumes:
+      - type: bind
+        source: ./data/tdarr/server
+        target: /app/server
+      - type: bind
+        source: ./data/tdarr/configs
+        target: /app/configs
+      - type: bind
+        source: ./data/tdarr/logs
+        target: /app/logs
+      - type: bind
+        source: ./data/tdarr/temp
+        target: /temp
+      - type: bind
+        source: ${JELLYFIN_MEDIA_PATH}
+        target: /media
+        bind:
+          create_host_path: false
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "${RENDER_GID}"
+      - "${VIDEO_GID}"
+    device_cgroup_rules:
+      - c 226:* rmw
 
   docling-server:
     image: antalos/docling-serve-xpu:${DOCLING_SERVE_VERSION}

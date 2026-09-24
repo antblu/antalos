@@ -4,9 +4,12 @@ debian_arc_timezone: America/Denver
 
 arc_compose_root: /opt/compose
 arc_render_device: /dev/dri/renderD128
-jellyfin_media_path: /srv/media
+jellyfin_media_path: /mnt/warm/jellyfin
+jellyfin_media_export: 10.30.0.5:/mnt/warm/jellyfin
 jellyfin_uid: "1100"
 jellyfin_gid: "1100"
+media_uid: "1008"
+media_gid: "1008"
 
 immich_machine_learning_version: v3.1.0
 nextcloud_talk_recording_version: latest@sha256:68ef053d0271d202f03b43f41f7bf1369d03b691d67aa5debca741ab363b4ac8
@@ -34,6 +37,7 @@ arc_host_packages:
   - intel-media-va-driver-non-free
   - libvpl2
   - linux-image-amd64
+  - nfs-common
   - pciutils
   - python3
   - qemu-guest-agent
