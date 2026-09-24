@@ -12,7 +12,7 @@ description: Deploy the single Node-RED process and recover its NFS-backed data.
 3. Publish the manifests and `apps/variables.yaml` to the branch tracked by Argo CD, then let the root Application discover `apps/node-red/app.yaml`. Follow the [shared deployment workflow](/admin-guide/deploy-an-application/). Local uncommitted files are not deployment inputs.
 4. Verify the Application is Synced and Healthy, the PVC is Bound, and the single pod is Ready. Open the HTTPS hostname as an allowed and a denied user; confirm Node-RED starts its own OIDC login, the callback works, and a small flow can be deployed. Check direct in-cluster access is denied by the NetworkPolicy. HTTP In endpoints are not covered by `adminAuth`; add their own authorization before exposing sensitive flow endpoints.
 
-The OIDC strategy package is installed into `/data/.oidc` before Node-RED starts. Its first installation or version change requires npm registry access. Node-RED's flow-credential encryption secret is generated in its persistent user directory when needed. Keep the original `/data` contents when restoring encrypted flow credentials. Avoid replacing the directory with an empty export during recovery.
+The OIDC strategy package is installed into `/data/.oidc` before Node-RED starts. Both containers set `HOME=/data` and `NPM_CONFIG_CACHE=/data/.npm` so UID 1007 can write npm state on the NFS volume. Its first installation or version change requires npm registry access. Node-RED's flow-credential encryption secret is generated in its persistent user directory when needed. Keep the original `/data` contents when restoring encrypted flow credentials. Avoid replacing the directory with an empty export during recovery.
 
 ## Recover and maintain
 

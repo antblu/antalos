@@ -42,6 +42,10 @@ spec:
                 npm install --prefix /data/.oidc --no-save --omit=dev --no-audit --no-fund "passport-openidconnect@$PASSPORT_OPENIDCONNECT_VERSION"
               fi
           env:
+            - name: HOME
+              value: /data
+            - name: NPM_CONFIG_CACHE
+              value: /data/.npm
             - name: PASSPORT_OPENIDCONNECT_VERSION
               value: ${NODE_RED_PASSPORT_OPENIDCONNECT_VERSION}
           securityContext:
@@ -60,6 +64,10 @@ spec:
             - --settings
             - /etc/node-red/settings.js
           env:
+            - name: HOME
+              value: /data
+            - name: NPM_CONFIG_CACHE
+              value: /data/.npm
             - name: NODE_PATH
               value: /data/.oidc/node_modules:/usr/src/node-red/node_modules:/data/node_modules
             - name: OIDC_ISSUER
