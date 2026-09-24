@@ -119,7 +119,7 @@
 
     - name: Deploy the Caddy Compose project
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/compose/"
+        src: "{{ playbook_dir }}/caddy/"
         dest: "{{ left_compose_root }}/"
         owner: root
         group: root
