@@ -43,6 +43,10 @@ spec:
               - ${TALOS_WORKER_RIGHT}
           minio:
             enabled: false
+          gitaly:
+            internal:
+              names:
+              - default
           psql:
             host: ${GITLAB_DATABASE_HOST}
             username: gitlab
@@ -68,20 +72,7 @@ spec:
             - host: ${GITLAB_REDIS_SENTINEL_2_HOST}
               port: 26379
           praefect:
-            enabled: true
-            ntpHost: ${GITLAB_NTP_HOST}
-            virtualStorages:
-            - name: default
-              gitalyReplicas: 3
-              maxUnavailable: 1
-            psql:
-              host: ${GITLAB_PRAEFECT_DATABASE_HOST}
-              user: praefect
-              dbName: praefect
-              sslMode: require
-            dbSecret:
-              secret: gitlab-praefect-db-app
-              key: password
+            enabled: false
           appConfig:
             omniauth:
               enabled: true
@@ -173,8 +164,6 @@ spec:
           webservice:
             minReplicas: 2
             maxReplicas: 2
-            ingress:
-              annotations:
             deployment:
               strategy: *id001
             workerProcesses: 2
@@ -213,28 +202,6 @@ spec:
             maxReplicas: 2
             deployment:
               strategy: *id001
-          praefect:
-            affinity:
-              nodeAffinity:
-                key: kubernetes.io/hostname
-                values:
-                - ${TALOS_WORKER_LEFT}
-                - ${TALOS_WORKER_RIGHT}
-                - ${TALOS_WORKER_RTX}
-            tolerations:
-            - key: quorum
-              operator: Exists
-              effect: NoSchedule
-            replicas: 3
-            resources:
-              requests:
-                cpu: 50m
-                memory: 128Mi
-              limits:
-                memory: 256Mi
-            statefulset:
-              strategy:
-                type: RollingUpdate
           gitaly:
             affinity:
               nodeAffinity:
@@ -242,11 +209,6 @@ spec:
                 values:
                 - ${TALOS_WORKER_LEFT}
                 - ${TALOS_WORKER_RIGHT}
-                - ${TALOS_WORKER_RTX}
-            tolerations:
-            - key: quorum
-              operator: Exists
-              effect: NoSchedule
             persistence:
               storageClass: openebs-local
               size: ${GITLAB_GITALY_STORAGE_SIZE}

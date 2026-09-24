@@ -104,7 +104,7 @@ variable "internal_bridge" {
 variable "control_vm_memory" {
   type        = number
   description = "Memory in MiB for control plane VMs"
-  default     = 4096
+  default     = 4608
 }
 
 variable "control_vm_cores" {
@@ -126,19 +126,19 @@ variable "control_vm_disk_size" {
 variable "se350_worker_vm_memory" {
   type        = number
   description = "Memory in MiB for worker VMs (28 GiB = 28672 MiB)"
-  default     = 28672
+  default     = 30720
 }
 
 variable "se350_worker_vm_ballooning_minimum" {
   type        = number
   description = "Minimum memory in MiB for SE350 worker VMs when ballooning"
-  default     = 0
+  default     = 28672
 }
 
 variable "se350_worker_vm_cores" {
   type        = number
   description = "Number of vCPUs for worker VMs"
-  default     = 10
+  default     = 14
 }
 
 variable "se350_worker_vm_disk_size" {
@@ -147,10 +147,16 @@ variable "se350_worker_vm_disk_size" {
   default     = 364
 }
 
+variable "se350_worker_ephemeral_vm_disk_size" {
+  type        = number
+  description = "Dedicated disk size in GB for EPHEMERAL on each SE350 worker VM"
+  default     = 100
+}
+
 variable "rtx_worker_vm_memory" {
   type        = number
   description = "Memory in MiB for worker VMs (28 GiB = 28672 MiB)"
-  default     = 4096
+  default     = 3586
 }
 
 variable "rtx_worker_vm_ballooning_minimum" {

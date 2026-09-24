@@ -17,7 +17,10 @@ Uptime Kuma runs as one Deployment replica. Its live SQLite database is in pod-l
 | Restore | Init container restores only when the database is absent and a replica exists |
 | Continuous copy | Litestream native sidecar writes the configured backup |
 | Durable backup mount | `uptime-kuma-backup` claim from `storage.yaml` |
-| Ingress | `UPTIME_KUMA_HOST` with `uptime-kuma-tls` |
+| Public ingress | `UPTIME_KUMA_HOST` serves status-page paths and published status APIs only |
+| Administrator ingress | `UPTIME_KUMA_ADMIN_HOST` uses Authentik forward auth with an unprotected outpost callback route; Kuma's own login is disabled in application settings |
+| TLS | `uptime-kuma-tls` covers both hostnames |
+| Pod ingress policy | Only Traefik pods may reach Kuma on port 3001 |
 
 ## Availability and failure behavior
 
@@ -29,6 +32,6 @@ The monitor is inside the same cluster it observes. Cluster, ingress, or externa
 
 ## Ownership
 
-`apps/uptime-kuma/` declares the workload, storage, Litestream configuration, and certificate. `UPTIME_KUMA_*` values belong in application variables. Monitors, notification targets, and status-page definitions are application state created after deployment.
+`apps/uptime-kuma/` declares the workload, storage, Litestream configuration, certificate, and two ingress paths. `UPTIME_KUMA_*` values belong in application variables. Monitors, notification targets, status-page definitions, and the disabled-auth setting are application state stored after deployment. The public root displays a status page only after an administrator publishes it and assigns `status.antblu.net` in Kuma's domain settings. The public path allowlist must be reviewed when Kuma changes its frontend or status API paths.
 
 See [administration](/admin-guide/uptime-kuma/) and the [upstream wiki](https://github.com/louislam/uptime-kuma/wiki).

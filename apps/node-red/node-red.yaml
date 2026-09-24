@@ -1,0 +1,188 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-red
+  namespace: node-red
+  labels:
+    app.kubernetes.io/name: node-red
+    app.kubernetes.io/part-of: antalos
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: node-red
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: node-red
+        app.kubernetes.io/part-of: antalos
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1007
+        runAsGroup: 1007
+        fsGroup: 1007
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: install-oidc-strategy
+          image: docker.io/nodered/node-red:${NODE_RED_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              installed_version="$(node -p "require('/data/.oidc/node_modules/passport-openidconnect/package.json').version" 2>/dev/null || true)"
+              if [ "$installed_version" != "$PASSPORT_OPENIDCONNECT_VERSION" ]; then
+                npm install --prefix /data/.oidc --no-save --omit=dev --no-audit --no-fund "passport-openidconnect@$PASSPORT_OPENIDCONNECT_VERSION"
+              fi
+          env:
+            - name: HOME
+              value: /data
+            - name: NPM_CONFIG_CACHE
+              value: /data/.npm
+            - name: PASSPORT_OPENIDCONNECT_VERSION
+              value: ${NODE_RED_PASSPORT_OPENIDCONNECT_VERSION}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      containers:
+        - name: node-red
+          image: docker.io/nodered/node-red:${NODE_RED_IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --settings
+            - /etc/node-red/settings.js
+          env:
+            - name: HOME
+              value: /data
+            - name: NPM_CONFIG_CACHE
+              value: /data/.npm
+            - name: NODE_PATH
+              value: /data/.oidc/node_modules:/usr/src/node-red/node_modules:/data/node_modules
+            - name: OIDC_ISSUER
+              value: ${NODE_RED_OIDC_ISSUER}
+            - name: OIDC_AUTHORIZATION_URL
+              value: ${NODE_RED_OIDC_AUTHORIZATION_URL}
+            - name: OIDC_TOKEN_URL
+              value: ${NODE_RED_OIDC_TOKEN_URL}
+            - name: OIDC_USERINFO_URL
+              value: ${NODE_RED_OIDC_USERINFO_URL}
+            - name: OIDC_CALLBACK_URL
+              value: ${NODE_RED_OIDC_CALLBACK_URL}
+            - name: OIDC_CLIENT_ID
+              value: ${NODE_RED_OIDC_CLIENT_ID}
+            - name: OIDC_STRATEGY_NAME
+              value: ${NODE_RED_OIDC_STRATEGY_NAME}
+            - name: OIDC_LOGIN_LABEL
+              value: ${NODE_RED_OIDC_LOGIN_LABEL}
+            - name: OIDC_SCOPES
+              value: ${NODE_RED_OIDC_SCOPES}
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: node-red-oidc
+                  key: clientSecret
+          ports:
+            - name: http
+              containerPort: 1880
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: settings
+              mountPath: /etc/node-red/settings.js
+              subPath: settings.js
+              readOnly: true
+      volumes:
+        - name: settings
+          configMap:
+            name: node-red-settings
+        - name: data
+          persistentVolumeClaim:
+            claimName: node-red-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-red
+  namespace: node-red
+  labels:
+    app.kubernetes.io/name: node-red
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: node-red
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: node-red
+  namespace: node-red
+  labels:
+    app.kubernetes.io/name: node-red
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - ${NODE_RED_HOST}
+      secretName: node-red-tls
+  rules:
+    - host: ${NODE_RED_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: node-red
+                port:
+                  name: http

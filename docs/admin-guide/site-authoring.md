@@ -90,7 +90,7 @@ Starlight owns the left sidebar, article column, responsive breakpoints, and On 
 
 Adjust supported tokens such as `--sl-content-width` instead of adding competing `.main-pane` or `.right-sidebar` positioning rules. See [Starlight CSS customization](https://starlight.astro.build/guides/css-and-tailwind/). Preserve keyboard focus, reduced-motion support, and light/dark contrast when changing the theme.
 
-`site/src/components/Header.astro` keeps the antalos logo, search, social link, and theme toggle. Avoid overriding the content layout just to align a header element.
+`site/src/components/Header.astro` keeps the antalos logo, centered search, GitHub link, and light/dark theme button visible in the header. Avoid overriding the content layout just to align a header element.
 
 ## Develop locally
 

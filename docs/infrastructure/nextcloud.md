@@ -69,7 +69,7 @@ An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure.
 
 ### Upgrades and voluntary maintenance
 
-Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy uses maxSurge 1 and maxUnavailable 0: hard anti-affinity can stall its replacement with only two eligible workers. Major Nextcloud upgrades still require the documented isolated maintenance and single-owner schema migration procedure.
+Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy uses maxSurge 1 and maxUnavailable 0. Its `quorum:NoSchedule` toleration makes the RTX worker eligible for a third anti-affined pod during replacement, subject to available node capacity. Major Nextcloud upgrades still require the documented isolated maintenance and single-owner schema migration procedure.
 
 ### What prevents a stronger HA claim
 
@@ -77,7 +77,7 @@ The Redis startup script hardcodes ordinal 0 as the initial primary and ordinal 
 
 ### What would improve the availability contract
 
-Establish Redis election and safe rejoin behavior, correct the HAProxy rollout capacity constraint, protect shared storage, and exercise file/office/Talk workflows during degraded operation. A warm web replica does not make the whole Nextcloud suite outage-free.
+Establish Redis election and safe rejoin behavior, protect shared storage, and exercise file/office/Talk workflows during degraded operation. A warm web replica does not make the whole Nextcloud suite outage-free.
 
 These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 

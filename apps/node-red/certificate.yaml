@@ -1,12 +1,12 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: activepieces-tls
-  namespace: activepieces
+  name: node-red-tls
+  namespace: node-red
 spec:
-  secretName: activepieces-tls
+  secretName: node-red-tls
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
-    - ${ACTIVEPIECES_HOST}
+    - ${NODE_RED_HOST}
