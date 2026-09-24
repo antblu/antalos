@@ -26,6 +26,8 @@ For credential rotation, seal the replacement PEM from a readable local path; ne
 
 Retain sync wave `0` on the SealedSecret. Publish the reviewed change before revoking the previous GitHub key, and verify a new run authenticates successfully.
 
+Renovate's standard managers do not recognize image tags stored as shared variables in `apps/variables.yaml`. The repository's regex manager discovers variables with a preceding `# renovate: datasource=... depName=...` comment. For an image tag, use the exact image repository as `depName`; `OPEN_WEBUI_IMAGE_TAG` is mapped to `ghcr.io/open-webui/open-webui` and restricted to unprefixed numeric tags. Add this annotation to other shared version variables when their upstream datasource and package are known.
+
 ## Deploy and verify
 
 Follow the [application workflow](/admin-guide/deploy-an-application/). Publish to `main` through the approved repository workflow; the root app-of-apps discovers Renovate automatically. Local edits alone do not deploy it. Config and sealed credentials are wave `0`; the CronJob is wave `1`.
