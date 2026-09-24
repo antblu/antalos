@@ -43,11 +43,12 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: web
-          image: ${CALDIY_WEB_IMAGE_REPOSITORY}:${CALDIY_IMAGE_TAG}
+          image: ${CALDIY_WEB_IMAGE_REPOSITORY}:${CALDIY_WEB_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           command:
-            - yarn
-            - start
+            - sh
+            - -ec
+            - scripts/replace-placeholder.sh "$BUILT_NEXT_PUBLIC_WEBAPP_URL" "$NEXT_PUBLIC_WEBAPP_URL"; exec yarn start
           envFrom:
             - configMapRef:
                 name: cal-diy-config
@@ -123,7 +124,7 @@ spec:
           resources:
             requests:
               cpu: 250m
-              memory: 1Gi
+              memory: 32Mi
             limits:
               cpu: "2"
               memory: 4Gi
@@ -181,7 +182,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: api
-          image: ${CALDIY_API_IMAGE_REPOSITORY}:${CALDIY_IMAGE_TAG}
+          image: ${CALDIY_API_IMAGE_REPOSITORY}:${CALDIY_API_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
@@ -262,7 +263,7 @@ spec:
           resources:
             requests:
               cpu: 250m
-              memory: 512Mi
+              memory: 32Mi
             limits:
               cpu: "2"
               memory: 2Gi

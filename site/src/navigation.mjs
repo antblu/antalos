@@ -22,10 +22,6 @@ export const serviceGroups = [
     "label": "Work and automation",
     "services": [
       {
-        "slug": "activepieces",
-        "label": "Activepieces"
-      },
-      {
         "slug": "gitlab",
         "label": "GitLab"
       },
@@ -40,6 +36,10 @@ export const serviceGroups = [
       {
         "slug": "bentopdf",
         "label": "BentoPDF"
+      },
+      {
+        "slug": "node-red",
+        "label": "Node-RED"
       }
     ]
   },

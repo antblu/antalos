@@ -6,7 +6,7 @@ variables:
   # Bump when changing the yaml-envsubst plugin; its subPath mount needs new pods.
   ARGOCD_PLUGIN_CONFIG_REVISION: "2"
   ARGOCD_CHART_VERSION: 10.4.0
-  AUTHENTIK_CHART_VERSION: 2026.8.2
+  AUTHENTIK_CHART_VERSION: 2026.8.3
   CERT_MANAGER_CHART_VERSION: v1.18.2
   CNPG_OPERATOR_CHART_VERSION: 0.29.0
   METALLB_CHART_VERSION: 0.16.1
@@ -55,16 +55,15 @@ variables:
   INVOICENINJA_BUSYBOX_IMAGE_TAG: 1.37.0
   INVOICENINJA_MARIADB_IMAGE_TAG: 11.8.9
   INVOICENINJA_GARBD_IMAGE_TAG: 11.8.9-ubi9
-  ACTIVEPIECES_IMAGE_TAG: 0.91.1
-  CALDIY_IMAGE_TAG: oidc-64c8693b971c
-  CALDIY_WEB_IMAGE_REPOSITORY: ghcr.io/antblu/cal-diy-web
+  CALDIY_WEB_IMAGE_REPOSITORY: ghcr.io/antblu/cal.diy-oidc
+  CALDIY_WEB_IMAGE_TAG: OIDC
   CALDIY_API_IMAGE_REPOSITORY: ghcr.io/antblu/cal-diy-api
-  CALDIY_SOURCE_REPOSITORY: https://github.com/PAtreju/cal.diy.git
-  CALDIY_SOURCE_COMMIT: 64c8693b971c77361655dd36ce61371978ff1287
+  CALDIY_API_IMAGE_TAG: oidc-64c8693b971c
   CALDIY_CURL_IMAGE_TAG: 8.16.0
   HEADSCALE_IMAGE_TAG: v0.29.3
   HEADPLANE_IMAGE_TAG: 0.7.1
   UPTIME_KUMA_IMAGE_TAG: 2.5.5-rootless
+  NODE_RED_IMAGE_TAG: 5.0.7-24
   BENTOPDF_IMAGE_TAG: 2.8.7
   COUCHDB_IMAGE_TAG: 3.5.2
   COUCHDB_HAPROXY_IMAGE_TAG: 3.2.23-alpine
@@ -175,6 +174,18 @@ variables:
   MAIL_DOMAIN: antblu.net
   HEADSCALE_HOST: vpn.antblu.net
   UPTIME_KUMA_HOST: status.antblu.net
+  UPTIME_KUMA_ADMIN_HOST: uptime.antblu.net
+  NODE_RED_HOST: flows.antblu.net
+  NODE_RED_OIDC_ISSUER: https://auth.antblu.net/application/o/node-red/
+  NODE_RED_OIDC_AUTHORIZATION_URL: https://auth.antblu.net/application/o/authorize/
+  NODE_RED_OIDC_TOKEN_URL: https://auth.antblu.net/application/o/token/
+  NODE_RED_OIDC_USERINFO_URL: https://auth.antblu.net/application/o/userinfo/
+  NODE_RED_OIDC_CALLBACK_URL: https://flows.antblu.net/auth/strategy/callback
+  NODE_RED_OIDC_CLIENT_ID: WNLWs5zbw3HxT5jwVvmsoPu9eyHPZLuH71pZQwFk
+  NODE_RED_OIDC_STRATEGY_NAME: openidconnect
+  NODE_RED_OIDC_LOGIN_LABEL: Sign in with antID
+  NODE_RED_OIDC_SCOPES: profile,email
+  NODE_RED_PASSPORT_OPENIDCONNECT_VERSION: 0.1.2
   HEADSCALE_BASE_DOMAIN: tailnet.antblu.net
   HEADSCALE_OIDC_ISSUER: https://auth.antblu.net/application/o/headscale/
   HEADSCALE_OIDC_CLIENT_ID: 5eTY9Y5chSEM2NGkXkZFXhGOoqL50wacds5NHZgt
@@ -201,6 +212,7 @@ variables:
   NEXTCLOUD_REDIS_QUORUM_MEMORY_REQUEST: 32Mi
   NEXTCLOUD_REDIS_QUORUM_MEMORY_LIMIT: 256Mi
   NEXTCLOUD_REDIS_HAPROXY_MEMORY_REQUEST: 128Mi
+  NEXTCLOUD_REDIS_HAPROXY_CONFIG_REVISION: "1"
 
   # Open WebUI: two stateless app replicas, one replicated CNPG database with
   # pgvector, and two Redis data nodes plus a quorum-only Sentinel on RTX.
@@ -309,6 +321,8 @@ variables:
   UPTIME_KUMA_NFS_STORAGE_SIZE: 5Gi
   UPTIME_KUMA_LOCAL_STORAGE_SIZE: 5Gi
   UPTIME_KUMA_TMP_STORAGE_SIZE: 128Mi
+  NODE_RED_NFS_SHARE: /mnt/nvme/node-red
+  NODE_RED_DATA_STORAGE_SIZE: 5Gi
   HEADSCALE_DNS_SERVER: 10.20.0.1
   KUBERNETES_POD_CIDR: 10.244.0.0/16
   KUBERNETES_DNS_SERVICE_IP: 10.96.0.10
@@ -388,18 +402,9 @@ variables:
   LITELLM_SPEACHES_DISCOVERY_CREDENTIAL_NAME: speaches
   GITLAB_S3_BUCKET: gitlabs
 
-  # Activepieces: two app replicas, four workers, CNPG, and Redis Sentinel.
-  ACTIVEPIECES_HOST: flows.antblu.net
-  ACTIVEPIECES_DATABASE_HOST: activepieces-db-rw.activepieces.svc.cluster.local
-  ACTIVEPIECES_DATABASE_STORAGE_SIZE: 10Gi
-  ACTIVEPIECES_REDIS_STORAGE_SIZE: 2Gi
-  ACTIVEPIECES_REDIS_DATA_0_HOST: activepieces-redis-data-0.activepieces-redis-data.activepieces.svc.cluster.local
-  ACTIVEPIECES_REDIS_DATA_1_HOST: activepieces-redis-data-1.activepieces-redis-data.activepieces.svc.cluster.local
-  ACTIVEPIECES_REDIS_SENTINEL_2_HOST: activepieces-redis-sentinel-2.activepieces.svc.cluster.local
-  ACTIVEPIECES_S3_BUCKET: activepieces
-
   # Cal.diy: two web and API v2 replicas, two synchronous CNPG instances,
-  # Redis Sentinel, and generic OIDC from the pinned PAtreju feature branch.
+  # Redis Sentinel, and generic OIDC from a v6.2.0-based PAtreju fork
+  # with the local bootstrap patch applied during the image build.
   CALDIY_HOST: cal.antblu.net
   CALDIY_DATABASE_HOST: cal-diy-db-rw.cal-diy.svc.cluster.local
   CALDIY_DATABASE_NAME: caldiy
@@ -412,8 +417,10 @@ variables:
   CALDIY_OIDC_CLIENT_ID: 7c85d8131ef6e6968d93aae2684bf544a491d03d
   CALDIY_OIDC_ISSUER: https://auth.antblu.net/application/o/cal-diy/
   CALDIY_OIDC_PROVIDER_NAME: antID
+  # Set to the verified Authentik email that may claim the first Cal.diy admin role.
+  CALDIY_OIDC_ADMIN_EMAIL: admin@antblu.net
   CALDIY_VAPID_PUBLIC_KEY: BBbFjlT2YlB2CdztdEWrlsXf2lld1-8W-1RxdAuFLQotjxDKqFeF44cGSkIfc2ZQrzM3VxdZuwL19yDYzqLJzAE
-  AUTHENTIK_CALDIY_OIDC_REVISION: "1"
+  AUTHENTIK_CALDIY_OIDC_REVISION: "3"
 
   # Invoice Ninja: two web replicas and two queue workers on the untainted
   # workers, with MariaDB and Redis quorum voters on the RTX worker.

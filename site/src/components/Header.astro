@@ -21,10 +21,10 @@ import antalosLogo from '../logoantalos.png';
       />
     </a>
   </div>
-  <div class="sl-flex print:hidden">
+  <div class="search-group">
     <Search />
   </div>
-  <div class="sl-hidden md:sl-flex print:hidden right-group">
+  <div class="header-actions">
     <div class="sl-flex social-icons">
       <SocialIcons />
     </div>
@@ -35,9 +35,9 @@ import antalosLogo from '../logoantalos.png';
 
 <style>
   .header {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, min(40vw, 30rem)) minmax(0, 1fr);
     align-items: center;
-    justify-content: space-between;
     padding: 1.5rem 2rem;
     border-bottom: 1px solid var(--sl-color-border-default);
   }
@@ -57,27 +57,51 @@ import antalosLogo from '../logoantalos.png';
     width: auto;
   }
 
-  .sl-flex {
+  .sl-flex,
+  .search-group,
+  .header-actions {
     display: flex;
     align-items: center;
     gap: 1rem;
   }
 
-  .print:hidden {
-    display: none;
+  .search-group {
+    width: 100%;
+    justify-self: center;
   }
 
-  .sl-hidden {
-    display: none;
+  .search-group :global(site-search),
+  .search-group :global(site-search button) {
+    width: 100%;
   }
 
-  @media (min-width: 768px) {
-    .sl-hidden.md:sl-flex {
+  .header-actions {
+    justify-self: end;
+  }
+
+  @media (max-width: 767px) {
+    .header {
       display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding: 1rem;
+    }
+
+    .search-group {
+      order: 3;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .header-actions {
+      margin-inline-start: auto;
     }
   }
 
-  .print:hidden.right-group {
-    display: none;
+  @media print {
+    .search-group,
+    .header-actions {
+      display: none;
+    }
   }
 </style>

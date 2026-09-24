@@ -11,7 +11,7 @@ This runbook deploys the service from `apps/gitlab/` and completes the configura
 
 1. Set `GITLAB_HOST`, `GITLAB_REGISTRY_HOST`, `GITLAB_KAS_HOST`, domain, OIDC, database, Redis, and volume variables. Route all three HTTPS names and Git SSH through the intended ingress path.
 
-2. Prepare CNPG, OpenEBS, Garage credentials, and capacity on all three workers. Reseal every Secret document in `secrets.yaml`, preserving existing application keys during a restore.
+2. Prepare CNPG, OpenEBS, Garage credentials, and capacity on both main workers for standalone Gitaly and the serving roles. Reseal every Secret document in `secrets.yaml`, preserving existing application keys during a restore.
 
 3. Allow the chart’s dependency and migration jobs to finish before treating the webservice as ready.
 
@@ -47,23 +47,23 @@ Native OIDC is configured through the `gitlab-oidc` Secret’s `provider` entry,
 
 ## Availability before maintenance
 
-**Partially HA as a complete service: extensive replication, with external storage and failover/recovery prerequisites.**
+**Partially HA overall; repository access depends on one standalone Gitaly pod and its local volume.**
 
-Paired Deployments use zero surge and one unavailable; repository StatefulSets update incrementally. Run chart migrations in the declared order. A schema change or queue retry can affect availability even when a frontend pod remains Ready.
+Paired Deployments use zero surge and one unavailable; the single Gitaly StatefulSet briefly interrupts Git access when its pod is replaced. Run chart migrations in the declared order. A schema change or queue retry can affect availability even when a frontend pod remains Ready.
 
-Establish Sentinel peer-authentication/election evidence, test repository correctness through loss and rejoin, protect Garage, and create a restorable backup covering both databases, repositories, objects, and application keys. Review the upstream support status of Gitaly Cluster on Kubernetes.
+Establish Sentinel peer-authentication/election evidence, protect Garage, and create a restorable backup covering the Rails database, repositories, objects, and application keys. Test standalone Gitaly restart and local-volume recovery.
 
-Use the [component-by-component failure contract](/infrastructure/gitlab/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+Use the [component-by-component failure contract](/infrastructure/gitlab/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. A Ready Gitaly pod alone does not prove that its repositories can be read or written.
 
 ## 5. Maintain and recover
 
-Recovery requires both PostgreSQL databases, the Gitaly repository data, Garage objects, and GitLab’s encryption, signing, SSH, and registry keys. The shared `gitlabs` bucket uses object prefixes and a registry prefix. Backup scheduling is disabled; this layout is incompatible with the stock Helm restore assumptions that require separate buckets.
+Recovery requires the Rails PostgreSQL database, the standalone Gitaly repository data, Garage objects, and GitLab’s encryption, signing, SSH, and registry keys. The shared `gitlabs` bucket uses object prefixes and a registry prefix. Backup scheduling is disabled; this layout is incompatible with the stock Helm restore assumptions that require separate buckets.
 
 Before an upgrade, read the release notes for the pinned target and record a recovery point. A previous image tag is not a database rollback after a schema migration. Use [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/) for the platform sequence.
 
 ## Troubleshooting
 
-For a stuck initialization, examine the current chart hook and its dependency rather than deleting every old Job. For repository failures, inspect Gitaly and Praefect quorum as well as Rails. For object failures, test the relevant prefix permissions and S3 endpoint.
+For a stuck initialization, examine the current chart hook and its dependency rather than deleting every old Job. For repository failures, inspect the standalone Gitaly pod, its local volume, and Rails. For object failures, test the relevant prefix permissions and S3 endpoint.
 
 ## Manifest and upstream reference
 

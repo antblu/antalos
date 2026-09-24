@@ -126,7 +126,7 @@ data "talos_machine_configuration" "worker" {
 
         provisioning = {
           diskSelector = {
-            match = "system_disk"
+            match = "'/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1' in disk.symlinks"
           }
 
           maxSize = var.talos_worker_ephemeral_disk_size
@@ -241,6 +241,7 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
   tags           = ["talos", "worker"]
   on_boot        = true
   stop_on_destroy = true
+  reboot_after_update = each.key == "rtx"
 
   # --- BIOS & Machine Type ---
   bios    = "ovmf"
@@ -274,6 +275,20 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
     size         = each.key == "rtx" ? var.rtx_worker_vm_disk_size : var.se350_worker_vm_disk_size
     ssd          = true
     discard      = "on"
+  }
+
+  # Keep OpenEBS on scsi0 while Talos provisions EPHEMERAL on scsi1.
+  dynamic "disk" {
+    for_each = each.key == "rtx" ? [] : [1]
+
+    content {
+      datastore_id = var.vm_storage
+      interface    = "scsi1"
+      size         = var.se350_worker_ephemeral_vm_disk_size
+      serial       = "talos-ephem-${each.key}"
+      ssd          = true
+      discard      = "on"
+    }
   }
 
   # --- EFI Disk (OVMF, no pre-enrolled keys, no TPM) ---
@@ -314,6 +329,7 @@ resource "talos_machine_configuration_apply" "worker" {
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.worker[each.key].machine_configuration
   node                        = each.value.talos_node_ip
+  apply_mode                  = each.key == "rtx" ? "auto" : "staged_if_needing_reboot"
   depends_on                  = [proxmox_virtual_environment_vm.talos_worker]
 }
 

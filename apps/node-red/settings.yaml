@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: node-red-settings
+  namespace: node-red
+data:
+  settings.js: |
+    const required = [
+      "OIDC_ISSUER",
+      "OIDC_AUTHORIZATION_URL",
+      "OIDC_TOKEN_URL",
+      "OIDC_USERINFO_URL",
+      "OIDC_CLIENT_ID",
+      "OIDC_CLIENT_SECRET",
+      "OIDC_STRATEGY_NAME",
+      "OIDC_LOGIN_LABEL",
+      "OIDC_SCOPES",
+      "OIDC_CALLBACK_URL"
+    ];
+    for (const name of required) {
+      if (!process.env[name]) {
+        throw new Error("Missing required Node-RED OIDC setting: " + name);
+      }
+    }
+
+    module.exports = {
+      adminAuth: {
+        type: "strategy",
+        strategy: {
+          name: process.env.OIDC_STRATEGY_NAME,
+          label: process.env.OIDC_LOGIN_LABEL,
+          autoLogin: true,
+          strategy: require("passport-openidconnect").Strategy,
+          options: {
+            issuer: process.env.OIDC_ISSUER,
+            authorizationURL: process.env.OIDC_AUTHORIZATION_URL,
+            tokenURL: process.env.OIDC_TOKEN_URL,
+            userInfoURL: process.env.OIDC_USERINFO_URL,
+            clientID: process.env.OIDC_CLIENT_ID,
+            clientSecret: process.env.OIDC_CLIENT_SECRET,
+            callbackURL: process.env.OIDC_CALLBACK_URL,
+            scope: process.env.OIDC_SCOPES.split(","),
+            verify: function (issuer, userInfo, idProfile, context, idToken, accessToken, refreshToken, tokenResponse, done) {
+              if (issuer !== process.env.OIDC_ISSUER || !idProfile?.id || userInfo?.id !== idProfile.id) {
+                return done(null, false);
+              }
+              return done(null, { username: idProfile.id });
+            }
+          }
+        },
+        users: function (username) {
+          return Promise.resolve(username ? { username, permissions: "*" } : null);
+        }
+      }
+    };

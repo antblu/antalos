@@ -13,6 +13,7 @@ SSO has two owners: Authentik decides who may authenticate, and the application 
 | GitLab | Native OIDC provider document in a Secret | Matching provider, callback, account-linking and project roles |
 | Headscale and Headplane | Shared OIDC client, PKCE options | Both callbacks, allowed domain, Headplane admin role and backend API key |
 | Open WebUI | OIDC discovery, client ID, sealed secret | Provider policy, callback, user/model permissions |
+| Node-RED | Native `adminAuth` OIDC strategy, public settings/client ID, sealed secret | Provider policy and exact editor callback |
 | Nextcloud | `user_oidc` installed | Provider definition in Authentik and Nextcloud, stable account mapping |
 | SuiteCRM | SAML environment and certificate references | Authentik SAML provider, metadata/certificates, CRM roles |
 | Traefik, BentoPDF, UrBackup UI | Forward-auth middleware | Proxy provider/outpost assignment and a callback route per hostname |
@@ -48,6 +49,7 @@ Both browser and application pods must reach the required endpoints. A successfu
 | Headscale | `https://<headscale-host>/oidc/callback` |
 | Headplane | `https://<headscale-host>/admin/oidc/callback` |
 | Open WebUI | `https://<open-webui-host>/oauth/oidc/callback` |
+| Node-RED | `https://flows.antblu.net/auth/strategy/callback` |
 | Nextcloud | The callback supplied by the installed `user_oidc` provider configuration |
 
 Replace each hostname with its shared variable value. Preserve path and trailing-slash behavior expected by the application. If the deployment uses a base-path override, derive the callback from that deployed configuration.

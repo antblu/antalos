@@ -27,7 +27,6 @@ The identity portal displays application tiles based on access policy. A missing
 | Rancher, Grafana, Zammad, Stalwart | Application administration; external SSO is not declared in these manifests |
 | RustDesk OSS | Server public key plus remote-device authorization |
 | Obsidian LiveSync | Authentik-protected database endpoint; administrator must supply a working sync-client authentication method |
-| Activepieces | Application workspace and connected-account permissions; access configured after deployment |
 | Uptime Kuma | Administrator account for configuration; public status pages only when published |
 | CrowdSec and cluster foundations | Background services, not ordinary user accounts |
 | Documentation | Public static content in the checked-in ingress |

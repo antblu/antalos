@@ -32,12 +32,12 @@ spec:
                       - ${TALOS_WORKER_RIGHT}
       containers:
         - name: migrate
-          image: ${CALDIY_WEB_IMAGE_REPOSITORY}:${CALDIY_IMAGE_TAG}
+          image: ${CALDIY_WEB_IMAGE_REPOSITORY}:${CALDIY_WEB_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           command:
             - sh
             - -ec
-            - npx prisma migrate deploy --schema /calcom/packages/prisma/schema.prisma && npx ts-node --transpile-only /calcom/scripts/seed-app-store.ts
+            - npx prisma migrate deploy --schema /calcom/packages/prisma/schema.prisma
           envFrom:
             - configMapRef:
                 name: cal-diy-config
@@ -66,7 +66,7 @@ spec:
           resources:
             requests:
               cpu: 250m
-              memory: 1Gi
+              memory: 64Mi
             limits:
               cpu: "2"
               memory: 4Gi

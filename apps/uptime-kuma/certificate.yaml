@@ -10,3 +10,4 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - ${UPTIME_KUMA_HOST}
+    - ${UPTIME_KUMA_ADMIN_HOST}

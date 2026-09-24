@@ -49,9 +49,9 @@ The repository installs `user_oidc`, but does not create its Authentik provider 
 
 **Partially HA overall: replicated web and many companions, with shared storage, session, Redis recovery, and upgrade limits.**
 
-Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy uses maxSurge 1 and maxUnavailable 0: hard anti-affinity can stall its replacement with only two eligible workers. Major Nextcloud upgrades still require the documented isolated maintenance and single-owner schema migration procedure.
+Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy uses maxSurge 1 and maxUnavailable 0. Its `quorum:NoSchedule` toleration makes the RTX worker eligible for a third anti-affined pod during replacement, subject to available node capacity. Major Nextcloud upgrades still require the documented isolated maintenance and single-owner schema migration procedure.
 
-Establish Redis election and safe rejoin behavior, correct the HAProxy rollout capacity constraint, protect shared storage, and exercise file/office/Talk workflows during degraded operation. A warm web replica does not make the whole Nextcloud suite outage-free.
+Establish Redis election and safe rejoin behavior, protect shared storage, and exercise file/office/Talk workflows during degraded operation. A warm web replica does not make the whole Nextcloud suite outage-free.
 
 Use the [component-by-component failure contract](/infrastructure/nextcloud/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
 
@@ -64,6 +64,8 @@ Before an upgrade, read the release notes for the pinned target and record a rec
 ## Troubleshooting
 
 For a 503 or incomplete rollout, separate database migration, app-code initialization, Redis discovery, and ingress failures. For missing files, verify database and object-store consistency before changing buckets. Read-only configuration requires the controlled maintenance procedure in the upgrade guide.
+
+If `/status.php` succeeds but `/login` intermittently returns 500, inspect both `nextcloud-redis-haproxy` endpoints and Nextcloud Redis errors. A HAProxy pod can accept TCP connections while its `redis-primary` backend has no available server. The HAProxy health endpoint on port 8404 reports 503 in that state, so Kubernetes removes it from the Service and restarts it if the failure persists. Confirm the login path after both proxies become ready.
 
 ## Manifest and upstream reference
 

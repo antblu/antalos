@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: activepieces
+  name: node-red
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/antblu/antalos.git
     targetRevision: main
-    path: apps/activepieces
+    path: apps/node-red
     plugin:
       name: yaml-envsubst
   destination:
     server: https://kubernetes.default.svc
-    namespace: activepieces
+    namespace: node-red
   syncPolicy:
     automated:
       prune: true
