@@ -231,7 +231,7 @@ services:
       - audiomuse-redis-data:/data
 
   audiomuse-postgres:
-    image: postgres:15-alpine
+    image: postgres:18-alpine
     container_name: audiomuse-postgres
     restart: unless-stopped
     environment:
