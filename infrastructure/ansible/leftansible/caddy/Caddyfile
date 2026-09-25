@@ -1,3 +1,71 @@
 {
-  acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+	acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN} {
+		resolvers 10.30.0.1
+	}
+}
+llama.antblu.net {
+        reverse_proxy 10.30.0.26:8080
+}
+speaches.antblu.net {
+        reverse_proxy 10.30.0.26:8000
+}
+photos.antblu.net {
+        reverse_proxy 10.30.0.5:30041
+}
+home.antblu.net {
+        reverse_proxy 10.30.0.50
+}
+jelly.antblu.net {
+	reverse_proxy 10.30.0.28:8096
+}
+seerr.antblu.net {
+	reverse_proxy 10.30.0.27:5055
+}
+sonarr.antblu.net {
+	reverse_proxy 10.30.0.27:8989
+}
+radarr.antblu.net {
+	reverse_proxy 10.30.0.27:7878
+}
+prowlarr.antblu.net {
+	reverse_proxy 10.30.0.27:9696
+}
+torrent.antblu.net {
+	reverse_proxy 10.30.0.27:8081
+}
+bazarr.antblu.net {
+	reverse_proxy 10.30.0.27:6767
+}
+subgen.antblu.net {
+	reverse_proxy 10.30.0.27:9000
+}
+autopulse.antblu.net {
+	reverse_proxy 10.30.0.27:2875
+}
+maintainerr.antblu.net {
+	reverse_proxy 10.30.0.27:6246
+}
+pixelfin.antblu.net {
+	reverse_proxy 10.30.0.27:1280
+}
+streamystats.antblu.net {
+	reverse_proxy 10.30.0.27:3000
+}
+lidarr.antblu.net {
+	reverse_proxy 10.30.0.27:8686
+}
+audiomuse.antblu.net {
+	reverse_proxy 10.30.0.27:8000
+}
+scrobbler.antblu.net {
+	reverse_proxy 10.30.0.27:9078
+}
+explo.antblu.net {
+	reverse_proxy 10.30.0.27:7288
+}
+yt2strm.antblu.net {
+	reverse_proxy 10.30.0.27:5005
+}
+cliparr.antblu.net {
+	reverse_proxy 10.30.0.27:7171
 }
