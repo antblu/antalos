@@ -1,6 +1,11 @@
 {
-	acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN} {
+	email antblu@antblu.net
+
+	cert_issuer acme {
+		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
 		resolvers 10.30.0.1
+		propagation_timeout -1
+		propagation_delay 90s
 	}
 }
 llama.antblu.net {
