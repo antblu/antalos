@@ -66,7 +66,7 @@ scp /tmp/homelable-topology.json debian-arc:/tmp/homelable-topology.json
 ssh debian-arc 'sudo python3 /opt/compose/homelable/populate.py /tmp/homelable-topology.json'
 ```
 
-An optional second exporter argument accepts a non-secret JSON list of OPNsense DNS records (`fqdn`, `server`, `description`) to include Debian/Caddy service names. The initial deployment imported those records. Without that export, existing diagrams/documents are retained; the importer does not delete unmatched objects. Matching document titles are managed imports, so retain custom writing in separate pages. Proxmox sync is hourly; new pending guests still need review and canvas placement. Physical host IP correlation is specific to the verified cluster's management addresses.
+An optional second exporter argument accepts a non-secret JSON list of OPNsense DNS records (`fqdn`, `server`, `description`) to include Debian/Caddy service names. The initial deployment imported those records. Without that export, existing diagrams/documents are retained; the importer does not delete unmatched objects. The exporter also reads the curated `homelable/physical.yaml` workbook facts. The importer reconciles the 12U rack with shared inventory identities and preserves unrelated rack objects. Retired ytdlp2strm entries retain history with monitoring disabled. Matching document titles are managed imports, so retain custom writing in separate pages. Proxmox sync is hourly; new pending guests still need review and canvas placement. Physical host IP correlation is specific to the verified cluster's management addresses.
 
 ## Backup and restore
 

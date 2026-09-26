@@ -1,0 +1,169 @@
+source: homelab (version 1) (2) (1).xlsx
+source_sheets:
+  - 12U Rack Layout
+  - EX3300 Map
+  - IP Address Book
+rack:
+  name: NavePoint 12U 600mm
+  u_height: 12
+  numbering: bottom-up
+  width_standard: "19"
+mounts:
+  - label: OPNsense
+    u_start: 12
+    u_height: 1
+    faceplate_id: router-1u
+  - label: Juniper EX3300
+    u_start: 11
+    u_height: 1
+    faceplate_id: switch-24
+  - label: Panduit 24-Port Cat6 Patch Coupler
+    u_start: 10
+    u_height: 1
+    faceplate_id: patch-24
+  - label: TrueNAS
+    u_start: 8
+    u_height: 2
+    faceplate_id: server-2u-bays
+  - label: rtx
+    u_start: 4
+    u_height: 4
+    faceplate_id: server-4u-storage
+  - label: se350-left
+    u_start: 2
+    u_height: 2
+    col_start: 0
+    col_span: 6
+    faceplate_id: server-1u
+  - label: se350-right
+    u_start: 2
+    u_height: 2
+    col_start: 6
+    col_span: 6
+    faceplate_id: server-1u
+  - label: Tripp-Lite 12 Outlet PDU
+    u_start: 1
+    u_height: 1
+    faceplate_id: pdu-1u
+additional_devices:
+  - label: XCC-Left
+    type: generic
+    ip: 10.20.0.4
+    check_method: tcp
+    check_target: 10.20.0.4:443
+  - label: XCC-Right
+    type: generic
+    ip: 10.20.0.3
+    check_method: tcp
+    check_target: 10.20.0.3:443
+  - label: APC UPS
+    type: ups
+    ip: 10.20.0.9
+    check_method: ping
+  - label: OpenWrt Archer A7
+    type: router
+    ip: 10.20.0.10
+    check_method: ping
+  - label: PC
+    type: pc
+    check_method: none
+connections:
+  - device: OPNsense
+    ports:
+      - ge-0/0/0
+      - ge-0/0/1
+    mode: trunk
+    vlans: ALL
+    aggregation: LACP
+    speed: 1Gb/s switch ports; router NICs 2.5Gb/s
+  - device: XCC-Left
+    mount: se350-left
+    ports:
+      - ge-0/0/2
+      - ge-0/0/3
+    mode: access
+    vlans: "20"
+    aggregation: failover
+    speed: 1Gb/s
+  - device: XCC-Right
+    mount: se350-right
+    ports:
+      - ge-0/0/4
+      - ge-0/0/5
+    mode: access
+    vlans: "20"
+    aggregation: failover
+    speed: 1Gb/s
+  - device: rtx
+    ports:
+      - ge-0/0/6
+    mode: access
+    vlans: "20"
+    speed: 1Gb/s
+  - device: TrueNAS
+    ports:
+      - ge-0/0/7
+    mode: access
+    vlans: "20"
+    speed: 1Gb/s
+  - device: APC UPS
+    ports:
+      - ge-0/0/8
+    mode: access
+    vlans: "20"
+    speed: 100Mb/s
+  - device: OpenWrt Archer A7
+    ports:
+      - ge-0/0/9
+    mode: trunk
+    vlans: "20,10"
+    speed: 1Gb/s
+  - device: se350-left
+    ports:
+      - ge-0/0/10
+      - ge-0/0/11
+    mode: access
+    vlans: "20"
+    aggregation: failover
+    speed: 1Gb/s
+  - device: se350-right
+    ports:
+      - ge-0/0/12
+      - ge-0/0/13
+    mode: access
+    vlans: "20"
+    aggregation: failover
+    speed: 1Gb/s
+  - device: PC
+    ports:
+      - ge-0/0/23
+    mode: trunk
+    vlans: ALL
+    speed: 1Gb/s
+  - device: TrueNAS
+    ports:
+      - xe-0/1/0
+    mode: access
+    vlans: "30"
+    speed: 10Gb/s DAC
+  - device: rtx
+    ports:
+      - xe-0/1/1
+    mode: trunk
+    vlans: "30,40"
+    speed: 10Gb/s DAC
+  - device: se350-left
+    ports:
+      - xe-0/1/2
+    mode: trunk
+    vlans: "30,40"
+    speed: 10Gb/s DAC
+  - device: se350-right
+    ports:
+      - xe-0/1/3
+    mode: trunk
+    vlans: "30,40"
+    speed: 10Gb/s DAC
+retired_services:
+  - yt2strm.antblu.net
+  - ytdlp2strm.antblu.net

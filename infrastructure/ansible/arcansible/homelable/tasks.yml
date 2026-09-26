@@ -80,6 +80,7 @@
     - api.py
     - backup.sh
     - populate.py
+    - rack.py
 
 - name: Validate Homelable Compose without printing interpolated secrets
   ansible.builtin.command:

@@ -241,3 +241,5 @@ uses loopback port 8002 because Storyteller owns LAN port 8001.
 
 See `docs/admin-guide/homelable.md` for OIDC/Proxmox prerequisites, DNS/firewall
 ownership, handbook import, backup/restore, updates and rollback.
+
+Homelable physical rack and EX3300 assignments are curated from the owner’s workbook in `homelable/physical.yaml`. The controller exporter requires PyYAML and includes these facts automatically; the API importer adds the **12U Rack** design and retains unrelated rack objects. See `docs/infrastructure/homelable-physical.md` for positions, port assignments and source discrepancies.

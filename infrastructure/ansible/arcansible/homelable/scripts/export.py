@@ -4,13 +4,14 @@
 Run from the repository root. OPNsense DNS export is optional. Never reads
 kubeconfig contents, credentials, Secrets, pod inventories, or private VM inputs.
 """
-import json,pathlib,subprocess,sys,re
+import json,pathlib,subprocess,sys,re,yaml
 repo=pathlib.Path.cwd();out=pathlib.Path(sys.argv[1]);dns_path=pathlib.Path(sys.argv[2]) if len(sys.argv)>2 else None
 kubectl=['/home/linuxbrew/.linuxbrew/bin/kubectl','--kubeconfig','kubeconfig']
 def kubernetes(kind): return json.loads(subprocess.check_output(kubectl+['get',kind,'-A','-o','json']))['items']
 pve=json.loads(subprocess.check_output(['ssh','proxmox','pvesh get /cluster/resources --output-format json']))
 kube_nodes=kubernetes('nodes');ingresses=kubernetes('ingress');services=kubernetes('svc')
 dns=json.loads(dns_path.read_text()) if dns_path else []
+physical=yaml.safe_load((pathlib.Path(__file__).resolve().parent.parent/'physical.yaml').read_text())
 documents=[];docs_by_slug={}
 for section,folder in [('Architecture','infrastructure'),('Operations','admin-guide'),('User Guides','user-guide')]:
  for path in sorted((repo/'docs'/folder).glob('*.md')):
@@ -29,9 +30,25 @@ def node(label,typ='generic',ip=None,check='none',target=None,notes='',**extra):
 host_ips={'rtx':'10.20.0.6','se350-left':'10.20.0.7','se350-right':'10.20.0.8'}
 hosts=[node(n,'proxmox',ip,'tcp',ip+':8006',notes='Proxmox cluster host; address verified from corosync.',x=i*600,y=100) for i,(n,ip) in enumerate(host_ips.items())]
 core=[node('Internet','isp',notes='Upstream Internet; no availability check.'),node('OPNsense','firewall','10.30.0.1','ping',notes='Router for VLANs 20, 30 and 40; AdGuard Home on port 53 forwards to Unbound on 53053.'),node('Juniper EX3300','switch',notes='Managed switch. Management IP and physical port assignments require confirmation.'),*[dict(n) for n in hosts],node('TrueNAS','nas','10.20.0.5','tcp','10.20.0.5:443',notes='TrueNAS management. Shared storage endpoints include 10.30.0.5; pool/physical cabling not inferred.')]
+# Physical facts are curated from the user's workbook, including its color legend.
+for n in core:
+ if n['label']=='Juniper EX3300': n.update(ip='10.20.0.2',check_method='ping',notes='EX3300-24T: 24 copper ports plus four SFP+. Management address and connections from physical.yaml / user workbook.')
+ if n['label']=='TrueNAS': n['notes']='TrueNAS management 10.20.0.5, data endpoint 10.30.0.5. Workbook switch map specifies SFP+ access VLAN 30; address book instead lists trunk 30/40 (unresolved).'
+core += [dict(n,notes='Management/endpoint identity supplied by user workbook; rack placement only where specified.') for n in physical['additional_devices']]
+for m in physical['mounts']:
+ if not any(n['label']==m['label'] for n in core):core.append(node(m['label'],'generic',notes='Passive rack equipment supplied by user workbook.'))
 # Render explicit placements rather than guessed switch patching.
 for i,n in enumerate(core):n['x']=(i%4)*400;n['y']=(i//4)*230
-core_edges=[('Internet','OPNsense','Internet routing'),('OPNsense','Juniper EX3300','VLAN routing / switching')]
+core_edges=[('Internet','OPNsense','Internet routing')]
+for c in physical['connections']:
+ core_edges.append(('Juniper EX3300',c['device'],', '.join(c['ports'])+' | '+c['mode']+' VLAN '+c['vlans']+' | '+c.get('aggregation',c['speed'])))
+for n in core:
+ links=[c for c in physical['connections'] if c['device']==n['label']]
+ mounts=[m for m in physical['mounts'] if m['label']==n['label']]
+ n['properties']=[{'key':'Switch ports','value':'; '.join(', '.join(c['ports'])+' ('+c['mode']+' VLAN '+c['vlans']+')' for c in links),'visible':True}] if links else []
+ if mounts:
+  m=mounts[0];n['properties'].append({'key':'Rack','value':physical['rack']['name']+' U'+str(m['u_start'])+'–'+str(m['u_start']+m['u_height']-1),'visible':True})
+ n['notes']+=' See Architecture Overviews / Physical Rack and Switch Map for source, cabling and rack details.'
 logical=[node('OPNsense','firewall','10.30.0.1','ping',x=450,y=20)]
 for i,(label,cidr) in enumerate([('VLAN 20 Management','10.20.0.0/24'),('VLAN 30 Internal','10.30.0.0/24'),('VLAN 40 Virtual','10.40.0.0/24')]):
  logical.append(node(label,'groupRect',notes='Subnet '+cidr,description=cidr,width=520,height=620,x=i*620,y=220))
@@ -87,7 +104,7 @@ for d in dns:
  if d['server']=='10.30.0.27':entries.append((fqdn,slug_alias.get(fqdn.split('.')[0],'media'),'Debian / Caddy'))
 entries.append(('homelable.antblu.net','homelable','Debian Arc / Caddy'))
 for fqdn,ns,platform in entries:
- if fqdn in seen:continue
+ if fqdn in seen or fqdn in physical['retired_services']:continue
  seen.add(fqdn);slug=slug_alias.get(fqdn.split('.')[0],ns);category=categories.get(slug,'Media' if platform.startswith('Debian') and slug!='homelable' else 'Applications');j=category_counts.get(category,0);category_counts[category]=j+1
  n=node(fqdn,'generic',hostname=fqdn,check='https',target='https://'+fqdn,notes='Platform: '+platform+'. HTTPS checks indicate endpoint reachability, not a successful authenticated transaction.',group=category,x=40+(j%3)*270,y=80+(j//3)*130)
  service_nodes.append(n);device_docs[fqdn]=docs_by_slug.get(slug,[])
@@ -98,8 +115,11 @@ for n in pve_nodes:
  if n['label'] not in device_docs:device_docs[n['label']]=docs_by_slug.get('platform' if n['label'].startswith('talos') else 'virtual-machines',[])
 for label,slugs in {'OPNsense':['networking'],'Juniper EX3300':['networking'],'TrueNAS':['storage'],'Traefik / Shared VIP':['traefik','metallb']}.items():device_docs[label]=sum((docs_by_slug.get(s,[]) for s in slugs),[])
 for label,slug in [('Network Overview','networking'),('Proxmox Architecture','platform'),('Kubernetes Architecture','platform'),('Authentication','authentik'),('Storage','storage'),('Backups / Disaster Recovery','disaster-recovery')]:
- refs=docs_by_slug.get(slug,[]);documents.append({'section':'Architecture Overviews','title':label,'body':'# '+label+'\n\nExisting handbook references:\n\n'+'\n'.join('[[doc:'+t+'|'+t+']]' for t in refs)+'\n\nLive inventory is represented in the related canvases. VLAN MAC visibility is limited to VLAN 30 from Arc. Physical switch ports and rack U positions have not been supplied.'})
+ refs=docs_by_slug.get(slug,[]);documents.append({'section':'Architecture Overviews','title':label,'body':'# '+label+'\n\nExisting handbook references:\n\n'+'\n'.join('[[doc:'+t+'|'+t+']]' for t in refs)+'\n\nLive inventory is represented in the related canvases. VLAN MAC visibility is limited to VLAN 30 from Arc. Physical switch ports and rack positions are recorded in [[doc:Physical Rack and Switch Map|Physical Rack and Switch Map]] from the user workbook.'})
 service_rows=['| Name | Platform | Check |','| --- | --- | --- |']+['| '+n['label']+' | '+n['notes'].split('.')[0]+' | HTTPS '+n['check_target']+' |' for n in service_nodes]
 documents.append({'section':'Architecture Overviews','title':'Service Catalog','body':'# Service Catalog\n\n'+ '\n'.join(service_rows)+'\n\nSee each service handbook page for purpose, dependency, recovery and availability details.'})
-bundle={'proxmox_host_ips':host_ips,'proxmox_host':'rtx.homelab.local','documents':documents,'device_docs':device_docs,'canvases':[{'name':'Physical / Core Network','nodes':core,'edges':core_edges},{'name':'Logical Network','nodes':logical,'edges':logical_edges},{'name':'Proxmox','nodes':pve_nodes,'edges':pve_edges},{'name':'Kubernetes','nodes':k8s,'edges':k8s_edges},{'name':'Services','groups':list(category_counts),'nodes':service_nodes,'edges':service_edges}]}
+physical_page=re.sub(r'^---\n.*?\n---\n','',(repo/'docs/infrastructure/homelable-physical.md').read_text(),flags=re.S)
+documents.append({'section':'Architecture Overviews','title':'Physical Rack and Switch Map','body':physical_page})
+for n in core:device_docs.setdefault(n['label'],[]).append('Physical Rack and Switch Map')
+bundle={'physical':physical,'proxmox_host_ips':host_ips,'proxmox_host':'rtx.homelab.local','documents':documents,'device_docs':device_docs,'canvases':[{'name':'Physical / Core Network','nodes':core,'edges':core_edges},{'name':'Logical Network','nodes':logical,'edges':logical_edges},{'name':'Proxmox','nodes':pve_nodes,'edges':pve_edges},{'name':'Kubernetes','nodes':k8s,'edges':k8s_edges},{'name':'Services','groups':list(category_counts),'nodes':service_nodes,'edges':service_edges}]}
 out.write_text(json.dumps(bundle));print(json.dumps({'documents':len(documents),'services':len(service_nodes),'canvases':5,'output':str(out)}))

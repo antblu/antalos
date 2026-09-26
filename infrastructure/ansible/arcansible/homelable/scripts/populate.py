@@ -111,3 +111,16 @@ for (canvas,label),n in node_results.items():
  body+='\n\n## Monitoring\n\nMethod: '+str(n.get('check_method') or 'none')+'\n\nTarget: '+str(n.get('check_target') or n.get('ip') or 'not applicable')+'\n'
  d=api('/documents',{'kind':'device','title':label,'device_id':device_id,'body':body});by_device[device_id]=d;linked+=1
 print(json.dumps({'designs':len(designs),'canvas_nodes':len(node_results),'documents':len(api('/documents')),'new_device_documents':linked,'proxmox_devices':pve['device_count']}))
+
+if bundle.get('physical'):
+ from rack import reconcile_rack
+ print(json.dumps(reconcile_rack(bundle['physical'],node_results)))
+ # Retired services remain recoverable, with no monitoring or catalog entry.
+ retired=[n for n in all_nodes if n['label'] in bundle['physical']['retired_services']]
+ if retired:
+  group=place('Services','Retired services',{'type':'groupRect','description':'Retired by owner; monitoring disabled; documents retained','check_method':'none','width':900,'height':420},0,7000)
+  for n in retired:
+   note=(n.get('notes') or '').split('\nRetired by owner:')[0]+'\nRetired by owner: ytdlp2strm removed. Monitoring disabled; history/documentation retained.'
+   api('/nodes/'+n['id'],{'parent_id':group['id'],'check_method':'none','status':'unknown','notes':note,'pos_x':40,'pos_y':90},'PATCH')
+   if n.get('device_id'):api('/scan/pending/'+n['device_id']+'/hide',{},'POST')
+  print(json.dumps({'retired_service_instances':len(retired)}))

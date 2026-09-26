@@ -24,3 +24,7 @@ Open a device's documentation to follow linked architecture and runbooks. The Do
 Imported handbook content describes repository design and records its source path. A green HTTP/HTTPS indicator means the endpoint answered according to Homelable's check; it does not prove database correctness, successful login or all application dependencies. Use the existing monitoring systems and service transaction checks for that evidence.
 
 Unknown discovered hosts stay in the pending inventory until their identity is established. Routed VLANs normally have no scanner MAC addresses. Review new findings instead of approving every entry or treating a missing MAC as a failure.
+
+## Rack and switch connections
+
+Open **12U Rack** to view bottom-up U positions and the EX3300’s 28 sockets. Cable labels identify switch ports; select a cable for VLAN, mode and link information. The physical/core network canvas also shows devices whose rack locations are unspecified. See [Rack and Switch Map](/infrastructure/homelable-physical/) for the workbook source, complete mapping and the NAS VLAN discrepancy. **Retired services** retains ytdlp2strm’s documentation with monitoring disabled.

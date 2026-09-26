@@ -61,6 +61,7 @@ export default defineConfig({
             { label: 'Traffic, DNS, and TLS', link: '/infrastructure/networking/' },
             { label: 'Storage and data', link: '/infrastructure/storage/' },
             { label: 'Debian application VMs', link: '/infrastructure/virtual-machines/' },
+            { label: 'Rack and switch connections', link: '/infrastructure/homelable-physical/' },
             { label: 'Availability and failure domains', link: '/infrastructure/availability/' },
             ...serviceNavigation('infrastructure'),
           ],
