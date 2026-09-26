@@ -1,12 +1,12 @@
 {
-	email antblu@antblu.net
+        email antblu@antblu.net
 
-	cert_issuer acme {
-		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-		resolvers 10.30.0.1
-		propagation_timeout -1
-		propagation_delay 90s
-	}
+        cert_issuer acme {
+                dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+                resolvers 10.30.0.1
+                propagation_timeout -1
+                propagation_delay 90s
+        }
 }
 llama.antblu.net {
         reverse_proxy 10.30.0.26:8080
@@ -21,56 +21,65 @@ home.antblu.net {
         reverse_proxy 10.30.0.50
 }
 jelly.antblu.net {
-	reverse_proxy 10.30.0.28:8096
+        reverse_proxy 10.30.0.28:8096
 }
 seerr.antblu.net {
-	reverse_proxy 10.30.0.27:5055
+        reverse_proxy 10.30.0.27:5055
 }
 sonarr.antblu.net {
-	reverse_proxy 10.30.0.27:8989
+        reverse_proxy 10.30.0.27:8989
 }
 radarr.antblu.net {
-	reverse_proxy 10.30.0.27:7878
+        reverse_proxy 10.30.0.27:7878
 }
 prowlarr.antblu.net {
-	reverse_proxy 10.30.0.27:9696
+        reverse_proxy 10.30.0.27:9696
 }
 torrent.antblu.net {
-	reverse_proxy 10.30.0.27:8081
+        reverse_proxy 10.30.0.27:8081
 }
 bazarr.antblu.net {
-	reverse_proxy 10.30.0.27:6767
+        reverse_proxy 10.30.0.27:6767
 }
 subgen.antblu.net {
-	reverse_proxy 10.30.0.27:9000
+        reverse_proxy 10.30.0.27:9000
 }
 autopulse.antblu.net {
-	reverse_proxy 10.30.0.27:2875
+        reverse_proxy 10.30.0.27:2875
 }
 maintainerr.antblu.net {
-	reverse_proxy 10.30.0.27:6246
+        reverse_proxy 10.30.0.27:6246
 }
 pixelfin.antblu.net {
-	reverse_proxy 10.30.0.27:1280
+        reverse_proxy 10.30.0.27:1280
 }
 streamystats.antblu.net {
-	reverse_proxy 10.30.0.27:3000
+        reverse_proxy 10.30.0.27:3000
 }
 lidarr.antblu.net {
-	reverse_proxy 10.30.0.27:8686
+        reverse_proxy 10.30.0.27:8686
 }
 audiomuse.antblu.net {
-	reverse_proxy 10.30.0.27:8000
+        reverse_proxy 10.30.0.27:8000
 }
 scrobbler.antblu.net {
-	reverse_proxy 10.30.0.27:9078
+        reverse_proxy 10.30.0.27:9078
 }
 explo.antblu.net {
-	reverse_proxy 10.30.0.27:7288
+        reverse_proxy 10.30.0.27:7288
 }
 yt2strm.antblu.net {
-	reverse_proxy 10.30.0.27:5005
+        reverse_proxy 10.30.0.27:5005
 }
 cliparr.antblu.net {
-	reverse_proxy 10.30.0.27:7171
+        reverse_proxy 10.30.0.27:7171
+}
+tdarr.antblu.net {
+        reverse_proxy 10.30.0.28:8265
+}
+trailarr.antblu.net {
+        reverse_proxy 10.30.0.28:7889
+}
+books.antblu.net {
+        reverse_proxy 10.30.0.28:8001
 }
