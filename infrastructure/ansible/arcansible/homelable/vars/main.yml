@@ -1,0 +1,26 @@
+homelable_root: /opt/compose/homelable
+homelable_version: "3.5.1"
+homelable_backend_bind: 172.17.0.1
+homelable_frontend_bind: 10.30.0.28
+homelable_frontend_port: "3000"
+homelable_mcp_port: "8002"
+homelable_origin: https://homelable.antblu.net
+homelable_authentik_origin: https://auth.antblu.net
+homelable_proxmox_host: rtx.homelab.local
+homelable_proxmox_ip: 10.20.0.6
+homelable_scan_ranges:
+  - 10.20.0.0/24
+  - 10.30.0.0/24
+  - 10.40.0.0/24
+homelable_http_ports:
+  - "1234"
+  - "3000"
+  - "3003"
+  - "5001"
+  - "5299"
+  - "7889"
+  - "8000-8001"
+  - "8080-8081"
+  - "8096"
+  - "8265-8266"
+  - "9000"

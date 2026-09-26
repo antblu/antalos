@@ -1,0 +1,116 @@
+name: antalos-homelable
+services:
+  backend:
+    image: ghcr.io/pouzor/homelable-backend:${HOMELABLE_VERSION}
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - ${HOMELABLE_BACKEND_BIND}
+      - --port
+      - "8000"
+      - --proxy-headers
+      - --forwarded-allow-ips
+      - "*"
+    env_file:
+      - backend.env
+    extra_hosts:
+      - ${HOMELABLE_PROXMOX_HOST}:${HOMELABLE_PROXMOX_IP}
+    volumes:
+      - data:/app/data
+      - ./ca-bundle.crt:/app/ca-bundle.crt:ro
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_RAW
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - --fail
+        - --silent
+        - http://${HOMELABLE_BACKEND_BIND}:8000/api/v1/health
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: "3"
+  frontend:
+    image: ghcr.io/pouzor/homelable-frontend:${HOMELABLE_VERSION}
+    restart: unless-stopped
+    environment:
+      BACKEND_UPSTREAM: host.docker.internal:8000
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "${HOMELABLE_FRONTEND_BIND}:${HOMELABLE_FRONTEND_PORT}:80"
+    networks:
+      - homelable
+    depends_on:
+      backend:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - -q
+        - -O
+        - /dev/null
+        - http://127.0.0.1/api/v1/health
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: "3"
+  mcp:
+    image: ghcr.io/pouzor/homelable-mcp:${HOMELABLE_VERSION}
+    restart: unless-stopped
+    env_file:
+      - mcp.env
+    environment:
+      BACKEND_URL: http://host.docker.internal:8000
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "127.0.0.1:${HOMELABLE_MCP_PORT}:8001"
+    networks:
+      - homelable
+    depends_on:
+      backend:
+        condition: service_healthy
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5)
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: "3"
+volumes:
+  data:
+networks:
+  homelable:
+    driver: bridge

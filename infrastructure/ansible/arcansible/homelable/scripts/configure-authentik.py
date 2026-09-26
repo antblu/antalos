@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""Reconcile only Homelable's Authentik provider from its protected Arc credentials.
+Run from the repository root. Requires existing SSH and Kubernetes access.
+"""
+import json,subprocess,tempfile,pathlib
+read="sudo python3 -c \"import json,pathlib; e={k:v.strip().strip(chr(39)) for k,v in (l.split('=',1) for l in pathlib.Path('/opt/compose/homelable/backend.env').read_text().splitlines() if '=' in l)}; print(json.dumps({'secret':e['OIDC_CLIENT_SECRET']}))\""
+credentials=json.loads(subprocess.check_output(['ssh','debian-arc',read]))
+script='from authentik.flows.models import Flow\nfrom authentik.providers.oauth2.models import OAuth2Provider, ScopeMapping\nfrom authentik.crypto.models import CertificateKeyPair\nfrom authentik.core.models import Application\nfrom django.db import transaction\nwith transaction.atomic():\n    provider, created = OAuth2Provider.objects.get_or_create(name="Provider for Homelable", defaults={"authorization_flow": Flow.objects.get(slug="default-provider-authorization-implicit-consent"), "invalidation_flow": Flow.objects.get(slug="default-provider-invalidation-flow")})\n    provider.authentication_flow=Flow.objects.get(slug="normal-authentication-flow")\n    provider.client_type="confidential"\n    provider.grant_types=["authorization_code","refresh_token"]\n    provider.client_id="homelable"\n    provider.client_secret=CLIENT_SECRET\n    provider._redirect_uris=[{"matching_mode":"strict","redirect_uri_type":"authorization","url":"https://homelable.antblu.net/api/v1/auth/oidc/callback"}]\n    provider.signing_key=CertificateKeyPair.objects.get(name="authentik Self-signed Certificate")\n    provider.include_claims_in_id_token=True\n    provider.issuer_mode="per_provider"\n    provider.sub_mode="hashed_user_id"\n    provider.save()\n    provider.property_mappings.set(ScopeMapping.objects.filter(name__startswith="authentik default OAuth Mapping:", scope_name__in=["openid","email","profile"]))\n    app, _=Application.objects.update_or_create(slug="homelable", defaults={"name":"Homelable","provider":provider,"meta_launch_url":"https://homelable.antblu.net","meta_description":"Antalos infrastructure topology and documentation","policy_engine_mode":"any"})\nprint("Homelable OIDC provider and application configured")\n'.replace('CLIENT_SECRET',repr(credentials['secret']))
+cmd=['/home/linuxbrew/.linuxbrew/bin/kubectl','--kubeconfig','kubeconfig','-n','authentik','exec','-i','deploy/authentik-worker','--','ak','shell','-c',"exec(__import__('sys').stdin.read())"]
+result=subprocess.run(cmd,input=script,text=True,capture_output=True)
+if result.returncode:
+    folder=pathlib.Path(tempfile.mkdtemp(prefix='homelable-authentik-')); log=folder/'setup.log';log.write_text(result.stdout+result.stderr);log.chmod(0o600)
+    raise SystemExit('Authentik setup failed; inspect protected log '+str(log))
+print('Homelable OIDC provider and application reconciled')

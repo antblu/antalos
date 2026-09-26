@@ -229,3 +229,15 @@ changed cloud-init dependency set, or install the same packages manually before
 running the playbook. The playbook also repairs the active Debian repository
 configuration, including `contrib`, `non-free`, and `non-free-firmware`, so an
 existing VM does not need to be recreated solely for missing package sources.
+
+## Homelable infrastructure mapper
+
+Homelable is an independent Compose project at `/opt/compose/homelable`. Run
+`homelable.yml` for isolated maintenance; the full `site.yml` imports it. Sources,
+public Proxmox CA and scripts are under `homelable/`; private credentials are in
+ignored `homelable/vars/vault.yml` (mode `0600`). Preserve these keys across runs.
+The backend uses host networking but binds only Docker's host-side address. MCP
+uses loopback port 8002 because Storyteller owns LAN port 8001.
+
+See `docs/admin-guide/homelable.md` for OIDC/Proxmox prerequisites, DNS/firewall
+ownership, handbook import, backup/restore, updates and rollback.

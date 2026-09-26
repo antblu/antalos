@@ -60,3 +60,10 @@ and the shared NAS, while alignment also depends on Arc.
 Each VM is a single compute endpoint. Losing the VM, its GPU, its storage, or its physical host interrupts the features it supplies. Kubernetes replicas can keep an application's other functions available while recording, conversion, or local inference remains unavailable.
 
 Back up VM state according to the data it owns: model files that cannot be reacquired, Jellyfin configuration, media, credentials, and outputs. A successful VM recreation is not a restore of these items. See [VM lifecycle](/admin-guide/virtual-machines/) for the operating sequence.
+
+## Homelable on Debian Arc
+
+[Homelable](/infrastructure/homelable/) runs as an independent Compose project
+on Arc. Its host-networked backend discovers reachable VLANs; Debian Left Caddy
+provides its HTTPS entrypoint and Authentik provides OIDC. The application and
+local SQLite volume are a recoverable singleton. It needs no Intel GPU.

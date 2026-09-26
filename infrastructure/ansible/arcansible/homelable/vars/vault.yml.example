@@ -1,0 +1,6 @@
+vault_homelable_secret_key: "REPLACE_PRIVATELY"
+vault_homelable_oidc_client_secret: "REPLACE_PRIVATELY"
+vault_homelable_mcp_api_key: "REPLACE_PRIVATELY"
+vault_homelable_mcp_service_key: "REPLACE_PRIVATELY"
+vault_homelable_proxmox_token_id: "REPLACE_PRIVATELY"
+vault_homelable_proxmox_token_secret: "REPLACE_PRIVATELY"

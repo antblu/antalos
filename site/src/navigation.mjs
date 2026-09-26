@@ -101,6 +101,10 @@ export const serviceGroups = [
         "label": "Grafana, metrics, and logs"
       },
       {
+        "slug": "homelable",
+        "label": "Homelable"
+      },
+      {
         "slug": "uptime-kuma",
         "label": "Uptime Kuma"
       },

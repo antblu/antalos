@@ -1,0 +1,8 @@
+---
+- name: Deploy only Homelable on Debian Arc
+  hosts: debian_arc
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Configure the independent Homelable project
+      ansible.builtin.import_tasks: homelable/tasks.yml

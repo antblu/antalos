@@ -881,6 +881,8 @@
         enabled: true
         daemon_reload: true
 
+- import_playbook: homelable.yml
+
 - name: Register the Talk recording backend in Nextcloud
   hosts: localhost
   connection: local

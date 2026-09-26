@@ -196,3 +196,11 @@ These are the evidence an administrator should capture in an authorized drill, n
 6. Record Argo sync/health separately from application results and persist any repair in the source manifests.
 
 Do not begin a second node’s maintenance just because replacement pods are Running. Full redundancy requires healthy copies, correct roles, and usable endpoints again.
+
+## Infrastructure map availability
+
+[Homelable](/infrastructure/homelable/) is a recoverable singleton on Debian Arc.
+Its HTTPS path also depends on Debian Left Caddy and new sessions depend on
+Authentik. Running outside Kubernetes preserves the map during some cluster
+failures, but does not remove shared Proxmox/network dependencies. Local backup
+archives require a separate off-host copy for disaster recovery.

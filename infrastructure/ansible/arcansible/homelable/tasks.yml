@@ -1,0 +1,119 @@
+- name: Load Homelable deployment inputs
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/homelable/vars/main.yml"
+
+- name: Load protected Homelable credentials
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/homelable/vars/vault.yml"
+  no_log: true
+
+- name: Require Homelable integration credentials
+  ansible.builtin.assert:
+    that:
+      - vault_homelable_secret_key | length >= 64
+      - vault_homelable_oidc_client_secret | length >= 32
+      - vault_homelable_mcp_api_key | length >= 64
+      - vault_homelable_mcp_service_key | length >= 64
+      - vault_homelable_proxmox_token_id == 'homelable@pve!inventory'
+      - vault_homelable_proxmox_token_secret | length > 0
+  no_log: true
+
+- name: Create the independent Homelable Compose project
+  ansible.builtin.file:
+    path: "{{ homelable_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Copy Homelable Compose definition
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/homelable/compose.yaml"
+    dest: "{{ homelable_root }}/compose.yaml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Copy the public Proxmox cluster CA
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/homelable/pve-root-ca.certificate"
+    dest: "{{ homelable_root }}/pve-root-ca.certificate"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Combine system trust with the Proxmox CA for this application
+  ansible.builtin.shell:
+    cmd: |
+      cat /etc/ssl/certs/ca-certificates.crt "{{ homelable_root }}/pve-root-ca.certificate" > "{{ homelable_root }}/ca-bundle.crt.new"
+      if cmp -s "{{ homelable_root }}/ca-bundle.crt.new" "{{ homelable_root }}/ca-bundle.crt"; then
+        rm "{{ homelable_root }}/ca-bundle.crt.new"
+      else
+        mv "{{ homelable_root }}/ca-bundle.crt.new" "{{ homelable_root }}/ca-bundle.crt"
+        echo updated
+      fi
+    executable: /bin/sh
+  register: homelable_trust
+  changed_when: "'updated' in homelable_trust.stdout"
+
+- name: Write the protected Homelable environment files
+  ansible.builtin.template:
+    src: "{{ playbook_dir }}/homelable/templates/{{ item }}.env.j2"
+    dest: "{{ homelable_root }}/{{ '.env' if item == 'compose' else item + '.env' }}"
+    owner: root
+    group: root
+    mode: "0600"
+  loop:
+    - compose
+    - backend
+    - mcp
+  no_log: true
+
+- name: Copy Homelable operational scripts
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/homelable/scripts/{{ item }}"
+    dest: "{{ homelable_root }}/{{ item }}"
+    owner: root
+    group: root
+    mode: "0700"
+  loop:
+    - api.py
+    - backup.sh
+    - populate.py
+
+- name: Validate Homelable Compose without printing interpolated secrets
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/docker
+      - compose
+      - --project-directory
+      - "{{ homelable_root }}"
+      - config
+      - --quiet
+  changed_when: false
+  no_log: true
+
+- name: Start only Homelable and wait for its health checks
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/docker
+      - compose
+      - --project-directory
+      - "{{ homelable_root }}"
+      - up
+      - --detach
+      - --wait
+      - --wait-timeout
+      - "120"
+  register: homelable_start
+  changed_when: "'Created' in homelable_start.stderr or 'Recreated' in homelable_start.stderr or 'Started' in homelable_start.stderr"
+
+- name: Enable hourly native Proxmox synchronization
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/python3
+      - "{{ homelable_root }}/api.py"
+      - /proxmox/config
+      - '{"sync_enabled":true,"sync_interval":3600}'
+  changed_when: false
+  no_log: true
