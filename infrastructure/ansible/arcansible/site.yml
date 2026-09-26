@@ -330,6 +330,10 @@
           owner: "{{ media_uid }}"
           group: "{{ media_gid }}"
           mode: "0750"
+        - path: "{{ arc_compose_root }}/data/storyteller"
+          owner: "{{ media_uid }}"
+          group: "{{ media_gid }}"
+          mode: "0750"
         - path: "{{ arc_compose_root }}/data/tdarr/server"
           owner: "{{ media_uid }}"
           group: "{{ media_gid }}"
@@ -346,6 +350,32 @@
           owner: "{{ media_uid }}"
           group: "{{ media_gid }}"
           mode: "0750"
+
+    - name: Create Storyteller assets on the shared media export
+      become_user: media
+      ansible.builtin.file:
+        path: "{{ jellyfin_media_path }}/storyteller"
+        state: directory
+        mode: "0755"
+
+    - name: Generate the Storyteller authentication key only on first installation
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/openssl
+          - rand
+          - -base64
+          - -out
+          - "{{ arc_compose_root }}/data/storyteller/secret_key"
+          - "32"
+        creates: "{{ arc_compose_root }}/data/storyteller/secret_key"
+      no_log: true
+
+    - name: Protect the persistent Storyteller authentication key
+      ansible.builtin.file:
+        path: "{{ arc_compose_root }}/data/storyteller/secret_key"
+        owner: "{{ media_uid }}"
+        group: "{{ media_gid }}"
+        mode: "0600"
 
     - name: Give Jellyfin access to its existing local state after UID migration
       ansible.builtin.file:
@@ -448,6 +478,7 @@
           - jellyfin
           - trailarr
           - tdarr
+          - storyteller
       changed_when: true
 
     - name: Build the Docling XPU image
@@ -480,6 +511,15 @@
           - --wait-timeout
           - "900"
       changed_when: true
+
+    - name: Wait for Storyteller HTTP
+      ansible.builtin.uri:
+        url: "http://{{ debian_arc_ip }}:{{ storyteller_port }}"
+        status_code: 200
+      register: storyteller_http
+      retries: 30
+      delay: 10
+      until: storyteller_http.status == 200
 
     - name: Wait for Jellyfin HTTP health
       ansible.builtin.uri:
@@ -699,7 +739,7 @@
           [Service]
           Type=oneshot
           WorkingDirectory={{ arc_compose_root }}
-          ExecStart=/usr/bin/docker compose --project-directory {{ arc_compose_root }} --file {{ arc_compose_root }}/compose.yaml up --detach --force-recreate immich-machine-learning nextcloud-talk-recording trailarr tdarr
+          ExecStart=/usr/bin/docker compose --project-directory {{ arc_compose_root }} --file {{ arc_compose_root }}/compose.yaml up --detach --force-recreate immich-machine-learning nextcloud-talk-recording trailarr tdarr storyteller
           RemainAfterExit=yes
 
     - name: Install the Arc render-device path unit

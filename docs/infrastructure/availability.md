@@ -121,7 +121,7 @@ Headscale, Headplane, and RustDesk hbbs keep SQLite on local pod storage and cop
 
 Vaultwarden and UrBackup also have single application processes, even though their state persists elsewhere. They return through replacement/restart, not through a ready hot application replica. Document that outage instead of presenting rescheduling as uninterrupted failover.
 
-The [Debian VM layer](/infrastructure/virtual-machines/) has its own availability limits. Arc hosts recording, Immich Machine Learning, Jellyfin, and Docling. RTX hosts llama-swap and Speaches. The left playbook configures a base Debian host without deploying Compose workloads. Each managed VM endpoint is a singleton; its loss interrupts its consumers' corresponding features. Manually installed applications require a separate inventory.
+The [Debian VM layer](/infrastructure/virtual-machines/) has its own availability limits. Arc hosts recording, Immich Machine Learning, Jellyfin, Storyteller, and Docling. RTX hosts llama-swap and Speaches. The left playbook configures a base Debian host without deploying Compose workloads. Each managed VM endpoint is a singleton; its loss interrupts its consumers' corresponding features. Manually installed applications require a separate inventory.
 
 ## Shared failure domains
 

@@ -50,6 +50,7 @@ Read the playbook before a maintenance run. These playbooks can install packages
 | Immich Machine Learning | Register the remote endpoint in the separately managed Immich server |
 | Jellyfin / media stack | Prepare the `10.30.0.5:/mnt/warm/jellyfin` NFS export for UID:GID `1008:1008`, fill the protected Debian Left media environment, then configure each application and test a representative import or encode |
 | Docling | Configure the client endpoint and its `X-Api-Key` credential |
+| Storyteller | Create the admin account at `http://10.30.0.28:8001`, upload ebooks/audiobooks or configure auto-import under `/media`, then test an alignment with Intel SYCL transcription |
 
 Successful container startup does not finish an application integration. Use a small representative request through the actual consumer after deployment.
 
@@ -69,3 +70,11 @@ Use `ssh proxmox` for hypervisor diagnostics and `ssh nas` for storage diagnosti
 Make durable Compose changes in the Ansible project, then deploy through that project. Changes made only in `/opt/compose` can be overwritten on the next playbook run. Cloud-init changes are provisioning changes and do not automatically rerun on an existing guest.
 
 Recover persistent data and original secrets before reconnecting consumers. A newly reachable endpoint with an empty data directory is not evidence that the former service has been restored.
+
+For Storyteller, preserve `/opt/compose/data/storyteller` (database and generated
+`secret_key`) and `/mnt/warm/jellyfin/storyteller` (books, audio, and covers).
+Ansible generates the authentication key only when absent. The application uses
+UID:GID `1008:1008` through `PUID`/`PGID` and receives the Arc render device;
+its SQLite database and processing scratch space stay on the VM while assets
+use Jellyfin's existing NFS export. A successful HTTP response does not prove
+that a book alignment uses GPU transcription.

@@ -62,21 +62,27 @@ services:
       - "${LEFT_IP}:9696:9696"
     volumes:
       - prowlarr-config:/config
+      
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    restart: unless-stopped
+    environment:
+      LOG_LEVEL: info
+      TZ: ${TZ}
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
     restart: unless-stopped
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
     environment:
       PUID: "1008"
       PGID: "1008"
       TZ: ${TZ}
       WEBUI_PORT: "8081"
-      TORRENTING_PORT: "6881"
-    ports:
-      - "${LEFT_IP}:8081:8081"
-      - "${LEFT_IP}:6881:6881"
-      - "${LEFT_IP}:6881:6881/udp"
     volumes:
       - qbittorrent-config:/config
       - type: bind
@@ -84,6 +90,39 @@ services:
         target: /media
         bind:
           create_host_path: false
+
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      # General
+      TZ: ${TZ}
+      VPN_SERVICE_PROVIDER: protonvpn
+      VPN_TYPE: wireguard
+      WIREGUARD_PRIVATE_KEY: ${PROTON_WIREGUARD_PRIVATE_KEY}
+      PORT_FORWARD_ONLY: "on"
+      SERVER_COUNTRIES: "United States"
+      VPN_PORT_FORWARDING: "on"
+      VPN_PORT_FORWARDING_STATUS_FILE: /tmp/gluetun/forwarded_port
+      # Automatically tell qBittorrent which port Proton assigned.
+      VPN_PORT_FORWARDING_UP_COMMAND: >-
+        /bin/sh -c 'wget -O- -nv --retry-connrefused
+        --post-data "json={\"listen_port\":{{PORT}},\"current_network_interface\":\"{{VPN_INTERFACE}}\",\"random_port\":false,\"upnp\":false}"
+        http://127.0.0.1:8081/api/v2/app/setPreferences'
+      # Reset qBittorrent when the Proton forwarding lease disappears
+      VPN_PORT_FORWARDING_DOWN_COMMAND: >-
+        /bin/sh -c 'wget -O- -nv --retry-connrefused
+        --post-data "json={\"listen_port\":0,\"current_network_interface\":\"lo\"}"
+        http://127.0.0.1:8081/api/v2/app/setPreferences'
+    ports:
+      - "${LEFT_IP}:8081:8081/tcp"
+    volumes:
+      - gluetun-data:/gluetun
 
   recyclarr:
     image: ghcr.io/recyclarr/recyclarr:8
@@ -293,7 +332,19 @@ services:
       TZ: ${TZ}
       PUID: "1008"
       PGID: "1008"
-      BASE_URL: http://${LEFT_IP}:9078
+      BASE_URL: "https://scrobbler.antblu.net"
+       # Jellyfin source
+      JELLYFIN_ID: "jellyfin"
+      JELLYFIN_NAME: "Jellyarc"
+      JELLYFIN_URL: "https://jelly.antblu.net"
+      JELLYFIN_APIKEY: "${JELLYFIN_API_KEY}"
+      JELLYFIN_USER: "admin"
+
+      # ListenBrainz destination
+      LZ_ID: "listenbrainz"
+      LZ_NAME: "ListenBrainz"
+      LZ_TOKEN: "${LISTENBRAINZ_TOKEN}"
+      LZ_USER: "YOUR_LISTENBRAINZ_USERNAME"
     ports:
       - "${LEFT_IP}:9078:9078"
     volumes:
@@ -379,3 +430,4 @@ volumes:
   explo-config:
   ytdlp2strm-config:
   cliparr-data:
+  gluetun-data:

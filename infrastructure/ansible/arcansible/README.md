@@ -27,6 +27,8 @@ new containers with conflicting names. It runs these services:
   GPU inference.
 - Trailarr for trailer management beside the media library.
 - Tdarr with an internal node and the Arc render device for media encoding.
+- Storyteller `latest-sycl` for ebooks, audiobooks, and synced narration on
+  the Arc GPU, with its application running as UID:GID `1008:1008`.
 
 Docling publishes CPU, CUDA, and AMD deployment paths, but no Intel container.
 `compose/Dockerfile.docling-xpu` therefore layers pinned Docling Serve and
@@ -38,7 +40,7 @@ requires that the provider reports an Intel GPU device.
 
 The playbook enables `antalos-arc-compose.path` for future boots. It waits for
 `/dev/dri/renderD128` before recreating Immich Machine Learning, Nextcloud
-Talk Recording, Trailarr, and Tdarr, preventing Docker from capturing an incomplete device set while
+Talk Recording, Trailarr, Tdarr, and Storyteller, preventing Docker from capturing an incomplete device set while
 the Arc driver is still initializing.
 
 ## Secrets
@@ -108,6 +110,31 @@ use `1008:1008` for media writes. The playbook restores ownership of Jellyfin's
 local config and cache if an interrupted UID migration changed them; back up
 that state before replaying the playbook.
 Review existing Jellyfin library paths when switching from `/srv/media`.
+
+Storyteller is available at `http://10.30.0.28:8001`; create the initial admin
+account there. It uses `registry.gitlab.com/storyteller-platform/storyteller:latest-sycl`
+and the host render/video groups. Following Storyteller's supported startup flow,
+`PUID` and `PGID` select `1008:1008` after the entrypoint prepares the container.
+Do not add Compose `user:` because that bypasses its permission setup.
+
+`STORYTELLER_ASSETS_DIR=/media/storyteller` keeps uploaded ebooks, audiobooks,
+aligned books, and covers in `/mnt/warm/jellyfin/storyteller` on the same NFS
+export as Jellyfin. The database, models, and temporary processing files remain
+local under `/opt/compose/data/storyteller`, mounted as `/data`. The playbook
+creates the NFS assets directory as the media user without changing existing
+library ownership. Add `/media/storyteller` to Jellyfin if it should read this
+library, and select existing book folders under `/media` in Storyteller when
+configuring auto-import.
+
+The playbook generates `/opt/compose/data/storyteller/secret_key` once and
+preserves it on later runs, owned by `1008:1008` with mode `0600`. It is read
+through `STORYTELLER_SECRET_KEY_FILE`; keep this guest-local credential out of
+Git and back it up with the local database and NFS assets. Restoring the VM
+requires all three. The playbook waits for Storyteller HTTP, but a representative
+book alignment is still needed to prove transcription through the selected GPU.
+See the upstream [self-hosting](https://storyteller-platform.dev/docs/installation/self-hosting/)
+and [GPU setup](https://storyteller-platform.dev/docs/installation/gpu-configuration/)
+guides.
 
 If an earlier run stopped while writing the protected Compose environment after
 changing Jellyfin's local file ownership, resume from the Jellyfin account task:

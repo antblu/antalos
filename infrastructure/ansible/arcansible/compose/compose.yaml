@@ -180,6 +180,33 @@ services:
     device_cgroup_rules:
       - c 226:* rmw
 
+  storyteller:
+    image: registry.gitlab.com/storyteller-platform/storyteller:${STORYTELLER_VERSION}
+    container_name: storyteller
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE}
+      PUID: ${MEDIA_UID}
+      PGID: ${MEDIA_GID}
+      STORYTELLER_SECRET_KEY_FILE: /data/secret_key
+      STORYTELLER_ASSETS_DIR: /media/storyteller
+    ports:
+      - "${DEBIAN_ARC_IP}:${STORYTELLER_PORT}:8001/tcp"
+    volumes:
+      - type: bind
+        source: ./data/storyteller
+        target: /data
+      - type: bind
+        source: ${JELLYFIN_MEDIA_PATH}
+        target: /media
+        bind:
+          create_host_path: false
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "${RENDER_GID}"
+      - "${VIDEO_GID}"
+
   docling-server:
     image: antalos/docling-serve-xpu:${DOCLING_SERVE_VERSION}
     container_name: docling-server
