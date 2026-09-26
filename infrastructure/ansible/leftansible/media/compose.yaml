@@ -344,7 +344,7 @@ services:
       LZ_ID: "listenbrainz"
       LZ_NAME: "ListenBrainz"
       LZ_TOKEN: "${LISTENBRAINZ_TOKEN}"
-      LZ_USER: "YOUR_LISTENBRAINZ_USERNAME"
+      LZ_USER: "${LISTENBRAINZ_USER}"
     ports:
       - "${LEFT_IP}:9078:9078"
     volumes:
@@ -361,37 +361,45 @@ services:
       WEB_UI: "true"
       UI_USERNAME: ${EXPLO_USERNAME}
       UI_PASSWORD: ${EXPLO_PASSWORD}
+
     ports:
       - "${LEFT_IP}:7288:7288"
+
     volumes:
-      - ./explo/.env:/opt/explo/.env:ro
+      - ./explo/.env:/opt/explo/.env
       - explo-config:/opt/explo/config
+
       - type: bind
-        source: ${MEDIA_PATH}
-        target: /media
+        source: ${MEDIA_PATH}/music/explo
+        target: /data
         bind:
           create_host_path: false
 
-  ytdlp2strm:
-    build:
-      context: .
-      dockerfile: ytdlp2strm/Dockerfile
-    image: antalos/ytdlp2strm:local
-    container_name: ytdlp2strm
-    restart: unless-stopped
-    user: "1008:1008"
-    environment:
-      AM_I_IN_A_DOCKER_CONTAINER: "Yes"
-      DOCKER_PORT: "5005"
-    ports:
-      - "${LEFT_IP}:5005:5000"
-    volumes:
-      - ytdlp2strm-config:/opt/ytdlp2STRM/config
-      - type: bind
-        source: ${MEDIA_PATH}
-        target: /media
-        bind:
-          create_host_path: false
+  # ytdlp2strm:
+  #   build:
+  #     context: ./ytdlp2strm
+  #     dockerfile: Dockerfile
+  #   image: antblu/ytdlp2strm:local
+  #   container_name: ytdlp2strm
+  #   restart: unless-stopped
+  #   network_mode: host
+  #   environment:
+  #     AM_I_IN_A_DOCKER_CONTAINER: "Yes"
+  #     DOCKER_PORT: "5000"
+  #     TZ: ${TZ}
+  #   volumes:
+  #     - type: bind
+  #       source: ${MEDIA_PATH}
+  #       target: /media
+  #       bind:
+  #         create_host_path: false
+
+  #     - ./ytdlp2strm/config.json:/opt/ytdlp2STRM/config/config.json
+  #     - ./ytdlp2strm/crons.json:/opt/ytdlp2STRM/config/crons.json
+  #     - ./ytdlp2strm/youtube.json:/opt/ytdlp2STRM/plugins/youtube/config.json
+  #     - ./ytdlp2strm/channels.json:/opt/ytdlp2STRM/plugins/youtube/channel_list.json
+  #     - ./ytdlp2strm/cookies.txt:/opt/ytdlp2STRM/plugins/youtube/cookies.txt
+  #     - ./ytdlp2strm/ytdlp2strm.log:/opt/ytdlp2STRM/ytdlp2strm.log
 
   cliparr:
     image: ghcr.io/techsquidtv/cliparr:latest
