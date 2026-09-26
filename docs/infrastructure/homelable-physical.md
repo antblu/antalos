@@ -49,3 +49,17 @@ The patch coupler has 24 numbered sockets, but its socket-to-switch/device mappi
 The address book lists the NAS SFP+ link as trunk VLANs 30/40; the more specific **EX3300 Map** lists `xe-0/1/0` as access VLAN 30. This model follows the switch map and retains the discrepancy for confirmation. `ALL` is retained literally; it is not expanded into an assumed live allowed-VLAN list. Spreadsheet Up/Down values are historical; Homelable runs its own current checks. This import changes no switch, VLAN, router, VM or storage configuration.
 
 The owner retired ytdlp2strm. Its hostnames are excluded from future service generation; the old Homelable object is retained under **Retired services**, with monitoring disabled and its documentation preserved.
+
+## Switch management return route and VLAN 30 restriction
+
+On 2026-09-26, Junos had only connected/local routes for VLAN 20. The switch answered same-subnet probes but could not return replies to Homelable on Debian Arc. Its committed configuration now returns traffic to `10.30.0.0/24` through `10.20.0.1`, with an IPv4 input filter on `vlan.20`:
+
+- Accept ICMP from `10.30.0.0/24`.
+- Discard all other IPv4 traffic from that subnet.
+- Preserve access from other sources, including VLAN 20 management.
+
+OPNsense also has one source-specific rule permitting only ICMP from `10.30.0.0/24` to `10.20.0.2` on its VLAN 30 interface. The operator script is `homelable/scripts/configure-switch-icmp.php`; run it on the router after a configuration backup, then apply `configctl filter reload`. It adds no TCP/UDP permission.
+
+The operator fragment is `infrastructure/ansible/arcansible/homelable/juniper-management.set`. Junos owns its running and saved configuration; the Debian Ansible playbook does not apply this fragment. Replace the earlier Arc-only `10.30.0.28/32` static route when migrating to this policy. The subnet return route does not create a default route or change VLAN switching. This restriction controls the switch's VLAN 20 management interface; it does not restrict unrelated services hosted in VLAN 20.
+
+For Junos 12.3, use `configure exclusive`, inspect `show | compare` for unrelated pending edits and any existing interface filter, and apply the fragment with `commit confirmed 3`. Verify Arc ping succeeds, Arc TCP management connections fail, and VLAN 20 management still works before confirming with `commit`. This version rejected confirmed commits in private configuration mode; that rejected attempt did not change the active configuration. See Juniper's [confirmed commit reference](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/commit.html).

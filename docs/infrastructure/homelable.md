@@ -19,7 +19,7 @@ Browser authentication is exclusively Authentik OIDC: confidential client `homel
 
 Arc has a single Layer-2 attachment to VLAN 30. The scanner uses `NET_RAW` without privileged mode. MAC discovery is possible on VLAN 30; VLANs 20 and 40 are routed and normally provide IP/service discovery without MAC addresses. Proxmox can supply guest MAC addresses independently through its API.
 
-The configured ranges are `10.20.0.0/24`, `10.30.0.0/24` and `10.40.0.0/24`. OPNsense has source-specific rules on its internal interface allowing `10.30.0.28` TCP and ICMP to these two routed subnets, plus UDP DNS on port 53. Other VLAN isolation rules remain in place. These router settings live in OPNsense's configuration and backup, not in the Kubernetes variables file.
+The configured ranges are `10.20.0.0/24`, `10.30.0.0/24` and `10.40.0.0/24`. OPNsense has source-specific rules on its internal interface allowing `10.30.0.28` TCP and ICMP to these two routed subnets, plus UDP DNS on port 53. One additional router rule allows ICMP from VLAN 30 to the Juniper management address only. The Juniper permits ICMP and discards other VLAN 30 traffic on its management interface; see [Rack and Switch Map](/infrastructure/homelable-physical/). Other VLAN isolation rules remain in place. These router settings live in OPNsense's configuration and backup, not in the Kubernetes variables file.
 
 Service detection uses the upstream standard scan plus optional HTTP fingerprinting on a short list of custom ports. It does not continuously scan all 65535 ports. MetalLB VIPs may share a worker's MAC; model them as separate stable logical endpoints rather than interpreting an ARP MAC as a unique service identity.
 

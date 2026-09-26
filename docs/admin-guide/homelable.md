@@ -35,7 +35,7 @@ Back up the router, configure an `opnsense` SSH alias, copy and run that script
 there, then apply `configctl filter reload` and `configctl unbound restart` during
 approved network maintenance. The normal Arc playbook does not modify the router.
 
-The project assumes Arc's Docker host gateway is `172.17.0.1`. Verify it before changing Docker addressing. Backend host networking does not require additional VM VLAN interfaces. Caddy's route is in Debian Left's owning Ansible project. OPNsense owns internal DNS (`homelable.antblu.net` → `10.30.0.27`) and the six source-specific inter-VLAN rules described in the [architecture](/infrastructure/homelable/); preserve those in the router's configuration backup.
+The project assumes Arc's Docker host gateway is `172.17.0.1`. Verify it before changing Docker addressing. Backend host networking does not require additional VM VLAN interfaces. Caddy's route is in Debian Left's owning Ansible project. OPNsense owns internal DNS (`homelable.antblu.net` → `10.30.0.27`) and the six Arc-specific inter-VLAN rules plus the VLAN 30 ICMP-only switch rule described in the [architecture](/infrastructure/homelable/); preserve those in the router's configuration backup.
 
 ## Status and API
 

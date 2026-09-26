@@ -1,0 +1,8 @@
+set routing-options static route 10.30.0.0/24 next-hop 10.20.0.1
+set firewall family inet filter HOMELABLE-VLAN30-ICMP-ONLY term allow-icmp from source-address 10.30.0.0/24
+set firewall family inet filter HOMELABLE-VLAN30-ICMP-ONLY term allow-icmp from protocol icmp
+set firewall family inet filter HOMELABLE-VLAN30-ICMP-ONLY term allow-icmp then accept
+set firewall family inet filter HOMELABLE-VLAN30-ICMP-ONLY term block-other-vlan30 from source-address 10.30.0.0/24
+set firewall family inet filter HOMELABLE-VLAN30-ICMP-ONLY term block-other-vlan30 then discard
+set firewall family inet filter HOMELABLE-VLAN30-ICMP-ONLY term preserve-other-sources then accept
+set interfaces vlan unit 20 family inet filter input HOMELABLE-VLAN30-ICMP-ONLY

@@ -4,7 +4,7 @@ homelable_backend_bind: 172.17.0.1
 homelable_frontend_bind: 10.30.0.28
 homelable_frontend_port: "3000"
 homelable_mcp_port: "8002"
-homelable_origin: https://homelable.antblu.net
+homelable_origin: https://homelab.antblu.net
 homelable_authentik_origin: https://auth.antblu.net
 homelable_proxmox_host: rtx.homelab.local
 homelable_proxmox_ip: 10.20.0.6
