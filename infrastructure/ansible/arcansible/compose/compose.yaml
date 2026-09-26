@@ -180,6 +180,27 @@ services:
     device_cgroup_rules:
       - c 226:* rmw
 
+  lazylibrarian:
+    image: lscr.io/linuxserver/lazylibrarian:${LAZYLIBRARIAN_VERSION}
+    container_name: lazylibrarian
+    restart: unless-stopped
+    environment:
+      PUID: ${MEDIA_UID}
+      PGID: ${MEDIA_GID}
+      TZ: ${TIMEZONE}
+      UMASK: "002"
+    ports:
+      - "${DEBIAN_ARC_IP}:${LAZYLIBRARIAN_PORT}:5299/tcp"
+    volumes:
+      - type: bind
+        source: ./data/lazylibrarian
+        target: /config
+      - type: bind
+        source: ${JELLYFIN_MEDIA_PATH}
+        target: /media
+        bind:
+          create_host_path: false
+
   storyteller:
     image: registry.gitlab.com/storyteller-platform/storyteller:${STORYTELLER_VERSION}
     container_name: storyteller
@@ -190,12 +211,20 @@ services:
       PGID: ${MEDIA_GID}
       STORYTELLER_SECRET_KEY_FILE: /data/secret_key
       STORYTELLER_ASSETS_DIR: /media/storyteller
+      STORYTELLER_CONFIG: /config/storyteller.json
+      AUTH_URL: ${STORYTELLER_AUTH_URL}
     ports:
       - "${DEBIAN_ARC_IP}:${STORYTELLER_PORT}:8001/tcp"
     volumes:
       - type: bind
         source: ./data/storyteller
         target: /data
+      - type: bind
+        source: ./storyteller.json
+        target: /config/storyteller.json
+        read_only: true
+        bind:
+          create_host_path: false
       - type: bind
         source: ${JELLYFIN_MEDIA_PATH}
         target: /media

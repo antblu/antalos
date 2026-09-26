@@ -29,6 +29,8 @@ new containers with conflicting names. It runs these services:
 - Tdarr with an internal node and the Arc render device for media encoding.
 - Storyteller `latest-sycl` for ebooks, audiobooks, and synced narration on
   the Arc GPU, with its application running as UID:GID `1008:1008`.
+- LazyLibrarian for author discovery and separate ebook/audiobook downloads
+  through Debian Left's existing qBittorrent endpoint.
 
 Docling publishes CPU, CUDA, and AMD deployment paths, but no Intel container.
 `compose/Dockerfile.docling-xpu` therefore layers pinned Docling Serve and
@@ -135,6 +137,58 @@ book alignment is still needed to prove transcription through the selected GPU.
 See the upstream [self-hosting](https://storyteller-platform.dev/docs/installation/self-hosting/)
 and [GPU setup](https://storyteller-platform.dev/docs/installation/gpu-configuration/)
 guides.
+
+## LazyLibrarian and Storyteller book integration
+
+LazyLibrarian uses `lscr.io/linuxserver/lazylibrarian:latest` and listens at
+`http://10.30.0.28:5299/home`. Its application runs as `1008:1008` through
+`PUID`/`PGID`; configuration and SQLite state remain local in
+`/opt/compose/data/lazylibrarian`. It shares `/media` with qBittorrent on Debian
+Left and Storyteller on Arc, backed by the existing Jellyfin NFS export.
+
+| Purpose | Container path | qBittorrent category |
+| --- | --- | --- |
+| Ebook downloads | `/media/downloads/books` | `books` |
+| Audiobook downloads | `/media/downloads/audiobooks` | `audiobooks` |
+| Completed ebooks | `/media/books/ebooks` | — |
+| Completed audiobooks | `/media/books/audiobooks` | — |
+
+`scripts/configure-books.py` authenticates to the endpoint declared by
+`books_qbittorrent_url`, creates missing categories, and writes only the owning
+library and downloader settings into LazyLibrarian's INI. Existing unrelated
+settings are preserved; the playbook stops LazyLibrarian before writing and
+starts it afterward. Both formats use `$Author/$Title` folders. The ordered
+qBittorrent label list `books,audiobooks` selects the matching category for each
+format. Leave the downloader's save-path override empty so category paths apply.
+Keep-seeding and destination-copy are enabled to preserve downloaded originals.
+The script refuses to overwrite an existing category with a different save path.
+
+The protected guest file `data/lazylibrarian/qbittorrent.json` stores the downloader
+connection, owned by `1008:1008` with mode `0600`. Ansible preserves this file's
+identity on subsequent runs. On first installation it reads Sonarr's existing
+credentials over the `debian-left` SSH alias, with `no_log` enabled. If those are
+stale or a new identity is needed, set `vault_books_qbittorrent_username` and
+`vault_books_qbittorrent_password` in the existing encrypted `vars/vault.yml`.
+These optional values override the saved identity. Neither credentials nor
+generated INI files belong in Git. The playbook requires a working downloader
+login to complete the integration; it does not reset qBittorrent credentials
+or change its VPN configuration.
+
+`compose/storyteller.json` declares reference imports from both completed-book
+libraries. Compose mounts this file read-only and sets `STORYTELLER_CONFIG`.
+Storyteller's startup reads it and adds both watch rules while retaining unrelated
+database settings. The two source libraries stay in place; imports from separate
+folders may require **merge books** before alignment. Import rules from the file
+are managed in Ansible rather than edited in Storyteller's UI. The existing
+public auth URL is controlled by `storyteller_auth_url`.
+
+Configure your authorized search providers in LazyLibrarian's Providers settings,
+then add an author and mark an ebook or audiobook Wanted. Downloader connectivity
+and container readiness do not prove a provider search, download, post-processing,
+or Storyteller alignment. Use a representative book to confirm that complete
+workflow. See the upstream [downloader](https://lazylibrarian.gitlab.io/config_downloaders/),
+[processing](https://lazylibrarian.gitlab.io/config_processing/), and
+[Storyteller import](https://storyteller-platform.dev/blog/20260525_scanner/) guides.
 
 If an earlier run stopped while writing the protected Compose environment after
 changing Jellyfin's local file ownership, resume from the Jellyfin account task:

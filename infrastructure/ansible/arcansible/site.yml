@@ -334,6 +334,10 @@
           owner: "{{ media_uid }}"
           group: "{{ media_gid }}"
           mode: "0750"
+        - path: "{{ arc_compose_root }}/data/lazylibrarian"
+          owner: "{{ media_uid }}"
+          group: "{{ media_gid }}"
+          mode: "0750"
         - path: "{{ arc_compose_root }}/data/tdarr/server"
           owner: "{{ media_uid }}"
           group: "{{ media_gid }}"
@@ -369,6 +373,85 @@
           - "32"
         creates: "{{ arc_compose_root }}/data/storyteller/secret_key"
       no_log: true
+
+    - name: Create the shared book libraries and download directories
+      become_user: media
+      ansible.builtin.file:
+        path: "{{ jellyfin_media_path }}/{{ item }}"
+        state: directory
+        mode: "0775"
+      loop:
+        - books/ebooks
+        - books/audiobooks
+        - downloads/books
+        - downloads/audiobooks
+
+    - name: Check for a saved book downloader connection
+      ansible.builtin.stat:
+        path: "{{ arc_compose_root }}/data/lazylibrarian/qbittorrent.json"
+      register: books_qbittorrent_saved
+
+    - name: Read the saved book downloader connection
+      ansible.builtin.slurp:
+        src: "{{ arc_compose_root }}/data/lazylibrarian/qbittorrent.json"
+      register: books_qbittorrent_saved_json
+      when: books_qbittorrent_saved.stat.exists
+      no_log: true
+
+    - name: Load the saved book downloader identity
+      ansible.builtin.set_fact:
+        books_qbittorrent_credentials: "{{ books_qbittorrent_saved_json.content | b64decode | from_json }}"
+      when: books_qbittorrent_saved.stat.exists
+      no_log: true
+
+    - name: Read the existing qBittorrent credentials from Debian Left
+      delegate_to: localhost
+      become: false
+      ansible.builtin.command:
+        argv:
+          - ssh
+          - "{{ books_qbittorrent_ssh_alias }}"
+          - sudo python3 -
+        stdin: "{{ lookup('ansible.builtin.file', playbook_dir + '/scripts/read-qbittorrent-credentials.py') }}"
+      register: books_qbittorrent_credentials_json
+      changed_when: false
+      no_log: true
+      when:
+        - not books_qbittorrent_saved.stat.exists
+        - vault_books_qbittorrent_username is not defined or vault_books_qbittorrent_password is not defined
+
+    - name: Load the existing qBittorrent identity
+      ansible.builtin.set_fact:
+        books_qbittorrent_credentials: "{{ books_qbittorrent_credentials_json.stdout | from_json }}"
+      no_log: true
+      when:
+        - not books_qbittorrent_saved.stat.exists
+        - vault_books_qbittorrent_username is not defined or vault_books_qbittorrent_password is not defined
+
+    - name: Load the explicit qBittorrent vault identity when supplied
+      ansible.builtin.set_fact:
+        books_qbittorrent_credentials:
+          username: "{{ vault_books_qbittorrent_username }}"
+          password: "{{ vault_books_qbittorrent_password }}"
+      no_log: true
+      when: vault_books_qbittorrent_username is defined and vault_books_qbittorrent_password is defined
+
+    - name: Write the protected book downloader connection
+      ansible.builtin.template:
+        src: qbittorrent.json.j2
+        dest: "{{ arc_compose_root }}/data/lazylibrarian/qbittorrent.json"
+        owner: "{{ media_uid }}"
+        group: "{{ media_gid }}"
+        mode: "0600"
+      no_log: true
+
+    - name: Install the book integration configurator
+      ansible.builtin.copy:
+        src: scripts/configure-books.py
+        dest: "{{ arc_compose_root }}/configure-books.py"
+        owner: root
+        group: root
+        mode: "0644"
 
     - name: Protect the persistent Storyteller authentication key
       ansible.builtin.file:
@@ -463,6 +546,29 @@
         mode: "0600"
       no_log: true
 
+    - name: Stop LazyLibrarian before updating its INI configuration
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - compose
+          - --project-directory
+          - "{{ arc_compose_root }}"
+          - --file
+          - "{{ arc_compose_root }}/compose.yaml"
+          - stop
+          - lazylibrarian
+      changed_when: true
+
+    - name: Configure LazyLibrarian and qBittorrent book categories
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/python3
+          - "{{ arc_compose_root }}/configure-books.py"
+          - --config-root
+          - "{{ arc_compose_root }}/data/lazylibrarian"
+      changed_when: true
+      no_log: true
+
     - name: Pull the published service images
       ansible.builtin.command:
         argv:
@@ -479,6 +585,7 @@
           - trailarr
           - tdarr
           - storyteller
+          - lazylibrarian
       changed_when: true
 
     - name: Build the Docling XPU image
@@ -511,6 +618,15 @@
           - --wait-timeout
           - "900"
       changed_when: true
+
+    - name: Wait for LazyLibrarian HTTP
+      ansible.builtin.uri:
+        url: "http://{{ debian_arc_ip }}:{{ lazylibrarian_port }}/home"
+        status_code: 200
+      register: lazylibrarian_http
+      retries: 30
+      delay: 10
+      until: lazylibrarian_http.status == 200
 
     - name: Wait for Storyteller HTTP
       ansible.builtin.uri:

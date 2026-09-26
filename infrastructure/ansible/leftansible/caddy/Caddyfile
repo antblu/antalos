@@ -83,3 +83,6 @@ trailarr.antblu.net {
 books.antblu.net {
         reverse_proxy 10.30.0.28:8001
 }
+library.antblu.net {
+        reverse_proxy 10.30.0.28:5299
+}

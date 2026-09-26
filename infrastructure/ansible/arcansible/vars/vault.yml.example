@@ -1,2 +1,8 @@
 vault_nextcloud_talk_recording_secret: replace-with-a-random-64-character-hex-secret
 vault_docling_api_key: replace-with-a-different-random-64-character-hex-secret
+
+# Optional: override the preserved LazyLibrarian downloader identity.
+# Otherwise reuse the saved guest connection, or read Sonarr on Debian Left
+# on first installation. Never copy this example over an existing vault.
+# vault_books_qbittorrent_username: replace-with-the-current-webui-username
+# vault_books_qbittorrent_password: replace-with-the-current-webui-password

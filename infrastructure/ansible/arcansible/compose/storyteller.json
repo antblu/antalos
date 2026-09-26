@@ -1,0 +1,14 @@
+{
+  "importRules": [
+    {
+      "kind": "watch",
+      "path": "/media/books/ebooks",
+      "importMode": "reference"
+    },
+    {
+      "kind": "watch",
+      "path": "/media/books/audiobooks",
+      "importMode": "reference"
+    }
+  ]
+}

@@ -51,6 +51,7 @@ Read the playbook before a maintenance run. These playbooks can install packages
 | Jellyfin / media stack | Prepare the `10.30.0.5:/mnt/warm/jellyfin` NFS export for UID:GID `1008:1008`, fill the protected Debian Left media environment, then configure each application and test a representative import or encode |
 | Docling | Configure the client endpoint and its `X-Api-Key` credential |
 | Storyteller | Create the admin account at `http://10.30.0.28:8001`, upload ebooks/audiobooks or configure auto-import under `/media`, then test an alignment with Intel SYCL transcription |
+| LazyLibrarian | Open `http://10.30.0.28:5299/home`, configure authorized search providers, follow authors, and select ebook/audiobook Wanted status; qBittorrent downloads and Storyteller watch rules are declared by Arc Ansible |
 
 Successful container startup does not finish an application integration. Use a small representative request through the actual consumer after deployment.
 
@@ -78,3 +79,18 @@ UID:GID `1008:1008` through `PUID`/`PGID` and receives the Arc render device;
 its SQLite database and processing scratch space stay on the VM while assets
 use Jellyfin's existing NFS export. A successful HTTP response does not prove
 that a book alignment uses GPU transcription.
+
+LazyLibrarian and Storyteller share completed libraries at `/media/books/ebooks`
+and `/media/books/audiobooks`. LazyLibrarian's qBittorrent category list is
+`books,audiobooks`; their download paths are `/media/downloads/books` and
+`/media/downloads/audiobooks`. The configured downloader is Debian Left's existing
+endpoint; do not change its VPN routing to connect a new client.
+
+Arc Ansible preserves the protected guest downloader identity, or accepts
+`vault_books_qbittorrent_username` and `vault_books_qbittorrent_password` in the
+existing encrypted vault. First-installation discovery can reuse Sonarr's
+configured identity through `ssh debian-left`, but stale credentials must be
+replaced with a working login. Back up `/opt/compose/data/lazylibrarian` along with
+the completed NFS libraries. Storyteller's reference watch rules come from
+`arcansible/compose/storyteller.json`; they preserve the source libraries and do
+not automatically merge matching formats stored in separate folders.
