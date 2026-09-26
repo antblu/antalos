@@ -1,5 +1,5 @@
 ---
-title: The antalos handbook
+title: antalos Documentation
 description: Use the services, understand the infrastructure, and deploy your own antalos stack.
 ---
 
