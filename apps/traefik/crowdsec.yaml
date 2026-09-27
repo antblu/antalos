@@ -9,6 +9,8 @@ spec:
       enabled: true
       logLevel: INFO
       crowdsecMode: stream
+      clientTrustedIPs:
+        - ${CROWDSEC_TRUSTED_HEADSCALE_CLIENT_IP}
       crowdsecLapiScheme: http
       crowdsecLapiHost: crowdsec-service.crowdsec.svc.cluster.local:8080
       crowdsecLapiKeyFile: /run/secrets/crowdsec/bouncerKey

@@ -34,6 +34,10 @@ Identify the responding layer using the requested host, time, response, and prox
 
 For a suspected ingestion problem, inspect the VictoriaLogs query and recent matching events. For authentication errors, inspect registration and bouncer agreement without printing credentials. For startup failures, inspect SQLite restore and NFS access separately from log acquisition.
 
+The Traefik bouncer trusts the single Headscale client address declared by `CROWDSEC_TRUSTED_HEADSCALE_CLIENT_IP` in `apps/variables.yaml`. Its `clientTrustedIPs` exemption bypasses IP remediation and AppSec only when the bouncer identifies that exact client address. Do not whitelist a shared proxy or Kubernetes masquerade address to compensate for missing client identity: that would exempt other clients too. The checked-in HTTPS HAProxy path uses TCP forwarding without PROXY protocol, so it does not preserve the original client address through the proxies.
+
+In stream mode, the bouncer's default `updateMaxFailure: 0` blocks requests when its LAPI decision feed fails. A LAPI outage can therefore produce widespread ingress HTTP 403 responses with `OriginStatus: 0`, even without an IP ban. Correlate those responses with `handleStreamTicker` connection failures, LAPI readiness, and pod restarts before attributing the restriction to an application rate limit.
+
 ## Maintenance and recovery
 
 The chart configures one LAPI, one processor, and one AppSec process, each with Recreate strategy. Plan an interruption to the corresponding function during updates. Preserve the LAPI backup and required identity material; confirm detection and enforcement after restore.
