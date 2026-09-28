@@ -50,7 +50,6 @@ spec:
         runAsNonRoot: true
         runAsUser: 1009
         runAsGroup: 1009
-        fsGroup: 1009
         seccompProfile:
           type: RuntimeDefault
       containers:
