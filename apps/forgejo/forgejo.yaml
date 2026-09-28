@@ -1,0 +1,245 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgejo
+  namespace: forgejo
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: forgejo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: forgejo
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 120
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ${TALOS_WORKER_LEFT}
+                - ${TALOS_WORKER_RIGHT}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ${TALOS_WORKER_LEFT}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: forgejo
+            topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1009
+        runAsGroup: 1009
+        fsGroup: 1009
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: forgejo
+        image: codeberg.org/forgejo/forgejo:${FORGEJO_IMAGE_TAG}
+        ports:
+        - name: http
+          containerPort: 3000
+        - name: ssh
+          containerPort: 2222
+        env:
+        - name: USER_UID
+          value: '1009'
+        - name: USER_GID
+          value: '1009'
+        - name: FORGEJO__database__DB_TYPE
+          value: postgres
+        - name: FORGEJO__database__HOST
+          value: ${FORGEJO_DATABASE_HOST}:5432
+        - name: FORGEJO__database__NAME
+          value: forgejo
+        - name: FORGEJO__database__USER
+          value: forgejo
+        - name: FORGEJO__database__PASSWD
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-db-app
+              key: password
+        - name: FORGEJO__server__DOMAIN
+          value: ${FORGEJO_HOST}
+        - name: FORGEJO__server__ROOT_URL
+          value: https://${FORGEJO_HOST}/
+        - name: FORGEJO__server__SSH_DOMAIN
+          value: ${FORGEJO_HOST}
+        - name: FORGEJO__server__SSH_LISTEN_PORT
+          value: '2222'
+        - name: FORGEJO__server__SSH_PORT
+          value: '22'
+        - name: FORGEJO__server__START_SSH_SERVER
+          value: 'true'
+        - name: FORGEJO__repository__ROOT
+          value: /var/lib/gitea/data/forgejo-repositories
+        - name: FORGEJO__security__INSTALL_LOCK
+          value: 'true'
+        - name: FORGEJO__service__DISABLE_REGISTRATION
+          value: 'true'
+        - name: FORGEJO__security__SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-app
+              key: secret-key
+        - name: FORGEJO__security__INTERNAL_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-app
+              key: internal-token
+        - name: FORGEJO__oauth2__JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-app
+              key: jwt-secret
+        - name: FORGEJO__storage__STORAGE_TYPE
+          value: minio
+        - name: FORGEJO__storage__MINIO_ENDPOINT
+          value: ${GARAGE_S3_IP}:${GARAGE_S3_PORT}
+        - name: FORGEJO__storage__MINIO_BUCKET
+          value: ${FORGEJO_S3_BUCKET}
+        - name: FORGEJO__storage__MINIO_BASE_PATH
+          value: ${FORGEJO_S3_BASE_PATH}
+        - name: FORGEJO__storage__MINIO_LOCATION
+          value: ${GARAGE_S3_CUSTOM_REGION}
+        - name: FORGEJO__storage__MINIO_USE_SSL
+          value: 'false'
+        - name: FORGEJO__storage__MINIO_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-s3
+              key: access-key
+        - name: FORGEJO__storage__MINIO_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-s3
+              key: secret-key
+        - name: FORGEJO__queue__TYPE
+          value: redis
+        - name: FORGEJO__queue__CONN_STR
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-redis
+              key: queue-url
+        - name: FORGEJO__cache__ADAPTER
+          value: redis
+        - name: FORGEJO__cache__HOST
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-redis
+              key: cache-url
+        - name: FORGEJO__session__PROVIDER
+          value: redis
+        - name: FORGEJO__session__PROVIDER_CONFIG
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-redis
+              key: session-url
+        readinessProbe:
+          httpGet:
+            path: /api/healthz
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /api/healthz
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 20
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: '2'
+            memory: 2Gi
+        volumeMounts:
+        - name: repositories
+          mountPath: /var/lib/gitea
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: repositories
+        persistentVolumeClaim:
+          claimName: forgejo-repositories
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: forgejo-http
+  namespace: forgejo
+spec:
+  selector:
+    app.kubernetes.io/name: forgejo
+  ports:
+  - name: http
+    port: 3000
+    targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: forgejo-ssh
+  namespace: forgejo
+  annotations:
+    metallb.io/allow-shared-ip: antblu-net
+    metallb.io/loadBalancerIPs: 10.30.0.200
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: forgejo
+  ports:
+  - name: ssh
+    port: 22
+    targetPort: ssh
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: forgejo
+  namespace: forgejo
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - ${FORGEJO_HOST}
+    secretName: forgejo-tls
+  rules:
+  - host: ${FORGEJO_HOST}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: forgejo-http
+            port:
+              name: http

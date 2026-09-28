@@ -22,6 +22,10 @@ export const serviceGroups = [
     "label": "Work and automation",
     "services": [
       {
+        "slug": "forgejo",
+        "label": "Forgejo"
+      },
+      {
         "slug": "suitecrm",
         "label": "SuiteCRM"
       },

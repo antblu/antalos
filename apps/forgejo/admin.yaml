@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: forgejo-admin-bootstrap
+  namespace: forgejo
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1009
+        runAsGroup: 1009
+        fsGroup: 1009
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: bootstrap
+        image: codeberg.org/forgejo/forgejo:${FORGEJO_IMAGE_TAG}
+        command:
+        - sh
+        - -ec
+        - |
+          if forgejo --work-path /var/lib/gitea --config /var/lib/gitea/custom/conf/app.ini admin user list | grep -q "${ADMIN_USERNAME}"; then
+            exit 0
+          fi
+          forgejo --work-path /var/lib/gitea --config /var/lib/gitea/custom/conf/app.ini admin user create \
+            --username "$ADMIN_USERNAME" --password "$ADMIN_PASSWORD" --email "$ADMIN_EMAIL" --admin
+        env:
+        - name: ADMIN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-admin
+              key: username
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-admin
+              key: password
+        - name: ADMIN_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-admin
+              key: email
+        volumeMounts:
+        - name: repositories
+          mountPath: /var/lib/gitea
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: repositories
+        persistentVolumeClaim:
+          claimName: forgejo-repositories

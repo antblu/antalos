@@ -16,6 +16,7 @@ Start with what you want to do. You do not need to understand the servers or Kub
 | Chat with an AI model | [Open WebUI](/user-guide/open-webui/) |
 | Connect an application to a model API | [LiteLLM](/user-guide/litellm/) |
 | Manage customer records or support tickets | [SuiteCRM](/user-guide/suitecrm/) or [Zammad](/user-guide/zammad/) |
+| Work on code with other people | [Forgejo](/user-guide/forgejo/) |
 | Work with a PDF | [BentoPDF](/user-guide/bentopdf/) |
 | Connect a device to the private network | [Headscale](/user-guide/headscale/) |
 | Help someone with their computer | [RustDesk](/user-guide/rustdesk/) |

@@ -19,6 +19,7 @@ These entries describe service definitions in Git. They do not report current de
 
 | Service | Purpose | Guides | Official manual |
 | --- | --- | --- | --- |
+| Forgejo | Git repositories, code review, and issue tracking. | [Use](/user-guide/forgejo/) · [Architecture](/infrastructure/forgejo/) · [Operate](/admin-guide/forgejo/)  [Read the manual](https://forgejo.org/docs/latest/user/) |
 | SuiteCRM | Customer records, sales work, and CRM activities. | [Use](/user-guide/suitecrm/) · [Architecture](/infrastructure/suitecrm/) · [Operate](/admin-guide/suitecrm/)  [Read the manual](https://docs.suitecrm.com/user/) |
 | Zammad | Support tickets and customer conversations. | [Use](/user-guide/zammad/) · [Architecture](/infrastructure/zammad/) · [Operate](/admin-guide/zammad/)  [Read the manual](https://user-docs.zammad.org/en/latest/) |
 | BentoPDF | PDF tools in the browser. | [Use](/user-guide/bentopdf/) · [Architecture](/infrastructure/bentopdf/) · [Operate](/admin-guide/bentopdf/)  [Read the manual](https://www.bentopdf.com/docs/) |

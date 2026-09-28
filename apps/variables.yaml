@@ -365,6 +365,19 @@ variables:
   VAULTWARDEN_DATA_STORAGE_SIZE: 10Gi
   VAULTWARDEN_DATABASE_STORAGE_SIZE: 10Gi
 
+  FORGEJO_IMAGE_TAG: 16.0.5-rootless
+  FORGEJO_HOST: git.antblu.net
+  FORGEJO_DATABASE_HOST: forgejo-db-rw.forgejo.svc.cluster.local
+  FORGEJO_DATABASE_STORAGE_SIZE: 20Gi
+  FORGEJO_NFS_SHARE: /mnt/nvme/git_repos
+  FORGEJO_REPO_STORAGE_SIZE: 500Gi
+  FORGEJO_S3_BUCKET: gitlabs
+  FORGEJO_S3_BASE_PATH: forgejo
+  FORGEJO_REDIS_STORAGE_SIZE: 2Gi
+  FORGEJO_REDIS_DATA_0_HOST: forgejo-redis-data-0.forgejo-redis-data.forgejo.svc.cluster.local
+  FORGEJO_REDIS_DATA_1_HOST: forgejo-redis-data-1.forgejo-redis-data.forgejo.svc.cluster.local
+  FORGEJO_REDIS_SENTINEL_2_HOST: forgejo-redis-sentinel-2.forgejo.svc.cluster.local
+
   # LiteLLM: two proxy and CNPG instances; Redis has a third Sentinel on RTX.
   LITELLM_IMAGE_TAG: v1.100.0
   LITELLM_HOST: litellm.antblu.net
