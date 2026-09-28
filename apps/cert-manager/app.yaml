@@ -17,7 +17,7 @@ spec:
             enabled: true
             keep: true
           extraArgs:
-            - --dns01-recursive-nameservers=${KUBERNETES_DNS_SERVICE_IP}:53
+            - --dns01-recursive-nameservers=${CERT_MANAGER_DNS01_RECURSIVE_NAMESERVER}
             - --dns01-recursive-nameservers-only=true
           webhook:
             replicaCount: 2

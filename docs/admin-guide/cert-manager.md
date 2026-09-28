@@ -9,7 +9,7 @@ This runbook deploys the service from `apps/cert-manager/` and completes the con
 
 ## 1. Prepare dependencies and inputs
 
-1. Deploy the chart/CRDs before Certificate resources. Set `CERT_MANAGER_CHART_VERSION` and `LETSENCRYPT_EMAIL`.
+1. Deploy the chart/CRDs before Certificate resources. Set `CERT_MANAGER_CHART_VERSION`, `CERT_MANAGER_DNS01_RECURSIVE_NAMESERVER`, and `LETSENCRYPT_EMAIL`. The DNS01 resolver uses DNS over HTTPS so its self-check sees public challenge records despite the cluster's split-horizon DNS.
 
 2. Create a Cloudflare token with the required access to the intended DNS zone. Seal it as `cloudflare-api-token` in namespace `cert-manager` and save the SealedSecret under `apps/cert-manager/`. The issuer references this Secret, but the directory does not currently include its ciphertext.
 
@@ -57,7 +57,7 @@ Before an upgrade, read the release notes for the pinned target and record a rec
 
 ## Troubleshooting
 
-Inspect Certificate, CertificateRequest, Order, and Challenge in that order. An IssuerNotFound error is a resource name/kind problem; a DNS challenge failure requires inspecting token permissions and DNS propagation.
+Inspect Certificate, CertificateRequest, Order, and Challenge in that order. An IssuerNotFound error is a resource name/kind problem; a DNS challenge failure requires inspecting token permissions, public DNS propagation, and DNS over HTTPS reachability from the controller pod. The configured resolver is used for all DNS01 self-checks.
 
 ## Manifest and upstream reference
 
