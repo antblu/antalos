@@ -18,8 +18,7 @@ export default defineConfig({
     "/site/build-and-customize/": "/admin-guide/site-authoring/",
     "/nextcloud/nc-storage/": "/infrastructure/nextcloud/",
     "/nextcloud/updating-nextcloud/": "/admin-guide/nextcloud-upgrades/",
-    "/nextcloud/talk-backend/": "/admin-guide/nextcloud-talk/",
-    "/gitlab/deployment/": "/admin-guide/gitlab/"
+    "/nextcloud/talk-backend/": "/admin-guide/nextcloud-talk/"
   },
   integrations: [
     starlight({

@@ -24,7 +24,7 @@ Keep recoverable copies of:
 | Proxmox credentials and configuration | Recreates and accesses the virtual infrastructure |
 | DNS provider credential | Restores automated certificate issuance |
 
-Store recovery material outside the cluster and test access to it periodically. Include SQLite/Litestream backups for Headscale, Headplane, and RustDesk, the RustDesk server identity, GitLab repository data and both databases, and any external Talk recording data in the service-specific recovery set.
+Store recovery material outside the cluster and test access to it periodically. Include SQLite/Litestream backups for Headscale, Headplane, and RustDesk, the RustDesk server identity, any external Talk recording data in the service-specific recovery set.
 
 ## Recovery order
 

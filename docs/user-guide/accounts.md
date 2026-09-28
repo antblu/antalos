@@ -18,7 +18,7 @@ The identity portal displays application tiles based on access policy. A missing
 
 | Service | What the manifests configure |
 | --- | --- |
-| Argo CD, GitLab, Headscale/Headplane, Open WebUI | Native OIDC through Authentik, subject to matching provider setup |
+| Argo CD, Headscale/Headplane, Open WebUI | Native OIDC through Authentik, subject to matching provider setup |
 | SuiteCRM | SAML through Authentik |
 | Traefik dashboard, BentoPDF, UrBackup UI | Authentik forward-auth at ingress; each hostname needs an outpost route/provider |
 | Nextcloud | OIDC app installed; provider configuration completed by the administrator |

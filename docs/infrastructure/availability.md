@@ -15,7 +15,7 @@ This reference describes the current repository design. It does not report live 
 
 - **HA serving designs:** the documentation site and BentoPDF have interchangeable stateless replicas; Traefik has two serving proxies; Rancher has a replicated management web tier. These still depend on the shared network/control-plane paths. The docs rollout has a placement limitation described below.
 - **Replicated stateful designs:** LiteLLM, Grafana, and the VictoriaMetrics metrics tier include application/data redundancy and a client path to surviving members. They can have a failover interval and reduced durability/capacity during degradation. They are not guarantees against every whole-host or external-service failure.
-- **Partially HA applications:** Authentik, GitLab, Nextcloud, Obsidian, Open WebUI, SuiteCRM, Stalwart, and Zammad have replicated important components but retain shared dependencies, singleton features, restart/rejoin concerns, or upgrade outages. The scope of each limitation matters more than the replica total.
+- **Partially HA applications:** Authentik, Nextcloud, Obsidian, Open WebUI, SuiteCRM, Stalwart, and Zammad have replicated important components but retain shared dependencies, singleton features, restart/rejoin concerns, or upgrade outages. The scope of each limitation matters more than the replica total.
 - **Not continuously HA:** Headscale, Headplane, Vaultwarden’s application, UrBackup, Uptime Kuma, CrowdSec’s singleton roles, and RustDesk rendezvous each run one primary application process. Kubernetes restart and persistent backups provide recovery, with an outage. RustDesk’s two native relays improve relay choice but do not make rendezvous HA.
 - **Not replicated log storage:** VictoriaLogs has two storage processes holding shards, not two complete copies. Grafana availability must not be used as evidence that all historical logs are available.
 - **External or not established here:** NFS/Garage server HA, public routing/DNS resilience, and the external Talk recorder require their own architecture and evidence.
@@ -39,7 +39,6 @@ No service should be described as unconditionally end-to-end HA solely because i
 | [Authentik](/infrastructure/authentik/#availability-and-failure-behavior) | Partially HA: replicated identity processing and database; external shared media and maintenance limits remain. | 2; required anti-affinity; see the linked component table for the data, routing, and recovery path. |
 | [BentoPDF](/infrastructure/bentopdf/#availability-and-failure-behavior) | HA static serving tier; access depends on the shared identity and ingress services. | 2 stateless pods on separate nodes; see the linked component table for the data, routing, and recovery path. |
 | [Documentation](/infrastructure/docs/#availability-and-failure-behavior) | HA static serving tier for node loss; current zero-unavailable rollout can be blocked by placement. | 2 stateless replicas; required host anti-affinity; see the linked component table for the data, routing, and recovery path. |
-| [GitLab](/infrastructure/gitlab/#availability-and-failure-behavior) | Partially HA overall; repository access depends on one standalone Gitaly pod and local volume. | Webservice, Sidekiq, Shell, KAS, registry, toolbox: 2 each; see the linked component table for the data, routing, and recovery path. |
 | [Headscale / Headplane](/infrastructure/headscale/#availability-and-failure-behavior) | Not continuously HA: Headscale and Headplane each recover by restarting one process. | 1 StatefulSet pod; see the linked component table for the data, routing, and recovery path. |
 | [LiteLLM](/infrastructure/litellm/#availability-and-failure-behavior) | HA design for a single data-worker loss, conditional on healthy control-plane, Sentinel communication, and upstream providers. | 2 anti-affined replicas on the main workers; see the linked component table for the data, routing, and recovery path. |
 | [Nextcloud](/infrastructure/nextcloud/#availability-and-failure-behavior) | Partially HA overall: replicated web and many companions, with shared storage, session, Redis recovery, and upgrade limits. | 2 anti-affined web-sidecar pairs; see the linked component table for the data, routing, and recovery path. |
@@ -73,7 +72,6 @@ CNPG manages a primary and a streaming standby for each two-instance cluster. Th
 | --- | --- | --- |
 | Authentik, Nextcloud/Context Chat, Stalwart | No synchronous stanza | Default asynchronous replication; recent primary writes may not yet be on the standby. |
 | LiteLLM, Open WebUI, Vaultwarden, Zammad, Grafana | any / 1 / preferred | Requests synchronous acknowledgement while possible, but permits degraded operation without the standby. |
-| GitLab Rails database | any / 1 / preferred | The active Rails database has a promotion and degraded-durability boundary. A retired Praefect database remains for recovery but is not in the request path. |
 
 These settings do not promise zero loss under every failure sequence. See [CNPG replication and durability](https://cloudnative-pg.io/docs/1.28/replication/) for the mechanisms; use documentation matching the installed operator when administering it.
 
@@ -84,7 +82,6 @@ Most bespoke Redis layouts use two data members and three Sentinel voters, one v
 | Consumer | Client path | Restart/rejoin behavior visible in its manifests |
 | --- | --- | --- |
 | LiteLLM | Direct authenticated Sentinel discovery | Data-side Redis role and Sentinel topology persist; startup queries peers before choosing a role. |
-| GitLab | Direct Sentinel discovery | Sentinel topology persists; initialized data members wait for discovery rather than guessing a primary. |
 | Open WebUI | Direct discovery; Sentinel listener auth follows its client contract | Initial data roles are assigned by ordinal; Sentinel configuration is temporary. |
 | Zammad | Direct Sentinel discovery | Initial data roles are assigned by ordinal; Sentinel configuration is temporary. |
 | Nextcloud | Two HAProxy replicas checking Redis ROLE | Same ordinal-based/temporary topology concern; proxy replication does not elect or fence writers. |
@@ -107,7 +104,6 @@ Galera’s connected majority can retain its Primary Component after a member lo
 
 Elasticsearch also needs appropriate replica shards allocated across data nodes. Two data processes and a tiebreaker protect election, but do not by themselves establish a second copy of every index. See [Elastic’s small-cluster resilience guidance](https://www.elastic.co/docs/deploy-manage/production-guidance/availability-and-resilience/resilience-in-small-clusters).
 
-GitLab now uses one standalone Gitaly pod on a main worker. The former Praefect database and local Gitaly volumes are retained for recovery during migration; they do not provide active repository failover. See [Gitaly on Kubernetes](https://docs.gitlab.com/administration/gitaly/kubernetes/).
 
 ### Metrics replication versus log sharding
 
@@ -138,7 +134,7 @@ Therefore, “survives one worker” must not be promoted to “survives any Pro
 | Shared dependency | Affected paths | Why application replicas cannot replace it |
 | --- | --- | --- |
 | NFS at the declared external endpoint | Authentik media, Nextcloud code/recording content, SuiteCRM files, Vaultwarden data, UrBackup exports, SQLite backups | Every replica or replacement mounts the same external service. |
-| Garage S3 at the declared external endpoint | Nextcloud files, GitLab objects/registry, Stalwart blobs, Open WebUI uploads, Zammad attachments, SuiteCRM media/database backups | Separate application pods still address the same object service. |
+| Garage S3 at the declared external endpoint | Nextcloud files, Stalwart blobs, Open WebUI uploads, Zammad attachments, SuiteCRM media/database backups | Separate application pods still address the same object service. |
 | Router, DNS, subnet, switches | Public and internal client access | The repository does not declare independent replacements for every network component. |
 | Authentik | New SSO/forward-auth access | Application replica counts do not duplicate the identity service’s database/storage path. |
 | CNPG/operator/API | Controlled state changes and database recovery | A standby does not independently guarantee the required controller action. |

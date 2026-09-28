@@ -10,7 +10,6 @@ SSO has two owners: Authentik decides who may authenticate, and the application 
 | Integration | Repository configuration | Administrator work remaining |
 | --- | --- | --- |
 | Argo CD | Dex OIDC connector | Provider, callback, sealed client secret, Argo RBAC |
-| GitLab | Native OIDC provider document in a Secret | Matching provider, callback, account-linking and project roles |
 | Headscale and Headplane | Shared OIDC client, PKCE options | Both callbacks, allowed domain, Headplane admin role and backend API key |
 | Open WebUI | OIDC discovery, client ID, sealed secret | Provider policy, callback, user/model permissions |
 | Node-RED | Native `adminAuth` OIDC strategy, public settings/client ID, sealed secret | Provider policy and exact editor callback |
@@ -45,7 +44,6 @@ Both browser and application pods must reach the required endpoints. A successfu
 | Application | Callback to allow on the Authentik provider |
 | --- | --- |
 | Argo CD through Dex | `https://<argocd-host>/api/dex/callback` |
-| GitLab | `https://<gitlab-host>/users/auth/openid_connect/callback` |
 | Headscale | `https://<headscale-host>/oidc/callback` |
 | Headplane | `https://<headscale-host>/admin/oidc/callback` |
 | Open WebUI | `https://<open-webui-host>/oauth/oidc/callback` |
@@ -58,7 +56,7 @@ Replace each hostname with its shared variable value. Preserve path and trailing
 
 Prefer an immutable subject identifier for account association. Before enabling automatic linking by email, establish how verified email, renamed users, and existing local accounts are handled. A mistaken identity mapping can attach a new login to the wrong application account.
 
-Explicitly assign application roles after authentication. Headplane’s default `member` role is not an administrator. GitLab group/project membership and SuiteCRM security groups are separate from Authentik portal assignment.
+Explicitly assign application roles after authentication. Headplane’s default `member` role is not an administrator. SuiteCRM security groups are separate from Authentik portal assignment.
 
 ## SuiteCRM SAML
 

@@ -22,10 +22,6 @@ export const serviceGroups = [
     "label": "Work and automation",
     "services": [
       {
-        "slug": "gitlab",
-        "label": "GitLab"
-      },
-      {
         "slug": "suitecrm",
         "label": "SuiteCRM"
       },

@@ -68,7 +68,7 @@ Before replacing an existing file, preserve any annotations or additional Sealed
 | OIDC | Provider client ID, client secret, issuer/discovery URL, and callback URI |
 | Redis Sentinel | Data authentication, replica authentication, Sentinel authentication, and client discovery settings |
 | Application encryption | The original encryption/salt/session key and the data it protects |
-| Structured configuration | The expected file format inside the Secret value, such as GitLab’s OIDC provider document |
+| Structured configuration | The expected file format inside the Secret value, such as an OIDC provider document |
 
 Changing a bootstrap database password Secret does not always rotate the password in an already initialized database. Follow the database’s documented rotation procedure, then update consumers together.
 
