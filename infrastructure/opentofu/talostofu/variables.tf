@@ -132,7 +132,7 @@ variable "se350_worker_vm_memory" {
 variable "se350_worker_vm_ballooning_minimum" {
   type        = number
   description = "Minimum memory in MiB for SE350 worker VMs when ballooning"
-  default     = 28672
+  default     = 0
 }
 
 variable "se350_worker_vm_cores" {
