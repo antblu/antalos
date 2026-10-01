@@ -368,6 +368,11 @@ variables:
 
   FORGEJO_IMAGE_TAG: 16.0.5-rootless
   FORGEJO_HOST: git.antblu.net
+  FORGEJO_ADMIN_USERNAME: forgejo-admin
+  FORGEJO_ADMIN_EMAIL: admin@antblu.net
+  FORGEJO_OIDC_PROVIDER_NAME: antID
+  FORGEJO_OIDC_CLIENT_ID: itn81BVvSpa8jTxI3pCv2c8qu7pYTSrj1grpIXn6
+  FORGEJO_OIDC_DISCOVERY_URL: https://auth.antblu.net/application/o/forgejo/.well-known/openid-configuration
   FORGEJO_DATABASE_HOST: forgejo-db-rw.forgejo.svc.cluster.local
   FORGEJO_DATABASE_STORAGE_SIZE: 20Gi
   FORGEJO_NFS_SHARE: /mnt/nvme/git_repos

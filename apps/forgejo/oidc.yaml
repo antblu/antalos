@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: forgejo-oidc-bootstrap
+  namespace: forgejo
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1009
+        runAsGroup: 1009
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: bootstrap
+        image: codeberg.org/forgejo/forgejo:${FORGEJO_IMAGE_TAG}
+        command:
+        - sh
+        - -ec
+        - |
+          auth() {
+            forgejo --work-path /var/lib/gitea --config /var/lib/gitea/custom/conf/app.ini admin auth "$@"
+          }
+          # Capture the command status separately so database errors fail the Job.
+          sources=$(auth list)
+          source_id=$(printf '%s\n' "$sources" | awk -v name="$OIDC_PROVIDER_NAME" '$1 ~ /^[0-9]+$/ && $2 == name {print $1}')
+          if [ -n "$source_id" ]; then
+            set -- update-oauth --id "$source_id"
+          else
+            set -- add-oauth
+          fi
+          auth "$@" --name "$OIDC_PROVIDER_NAME" --provider openidConnect \
+            --key "$OIDC_CLIENT_ID" --secret "$OIDC_CLIENT_SECRET" \
+            --auto-discover-url "$OIDC_DISCOVERY_URL"
+        env:
+        - name: OIDC_PROVIDER_NAME
+          value: ${FORGEJO_OIDC_PROVIDER_NAME}
+        - name: OIDC_CLIENT_ID
+          value: ${FORGEJO_OIDC_CLIENT_ID}
+        - name: OIDC_DISCOVERY_URL
+          value: ${FORGEJO_OIDC_DISCOVERY_URL}
+        - name: OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: forgejo-oidc
+              key: client-secret
+        volumeMounts:
+        - name: repositories
+          mountPath: /var/lib/gitea
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: repositories
+        persistentVolumeClaim:
+          claimName: forgejo-repositories

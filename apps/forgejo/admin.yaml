@@ -32,20 +32,14 @@ spec:
             --username "$ADMIN_USERNAME" --password "$ADMIN_PASSWORD" --email "$ADMIN_EMAIL" --admin
         env:
         - name: ADMIN_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: forgejo-admin
-              key: username
+          value: "${FORGEJO_ADMIN_USERNAME}"
         - name: ADMIN_PASSWORD
           valueFrom:
             secretKeyRef:
               name: forgejo-admin
               key: password
         - name: ADMIN_EMAIL
-          valueFrom:
-            secretKeyRef:
-              name: forgejo-admin
-              key: email
+          value: "${FORGEJO_ADMIN_EMAIL}"
         volumeMounts:
         - name: repositories
           mountPath: /var/lib/gitea
