@@ -15,7 +15,6 @@ kubeconfig
 *.crt
 *.lock.hcl
 sealed-secrets-priv-key.yaml
-AGENTS.md
 infrastructure/azure/secrets.yaml
 infrastructure/azure/cloud-init.rendered.yaml
 
