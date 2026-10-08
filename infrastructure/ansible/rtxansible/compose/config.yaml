@@ -150,6 +150,20 @@ models:
       --n-gpu-layers all
     ttl: 600
 
+  "mradermacher/torchcast-decision-12b-GGUF:Q5_K_M":
+    cmd: >-
+      llama-server
+      --host 127.0.0.1
+      --port ${PORT}
+      --hf-repo mradermacher/torchcast-decision-12b-GGUF
+      --hf-file torchcast-decision-12b.Q5_K_M.gguf
+      --ctx-size 16384
+      --parallel 1
+      --cache-ram 2048
+      --ctx-checkpoints 8
+      --n-gpu-layers all
+    ttl: 600
+
 # ==============================================================
 # STARTUP
 #
@@ -235,3 +249,4 @@ routing:
             - "HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M"
             - "empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF:MTP-Q5_K_M"
             - "mradermacher/OxCoder-9B-i1-GGUF:Q5_K_M"
+            - "mradermacher/torchcast-decision-12b-GGUF:Q5_K_M"

@@ -6,7 +6,7 @@ repository to `/opt/compose` on every playbook run. Model files remain under
 `/srv/llama-models`; the playbook does not download the local GGUF files.
 
 llama-swap keeps the Qwen embedding model, Qwen reranker, and Gemma 4 E4B
-loaded together at startup. A request for any of the four other configured
+loaded together at startup. A request for any of the other configured
 models unloads that baseline group. Only one of those other models runs at a
 time. Each has a 600-second idle TTL. The baseline-restorer container watches
 for the last large model to stop and loads the three baseline models again.
@@ -14,6 +14,11 @@ A baseline request while a large model is active also swaps the large model
 out. The local Gemma, Qwen, and MTP files in `config.yaml` must already exist
 under `/srv/llama-models`. The Hugging Face model definitions use llama.cpp's
 `--hf-repo` acquisition and cache under that same directory.
+
+Torchcast Decision 12B is available as
+`mradermacher/torchcast-decision-12b-GGUF:Q5_K_M` in the large-model group,
+with a 16384-token context, one parallel request slot, and a 600-second idle TTL.
+llama.cpp acquires its Q5_K_M GGUF from Hugging Face on first use.
 
 The API remains at `http://10.30.0.26:8080/v1` and uses the existing
 `vault_llama_cpp_api_key` value as llama-swap's API key. Speaches remains at
