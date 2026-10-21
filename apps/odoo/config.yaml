@@ -1,0 +1,367 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odoo-config
+  namespace: odoo
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+data:
+  odoo.conf: |
+    [options]
+    addons_path = /mnt/extra-addons
+    data_dir = /var/lib/odoo
+    db_host = odoo-db-rw.odoo.svc.cluster.local
+    db_port = 5432
+    db_name = ${ODOO_DATABASE_NAME}
+    db_user = ${ODOO_DATABASE_USERNAME}
+    db_sslmode = require
+    dbfilter = ^${ODOO_DATABASE_NAME}$
+    list_db = False
+    proxy_mode = True
+    workers = 0
+    max_cron_threads = 1
+    db_maxconn = 16
+    http_port = 8069
+    log_level = info
+    server_wide_modules = base,rpc,web,session_db
+  bootstrap.py: |
+    import configparser
+    import os
+    from pathlib import Path
+    import subprocess
+    import time
+
+    import psycopg2
+
+    os.umask(0o077)
+    config = configparser.RawConfigParser()
+    config.read('/config/odoo.conf')
+    config['options']['db_password'] = Path('/credentials/database/password').read_text()
+    config['options']['admin_passwd'] = Path('/credentials/app/master-password').read_text()
+    with open('/run/odoo/odoo.conf', 'w') as handle:
+        config.write(handle)
+
+    # The database operator and sealed-secrets controller reconcile asynchronously.
+    options = config['options']
+    for attempt in range(180):
+        try:
+            connection = psycopg2.connect(
+                host=options['db_host'], dbname=options['db_name'],
+                user=options['db_user'], password=options['db_password'],
+                sslmode='require', connect_timeout=5,
+            )
+            break
+        except psycopg2.OperationalError:
+            time.sleep(5)
+    else:
+        raise RuntimeError('Odoo database did not become available')
+
+    if os.environ.get('ODOO_BOOTSTRAP_MODE') != 'initialize':
+        connection.autocommit = True
+        # Only the bootstrap Job mutates the schema and migrates legacy data.
+        for attempt in range(360):
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT to_regclass('public.ir_config_parameter')")
+                ready = cursor.fetchone()[0] is not None
+                if ready:
+                    cursor.execute("SELECT value FROM ir_config_parameter WHERE key = 'antalos.odoo.ha_ready'")
+                    ready = cursor.fetchone() == ('1',)
+            if ready:
+                connection.close()
+                raise SystemExit(0)
+            time.sleep(5)
+        raise RuntimeError('HA bootstrap did not complete')
+
+    # Serialize initialization; serving replicas only generate their local config.
+    connection.autocommit = True
+    with connection.cursor() as cursor:
+        cursor.execute('SELECT pg_advisory_lock(19650621)')
+    bootstrap_lock = connection
+    connection = psycopg2.connect(
+        host=options['db_host'], dbname=options['db_name'],
+        user=options['db_user'], password=options['db_password'], sslmode='require',
+    )
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT to_regclass('public.ir_module_module')")
+            initialized = cursor.fetchone()[0] is not None
+            if initialized:
+                cursor.execute("SELECT state FROM ir_module_module WHERE name = 'base'")
+                initialized = cursor.fetchone() == ('installed',)
+    connection.close()
+    pending = Path('/legacy/.bootstrap-admin-pending')
+    if not initialized:
+        pending.touch(mode=0o600)
+        subprocess.run([
+            'odoo', '--config=/run/odoo/odoo.conf', '--init=base',
+            '--without-demo=all', '--stop-after-init', '--no-http',
+        ], check=True)
+    if pending.exists():
+        # No HTTP listener is exposed until the default administrator is secured.
+        subprocess.run([
+            'odoo', 'shell', '--config=/run/odoo/odoo.conf', '--no-http',
+        ], input="""
+    from pathlib import Path
+    admin = env.ref('base.user_admin')
+    admin.write({'login': 'admin', 'password': Path('/credentials/app/admin-password').read_text()})
+    env['ir.config_parameter'].sudo().set_param('web.base.url', 'https://${ODOO_HOST}')
+    env['ir.config_parameter'].sudo().set_param('web.base.url.freeze', 'True')
+    env.cr.commit()
+    """, text=True, check=True)
+        pending.unlink()
+
+    # Install the storage addon only when absent; the serving container is stopped.
+    with psycopg2.connect(
+        host=options['db_host'], dbname=options['db_name'],
+        user=options['db_user'], password=options['db_password'], sslmode='require',
+    ) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT state FROM ir_module_module WHERE name = 'fs_attachment_s3'")
+            installed = cursor.fetchone() == ('installed',)
+    if not installed:
+        subprocess.run([
+            'odoo', '--config=/run/odoo/odoo.conf', '--init=fs_attachment_s3',
+            '--without-demo=all', '--stop-after-init', '--no-http',
+        ], check=True)
+    subprocess.run([
+        'odoo', 'shell', '--config=/run/odoo/odoo.conf', '--no-http',
+    ], input=Path('/config/configure-storage.py').read_text(), text=True, check=True)
+    subprocess.run([
+        'odoo', 'shell', '--config=/run/odoo/odoo.conf', '--no-http',
+    ], input=Path('/config/migrate-ha.py').read_text(), text=True, check=True)
+    bootstrap_lock.close()
+  install-addons.py: |
+    import io
+    import os
+    from pathlib import Path
+    import shutil
+    import subprocess
+    import tarfile
+    import urllib.request
+
+    subprocess.run([
+        'python3', '-m', 'pip', 'install', '--disable-pip-version-check',
+        '--no-cache-dir', '--target=/opt/python',
+        's3fs==' + os.environ['S3FS_VERSION'],
+        'python-slugify==' + os.environ['SLUGIFY_VERSION'],
+    ], check=True)
+    repositories = [
+        ('storage', os.environ['OCA_STORAGE_REVISION'], ('fs_storage', 'fs_attachment', 'fs_attachment_s3')),
+        ('server-tools', os.environ['OCA_SERVER_TOOLS_REVISION'], ('session_db',)),
+    ]
+    for repository, revision, modules in repositories:
+        url = f'https://codeload.github.com/OCA/{repository}/tar.gz/{revision}'
+        with urllib.request.urlopen(url, timeout=120) as response:
+            archive = tarfile.open(fileobj=io.BytesIO(response.read()), mode='r:gz')
+        with archive:
+            for member in archive.getmembers():
+                parts = Path(member.name).parts
+                if len(parts) < 2 or parts[1] not in modules:
+                    continue
+                if '..' in parts or member.issym() or member.islnk():
+                    raise RuntimeError('Unexpected addon archive path')
+                target = Path('/mnt/extra-addons').joinpath(*parts[1:])
+                if member.isdir():
+                    target.mkdir(parents=True, exist_ok=True)
+                elif member.isfile():
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    with archive.extractfile(member) as source, target.open('wb') as destination:
+                        shutil.copyfileobj(source, destination)
+  configure-storage.py: |
+    import json
+    import os
+
+    Storage = env['fs.storage'].sudo()
+    storage = Storage.search([('code', '=', 'garage_odoo')], limit=1)
+    values = {
+        'name': 'Garage Odoo attachments',
+        'code': 'garage_odoo',
+        'protocol': 's3',
+        'directory_path': os.environ['ODOO_S3_BUCKET'] + '/' + os.environ['ODOO_S3_ATTACHMENT_PREFIX'],
+        'options': json.dumps({
+            'key': '$AWS_ACCESS_KEY_ID',
+            'secret': '$AWS_SECRET_ACCESS_KEY',
+            'endpoint_url': os.environ['ODOO_S3_ENDPOINT'],
+            'client_kwargs': {'region_name': os.environ['AWS_DEFAULT_REGION']},
+            'config_kwargs': {
+                's3': {'addressing_style': 'path'},
+                'request_checksum_calculation': 'when_required',
+                'response_checksum_validation': 'when_required',
+            },
+        }),
+        'eval_options_from_env': True,
+        'use_as_default_for_attachments': True,
+        'use_filename_obfuscation': True,
+        # Keep deleted objects until backups and restore requirements are reviewed.
+        'autovacuum_gc': False,
+        'check_connection_method': False,
+        'use_x_sendfile_to_serve_internal_url': False,
+    }
+    if storage:
+        storage.write(values)
+    else:
+        Storage.create(values)
+    # Assets and small images use the addon defaults; startup assets use PostgreSQL.
+    env['ir.config_parameter'].sudo().set_param('ir_attachment.location', 'db')
+    env.cr.commit()
+  backup.py: |
+    import json
+    import os
+    import shutil
+    import signal
+    import subprocess
+    from datetime import datetime, timezone
+
+    import s3fs
+    import psycopg2
+
+
+    def interrupted(signum, frame):
+        raise RuntimeError('Backup interrupted')
+
+    signal.signal(signal.SIGTERM, interrupted)
+    signal.signal(signal.SIGALRM, interrupted)
+    signal.alarm(7200)
+    fs = s3fs.S3FileSystem(
+        key=os.environ['AWS_ACCESS_KEY_ID'], secret=os.environ['AWS_SECRET_ACCESS_KEY'],
+        endpoint_url=os.environ['ODOO_S3_ENDPOINT'],
+        client_kwargs={'region_name': os.environ['AWS_DEFAULT_REGION']},
+        config_kwargs={
+            's3': {'addressing_style': 'path'},
+            'request_checksum_calculation': 'when_required',
+            'response_checksum_validation': 'when_required',
+        },
+    )
+    # Do not create a new-layout backup before the local-file migration commits.
+    with psycopg2.connect('') as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT value FROM ir_config_parameter WHERE key = 'antalos.odoo.ha_ready'")
+            if cursor.fetchone() != ('1',):
+                raise RuntimeError('HA initialization has not completed')
+    bucket = os.environ['ODOO_S3_BUCKET']
+    timestamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    root = bucket + '/' + os.environ['ODOO_S3_BACKUP_PREFIX'].strip('/') + '/' + timestamp
+    attachments = bucket + '/' + os.environ['ODOO_S3_ATTACHMENT_PREFIX'].strip('/') + '/'
+    # pg_dump uses one MVCC snapshot. Attachment objects use versioned immutable
+    # names and GC is disabled: every object referenced by that snapshot remains
+    # available for the subsequent copy while serving traffic continues.
+    with fs.open(root + '/database.dump', 'wb', block_size=8 * 1024 * 1024) as destination:
+        process = subprocess.Popen([
+            'pg_dump', '--format=custom', '--no-owner', '--no-acl',
+        ], stdout=subprocess.PIPE)
+        try:
+            shutil.copyfileobj(process.stdout, destination, length=1024 * 1024)
+            if process.wait() != 0:
+                raise RuntimeError('PostgreSQL dump failed')
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+            process.stdout.close()
+    keys = fs.find(attachments)
+    count = 0
+    for key in keys:
+        if not key.startswith(attachments):
+            continue
+        relative = key[len(attachments):]
+        if not relative:
+            continue
+        fs.copy(key, root + '/attachments/' + relative)
+        count += 1
+    manifest = {
+        'completed_at': datetime.now(timezone.utc).isoformat(),
+        'database': os.environ['PGDATABASE'],
+        'source_attachment_prefix': attachments,
+        'attachment_objects': count,
+        'database_dump': 'database.dump',
+        'oca_storage_revision': os.environ['OCA_STORAGE_REVISION'],
+        'oca_server_tools_revision': os.environ['OCA_SERVER_TOOLS_REVISION'],
+        'layout': 'ha-postgresql-sessions-s3-attachments-v1',
+    }
+    with fs.open(root + '/COMPLETE.json', 'w') as destination:
+        json.dump(manifest, destination)
+    print('Completed online backup: s3://' + root, flush=True)
+  migrate-ha.py: |
+    import os
+    from pathlib import Path
+
+    # This runs offline, before either serving replica starts. Keep original files.
+    roots = [(Path(base) / env.cr.dbname).resolve() for base in ('/legacy/filestore', '/var/lib/odoo/filestore')]
+    Attachment = env['ir.attachment'].sudo()
+    last_id = 0
+    migrated = 0
+    while True:
+        records = Attachment.search([
+            ('id', '>', last_id), ('store_fname', '!=', False),
+            '|', ('res_field', '=', False), ('res_field', '!=', False),
+        ], order='id', limit=100)
+        if not records:
+            break
+        for attachment in records:
+            last_id = attachment.id
+            filename = attachment.store_fname
+            if '://' in filename:
+                continue
+            data = None
+            for root in roots:
+                path = (root / filename).resolve()
+                if not path.is_relative_to(root):
+                    raise RuntimeError('Invalid legacy attachment path')
+                if path.is_file():
+                    data = path.read_bytes()
+                    break
+            if data is None:
+                raise RuntimeError('Missing legacy attachment file for record ' + str(attachment.id))
+            attachment.write({'db_datas': data, 'store_fname': False})
+            migrated += 1
+    # A single transaction preserves all original DB references on any failure.
+    from odoo import http
+    from odoo.addons import session_db
+    # Create the shared session table before concurrent serving pods load it.
+    shared_sessions = http.root.session_store
+    env['ir.config_parameter'].sudo().set_param('antalos.odoo.ha_ready', '1')
+    env.cr.commit()
+    print('Copied legacy attachments into PostgreSQL:', migrated, flush=True)
+  launch-bootstrap.py: |
+    import json
+    import os
+    from pathlib import Path
+    import ssl
+    import subprocess
+    import urllib.error
+    import urllib.request
+    import urllib.parse
+    import time
+
+    # The existing installation was scaled down for migration. On a fresh Argo
+    # installation, its serving Deployment is created in the next sync wave.
+    account = Path('/var/run/secrets/kubernetes.io/serviceaccount')
+    context = ssl.create_default_context(cafile=str(account / 'ca.crt'))
+    url = ('https://' + os.environ['KUBERNETES_SERVICE_HOST'] + ':'
+           + os.environ['KUBERNETES_SERVICE_PORT_HTTPS']
+           + '/apis/apps/v1/namespaces/odoo/deployments/odoo/scale')
+    headers = {'Authorization': 'Bearer ' + (account / 'token').read_text()}
+    # The serving Deployment is submitted with replicas=0 for this one-time migration.
+    selector = urllib.parse.urlencode({'labelSelector': 'app.kubernetes.io/name=odoo'})
+    pods_url = url.split('/apis/apps/')[0] + '/api/v1/namespaces/odoo/pods?' + selector
+    for attempt in range(120):
+        with urllib.request.urlopen(urllib.request.Request(pods_url, headers=headers), context=context, timeout=30) as response:
+            pods = json.load(response)['items']
+        if not pods:
+            break
+        time.sleep(5)
+    else:
+        raise RuntimeError('Serving pods have not terminated; refusing offline migration')
+    subprocess.run(['python3', '/config/bootstrap.py'], check=True)
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers=headers), context=context, timeout=30) as response:
+            scale = json.load(response)
+    except urllib.error.HTTPError as exc:
+        if exc.code != 404:
+            raise
+    else:
+        if scale['spec']['replicas'] == 0:
+            headers['Content-Type'] = 'application/merge-patch+json'
+            request = urllib.request.Request(url, headers=headers, method='PATCH', data=b'{"spec":{"replicas":2}}')
+            with urllib.request.urlopen(request, context=context, timeout=30):
+                pass

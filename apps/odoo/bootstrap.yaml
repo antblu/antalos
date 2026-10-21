@@ -1,0 +1,162 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: odoo-bootstrap-ha-v1
+  namespace: odoo
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: odoo-bootstrap
+    spec:
+      automountServiceAccountToken: true
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ${TALOS_WORKER_LEFT}
+                      - ${TALOS_WORKER_RIGHT}
+      initContainers:
+        - name: install-storage-addons
+          image: docker.io/library/python:${ODOO_ADDON_INSTALLER_IMAGE_TAG}
+          command:
+            - python3
+            - /config/install-addons.py
+          env:
+            - name: OCA_STORAGE_REVISION
+              value: ${ODOO_OCA_STORAGE_REVISION}
+            - name: S3FS_VERSION
+              value: ${ODOO_S3FS_VERSION}
+            - name: SLUGIFY_VERSION
+              value: ${ODOO_SLUGIFY_VERSION}
+            - name: OCA_SERVER_TOOLS_REVISION
+              value: ${ODOO_OCA_SERVER_TOOLS_REVISION}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: '1'
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: python-dependencies
+              mountPath: /opt/python
+            - name: addons
+              mountPath: /mnt/extra-addons
+      containers:
+        - name: bootstrap
+          image: docker.io/library/odoo:${ODOO_IMAGE_TAG}
+          command:
+            - python3
+            - /config/launch-bootstrap.py
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: '2'
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/odoo
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: runtime-config
+              mountPath: /run/odoo
+            - name: database-credentials
+              mountPath: /credentials/database
+              readOnly: true
+            - name: app-credentials
+              mountPath: /credentials/app
+              readOnly: true
+            - name: python-dependencies
+              mountPath: /opt/python
+              readOnly: true
+            - name: addons
+              mountPath: /mnt/extra-addons
+              readOnly: true
+            - name: legacy-data
+              mountPath: /legacy
+          env:
+            - name: PYTHONPATH
+              value: /opt/python
+            - name: AWS_DEFAULT_REGION
+              value: ${ODOO_S3_REGION}
+            - name: ODOO_S3_ENDPOINT
+              value: ${ODOO_S3_ENDPOINT}
+            - name: ODOO_S3_BUCKET
+              value: ${ODOO_S3_BUCKET}
+            - name: ODOO_S3_ATTACHMENT_PREFIX
+              value: ${ODOO_S3_ATTACHMENT_PREFIX}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: odoo-s3
+                  key: access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: odoo-s3
+                  key: secret-access-key
+            - name: SESSION_DB_URI
+              value: ${ODOO_DATABASE_NAME}
+            - name: SESSION_DB_URI
+              value: ${ODOO_DATABASE_NAME}
+            - name: ODOO_BOOTSTRAP_MODE
+              value: initialize
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: odoo-config
+        - name: runtime-config
+          emptyDir:
+            medium: Memory
+        - name: database-credentials
+          secret:
+            secretName: odoo-db
+            defaultMode: 288
+        - name: app-credentials
+          secret:
+            secretName: odoo-app
+            defaultMode: 288
+        - name: python-dependencies
+          emptyDir: {}
+        - name: addons
+          emptyDir: {}
+        - name: legacy-data
+          persistentVolumeClaim:
+            claimName: odoo-data
+      serviceAccountName: odoo-bootstrap
+      restartPolicy: Never

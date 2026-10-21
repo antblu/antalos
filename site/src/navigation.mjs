@@ -30,6 +30,10 @@ export const serviceGroups = [
         "label": "SuiteCRM"
       },
       {
+        "slug": "odoo",
+        "label": "Odoo"
+      },
+      {
         "slug": "zammad",
         "label": "Zammad"
       },

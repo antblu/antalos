@@ -1,0 +1,20 @@
+---
+title: Odoo · Architecture
+description: Two Odoo replicas, PostgreSQL sessions, S3 attachments, and two-node CNPG replication.
+---
+
+<nav class="guide-switcher" aria-label="Odoo guides"><a href="/user-guide/odoo/">Use</a><a aria-current="page" href="/infrastructure/odoo/">Architecture</a><a href="/admin-guide/odoo/">Operate</a></nav>
+
+The source design places two Odoo 19 Community pods on distinct `talos-worker-left` and `talos-worker-right` nodes using required hostname anti-affinity. The Service routes requests to ready endpoints. A `minAvailable: 1` PodDisruptionBudget protects voluntary eviction, and rolling updates use `maxSurge: 0` and `maxUnavailable: 1` to fit two workers. Traefik terminates HTTPS at `odoo.antblu.net` with the service-owned `letsencrypt-prod` certificate. Threaded HTTP and WebSocket traffic use port 8069. Native Odoo accounts provide login.
+
+CloudNativePG runs two PostgreSQL instances on those same two distinct workers, each with its own 10 GiB `openebs-local` volume. Required database pod anti-affinity prevents colocation. The operator promotes the surviving standby when needed, and `odoo-db-rw` routes clients to the writer. Synchronous replication requests one acknowledgement with preferred durability: writes may continue when the standby is unavailable, so degraded operation can lose recent writes on a subsequent failure. Application requests must reconnect during database promotion.
+
+The OCA `session_db` server-wide addon stores shared HTTP sessions in the replicated Odoo database. The OCA S3 attachment addon stores new attachments in Garage at `http://10.20.0.5:30188`, region `garage`, bucket `odoo`, prefix `attachments/`. Small images and web assets use PostgreSQL. The bootstrap Job copies remaining legacy local attachments into PostgreSQL before enabling the serving pods. Their original files and the 20 GiB legacy PVC are retained for recovery; serving pods use only disposable local cache directories. No worker-local volume is required to serve an existing attachment or session.
+
+Initialization runs once through `odoo-bootstrap-ha-v1`, with a PostgreSQL advisory lock and a database readiness marker. It initializes an empty database, secures its administrator, installs storage addons, configures S3, and imports legacy attachment files. Serving init containers generate their private runtime configuration and wait for this marker; they do not run concurrent schema installation. Existing administrator credentials are preserved. Switching from filesystem sessions requires users to sign in again.
+
+Daily backups run at 09:00 UTC without scaling down either serving replica. A consistent `pg_dump` snapshot includes database attachments and sessions; the subsequent S3 copy captures all immutable object versions with garbage collection disabled. `COMPLETE.json` marks a completed backup. The backup account has no Kubernetes mutation permissions. Do not enable attachment garbage collection or in-place object overwrite without revisiting this consistency model.
+
+This design supports continued service through loss of one eligible worker while Garage, ingress, the Kubernetes API, and CNPG control remain available. Database promotion and interrupted requests can cause a brief error/retry period. Shared Garage, ingress, the API endpoint, host-level failures, and addon download availability remain dependencies. Copies of active objects and backups in the same Garage service do not provide an independent disaster-recovery destination. See [service availability](/infrastructure/availability/).
+
+All resources belong to `apps/odoo/`; shared inputs belong to `apps/variables.yaml`, and credentials are namespace-bound SealedSecrets. This page describes source design. It does not establish live replication health, successful session or attachment failover, completed backups, or a measured recovery time.

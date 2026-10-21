@@ -19,6 +19,12 @@ Torchcast Decision 12B is available as
 `mradermacher/torchcast-decision-12b-GGUF:Q5_K_M` in the large-model group,
 with a 16384-token context, one parallel request slot, and a 600-second idle TTL.
 llama.cpp acquires its Q5_K_M GGUF from Hugging Face on first use.
+Hugging Face acquisition also automatically loads the repository's multimodal
+projector, enabling image and audio inputs through `/v1/chat/completions`.
+Use `image_url` content parts for images and `input_audio` content parts for
+base64-encoded audio. Responses are text; this does not enable audio generation.
+The checkpoint's published evaluation covers text decisions, so multimodal
+input support does not establish image or audio task quality.
 
 The API remains at `http://10.30.0.26:8080/v1` and uses the existing
 `vault_llama_cpp_api_key` value as llama-swap's API key. Speaches remains at

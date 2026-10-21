@@ -57,6 +57,8 @@ No service should be described as unconditionally end-to-end HA solely because i
 | [Node-RED](/infrastructure/node-red/#availability-and-failure-behavior) | Recoverable singleton with an automation gap during replacement. | One process, persistent `/data` on external NFS; in-memory context and in-flight messages are lost. |
 | [CrowdSec](/infrastructure/crowdsec/#availability-and-failure-behavior) | Singleton LAPI, processor, and AppSec; enforcement impact depends on the consumer. | LAPI SQLite recovery through Litestream; VictoriaLogs and Traefik are separate dependencies. |
 
+Odoo has two serving replicas and two CNPG PostgreSQL instances separated across the left/right workers. Shared sessions and imported legacy attachments live in PostgreSQL; new attachments use Garage S3. Serving pods do not depend on a worker-local PVC. Online backups preserve availability, with consistency relying on retained immutable S3 attachment versions. Database promotion can interrupt requests, and shared ingress, API and Garage remain dependencies. See [Odoo architecture](/infrastructure/odoo/).
+
 ## How the HA mechanisms work
 
 ### Ready replicas and client routing

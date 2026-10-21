@@ -1,0 +1,142 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: odoo-backup
+  namespace: odoo
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+spec:
+  schedule: ${ODOO_BACKUP_SCHEDULE}
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 1800
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: odoo-backup
+        spec:
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 180
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
+            - name: install-storage-addons
+              image: docker.io/library/python:${ODOO_ADDON_INSTALLER_IMAGE_TAG}
+              command:
+                - python3
+                - /config/install-addons.py
+              env:
+                - name: OCA_STORAGE_REVISION
+                  value: ${ODOO_OCA_STORAGE_REVISION}
+                - name: S3FS_VERSION
+                  value: ${ODOO_S3FS_VERSION}
+                - name: SLUGIFY_VERSION
+                  value: ${ODOO_SLUGIFY_VERSION}
+                - name: OCA_SERVER_TOOLS_REVISION
+                  value: ${ODOO_OCA_SERVER_TOOLS_REVISION}
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: '1'
+                  memory: 512Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+                - name: python-dependencies
+                  mountPath: /opt/python
+                - name: addons
+                  mountPath: /mnt/extra-addons
+          containers:
+            - name: backup
+              image: docker.io/library/odoo:${ODOO_IMAGE_TAG}
+              command:
+                - python3
+                - -u
+                - /config/backup.py
+              env:
+                - name: PYTHONPATH
+                  value: /opt/python
+                - name: AWS_DEFAULT_REGION
+                  value: ${ODOO_S3_REGION}
+                - name: ODOO_S3_ENDPOINT
+                  value: ${ODOO_S3_ENDPOINT}
+                - name: ODOO_S3_BUCKET
+                  value: ${ODOO_S3_BUCKET}
+                - name: ODOO_S3_ATTACHMENT_PREFIX
+                  value: ${ODOO_S3_ATTACHMENT_PREFIX}
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: odoo-s3
+                      key: access-key-id
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: odoo-s3
+                      key: secret-access-key
+                - name: ODOO_S3_BACKUP_PREFIX
+                  value: ${ODOO_S3_BACKUP_PREFIX}
+                - name: OCA_STORAGE_REVISION
+                  value: ${ODOO_OCA_STORAGE_REVISION}
+                - name: PGHOST
+                  value: odoo-db-rw.odoo.svc.cluster.local
+                - name: PGDATABASE
+                  value: ${ODOO_DATABASE_NAME}
+                - name: PGUSER
+                  value: ${ODOO_DATABASE_USERNAME}
+                - name: PGSSLMODE
+                  value: require
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: odoo-db
+                      key: password
+                - name: OCA_SERVER_TOOLS_REVISION
+                  value: ${ODOO_OCA_SERVER_TOOLS_REVISION}
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: '1'
+                  memory: 1Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+                - name: python-dependencies
+                  mountPath: /opt/python
+                  readOnly: true
+          volumes:
+            - name: config
+              configMap:
+                name: odoo-config
+            - name: python-dependencies
+              emptyDir: {}
+            - name: addons
+              emptyDir: {}
+          automountServiceAccountToken: false

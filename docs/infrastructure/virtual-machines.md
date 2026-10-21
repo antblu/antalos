@@ -29,6 +29,10 @@ The configured large-model group includes Torchcast Decision 12B in Q5_K_M
 quantization, served with a 16384-token context and one parallel request slot.
 Its GGUF is acquired from Hugging Face on first use. It follows the group's
 600-second idle timeout and swaps out the baseline models when selected.
+llama.cpp automatically acquires its multimodal projector alongside the GGUF,
+enabling image and audio inputs with text responses through
+`/v1/chat/completions`. The model's published decision evaluation covers text;
+image and audio task quality must be assessed separately.
 
 ## Arc media and document services
 
