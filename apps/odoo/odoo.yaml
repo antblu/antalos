@@ -143,8 +143,6 @@ spec:
                   key: secret-access-key
             - name: SESSION_DB_URI
               value: ${ODOO_DATABASE_NAME}
-            - name: SESSION_DB_URI
-              value: ${ODOO_DATABASE_NAME}
       containers:
         - name: odoo
           image: docker.io/library/odoo:${ODOO_IMAGE_TAG}
@@ -218,8 +216,6 @@ spec:
                 secretKeyRef:
                   name: odoo-s3
                   key: secret-access-key
-            - name: SESSION_DB_URI
-              value: ${ODOO_DATABASE_NAME}
             - name: SESSION_DB_URI
               value: ${ODOO_DATABASE_NAME}
       volumes:

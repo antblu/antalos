@@ -130,8 +130,6 @@ spec:
                   key: secret-access-key
             - name: SESSION_DB_URI
               value: ${ODOO_DATABASE_NAME}
-            - name: SESSION_DB_URI
-              value: ${ODOO_DATABASE_NAME}
             - name: ODOO_BOOTSTRAP_MODE
               value: initialize
       volumes:

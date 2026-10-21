@@ -94,7 +94,7 @@ data:
         pending.touch(mode=0o600)
         subprocess.run([
             'odoo', '--config=/run/odoo/odoo.conf', '--init=base',
-            '--without-demo=all', '--stop-after-init', '--no-http',
+            '--without-demo=true', '--stop-after-init', '--no-http',
         ], check=True)
     if pending.exists():
         # No HTTP listener is exposed until the default administrator is secured.
@@ -121,7 +121,7 @@ data:
     if not installed:
         subprocess.run([
             'odoo', '--config=/run/odoo/odoo.conf', '--init=fs_attachment_s3',
-            '--without-demo=all', '--stop-after-init', '--no-http',
+            '--without-demo=true', '--stop-after-init', '--no-http',
         ], check=True)
     subprocess.run([
         'odoo', 'shell', '--config=/run/odoo/odoo.conf', '--no-http',
@@ -144,6 +144,7 @@ data:
         '--no-cache-dir', '--target=/opt/python',
         's3fs==' + os.environ['S3FS_VERSION'],
         'python-slugify==' + os.environ['SLUGIFY_VERSION'],
+        'packaging==${ODOO_PACKAGING_VERSION}',
     ], check=True)
     repositories = [
         ('storage', os.environ['OCA_STORAGE_REVISION'], ('fs_storage', 'fs_attachment', 'fs_attachment_s3')),
