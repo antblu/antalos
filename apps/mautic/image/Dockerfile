@@ -17,6 +17,7 @@ RUN apt-get update \
     && sed -i 's/:80>/:8080>/' /etc/apache2/sites-available/000-default.conf
 
 COPY patch-installer.php /usr/local/share/mautic/patch-installer.php
+COPY configure-proxies.php /usr/local/share/mautic/configure-proxies.php
 RUN php /usr/local/share/mautic/patch-installer.php \
     && php -l /var/www/html/docroot/app/bundles/InstallBundle/Install/InstallService.php
 

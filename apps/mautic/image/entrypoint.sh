@@ -45,6 +45,7 @@ case "$1" in
             --admin_username=admin --admin_email="$MAUTIC_ADMIN_EMAIL" \
             --admin_firstname=Mautic --admin_lastname=Administrator \
             --admin_password="$MAUTIC_ADMIN_PASSWORD"
+        php /usr/local/share/mautic/configure-proxies.php
         php bin/console doctrine:migrations:migrate --no-interaction
         ;;
     console)

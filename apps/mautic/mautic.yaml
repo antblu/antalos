@@ -86,18 +86,40 @@ spec:
         - name: http
           containerPort: 8080
         startupProbe:
-          httpGet:
-            path: /s/login
-            port: http
-          periodSeconds: 5
-          timeoutSeconds: 5
+          exec:
+            command:
+            - php
+            - -r
+            - |
+              $ip = gethostbyname(gethostname());
+              $context = stream_context_create(['http' => [
+                  'header' => "Host: ${MAUTIC_HOST}\r\nX-Forwarded-Proto: https\r\nX-Forwarded-Port: 443\r\n",
+                  'timeout' => 10,
+                  'follow_location' => 0,
+                  'ignore_errors' => true,
+              ]]);
+              @file_get_contents('http://'.$ip.':8080/s/login', false, $context);
+              exit(preg_match('/^HTTP\/\S+ 200\b/', $http_response_header[0] ?? '') ? 0 : 1);
+          periodSeconds: 10
+          timeoutSeconds: 15
           failureThreshold: 60
         readinessProbe:
-          httpGet:
-            path: /s/login
-            port: http
+          exec:
+            command:
+            - php
+            - -r
+            - |
+              $ip = gethostbyname(gethostname());
+              $context = stream_context_create(['http' => [
+                  'header' => "Host: ${MAUTIC_HOST}\r\nX-Forwarded-Proto: https\r\nX-Forwarded-Port: 443\r\n",
+                  'timeout' => 10,
+                  'follow_location' => 0,
+                  'ignore_errors' => true,
+              ]]);
+              @file_get_contents('http://'.$ip.':8080/s/login', false, $context);
+              exit(preg_match('/^HTTP\/\S+ 200\b/', $http_response_header[0] ?? '') ? 0 : 1);
           periodSeconds: 10
-          timeoutSeconds: 5
+          timeoutSeconds: 15
         livenessProbe:
           tcpSocket:
             port: http

@@ -551,7 +551,7 @@ variables:
   # renovate: datasource=docker depName=mautic/mautic
   MAUTIC_BASE_IMAGE_TAG: 7.2.1-apache
   MAUTIC_IMAGE_REPOSITORY: ghcr.io/antblu/mautic
-  MAUTIC_IMAGE_TAG: 7.2.1-1010-v2
+  MAUTIC_IMAGE_TAG: 7.2.1-1010-v3
   # renovate: datasource=github-releases depName=phpredis/phpredis extractVersion=^{{version}}$
   MAUTIC_PHPREDIS_VERSION: 6.3.0
   # Match Invoice Ninja's MariaDB/Galera images.

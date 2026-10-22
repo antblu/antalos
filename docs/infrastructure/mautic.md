@@ -10,6 +10,12 @@ not evidence of a deployed or failure-tested service.
 Traefik terminates TLS on `websecure`. Mautic trusts forwarded headers from the
 configured pod CIDR through the JSON-valued `MAUTIC_TRUSTED_PROXIES` input, so it
 recognizes the external HTTPS request while Apache listens internally on 8080.
+The install hook also writes that input into `config/local.php`, which Mautic's
+early proxy middleware reads before Symfony resolves environment parameters.
+Web startup/readiness checks execute a local HTTP request to the pod address with
+the public Host and forwarded HTTPS headers, checking for a 200 login response.
+This follows the same trusted pod-network path as Traefik and avoids following an
+HTTPS redirect to a pod that has no TLS listener.
 
 ## Components and placement
 
