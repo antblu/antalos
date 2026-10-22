@@ -24,7 +24,9 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   })
   let identity = result.authIdentity
   if (!result.success || !identity) {
-    throw new MedusaError(MedusaError.Types.UNAUTHORIZED, "antID authentication failed")
+    // The provider returns fixed, credential-free failure messages. Preserve
+    // them so the logs identify claim/state failures instead of hiding the cause.
+    throw new MedusaError(MedusaError.Types.UNAUTHORIZED, result.error || "antID authentication failed")
   }
   if (identity.app_metadata?.user_id) {
     // A deleted administrator must not receive a valid login token.

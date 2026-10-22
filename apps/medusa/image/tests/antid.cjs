@@ -106,6 +106,30 @@ test("antID verifies OIDC tokens, consumes state and keeps subject identity", as
     const input = await start()
     signingKey = (await generateKeyPair("RS256")).privateKey
     assert.equal((await provider.validateCallback(input, service)).success, false)
+    signingKey = privateKey
+  })
+  await t.test("explicit Authentik trust accepts unverified email", async () => {
+    const trustedProvider = new Provider({}, { ...options, require_verified_email: false })
+    const input = await start()
+    claims.email_verified = false
+    const result = await trustedProvider.validateCallback(input, service)
+    assert.equal(result.success, true)
+    assert.equal(result.authIdentity.user_metadata.email, "admin@example.com")
+    assert.equal((await trustedProvider.validateCallback(input, service)).success, false)
+    const missingEmail = await start()
+    delete claims.email
+    assert.equal((await trustedProvider.validateCallback(missingEmail, service)).success, false)
+  })
+  await t.test("Authentik trust retains issuer and signature checks", async () => {
+    const trustedProvider = new Provider({}, { ...options, require_verified_email: false })
+    const input = await start()
+    claims.email_verified = false
+    claims.iss = "https://attacker.example/"
+    assert.equal((await trustedProvider.validateCallback(input, service)).success, false)
+    const forged = await start()
+    signingKey = (await generateKeyPair("RS256")).privateKey
+    assert.equal((await trustedProvider.validateCallback(forged, service)).success, false)
+    signingKey = privateKey
   })
   await t.test("unknown state makes no token request", async () => {
     const before = tokenCalls
@@ -138,7 +162,11 @@ test("administrator callback provisions, links and preserves actor association",
       provider_identities: [{ provider: "antid", user_metadata: { email: user.email } }],
     }
     const auth = {
-      validateCallback: async () => ({ success: !denied, authIdentity: identity }),
+      validateCallback: async () => ({
+        success: !denied,
+        authIdentity: identity,
+        error: denied ? "antID requires a verified email and subject" : undefined,
+      }),
       updateAuthIdentities: async (data) => { linked++; return { ...identity, ...data } },
       listAuthMfa: async () => [],
     }
@@ -166,6 +194,7 @@ test("administrator callback provisions, links and preserves actor association",
   await t.test("first login creates administrator", async () => assert.deepEqual(await run(), { created: 1, linked: 1 }))
   await t.test("verified email links existing administrator", async () => assert.deepEqual(await run({ existing: true }), { created: 0, linked: 1 }))
   await t.test("existing subject retains user ID", async () => assert.deepEqual(await run({ associated: true }), { created: 0, linked: 0 }))
-  await t.test("denied login cannot provision", async () => assert.rejects(run({ denied: true })))
+  await t.test("denied login reports the cause and cannot provision", async () =>
+    assert.rejects(run({ denied: true }), /antID requires a verified email and subject/))
   await t.test("deleted administrator cannot sign in", async () => assert.rejects(run({ associated: true, deleted: true })))
 })

@@ -12,6 +12,7 @@ type Options = {
   client_secret: string
   callback_url: string
   display_name?: string
+  require_verified_email?: boolean
 }
 
 export default class AntidProvider extends AbstractAuthModuleProvider {
@@ -135,8 +136,10 @@ export default class AntidProvider extends AbstractAuthModuleProvider {
         idTokenExpected: true,
       })
       const claims = tokens.claims()
-      if (!claims?.sub || claims.email_verified !== true ||
-          typeof claims.email !== "string" || !claims.email.trim()) {
+      if (!claims?.sub || typeof claims.email !== "string" || !claims.email.trim()) {
+        return { success: false, error: "antID requires an email address and subject" }
+      }
+      if (this.options.require_verified_email !== false && claims.email_verified !== true) {
         return { success: false, error: "antID requires a verified email and subject" }
       }
       const metadata = {

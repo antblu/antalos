@@ -51,6 +51,7 @@ module.exports = defineConfig({
               client_id: process.env.OIDC_CLIENT_ID,
               client_secret: process.env.OIDC_CLIENT_SECRET,
               callback_url: process.env.OIDC_CALLBACK_URL,
+              require_verified_email: process.env.OIDC_REQUIRE_VERIFIED_EMAIL !== "false",
             },
           },
         ],
