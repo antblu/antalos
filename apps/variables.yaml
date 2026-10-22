@@ -92,7 +92,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/tale/headplane
   HEADPLANE_IMAGE_TAG: 0.7.1
   # renovate: datasource=docker depName=louislam/uptime-kuma
-  UPTIME_KUMA_IMAGE_TAG: 2.5.5-rootless
+  UPTIME_KUMA_IMAGE_TAG: 2.5.6-rootless
   # renovate: datasource=docker depName=nodered/node-red
   NODE_RED_IMAGE_TAG: 5.0.7-24
   # renovate: datasource=docker depName=ghcr.io/alam00000/bentopdf-simple
