@@ -74,7 +74,7 @@ variables:
   # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
   INVOICENINJA_NGINX_IMAGE_TAG: 1.29.8-alpine
   # renovate: datasource=docker depName=busybox
-  INVOICENINJA_BUSYBOX_IMAGE_TAG: 1.37.0
+  INVOICENINJA_BUSYBOX_IMAGE_TAG: 1.38.0
   # renovate: datasource=docker depName=mariadb
   INVOICENINJA_MARIADB_IMAGE_TAG: 11.8.9
   # renovate: datasource=docker depName=mariadb
@@ -482,7 +482,7 @@ variables:
   # renovate: datasource=docker depName=rustdesk/rustdesk-server
   RUSTDESK_IMAGE_TAG: 1.1.16
   # renovate: datasource=docker depName=busybox
-  RUSTDESK_BUSYBOX_IMAGE_TAG: 1.37.0-musl
+  RUSTDESK_BUSYBOX_IMAGE_TAG: 1.38.0-musl
   RUSTDESK_HOST: rustdesk.antblu.net
   RUSTDESK_RELAY_0_HOST: rustdesk-relay-1.antblu.net
   RUSTDESK_RELAY_1_HOST: rustdesk-relay-2.antblu.net
