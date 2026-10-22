@@ -408,7 +408,7 @@ variables:
   VAULTWARDEN_DATABASE_STORAGE_SIZE: 10Gi
 
   # renovate: datasource=docker depName=codeberg.org/forgejo/forgejo
-  FORGEJO_IMAGE_TAG: 16.0.5-rootless
+  FORGEJO_IMAGE_TAG: 16.0.6-rootless
   FORGEJO_HOST: git.antblu.net
   FORGEJO_ADMIN_USERNAME: forgejo-admin
   FORGEJO_ADMIN_EMAIL: admin@antblu.net
