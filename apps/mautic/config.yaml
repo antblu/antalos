@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mautic-env
+  namespace: mautic
+  annotations:
+    argocd.argoproj.io/sync-wave: '-2'
+data:
+  MAUTIC_DB_HOST: mautic-db-primary.mautic.svc.cluster.local
+  MAUTIC_DB_PORT: '3306'
+  MAUTIC_DB_DATABASE: mautic
+  MAUTIC_DB_USER: mautic
+  MAUTIC_ADMIN_EMAIL: ${MAUTIC_ADMIN_EMAIL}
+  MAUTIC_URL: https://${MAUTIC_HOST}
+  MAUTIC_REDIS_HOST: mautic-redis.mautic.svc.cluster.local
+  MAUTIC_TRUSTED_PROXIES: ${MAUTIC_TRUSTED_PROXIES}
+  MAUTIC_MESSENGER_DSN_EMAIL: doctrine://default
+  MAUTIC_MESSENGER_DSN_HIT: doctrine://default
+  MAUTIC_MESSENGER_DSN_FAILED: doctrine://default?queue_name=failed
+  MAUTIC_MAILER_DSN: null://null
+  PHP_INI_VALUE_DATE_TIMEZONE: America/Denver
+  PHP_INI_VALUE_MEMORY_LIMIT: 512M
+  PHP_INI_VALUE_MAX_EXECUTION_TIME: '300'
+  PHP_INI_VALUE_UPLOAD_MAX_FILESIZE: 64M
+  PHP_INI_VALUE_POST_MAX_FILESIZE: 64M

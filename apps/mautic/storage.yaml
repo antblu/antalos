@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mautic-data
+  annotations:
+    argocd.argoproj.io/sync-wave: '-6'
+spec:
+  capacity:
+    storage: ${MAUTIC_DATA_STORAGE_SIZE}
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ''
+  claimRef:
+    name: mautic-data
+    namespace: mautic
+  mountOptions:
+  - nfsvers=4
+  - hard
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: mautic-data
+    volumeAttributes:
+      server: ${MAUTIC_NFS_SERVER}
+      share: ${MAUTIC_NFS_SHARE}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mautic-data
+  namespace: mautic
+  annotations:
+    argocd.argoproj.io/sync-wave: '-6'
+spec:
+  accessModes:
+  - ReadWriteMany
+  storageClassName: ''
+  volumeName: mautic-data
+  resources:
+    requests:
+      storage: ${MAUTIC_DATA_STORAGE_SIZE}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: galera-mautic-db-0
+  namespace: mautic
+  annotations:
+    argocd.argoproj.io/sync-wave: '-6'
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: openebs-local
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: galera-mautic-db-1
+  namespace: mautic
+  annotations:
+    argocd.argoproj.io/sync-wave: '-6'
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: openebs-local
+  resources:
+    requests:
+      storage: 100Mi

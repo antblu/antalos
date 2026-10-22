@@ -1,0 +1,338 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mautic-segments
+  namespace: mautic
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  schedule: 0,15,30,45 * * * *
+  timeZone: America/Denver
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 840
+      template:
+        spec:
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1010
+            runAsGroup: 1010
+            fsGroup: 1010
+            seccompProfile:
+              type: RuntimeDefault
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                    - ${TALOS_WORKER_LEFT}
+                    - ${TALOS_WORKER_RIGHT}
+          containers:
+          - name: mautic
+            image: ${MAUTIC_IMAGE_REPOSITORY}:${MAUTIC_IMAGE_TAG}
+            args:
+            - console
+            - mautic:segments:update
+            - --no-interaction
+            envFrom:
+            - configMapRef:
+                name: mautic-env
+            - secretRef:
+                name: mautic-app
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+            volumeMounts:
+            - name: data
+              mountPath: /var/www/html/config
+              subPath: config
+            - name: data
+              mountPath: /var/www/html/docroot/media/files
+              subPath: files
+            - name: data
+              mountPath: /var/www/html/docroot/media/images
+              subPath: images
+            - name: var
+              mountPath: /var/www/html/var
+            - name: data
+              mountPath: /var/www/html/var/logs
+              subPath: logs
+            - name: tmp
+              mountPath: /tmp
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: '2'
+                memory: 1Gi
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: mautic-data
+          - name: var
+            emptyDir:
+              sizeLimit: 1Gi
+          - name: tmp
+            emptyDir:
+              sizeLimit: 128Mi
+          initContainers:
+          - name: prepare-storage
+            image: ${MAUTIC_IMAGE_REPOSITORY}:${MAUTIC_IMAGE_TAG}
+            args:
+            - prepare-storage
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+            volumeMounts:
+            - name: data
+              mountPath: /mnt/mautic
+            - name: var
+              mountPath: /mnt/runtime
+            resources:
+              requests:
+                cpu: 25m
+                memory: 32Mi
+              limits:
+                cpu: 500m
+                memory: 128Mi
+          restartPolicy: Never
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mautic-campaigns
+  namespace: mautic
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  schedule: 5,20,35,50 * * * *
+  timeZone: America/Denver
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 840
+      template:
+        spec:
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1010
+            runAsGroup: 1010
+            fsGroup: 1010
+            seccompProfile:
+              type: RuntimeDefault
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                    - ${TALOS_WORKER_LEFT}
+                    - ${TALOS_WORKER_RIGHT}
+          containers:
+          - name: mautic
+            image: ${MAUTIC_IMAGE_REPOSITORY}:${MAUTIC_IMAGE_TAG}
+            args:
+            - console
+            - mautic:campaigns:update
+            - --no-interaction
+            envFrom:
+            - configMapRef:
+                name: mautic-env
+            - secretRef:
+                name: mautic-app
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+            volumeMounts:
+            - name: data
+              mountPath: /var/www/html/config
+              subPath: config
+            - name: data
+              mountPath: /var/www/html/docroot/media/files
+              subPath: files
+            - name: data
+              mountPath: /var/www/html/docroot/media/images
+              subPath: images
+            - name: var
+              mountPath: /var/www/html/var
+            - name: data
+              mountPath: /var/www/html/var/logs
+              subPath: logs
+            - name: tmp
+              mountPath: /tmp
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: '2'
+                memory: 1Gi
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: mautic-data
+          - name: var
+            emptyDir:
+              sizeLimit: 1Gi
+          - name: tmp
+            emptyDir:
+              sizeLimit: 128Mi
+          initContainers:
+          - name: prepare-storage
+            image: ${MAUTIC_IMAGE_REPOSITORY}:${MAUTIC_IMAGE_TAG}
+            args:
+            - prepare-storage
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+            volumeMounts:
+            - name: data
+              mountPath: /mnt/mautic
+            - name: var
+              mountPath: /mnt/runtime
+            resources:
+              requests:
+                cpu: 25m
+                memory: 32Mi
+              limits:
+                cpu: 500m
+                memory: 128Mi
+          restartPolicy: Never
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mautic-trigger
+  namespace: mautic
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  schedule: 10,25,40,55 * * * *
+  timeZone: America/Denver
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 840
+      template:
+        spec:
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1010
+            runAsGroup: 1010
+            fsGroup: 1010
+            seccompProfile:
+              type: RuntimeDefault
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                    - ${TALOS_WORKER_LEFT}
+                    - ${TALOS_WORKER_RIGHT}
+          containers:
+          - name: mautic
+            image: ${MAUTIC_IMAGE_REPOSITORY}:${MAUTIC_IMAGE_TAG}
+            args:
+            - console
+            - mautic:campaigns:trigger
+            - --no-interaction
+            envFrom:
+            - configMapRef:
+                name: mautic-env
+            - secretRef:
+                name: mautic-app
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+            volumeMounts:
+            - name: data
+              mountPath: /var/www/html/config
+              subPath: config
+            - name: data
+              mountPath: /var/www/html/docroot/media/files
+              subPath: files
+            - name: data
+              mountPath: /var/www/html/docroot/media/images
+              subPath: images
+            - name: var
+              mountPath: /var/www/html/var
+            - name: data
+              mountPath: /var/www/html/var/logs
+              subPath: logs
+            - name: tmp
+              mountPath: /tmp
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: '2'
+                memory: 1Gi
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: mautic-data
+          - name: var
+            emptyDir:
+              sizeLimit: 1Gi
+          - name: tmp
+            emptyDir:
+              sizeLimit: 128Mi
+          initContainers:
+          - name: prepare-storage
+            image: ${MAUTIC_IMAGE_REPOSITORY}:${MAUTIC_IMAGE_TAG}
+            args:
+            - prepare-storage
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+            volumeMounts:
+            - name: data
+              mountPath: /mnt/mautic
+            - name: var
+              mountPath: /mnt/runtime
+            resources:
+              requests:
+                cpu: 25m
+                memory: 32Mi
+              limits:
+                cpu: 500m
+                memory: 128Mi
+          restartPolicy: Never

@@ -546,3 +546,27 @@ variables:
   MEDUSA_S3_ENDPOINT: http://10.30.0.5:30188
   MEDUSA_S3_REGION: garage
   MEDUSA_S3_FILE_URL: http://10.30.0.5:30188/medusa
+
+  # Mautic: application image adds non-root UID/GID 1010 and Redis sessions.
+  # renovate: datasource=docker depName=mautic/mautic
+  MAUTIC_BASE_IMAGE_TAG: 7.2.1-apache
+  MAUTIC_IMAGE_REPOSITORY: ghcr.io/antblu/mautic
+  MAUTIC_IMAGE_TAG: 7.2.1-1010-v1
+  # renovate: datasource=github-releases depName=phpredis/phpredis extractVersion=^{{version}}$
+  MAUTIC_PHPREDIS_VERSION: 6.3.0
+  # Match Invoice Ninja's MariaDB/Galera images.
+  # renovate: datasource=docker depName=mariadb
+  MAUTIC_MARIADB_IMAGE_TAG: 11.8.9
+  # renovate: datasource=docker depName=mariadb
+  MAUTIC_GARBD_IMAGE_TAG: 11.8.9-ubi9
+  MAUTIC_HOST: mautic.antblu.net
+  MAUTIC_ADMIN_EMAIL: admin@antblu.net
+  MAUTIC_TRUSTED_PROXIES: '["10.244.0.0/16"]'
+  MAUTIC_NFS_SERVER: 10.30.0.5
+  MAUTIC_NFS_SHARE: /mnt/nvme/mautic
+  MAUTIC_DATA_STORAGE_SIZE: 20Gi
+  MAUTIC_DATABASE_STORAGE_SIZE: 20Gi
+  MAUTIC_REDIS_STORAGE_SIZE: 2Gi
+  MAUTIC_REDIS_DATA_0_HOST: mautic-redis-data-0.mautic-redis-data.mautic.svc.cluster.local
+  MAUTIC_REDIS_DATA_1_HOST: mautic-redis-data-1.mautic-redis-data.mautic.svc.cluster.local
+  MAUTIC_REDIS_SENTINEL_2_HOST: mautic-redis-sentinel-2.mautic.svc.cluster.local

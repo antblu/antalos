@@ -36,6 +36,7 @@ No service should be described as unconditionally end-to-end HA solely because i
 
 | Service | Availability conclusion | Mechanism and limits |
 | --- | --- | --- |
+| [Mautic](/infrastructure/mautic/) | Partially HA: two web/worker pods, two Galera members plus garbd, two Redis data pods and three Sentinels. | Shared NFS, API/operator dependencies, scheduled jobs and schema upgrades retain interruption paths; failover requires separate testing. |
 | [Authentik](/infrastructure/authentik/#availability-and-failure-behavior) | Partially HA: replicated identity processing and database; external shared media and maintenance limits remain. | 2; required anti-affinity; see the linked component table for the data, routing, and recovery path. |
 | [BentoPDF](/infrastructure/bentopdf/#availability-and-failure-behavior) | HA static serving tier; access depends on the shared identity and ingress services. | 2 stateless pods on separate nodes; see the linked component table for the data, routing, and recovery path. |
 | [Documentation](/infrastructure/docs/#availability-and-failure-behavior) | HA static serving tier for node loss; current zero-unavailable rollout can be blocked by placement. | 2 stateless replicas; required host anti-affinity; see the linked component table for the data, routing, and recovery path. |

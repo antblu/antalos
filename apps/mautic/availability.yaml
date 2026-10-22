@@ -1,0 +1,32 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mautic-redis-data
+  namespace: mautic
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mautic-redis-data
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mautic-redis-sentinels
+  namespace: mautic
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      mautic.antblu.net/sentinel: 'true'
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mautic-redis-proxy
+  namespace: mautic
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mautic-redis-proxy
