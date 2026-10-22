@@ -471,3 +471,20 @@ variables:
   ODOO_JIT_PROVIDER_NAME: antID
   ODOO_JIT_TEMPLATE_LOGIN: jit-template@invalid.local
   ODOO_PACKAGING_VERSION: "25.0"
+
+  # Medusa backend and Admin only; storefront is deployed separately.
+  MEDUSA_VERSION: 2.22.0
+  MEDUSA_NODE_IMAGE_TAG: 24-bookworm-slim
+  MEDUSA_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-medusa
+  MEDUSA_IMAGE_TAG: 2.22.0-1
+  MEDUSA_HOST: medusa.antblu.net
+  MEDUSA_DATABASE_HOST: medusa-db-rw.medusa.svc.cluster.local
+  MEDUSA_DATABASE_STORAGE_SIZE: 10Gi
+  MEDUSA_REDIS_STORAGE_SIZE: 2Gi
+  MEDUSA_REDIS_DATA_0_HOST: medusa-redis-data-0.medusa-redis-data.medusa.svc.cluster.local
+  MEDUSA_REDIS_DATA_1_HOST: medusa-redis-data-1.medusa-redis-data.medusa.svc.cluster.local
+  MEDUSA_REDIS_SENTINEL_2_HOST: medusa-redis-sentinel-2.medusa.svc.cluster.local
+  MEDUSA_S3_BUCKET: medusa
+  MEDUSA_S3_ENDPOINT: http://10.30.0.5:30188
+  MEDUSA_S3_REGION: garage
+  MEDUSA_S3_FILE_URL: http://10.30.0.5:30188/medusa

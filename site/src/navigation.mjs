@@ -34,6 +34,10 @@ export const serviceGroups = [
         "label": "Odoo"
       },
       {
+        "slug": "medusa",
+        "label": "Medusa"
+      },
+      {
         "slug": "zammad",
         "label": "Zammad"
       },

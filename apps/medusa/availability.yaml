@@ -1,0 +1,43 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: medusa-server
+  namespace: medusa
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: medusa-server
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: medusa-worker
+  namespace: medusa
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: medusa-worker
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: medusa-redis-data
+  namespace: medusa
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: medusa-redis-data
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: medusa-redis-sentinels
+  namespace: medusa
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      medusa.antblu.net/sentinel: 'true'

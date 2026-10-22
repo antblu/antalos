@@ -1,0 +1,201 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medusa-server
+  namespace: medusa
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels: &id001
+      app.kubernetes.io/name: medusa-server
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ${TALOS_WORKER_LEFT}
+                - ${TALOS_WORKER_RIGHT}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels: *id001
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: medusa
+        image: ${MEDUSA_IMAGE_REPOSITORY}:${MEDUSA_IMAGE_TAG}
+        envFrom:
+        - configMapRef:
+            name: medusa-env
+        - secretRef:
+            name: medusa-app
+        - secretRef:
+            name: medusa-s3
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        env:
+        - name: MEDUSA_WORKER_MODE
+          value: server
+        - name: DISABLE_MEDUSA_ADMIN
+          value: 'false'
+        command:
+        - node
+        - node_modules/@medusajs/cli/cli.js
+        - start
+        - --host
+        - 0.0.0.0
+        ports:
+        - name: http
+          containerPort: 9000
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 10
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 6
+        resources:
+          requests:
+            cpu: 200m
+            memory: 768Mi
+          limits:
+            cpu: '2'
+            memory: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medusa-worker
+  namespace: medusa
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels: &id001
+      app.kubernetes.io/name: medusa-worker
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ${TALOS_WORKER_LEFT}
+                - ${TALOS_WORKER_RIGHT}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels: *id001
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: medusa
+        image: ${MEDUSA_IMAGE_REPOSITORY}:${MEDUSA_IMAGE_TAG}
+        envFrom:
+        - configMapRef:
+            name: medusa-env
+        - secretRef:
+            name: medusa-app
+        - secretRef:
+            name: medusa-s3
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        env:
+        - name: MEDUSA_WORKER_MODE
+          value: worker
+        - name: DISABLE_MEDUSA_ADMIN
+          value: 'true'
+        command:
+        - node
+        - node_modules/@medusajs/cli/cli.js
+        - start
+        - --host
+        - 0.0.0.0
+        ports:
+        - name: http
+          containerPort: 9000
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 10
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 6
+        resources:
+          requests:
+            cpu: 200m
+            memory: 768Mi
+          limits:
+            cpu: '2'
+            memory: 2Gi

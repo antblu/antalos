@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: medusa-migrate
+  namespace: medusa
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 900
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ${TALOS_WORKER_LEFT}
+                - ${TALOS_WORKER_RIGHT}
+      containers:
+      - name: medusa
+        image: ${MEDUSA_IMAGE_REPOSITORY}:${MEDUSA_IMAGE_TAG}
+        envFrom:
+        - configMapRef:
+            name: medusa-env
+        - secretRef:
+            name: medusa-app
+        - secretRef:
+            name: medusa-s3
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        command:
+        - node
+        - node_modules/@medusajs/cli/cli.js
+        - db:migrate
+        env:
+        - name: MEDUSA_WORKER_MODE
+          value: worker
+        - name: DISABLE_MEDUSA_ADMIN
+          value: 'true'
+        resources:
+          requests:
+            cpu: 200m
+            memory: 768Mi
+          limits:
+            cpu: '2'
+            memory: 2Gi

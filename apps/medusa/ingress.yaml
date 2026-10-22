@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: medusa-http
+  namespace: medusa
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  selector:
+    app.kubernetes.io/name: medusa-server
+  ports:
+  - name: http
+    port: 9000
+    targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: medusa
+  namespace: medusa
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - ${MEDUSA_HOST}
+    secretName: medusa-tls
+  rules:
+  - host: ${MEDUSA_HOST}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: medusa-http
+            port:
+              name: http
