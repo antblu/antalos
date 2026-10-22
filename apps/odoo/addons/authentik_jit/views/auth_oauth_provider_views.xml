@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_oauth_provider_form_authentik_jit" model="ir.ui.view">
+        <field name="name">auth.oauth.provider.form.authentik.jit</field>
+        <field name="model">auth.oauth.provider</field>
+        <field name="inherit_id" ref="auth_oauth.view_oauth_provider_form"/>
+        <field name="arch" type="xml">
+            <field name="scope" position="after">
+                <separator string="JIT Provisioning"/>
+                <field name="jit_enabled"/>
+                <field name="jit_user_template_id" invisible="not jit_enabled"/>
+                <field name="jit_link_by_verified_email" invisible="not jit_enabled"/>
+            </field>
+        </field>
+    </record>
+</odoo>

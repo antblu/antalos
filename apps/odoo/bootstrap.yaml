@@ -62,6 +62,9 @@ spec:
               drop:
                 - ALL
           volumeMounts:
+            - name: custom-addons
+              mountPath: /custom-addons
+              readOnly: true
             - name: config
               mountPath: /config
               readOnly: true
@@ -135,6 +138,22 @@ spec:
             - name: ODOO_BOOTSTRAP_MODE
               value: initialize
       volumes:
+        - name: custom-addons
+          configMap:
+            name: odoo-authentik-jit-addon
+            items:
+              - key: authentik_jit____init__.py
+                path: authentik_jit/__init__.py
+              - key: authentik_jit____manifest__.py
+                path: authentik_jit/__manifest__.py
+              - key: authentik_jit__models____init__.py
+                path: authentik_jit/models/__init__.py
+              - key: authentik_jit__models__auth_oauth_provider.py
+                path: authentik_jit/models/auth_oauth_provider.py
+              - key: authentik_jit__models__res_users.py
+                path: authentik_jit/models/res_users.py
+              - key: authentik_jit__views__auth_oauth_provider_views.xml
+                path: authentik_jit/views/auth_oauth_provider_views.xml
         - name: data
           emptyDir: {}
         - name: config

@@ -28,6 +28,12 @@ spec:
       namespace: odoo
       jsonPointers:
         - /spec/template
+    - group: batch
+      kind: Job
+      name: odoo-authentik-jit-v1
+      namespace: odoo
+      jsonPointers:
+        - /spec/template
   syncPolicy:
     automated:
       prune: true

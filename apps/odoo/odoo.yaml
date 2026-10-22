@@ -4,7 +4,7 @@ metadata:
   name: odoo
   namespace: odoo
   annotations:
-    argocd.argoproj.io/sync-wave: '2'
+    argocd.argoproj.io/sync-wave: '3'
 spec:
   replicas: 2
   strategy:
@@ -21,6 +21,7 @@ spec:
         app.kubernetes.io/name: odoo
       annotations:
         antalos.net/storage-revision: ha-1
+        antalos.net/jit-addon-revision: "${ODOO_JIT_ADDON_REVISION}"
     spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
@@ -78,6 +79,9 @@ spec:
               drop:
                 - ALL
           volumeMounts:
+            - name: custom-addons
+              mountPath: /custom-addons
+              readOnly: true
             - name: config
               mountPath: /config
               readOnly: true
@@ -221,6 +225,22 @@ spec:
             - name: SESSION_DB_URI
               value: ${ODOO_DATABASE_NAME}
       volumes:
+        - name: custom-addons
+          configMap:
+            name: odoo-authentik-jit-addon
+            items:
+              - key: authentik_jit____init__.py
+                path: authentik_jit/__init__.py
+              - key: authentik_jit____manifest__.py
+                path: authentik_jit/__manifest__.py
+              - key: authentik_jit__models____init__.py
+                path: authentik_jit/models/__init__.py
+              - key: authentik_jit__models__auth_oauth_provider.py
+                path: authentik_jit/models/auth_oauth_provider.py
+              - key: authentik_jit__models__res_users.py
+                path: authentik_jit/models/res_users.py
+              - key: authentik_jit__views__auth_oauth_provider_views.xml
+                path: authentik_jit/views/auth_oauth_provider_views.xml
         - name: data
           emptyDir: {}
         - name: config
