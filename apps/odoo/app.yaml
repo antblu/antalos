@@ -14,9 +14,18 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: odoo
+  # Completed migration Jobs have immutable templates; preserve their history.
+  ignoreDifferences:
+    - group: batch
+      kind: Job
+      name: odoo-bootstrap-ha-v1
+      namespace: odoo
+      jsonPointers:
+        - /spec/template
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true

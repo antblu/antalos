@@ -67,12 +67,20 @@ data:
                     cursor.execute("SELECT value FROM ir_config_parameter WHERE key = 'antalos.odoo.ha_ready'")
                     ready = cursor.fetchone() == ('1',)
             if ready:
-                connection.close()
+                # Reconcile runtime settings without rerunning schema migrations.
+                with connection.cursor() as cursor:
+                    cursor.execute('SELECT pg_advisory_lock(19650621)')
+                try:
+                    subprocess.run([
+                        'odoo', 'shell', '--config=/run/odoo/odoo.conf', '--no-http',
+                    ], input=Path('/config/configure-storage.py').read_text(), text=True, check=True)
+                finally:
+                    connection.close()
                 raise SystemExit(0)
             time.sleep(5)
         raise RuntimeError('HA bootstrap did not complete')
 
-    # Serialize initialization; serving replicas only generate their local config.
+    # Serialize initialization and runtime storage configuration.
     connection.autocommit = True
     with connection.cursor() as cursor:
         cursor.execute('SELECT pg_advisory_lock(19650621)')

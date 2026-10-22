@@ -17,7 +17,7 @@ The one-time `odoo-bootstrap-ha-v1` Job runs at Sync wave 0 after credentials, t
 
 For the initial singleton-to-HA transition, suspend the old backup CronJob and submit the updated Deployment with a temporary replica count of zero before submitting the bootstrap Job. The Job waits for old serving pods to terminate, migrates, then restores the Deployment to two replicas. The checked-in desired count is two. A fresh GitOps installation creates that Deployment in wave 1 after the Job completes. The transition interrupts access once; old filesystem sessions are not imported, so users must sign in again.
 
-Do not rerun schema initialization against serving replicas. An ordinary completed bootstrap Job is retained, not recreated on every Sync. Use a new versioned Job and an explicit maintenance plan for future migrations. If bootstrap fails, repair the cause and deliberately retry that Job while the Deployment remains stopped; do not bypass its readiness marker.
+Do not rerun schema initialization against serving replicas. An ordinary completed bootstrap Job is retained, not recreated on every Sync. The Application ignores its immutable pod template and respects that exclusion during sync, so runtime input changes do not block later waves. Serving init containers reconcile the storage configuration through the Odoo ORM under the bootstrap advisory lock after the readiness marker exists; they do not rerun schema installation or legacy migration. Publish changes to `ODOO_S3_ENDPOINT` and allow the serving Deployment to roll so the database storage record and process caches pick up the new endpoint. Use a new versioned Job and an explicit maintenance plan for future migrations. If bootstrap fails, repair the cause and deliberately retry that Job while the Deployment remains stopped; do not bypass its readiness marker.
 
 DNS and the edge route must deliver `odoo.antblu.net` to Traefik. The Ingress and Certificate do not create external DNS or firewall rules. Init containers download pinned addon source revisions and install direct Python dependency versions from `apps/variables.yaml`; startup depends on GitHub and PyPI, and transitive Python dependencies resolve at installation time.
 
@@ -33,7 +33,7 @@ The separate `master-password` protects database management. Database listing is
 
 ## Garage attachments and backups
 
-Service-specific settings use `http://10.20.0.5:30188`, region `garage`, bucket `odoo`. Other services' shared Garage endpoint is unchanged. The `odoo-s3` SealedSecret supplies credentials to both serving replicas and backup Jobs. The `garage_odoo` storage record contains environment references rather than access secrets. Odoo streams private objects through its own authentication; no public bucket is required.
+Service-specific settings use `http://10.30.0.5:30188`, region `garage`, bucket `odoo`. The `odoo-s3` SealedSecret supplies credentials to both serving replicas and backup Jobs. The `garage_odoo` storage record contains environment references rather than access secrets. Odoo streams private objects through its own authentication; no public bucket is required.
 
 New attachments use `attachments/`; small images and web assets retain PostgreSQL defaults. Legacy local files imported during HA migration are now database attachments. Remote garbage collection is disabled, preserving object versions referenced by database snapshots. Do not manually remove or overwrite live attachment objects while relying on these backups.
 
