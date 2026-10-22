@@ -153,7 +153,7 @@ data:
         's3fs==' + os.environ['S3FS_VERSION'],
         'python-slugify==' + os.environ['SLUGIFY_VERSION'],
         'packaging==${ODOO_PACKAGING_VERSION}',
-        'python-jose[cryptography]==${ODOO_PYTHON_JOSE_VERSION}',
+        'python-jose==${ODOO_PYTHON_JOSE_VERSION}',
     ], check=True)
     repositories = [
         ('storage', os.environ['OCA_STORAGE_REVISION'], ('fs_storage', 'fs_attachment', 'fs_attachment_s3')),

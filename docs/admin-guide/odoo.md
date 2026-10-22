@@ -23,7 +23,7 @@ DNS and the edge route must deliver `odoo.antblu.net` to Traefik. The Ingress an
 
 ## OpenID Connect addon
 
-OCA [`auth_oidc`](https://github.com/OCA/server-auth/tree/19.0/auth_oidc) is installed with its standard `auth_oauth` dependency. The addon installer downloads the pinned `ODOO_OCA_SERVER_AUTH_REVISION` and installs `python-jose[cryptography]` at `ODOO_PYTHON_JOSE_VERSION`, both owned by `apps/variables.yaml`. Every serving pod receives these dependencies.
+OCA [`auth_oidc`](https://github.com/OCA/server-auth/tree/19.0/auth_oidc) is installed with its standard `auth_oauth` dependency. The addon installer downloads the pinned `ODOO_OCA_SERVER_AUTH_REVISION` and installs `python-jose` at `ODOO_PYTHON_JOSE_VERSION`, both owned by `apps/variables.yaml`. Every serving pod receives these dependencies.
 
 The retained `odoo-auth-oidc-v1` Job runs at Sync wave 1, after the HA bootstrap at wave 0. It checks whether the module is already installed, stops existing serving pods before schema installation, and leaves them stopped on failure. The Deployment at wave 2 restores two replicas with the addon available. This first installation briefly interrupts access. Completed Job templates are ignored during subsequent syncs; changing the pins does not rerun database upgrades. If this Job fails, repair the cause and deliberately recreate it during a sync before allowing wave 2 to proceed.
 
