@@ -54,3 +54,5 @@ To restore a completed HA backup, stop both Odoo replicas, restore `database.dum
 Change the Odoo image within 19.0 deliberately. Major releases and module upgrades need a supported migration procedure and maintenance plan; rolling incompatible schema versions is unsafe. Do not delete PVCs to repair a rollout.
 
 Checks were explicitly skipped for this deployment. When verification is requested, assess source publication, Argo reconciliation, CNPG primary/standby placement and streaming health, two-node Odoo readiness, authenticated sessions across replicas, attachment access, controlled worker failover, and backup restoration separately.
+
+The scale API may omit `spec.replicas` when its value is zero. The bootstrap launcher treats an omitted field as zero so a completed migration can restore both serving replicas.

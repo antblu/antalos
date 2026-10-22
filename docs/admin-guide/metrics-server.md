@@ -64,3 +64,7 @@ For unknown HPA utilization, inspect metrics API availability, kubelet connectio
 - [`app.yaml`](https://github.com/antblu/antalos/blob/main/apps/metrics-server/app.yaml)
 
 [Official Metrics Server documentation](https://github.com/kubernetes-sigs/metrics-server).
+
+## Duplicate legacy installation
+
+The supported Metrics Server runs in the `metrics-server` namespace through its Argo CD Application. The aggregated `v1beta1.metrics.k8s.io` APIService must point at that namespace. A former manually applied Deployment named `metrics-server` in `kube-system` is redundant and can crash with a forbidden read of `extension-apiserver-authentication` after the shared RBAC moves to the chart-managed service account. The redundant `kube-system/metrics-server` Deployment was removed during the 2026-10-21 incident after confirming APIService ownership. For any recurrence, remove that unused Deployment after confirming APIService ownership; do not grant it additional permissions or remove the chart's shared ClusterRoles and bindings. No Talos/OpenTofu source installs the former Deployment.

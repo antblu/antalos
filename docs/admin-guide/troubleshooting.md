@@ -61,3 +61,12 @@ If the failure is outside this repository, record the exact boundary: source, de
 | Restored replication and voter membership | Redundancy has returned after the repair |
 
 Report any remaining gap. A message in a queue is not proof of delivery; a successful upload is not proof that its backup can be restored. Use [disaster recovery](/admin-guide/disaster-recovery/) when the task requires restoration rather than a configuration repair.
+
+
+## RTX quorum-worker memory exhaustion
+
+During the 2026-10-21 incident, `talos-worker-rtx` alternated between Ready and unreachable while quorum pods were repeatedly OOM-killed. Read-only Talos diagnostics showed about 298 `containerd-shim-runc-v2` processes and almost no available memory; kubelet log requests stalled. A Ready condition alone did not establish usable node capacity. The RTX Proxmox host also had almost no available memory, so increasing guest RAM was not a safe immediate repair.
+
+Compare the process inventory with current CRI containers before attributing usage solely to application heaps. A growing set of shims for exited containers can consume significant host memory outside pod reservations. Preserve diagnostic evidence and investigate the installed Talos/containerd release before selecting an upgrade; similar upstream reports do not prove the exact defect on this cluster.
+
+Obtain approval before rebooting the affected worker. If a Talos reboot and a Proxmox graceful reboot both fail because the guest is unresponsive, an approved worker reset can recover the runtime without deleting persistent volumes. Confirm the exact VM identity first and leave control-plane and other worker VMs untouched. Afterward, separately inspect the boot ID, node readiness, shim count, available memory, actual quorum members, and the metrics pipeline. A reset clears accumulated processes but is not proof that their underlying cause has been permanently eliminated.
