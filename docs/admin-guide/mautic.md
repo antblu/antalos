@@ -25,6 +25,12 @@ Argo discovers `app.yaml` and uses main; local edits cannot be deployed until
 published. Keep the install Job as a Sync hook at wave 0. Its dependencies are
 created during earlier Sync waves, so PreSync would be too early.
 
+The Galera configuration PVCs must share wave `-5` with the MariaDB resource.
+OpenEBS uses `WaitForFirstConsumer`: those PVCs stay Pending until the database
+pods are scheduled. Putting them in an earlier wave makes Argo wait for binding
+before it creates their consumers, deadlocking a fresh deployment. The static
+NFS PV/PVC can remain in wave `-6` because it binds without a consumer.
+
 The installer creates local user `admin`, with its email from `MAUTIC_ADMIN_EMAIL`
 and password from Secret `mautic-admin`, key `MAUTIC_ADMIN_PASSWORD`. Retrieve this
 only in a protected operator terminal; do not copy it into logs or documentation.
