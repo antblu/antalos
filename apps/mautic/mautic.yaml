@@ -25,7 +25,6 @@ spec:
         runAsNonRoot: true
         runAsUser: 1010
         runAsGroup: 1010
-        fsGroup: 1010
         seccompProfile:
           type: RuntimeDefault
       affinity:
@@ -115,6 +114,34 @@ spec:
         emptyDir:
           sizeLimit: 128Mi
       initContainers:
+      - name: prepare-local-volumes
+        image: ${MAUTIC_IMAGE_REPOSITORY}:${MAUTIC_IMAGE_TAG}
+        command:
+        - sh
+        - -ec
+        - chown 1010:1010 /runtime /scratch
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+          runAsGroup: 0
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+        volumeMounts:
+        - name: var
+          mountPath: /runtime
+        - name: tmp
+          mountPath: /scratch
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
       - name: prepare-storage
         image: ${MAUTIC_IMAGE_REPOSITORY}:${MAUTIC_IMAGE_TAG}
         args:
@@ -175,7 +202,6 @@ spec:
         runAsNonRoot: true
         runAsUser: 1010
         runAsGroup: 1010
-        fsGroup: 1010
         seccompProfile:
           type: RuntimeDefault
       affinity:
@@ -251,6 +277,34 @@ spec:
         emptyDir:
           sizeLimit: 128Mi
       initContainers:
+      - name: prepare-local-volumes
+        image: ${MAUTIC_IMAGE_REPOSITORY}:${MAUTIC_IMAGE_TAG}
+        command:
+        - sh
+        - -ec
+        - chown 1010:1010 /runtime /scratch
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+          runAsGroup: 0
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+        volumeMounts:
+        - name: var
+          mountPath: /runtime
+        - name: tmp
+          mountPath: /scratch
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
       - name: prepare-storage
         image: ${MAUTIC_IMAGE_REPOSITORY}:${MAUTIC_IMAGE_TAG}
         args:

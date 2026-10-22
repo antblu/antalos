@@ -16,6 +16,10 @@ RUN apt-get update \
     && sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf \
     && sed -i 's/:80>/:8080>/' /etc/apache2/sites-available/000-default.conf
 
+COPY patch-installer.php /usr/local/share/mautic/patch-installer.php
+RUN php /usr/local/share/mautic/patch-installer.php \
+    && php -l /var/www/html/docroot/app/bundles/InstallBundle/Install/InstallService.php
+
 COPY --chmod=755 entrypoint.sh /usr/local/bin/antalos-mautic
 ENV APACHE_RUN_DIR=/tmp/apache2 \
     APACHE_LOCK_DIR=/tmp/apache2 \

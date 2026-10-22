@@ -33,6 +33,12 @@ allows a minimum cluster size of one; loss of quorum or ambiguous data position
 can still require operator recovery and must not be treated as permission to
 bootstrap an arbitrary stale member.
 
+The image guards and patches Mautic's installer lookup of the administrator role:
+it selects the first administrator role rather than assuming primary key 1.
+Galera's automatic ID spacing remains enabled, including its adjustment for the
+arbitrator's membership. Image upgrades fail to build if that upstream lookup
+changes and requires review.
+
 Redis is used for shared PHP sessions with locking. Mautic's bundled Doctrine
 Messenger transport stores queues in MariaDB; no Redis Messenger dependency is
 added. Failed messages remain in the failed Doctrine transport for operator review.
@@ -47,6 +53,13 @@ already allow UID/GID 1010 to create directories. A non-root init container crea
 existing files. It never changes ownership of the export. Per-pod cache and temporary
 files are ephemeral; Apache logs go to container output. Protect NFS configuration
 files because Mautic writes credentials and integration settings there.
+
+Mautic pods deliberately omit `fsGroup`: the NFS CSI driver's recursive ownership
+pass runs through kubelet's root identity, which cannot traverse private 1010-owned
+directories on this export. A small root init container with only `CHOWN` prepares
+the two fresh local `emptyDir` mount roots. It has no NFS mount. The media/config
+init container and every Mautic process run as `1010:1010`; no recursive ownership
+or permission changes are made to shared NFS data.
 
 The service image extends the official Apache image, adds pinned phpredis and
 remaps `www-data` to 1010 at build time. Its entrypoint starts Apache or CLI directly,

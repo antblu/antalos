@@ -1,0 +1,26 @@
+kind: SealedSecret
+apiVersion: bitnami.com/v1alpha1
+metadata:
+  name: mautic-registry
+  namespace: mautic
+  annotations:
+    argocd.argoproj.io/sync-wave: '-7'
+spec:
+  template:
+    metadata:
+      name: mautic-registry
+      namespace: mautic
+    type: kubernetes.io/dockerconfigjson
+  encryptedData:
+    .dockerconfigjson: AgBAEEdb3StV2ePC2z9q/xLO9xJslCRmxTdzzyV6UC9aaQci9O0fUTX8KxYWFJobP+IsPvHeN2TX/sqFCk0CM6Y/plc/0RMkcqCrXkbcg4lykVTXKweQXEz+cEygqZqLrvdSVXyLiPoJNPtYjNBdeAht+Sahz8puAYSoJs/mjJpJq4E4H7zgIKZD7W08H4tvzhfj8FYJ8WiO8JXXq/JpzhJ/gJ7oP3Ja0DNR2AL88k0h1CLAlhdNOuqzGieD3VSGctDeMD9maWS7stVBurTMcHpJgZzWG/5YGhsw5qRqT6e5Tp1Isal7fBlWFjoraqS+O/KX3QA0EAE5RsSKJhas5TeN8PK3vAKuosxHe3SM7yuAwDba4RR4PXAYtN098QlXSJoUDO3Stc64u6RrUoq0BSI6pcqPcv9NApspY9hqqoPlrNM6Vnr8qkpzcSz8skuPq6r7dmv5wK3e3Y/0e83As5QPPOzkQmc106XsHB5cQQqTMpsKHWgAV1S48zUn+1ixANhNW3d7zk1YRmumtVJNXUE4KQ/Ipb/n8PFcMUWnc2rxxXlpX+81xVdOsYklDaYP3GXwNxyUL3NKbumx1qF+ACTyPR4ibkvZOY+/p4QMywxI31WeFmAmkUgWQOc+fqzphoqX6lDXwfp7Zv/j1ENirbmsJYzTkr/ADRKXD30s410sgYL3PMBG8xY1m4Wx960RDfU41oC8MmXf2ulrvNQ5VXP5VyZ+0fOHEBRAn5i3NMacAoI/dt3OwCJBjk4obDGCiEAibIEdzjP6ndiwQAUcWvdpY6Mh7jEDJndhnqywUHFQMC5KkYd8dzhSEtkcc7FOCjMFvrLO+PdacDybSccRDiOlkyDR
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: default
+  namespace: mautic
+  annotations:
+    argocd.argoproj.io/sync-wave: '-7'
+automountServiceAccountToken: false
+imagePullSecrets:
+- name: mautic-registry

@@ -20,6 +20,22 @@ PR runs build without publishing. A push may trigger Argo before its image build
 finishes; image pulls recover after the image becomes available. For upgrades,
 publish a new immutable tag first, then update the deployment tag.
 
+`registry.yaml` supplies the namespace-scoped `mautic-registry` SealedSecret and
+adds it to the default service account's `imagePullSecrets`. It uses the existing
+cluster GHCR pull credential, sealed separately for Mautic; package visibility
+can remain private. Reseal that credential here when rotating registry access.
+Existing pods do not inherit service account changes retroactively: recreate a
+blocked install pod after the Secret is ready, then check its pull events.
+
+The self-hosted build runner must be online for workflow jobs to start. A queued
+build has not published an image; inspect runner availability before treating a
+registry 403 as a container startup or NFS problem.
+
+If pod events report `applyFSGroup failed` on this export, verify that the pod
+omits `fsGroup` and uses the local-volume permission init container. Do not loosen
+private NFS directory permissions to accommodate kubelet's root identity. The
+application accesses those files directly as UID/GID 1010.
+
 Follow the [application deployment workflow](/admin-guide/deploy-an-application/).
 Argo discovers `app.yaml` and uses main; local edits cannot be deployed until
 published. Keep the install Job as a Sync hook at wave 0. Its dependencies are
