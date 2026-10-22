@@ -443,8 +443,8 @@ data:
     except urllib.error.HTTPError as exc:
         if exc.code != 404:
             raise
-        else:
-            request(scale_url, 'PATCH', {'spec': {'replicas': 0}})
+    else:
+        request(scale_url, 'PATCH', {'spec': {'replicas': 0}})
 
     selector = urllib.parse.urlencode({'labelSelector': 'app.kubernetes.io/name=odoo'})
     for attempt in range(120):
