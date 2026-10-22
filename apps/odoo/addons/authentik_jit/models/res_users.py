@@ -92,4 +92,8 @@ class ResUsers(models.Model):
             'oauth_uid': subject,
             'oauth_access_token': params['access_token'],
         })
+        # The OAuth controller commits with an anonymous default environment.
+        # Finish related avatar/attachment computations with a real user first;
+        # their SVG access checks deliberately drop sudo and need a valid uid.
+        users.env.flush_all()
         return user.login
