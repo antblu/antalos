@@ -54,6 +54,29 @@ object afterward. Fetch the frontend assets as well as the landing page. A full
 acceptance test also needs an authorized disposable invoice, client portal access,
 PDF download, and any configured payment gateway's sandbox workflow.
 
+## Authentik OIDC
+
+The shared environment supplies `OIDC_ISSUER`, `OIDC_WELL_KNOWN`,
+`OIDC_CLIENT_ID`, `OIDC_SCOPES` (`openid profile email`), and
+`OIDC_PROVIDER_LABEL` (`Authentik`). The issuer and client ID are owned by
+`apps/variables.yaml` and passed through the Application to the local chart.
+`OIDC_CLIENT_SECRET` is sealed in `invoiceninja-app` alongside the existing
+application credentials. Web replicas, queue workers, and scheduler Jobs consume
+the same ConfigMap and Secret.
+
+The issuer is `https://auth.antblu.net/application/o/invoice-ninja/`.
+Discovery supplies the authorization, token, userinfo, logout, and JWKS endpoints;
+these do not need separate environment variables. `OIDC_WELL_KNOWN` also supplies
+the discovery URL for releases using the older configuration name.
+Register `https://invoice.antblu.net/auth/oidc` as the exact redirect URI in
+Authentik; Invoice Ninja derives it from `APP_URL`. See the upstream
+[OIDC configuration](https://github.com/invoiceninja/invoiceninja/blob/v5-stable/config/services.php).
+
+The checked-in image tag remains `5.13.26`, whose upstream configuration lacks
+generic OIDC support. These environment settings prepare the deployment for a
+compatible image; they do not enable OIDC in that version. Image selection and
+authenticated login verification remain separate deployment work.
+
 ## Mail and payment setup
 
 Configure the company's SMTP provider, host, port, encryption, credentials, and

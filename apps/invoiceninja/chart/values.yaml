@@ -117,6 +117,10 @@ env:
   dbUsername: ninja
   dbConnection: mysql
   initialUserEmail: ""
+  oidcIssuer: ""
+  oidcClientId: ""
+  oidcScopes: openid profile email
+  oidcProviderLabel: Authentik
   s3AccessKeyId: ""
   s3Region: garage
   s3Bucket: ninja

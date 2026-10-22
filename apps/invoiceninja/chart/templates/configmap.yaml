@@ -28,6 +28,13 @@ data:
   DB_USERNAME: {{ .Values.env.dbUsername | quote }}
   DB_CONNECTION: {{ .Values.env.dbConnection | quote }}
   IN_USER_EMAIL: {{ .Values.env.initialUserEmail | quote }}
+  OIDC_ISSUER: {{ .Values.env.oidcIssuer | quote }}
+  {{- if .Values.env.oidcIssuer }}
+  OIDC_WELL_KNOWN: {{ printf "%s/.well-known/openid-configuration" (trimSuffix "/" .Values.env.oidcIssuer) | quote }}
+  {{- end }}
+  OIDC_CLIENT_ID: {{ .Values.env.oidcClientId | quote }}
+  OIDC_SCOPES: {{ .Values.env.oidcScopes | quote }}
+  OIDC_PROVIDER_LABEL: {{ .Values.env.oidcProviderLabel | quote }}
   AWS_ACCESS_KEY_ID: {{ .Values.env.s3AccessKeyId | quote }}
   AWS_DEFAULT_REGION: {{ .Values.env.s3Region | quote }}
   AWS_BUCKET: {{ .Values.env.s3Bucket | quote }}
