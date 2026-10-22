@@ -104,7 +104,7 @@ variables:
   # renovate: datasource=docker depName=curlimages/curl
   COUCHDB_CURL_IMAGE_TAG: 8.16.0
   # renovate: datasource=docker depName=litestream/litestream
-  LITESTREAM_IMAGE_TAG: 0.5.16
+  LITESTREAM_IMAGE_TAG: 0.5.17
   # renovate: datasource=docker depName=nextcloud
   NEXTCLOUD_IMAGE_TAG: 34.0.5-apache
   NEXTCLOUD_INSTANCE_ID: ocxyyr3nkdoj
