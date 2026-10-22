@@ -18,6 +18,9 @@ spec:
       app.kubernetes.io/component: app
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/oidc-extension: {{ include (print $.Template.BasePath "/oidc-extension.yaml") . | sha256sum }}
       labels:
         {{- include "invoiceninja.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: app
@@ -48,6 +51,12 @@ spec:
         - name: app
           image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
           imagePullPolicy: {{ .Values.app.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              php /opt/antalos-oidc/install.php
+              exec /usr/local/bin/init.sh supervisord -c /etc/supervisor/supervisord.conf
           ports:
             - name: fpm
               containerPort: 9000
@@ -82,6 +91,9 @@ spec:
           securityContext:
             {{- toYaml .Values.app.securityContext | nindent 12 }}
           volumeMounts:
+            - name: oidc-extension
+              mountPath: /opt/antalos-oidc
+              readOnly: true
             - name: app-public
               mountPath: /var/www/html/public
             - name: app-storage
@@ -91,6 +103,9 @@ spec:
               subPath: supervisord.conf
               readOnly: true
       volumes:
+        - name: oidc-extension
+          configMap:
+            name: {{ include "invoiceninja.fullname" . }}-oidc-extension
         - name: app-public
           emptyDir: {}
         - name: app-storage

@@ -18,6 +18,8 @@ spec:
       app.kubernetes.io/component: nginx
   template:
     metadata:
+      annotations:
+        checksum/oidc-extension: {{ include (print $.Template.BasePath "/oidc-extension.yaml") . | sha256sum }}
       labels:
         {{- include "invoiceninja.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: nginx
@@ -34,8 +36,13 @@ spec:
           command:
             - /bin/sh
             - -ec
-            - cp -r /tmp/public/. /var/www/html/public/
+            - |
+              cp -r /tmp/public/. /var/www/html/public/
+              php -d opcache.enable_cli=0 -d opcache.preload= /opt/antalos-oidc/patch-public.php
           volumeMounts:
+            - name: oidc-extension
+              mountPath: /opt/antalos-oidc
+              readOnly: true
             - name: app-public
               mountPath: /var/www/html/public
       containers:
@@ -71,6 +78,9 @@ spec:
               mountPath: /etc/nginx/conf.d
               readOnly: true
       volumes:
+        - name: oidc-extension
+          configMap:
+            name: {{ include "invoiceninja.fullname" . }}-oidc-extension
         - name: app-public
           emptyDir: {}
         - name: app-storage

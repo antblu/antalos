@@ -58,7 +58,7 @@ PDF download, and any configured payment gateway's sandbox workflow.
 
 The shared environment supplies `OIDC_ISSUER`, `OIDC_WELL_KNOWN`,
 `OIDC_CLIENT_ID`, `OIDC_SCOPES` (`openid profile email`), and
-`OIDC_PROVIDER_LABEL` (`Authentik`). The issuer and client ID are owned by
+`OIDC_PROVIDER_LABEL` (`antID`, displayed as **Sign in with antID**). The issuer, client ID, provider label, and JIT target company are owned by
 `apps/variables.yaml` and passed through the Application to the local chart.
 `OIDC_CLIENT_SECRET` is sealed in `invoiceninja-app` alongside the existing
 application credentials. Web replicas, queue workers, and scheduler Jobs consume
@@ -72,10 +72,54 @@ Register `https://invoice.antblu.net/auth/oidc` as the exact redirect URI in
 Authentik; Invoice Ninja derives it from `APP_URL`. See the upstream
 [OIDC configuration](https://github.com/invoiceninja/invoiceninja/blob/v5-stable/config/services.php).
 
-The checked-in image tag remains `5.13.26`, whose upstream configuration lacks
-generic OIDC support. These environment settings prepare the deployment for a
-compatible image; they do not enable OIDC in that version. Image selection and
-authenticated login verification remain separate deployment work.
+The checked-in image tag is `5.13.50`, which includes generic OIDC support.
+Upstream only signs in existing users. The local chart installs the antID JIT
+extension from `chart/files/oidc/` before the normal image initialization and
+Laravel configuration cache. Its installer checks the upstream callback shape
+and refuses to start on incompatible changes; review it when upgrading the image.
+The extension is included in the web pod's rollout checksum.
+The nginx asset-seeding init container also fills missing English OIDC strings
+in this UI build, including `Sign in with {{provider}}`. Its extension checksum
+triggers a rollout when that fix changes. Hard-refresh the login page after the
+update if the browser retains the older JavaScript asset.
+
+`INVOICENINJA_OIDC_JIT_COMPANY_ID` selects the existing company by its internal
+numeric database ID (currently `3`). A blank value disables JIT. New users must
+have a valid email and a literal boolean `email_verified: true` assertion from
+antID. Provisioning serializes on the target company inside a database
+transaction; repeat callbacks reuse the same subject. New members receive no
+owner/admin flags or additional permissions. Administrators can grant the
+required permissions under the company's user settings after first login.
+Deleted users, existing conflicting email identities, and different OIDC
+subjects cannot be restored or rebound by JIT. Existing unlinked accounts can
+still use upstream's verified-email linking. Authentik's application access
+policy controls who may reach this flow; there is no local email-domain allowlist.
+No new company or account is created, and no invitation email is sent.
+
+Run `chart/tests/oidc-jit.php` inside the matching application image with the
+extension helper path and company ID as arguments to exercise first/repeat
+provisioning, permissions, and denial cases. It rolls back its fixture writes.
+This test does not replace a real signed Authentik browser login.
+
+If the callback and code exchange succeed but the UI reports a sign-in failure,
+check `/api/v1/refresh_react` in the browser's network log. A 403 with Traefik
+`OriginStatus: 0` can be CrowdSec's Langflow rule
+`crowdsecurity/vpatch-CVE-2025-34291`, which matches the `/api/v1/refresh`
+substring when the request has an HTTPS Origin header. The owning CrowdSec
+Application carries a rule-specific exception for POST to this exact path on
+the Invoice Ninja hostname; see [CrowdSec operations](/admin-guide/crowdsec/).
+
+The web Deployment includes a ConfigMap checksum in its pod template so chart
+configuration changes trigger a rollout and rebuild Laravel's cached settings.
+Secret changes require a rolling restart of the web Deployment; restart the queue
+workers when their shared environment changes as well. New scheduler Jobs inherit
+the current ConfigMap and Secret automatically.
+
+After reconciliation, verify `/api/v1/oidc/config` reports `oidc_enabled: true`
+and `/auth/oidc` redirects to Authentik with the expected client ID, callback,
+and scopes. Complete a browser login with a new permitted antID identity and
+repeat it to verify provisioning, callback, and session; readiness and a successful redirect
+alone do not establish authenticated login.
 
 ## Mail and payment setup
 

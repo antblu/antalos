@@ -40,6 +40,17 @@ In stream mode, the bouncer's default `updateMaxFailure: 0` blocks requests when
 
 ## Maintenance and recovery
 
+The AppSec acquisition uses the local `antalos/virtual-patching` configuration
+from `apps/crowdsec/app.yaml`. It retains the upstream base and virtual-patching
+rules, with one request-specific exception: `crowdsecurity/vpatch-CVE-2025-34291`
+is removed only for POST `/api/v1/refresh_react` on `INVOICENINJA_HOST`.
+That Langflow CORS rule otherwise matches Invoice Ninja's path by substring
+and blocks legitimate browser requests carrying an HTTPS Origin header. Other
+rules, hosts, paths, and methods remain evaluated. Follow CrowdSec's official
+[rule override guidance](https://docs.crowdsec.net/docs/appsec/configuration_rule_management/)
+and test both the intended request and requests outside the exception when
+changing this configuration.
+
 The chart configures one LAPI, one processor, and one AppSec process, each with Recreate strategy. Plan an interruption to the corresponding function during updates. Preserve the LAPI backup and required identity material; confirm detection and enforcement after restore.
 
 Azure's CrowdSec engine and nftables bouncer follow [the edge runbook](/admin-guide/azure-edge/). Changing the Kubernetes Application does not update that guest or the separately managed firewall system.

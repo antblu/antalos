@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "invoiceninja.fullname" . }}-oidc-extension
+  labels:
+    {{- include "invoiceninja.labels" . | nindent 4 }}
+data:
+  install.php: |
+{{ .Files.Get "files/oidc/install.php" | indent 4 }}
+  AntIdJitProvisioner.php: |
+{{ .Files.Get "files/oidc/AntIdJitProvisioner.php" | indent 4 }}
+  patch-public.php: |
+{{ .Files.Get "files/oidc/patch-public.php" | indent 4 }}

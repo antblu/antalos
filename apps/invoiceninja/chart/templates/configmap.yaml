@@ -35,6 +35,7 @@ data:
   OIDC_CLIENT_ID: {{ .Values.env.oidcClientId | quote }}
   OIDC_SCOPES: {{ .Values.env.oidcScopes | quote }}
   OIDC_PROVIDER_LABEL: {{ .Values.env.oidcProviderLabel | quote }}
+  OIDC_JIT_COMPANY_ID: {{ .Values.env.oidcJitCompanyId | quote }}
   AWS_ACCESS_KEY_ID: {{ .Values.env.s3AccessKeyId | quote }}
   AWS_DEFAULT_REGION: {{ .Values.env.s3Region | quote }}
   AWS_BUCKET: {{ .Values.env.s3Bucket | quote }}
