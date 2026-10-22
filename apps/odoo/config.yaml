@@ -561,9 +561,18 @@ data:
     if templates.oauth_uid or templates.oauth_provider_id:
         raise UserError('The JIT template must not have an OAuth identity')
     providers.write({
+        'flow': 'id_token_code',
         'jit_enabled': True,
         'jit_user_template_id': templates.id,
         'jit_link_by_verified_email': True,
     })
     env.cr.commit()
     print('JIT provider configured; no user login or provisioning test performed', flush=True)
+  configure-oidc.py: |
+    from pathlib import Path
+    import subprocess
+
+    subprocess.run(['python3', '/config/bootstrap.py'], check=True)
+    subprocess.run([
+        'odoo', 'shell', '--config=/run/odoo/odoo.conf', '--no-http',
+    ], input=Path('/config/configure-jit.py').read_text(), text=True, check=True)
