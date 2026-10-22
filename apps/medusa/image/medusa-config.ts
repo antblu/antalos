@@ -26,9 +26,46 @@ module.exports = defineConfig({
       authCors: process.env.AUTH_CORS || "",
       jwtSecret: process.env.JWT_SECRET!,
       cookieSecret: process.env.COOKIE_SECRET!,
+      authMethodsPerActor: {
+        user: ["antid"],
+        customer: ["emailpass"],
+      },
     },
   },
   modules: [
+    // Auth still consumes the legacy cache interface for OAuth state. Keep it
+    // shared through Sentinel so initiation and callback can hit different pods.
+    { resolve: "@medusajs/medusa/cache-redis", options: { redisUrl, redisOptions } },
+    {
+      resolve: "@medusajs/medusa/auth",
+      dependencies: ["cache", "logger"],
+      options: {
+        providers: [
+          { resolve: "@medusajs/medusa/auth-emailpass", id: "emailpass" },
+          {
+            resolve: "@medusajs/medusa/auth-oidc",
+            id: "antid",
+            options: {
+              display_name: process.env.OIDC_DISPLAY_NAME,
+              issuer: process.env.OIDC_ISSUER,
+              client_id: process.env.OIDC_CLIENT_ID,
+              client_secret: process.env.OIDC_CLIENT_SECRET,
+              callback_url: process.env.OIDC_CALLBACK_URL,
+              allowed_callback_urls: [process.env.OIDC_CALLBACK_URL!],
+              scopes: ["openid", "email", "profile"],
+              require_verified_email: true,
+              claim_mappings: {
+                entity_id: "sub",
+                email: "email",
+                name: "name",
+                given_name: "given_name",
+                family_name: "family_name",
+              },
+            },
+          },
+        ],
+      },
+    },
     { resolve: "@medusajs/medusa/caching", options: { providers: [
       { resolve: "@medusajs/caching-redis", id: "caching-redis", is_default: true,
         options: { redisUrl, redisOptions } },

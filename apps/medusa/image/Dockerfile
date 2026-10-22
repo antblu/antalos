@@ -7,7 +7,10 @@ RUN test "$(node -p 'require("./package.json").dependencies["@medusajs/medusa"]'
     && npm ci --no-audit --no-fund
 COPY medusa-config.ts tsconfig.json ./
 COPY src ./src
-RUN JWT_SECRET=build-only COOKIE_SECRET=build-only npm run build
+RUN JWT_SECRET=build-only COOKIE_SECRET=build-only \
+    OIDC_ISSUER=https://build.invalid/ OIDC_CLIENT_ID=build-only \
+    OIDC_CALLBACK_URL=https://build.invalid/app/login?auth_provider=antid \
+    npm run build
 
 FROM node:${NODE_IMAGE_TAG}
 ENV NODE_ENV=production MEDUSA_TELEMETRY_DISABLED=true PORT=9000

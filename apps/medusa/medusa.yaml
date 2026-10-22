@@ -53,6 +53,8 @@ spec:
             name: medusa-app
         - secretRef:
             name: medusa-s3
+        - secretRef:
+            name: medusa-oidc
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -154,6 +156,8 @@ spec:
             name: medusa-app
         - secretRef:
             name: medusa-s3
+        - secretRef:
+            name: medusa-oidc
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

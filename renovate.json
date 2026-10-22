@@ -10,11 +10,20 @@
         "/^apps[/]variables[.]yaml$/"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+[A-Z][A-Z0-9_]*:\\s*(?<currentValue>[^\\s]+)"
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+[A-Z][A-Z0-9_]*:\\s*[\"']?(?<currentValue>[^\\s\"']+)"
       ]
     }
   ],
   "packageRules": [
+    {
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
+      "versioning": "docker"
+    },
     {
       "matchDatasources": [
         "docker"

@@ -12,10 +12,12 @@ description: Replicated Medusa backend and Admin with CNPG, Redis Sentinel, and 
 | Component | Design |
 | --- | --- |
 | HTTP API and Admin | Two server pods, required hostname anti-affinity across the left/right workers; Traefik routes `medusa.antblu.net` to ready Service endpoints. Admin is served under `/app`. |
+| Admin identity | Authentik OIDC through the native `antid` provider, displayed as `antID`; Admin users authenticate only through that provider. Verified-email provisioning creates or links a Medusa user. Authentik application bindings define who may become an administrator. |
 | Background processing | Two worker pods across the same workers; Redis coordinates workflows, events, scheduled work, caching, sessions, and distributed locks. Workers are not exposed by the HTTP Service. |
 | PostgreSQL | Two CNPG instances on separate OpenEBS local volumes; streaming replication, `any / 1 / preferred` synchronous policy, operator promotion, and the `medusa-db-rw` writer Service. |
 | Redis | Two data pods on separate local volumes, AOF persistence, no eviction, and a Sentinel sidecar on each. A third Sentinel-only voter runs on the RTX worker with the `quorum` toleration. Quorum is two. |
 | Redis clients | Authenticated native Sentinel discovery in every Medusa Redis consumer, including sessions, cache, events, workflow pub/sub/queues, and locking. Promotion notifications force reconnection even if the old primary socket remains open. No singleton proxy. |
+| OAuth state | The Auth module depends on the legacy `cache` interface, explicitly backed by `cache-redis` with the same Sentinel options. Modern caching remains configured separately. Both serving pods can read the login state; no sticky session is required. |
 | Files | Existing Garage S3 endpoint, region `garage`, bucket `medusa`; path-style requests and no ACL header. Access credentials are namespace-scoped SealedSecrets. |
 
 ## Availability and recovery

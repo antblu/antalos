@@ -27,51 +27,85 @@ variables:
   ZAMMAD_CHART_VERSION: 18.0.4
   INVOICENINJA_CHART_VERSION: 0.1.1
 
+  # renovate: datasource=docker depName=node
   DOCS_NODE_IMAGE_TAG: 24.8.0-alpine3.22
+  # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
   DOCS_NGINX_IMAGE_TAG: 1.29.8-alpine
+  # renovate: datasource=docker depName=ghcr.io/antblu/antalos-docs
   DOCS_IMAGE_TAG: main
+  # renovate: datasource=docker depName=ghcr.io/renovatebot/renovate
   RENOVATE_IMAGE_TAG: 44.106.0
   RENOVATE_SCHEDULE: "17 * * * *"
   RENOVATE_GITHUB_APP_ID: "5033067"
   RENOVATE_GITHUB_INSTALLATION_ID: "163769372"
+  # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
   POSTGRES_IMAGE_TAG: 18.6-minimal-trixie
+  # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
   NEXTCLOUD_POSTGRES_IMAGE_TAG: 18.6-standard-trixie
+  # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
   OPEN_WEBUI_POSTGRES_IMAGE_TAG: 18.6-standard-trixie
   # renovate: datasource=docker depName=ghcr.io/open-webui/open-webui
   OPEN_WEBUI_IMAGE_TAG: 0.12.3
+  # renovate: datasource=docker depName=stalwartlabs/stalwart
   STALWART_IMAGE_TAG: v0.16.22
   SUITECRM_IMAGE_REPOSITORY: ghcr.io/antblu/suitecrm
+  # renovate: datasource=docker depName=ghcr.io/antblu/suitecrm
   SUITECRM_IMAGE_TAG: 8.10.2
   SUITECRM_IMAGE_DIGEST: sha256:13dded398bab3f42c5d6a37e1bd1c13120fb2257f2f069565a717565142c99e8
   SUITECRM_PHP_BASE_IMAGE: php:8.3-apache-bookworm@sha256:fa8852a2e01747ffe8c8768bfd6bbc2f296f974aa0de90ee157a66664996d263
   SUITECRM_RELEASE_SHA256: ac4693d10ea2d6cd20b3256098781d134599d88878fb24e8dc127038d624f5a8
+  # renovate: datasource=docker depName=mariadb
   SUITECRM_MARIADB_IMAGE_TAG: 11.8.9
+  # renovate: datasource=docker depName=mariadb
   SUITECRM_GARBD_IMAGE_TAG: 11.8.9-ubi9
+  # renovate: datasource=docker depName=ghcr.io/stalwartlabs/cli
   STALWART_CLI_IMAGE_TAG: 1.0.12
   DEBIAN_ARC_IP: 10.30.0.28
+  # renovate: datasource=docker depName=docker.elastic.co/elasticsearch/elasticsearch
   ELASTICSEARCH_IMAGE_TAG: 9.5.1
+  # renovate: datasource=docker depName=redis
   REDIS_IMAGE_TAG: 8.10.1
+  # renovate: datasource=docker depName=haproxy
   HAPROXY_IMAGE_TAG: 3.2.4-alpine
+  # renovate: datasource=docker depName=ghcr.io/zammad/zammad
   ZAMMAD_IMAGE_TAG: 7.1.3-0006
+  # renovate: datasource=docker depName=invoiceninja/invoiceninja-debian
   INVOICENINJA_IMAGE_TAG: 5.13.26
+  # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
   INVOICENINJA_NGINX_IMAGE_TAG: 1.29.8-alpine
+  # renovate: datasource=docker depName=busybox
   INVOICENINJA_BUSYBOX_IMAGE_TAG: 1.37.0
+  # renovate: datasource=docker depName=mariadb
   INVOICENINJA_MARIADB_IMAGE_TAG: 11.8.9
+  # renovate: datasource=docker depName=mariadb
   INVOICENINJA_GARBD_IMAGE_TAG: 11.8.9-ubi9
   CALDIY_WEB_IMAGE_REPOSITORY: ghcr.io/antblu/cal.diy-oidc
+  # renovate: datasource=docker depName=ghcr.io/antblu/cal.diy-oidc
   CALDIY_WEB_IMAGE_TAG: OIDC
   CALDIY_API_IMAGE_REPOSITORY: ghcr.io/antblu/cal-diy-api
+  # renovate: datasource=docker depName=ghcr.io/antblu/cal-diy-api
   CALDIY_API_IMAGE_TAG: oidc-64c8693b971c
+  # renovate: datasource=docker depName=curlimages/curl
   CALDIY_CURL_IMAGE_TAG: 8.16.0
+  # renovate: datasource=docker depName=ghcr.io/juanfont/headscale
   HEADSCALE_IMAGE_TAG: v0.29.3
+  # renovate: datasource=docker depName=ghcr.io/tale/headplane
   HEADPLANE_IMAGE_TAG: 0.7.1
+  # renovate: datasource=docker depName=louislam/uptime-kuma
   UPTIME_KUMA_IMAGE_TAG: 2.5.5-rootless
+  # renovate: datasource=docker depName=nodered/node-red
   NODE_RED_IMAGE_TAG: 5.0.7-24
+  # renovate: datasource=docker depName=ghcr.io/alam00000/bentopdf-simple
   BENTOPDF_IMAGE_TAG: 2.8.7
+  # renovate: datasource=docker depName=couchdb
   COUCHDB_IMAGE_TAG: 3.5.2
+  # renovate: datasource=docker depName=haproxy
   COUCHDB_HAPROXY_IMAGE_TAG: 3.2.23-alpine
+  # renovate: datasource=docker depName=curlimages/curl
   COUCHDB_CURL_IMAGE_TAG: 8.16.0
+  # renovate: datasource=docker depName=litestream/litestream
   LITESTREAM_IMAGE_TAG: 0.5.16
+  # renovate: datasource=docker depName=nextcloud
   NEXTCLOUD_IMAGE_TAG: 34.0.4-apache
   NEXTCLOUD_INSTANCE_ID: ocxyyr3nkdoj
   NEXTCLOUD_SERVER_VERSION: 34.0.4.1
@@ -83,7 +117,9 @@ variables:
   NEXTCLOUD_NFS_SHARE: /mnt/nvme/nc_nfs
   NEXTCLOUD_NFS_VERSION: "3"
   NEXTCLOUD_APP_STORAGE_SIZE: 5Gi
+  # renovate: datasource=docker depName=ghcr.io/euro-office/documentserver
   EUROOFFICE_IMAGE_TAG: v9.3.4-hotfix.1
+  # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/whiteboard
   WHITEBOARD_IMAGE_TAG: v1.5.9
   NOTIFY_PUSH_PORT: "7867"
   NOTIFY_PUSH_METRICS_PORT: "7868"
@@ -91,6 +127,7 @@ variables:
 
   CONTEXT_CHAT_LAUNCHER_REVISION: "5"
   CONTEXT_CHAT_BACKEND_VERSION: 5.4.1
+  # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/context_chat_backend
   CONTEXT_CHAT_BACKEND_IMAGE_TAG: 5.4.1
   CONTEXT_CHAT_BACKEND_PORT: "10034"
   CONTEXT_CHAT_BACKEND_HOST: nextcloud-context-chat-backend.nextcloud.svc.cluster.local
@@ -307,6 +344,7 @@ variables:
   NEXTCLOUD_S3_BUCKET: nextcloud
   NEXTCLOUD_S3_ACCESS_KEY: GKf1cf070fd131e347984c1b08
   NFS_SERVER: 10.30.0.5
+  # renovate: datasource=docker depName=uroni/urbackup-server
   URBACKUP_IMAGE_TAG: 2.5.x
   URBACKUP_HOST: backup.antblu.net
   URBACKUP_PUID: "1004"
@@ -342,7 +380,9 @@ variables:
   # Talk HPB: one AIO replica couples signaling, Janus and TURN. Multiple Janus
   # backends require dedicated signaling proxies rather than AIO replicas.
   NEXTCLOUD_TALK_CONFIG_REVISION: "3"
+  # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/aio-talk
   NEXTCLOUD_TALK_IMAGE_TAG: latest
+  # renovate: datasource=docker depName=nats
   NEXTCLOUD_TALK_NATS_IMAGE_TAG: 2.14.5-alpine
   NEXTCLOUD_TALK_HOST: talk.antblu.net
   NEXTCLOUD_TALK_TURN_HOST: turn.antblu.net
@@ -359,6 +399,7 @@ variables:
 
   # Vaultwarden: app data on the existing NFS export; CNPG data on OpenEBS.
   VAULTWARDEN_CHART_VERSION: 0.46.1
+  # renovate: datasource=docker depName=vaultwarden/server
   VAULTWARDEN_IMAGE_TAG: 1.37.2-alpine
   VAULTWARDEN_HOST: vault.antblu.net
   VAULTWARDEN_DATABASE_HOST: vaultwarden-db-rw.vaultwarden.svc.cluster.local
@@ -366,6 +407,7 @@ variables:
   VAULTWARDEN_DATA_STORAGE_SIZE: 10Gi
   VAULTWARDEN_DATABASE_STORAGE_SIZE: 10Gi
 
+  # renovate: datasource=docker depName=codeberg.org/forgejo/forgejo
   FORGEJO_IMAGE_TAG: 16.0.5-rootless
   FORGEJO_HOST: git.antblu.net
   FORGEJO_ADMIN_USERNAME: forgejo-admin
@@ -385,6 +427,7 @@ variables:
   FORGEJO_REDIS_SENTINEL_2_HOST: forgejo-redis-sentinel-2.forgejo.svc.cluster.local
 
   # LiteLLM: two proxy and CNPG instances; Redis has a third Sentinel on RTX.
+  # renovate: datasource=docker depName=ghcr.io/berriai/litellm
   LITELLM_IMAGE_TAG: v1.100.0
   LITELLM_HOST: litellm.antblu.net
   LITELLM_DATABASE_HOST: litellm-db-rw.litellm.svc.cluster.local
@@ -432,7 +475,9 @@ variables:
   INVOICENINJA_INITIAL_USER_EMAIL: admin@antblu.net
 
   # RustDesk OSS: one recoverable hbbs and two independently addressed relays.
+  # renovate: datasource=docker depName=rustdesk/rustdesk-server
   RUSTDESK_IMAGE_TAG: 1.1.16
+  # renovate: datasource=docker depName=busybox
   RUSTDESK_BUSYBOX_IMAGE_TAG: 1.37.0-musl
   RUSTDESK_HOST: rustdesk.antblu.net
   RUSTDESK_RELAY_0_HOST: rustdesk-relay-1.antblu.net
@@ -448,6 +493,7 @@ variables:
   RUSTDESK_TMP_STORAGE_SIZE: 64Mi
 
   # Odoo Community 19; two serving replicas and replicated PostgreSQL.
+  # renovate: datasource=docker depName=odoo
   ODOO_IMAGE_TAG: "19.0"
   ODOO_HOST: odoo.antblu.net
   ODOO_DATABASE_NAME: odoo
@@ -460,6 +506,7 @@ variables:
   ODOO_S3_ATTACHMENT_PREFIX: attachments
   ODOO_S3_BACKUP_PREFIX: backups
   ODOO_BACKUP_SCHEDULE: "0 9 * * *"
+  # renovate: datasource=docker depName=python
   ODOO_ADDON_INSTALLER_IMAGE_TAG: 3.12-slim-bookworm
   ODOO_OCA_STORAGE_REVISION: 55f7de06ae47c7b8521cab2ed901853bd3ad259e
   ODOO_S3FS_VERSION: 2026.9.0
@@ -474,10 +521,15 @@ variables:
 
   # Medusa backend and Admin only; storefront is deployed separately.
   MEDUSA_VERSION: 2.22.0
+  # renovate: datasource=docker depName=node
   MEDUSA_NODE_IMAGE_TAG: 24-bookworm-slim
   MEDUSA_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-medusa
-  MEDUSA_IMAGE_TAG: 2.22.0-1
+  # renovate: datasource=docker depName=ghcr.io/antblu/antalos-medusa
+  MEDUSA_IMAGE_TAG: 2.22.0-2
   MEDUSA_HOST: medusa.antblu.net
+  MEDUSA_OIDC_DISPLAY_NAME: antID
+  MEDUSA_OIDC_ISSUER: https://auth.antblu.net/application/o/medusa/
+  MEDUSA_OIDC_CLIENT_ID: LjcOqQyK8PeMP4AEAW831nHeExwAZvWth5udhSK7
   MEDUSA_DATABASE_HOST: medusa-db-rw.medusa.svc.cluster.local
   MEDUSA_DATABASE_STORAGE_SIZE: 10Gi
   MEDUSA_REDIS_STORAGE_SIZE: 2Gi

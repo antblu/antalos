@@ -26,7 +26,9 @@ For credential rotation, seal the replacement PEM from a readable local path; ne
 
 Retain sync wave `0` on the SealedSecret. Publish the reviewed change before revoking the previous GitHub key, and verify a new run authenticates successfully.
 
-Renovate's standard managers do not recognize image tags stored as shared variables in `apps/variables.yaml`. The repository's regex manager discovers variables with a preceding `# renovate: datasource=... depName=...` comment. For an image tag, use the exact image repository as `depName`; `OPEN_WEBUI_IMAGE_TAG` is mapped to `ghcr.io/open-webui/open-webui` and restricted to unprefixed numeric tags. Add this annotation to other shared version variables when their upstream datasource and package are known.
+Renovate's standard managers do not recognize image tags stored as shared variables in `apps/variables.yaml`. The repository's regex manager discovers variables with a preceding `# renovate: datasource=... depName=...` comment. For an image tag, use the exact image repository as `depName`; `OPEN_WEBUI_IMAGE_TAG` is mapped to `ghcr.io/open-webui/open-webui` and restricted to unprefixed numeric tags. Every `*_IMAGE_TAG` variable has this annotation, including build images and custom images; keep it immediately above the value and use the repository actually consumed by the workload or Dockerfile. The matcher supports quoted YAML tags. Docker annotations use Docker versioning so image flavor suffixes are retained; the Open WebUI numeric-tag restriction still applies. Add annotations to other shared version variables when their upstream datasource and package are known.
+
+Annotations enable dependency lookup; floating tags such as `main`, `latest`, and `OIDC`, and commit-based tags, do not necessarily yield version-update PRs. These annotations do not add digest tracking. SuiteCRM remains digest-pinned and requires its [coordinated image, checksum, shared-file, and database upgrade procedure](/admin-guide/suitecrm/); a tag-only PR is not a complete upgrade.
 
 ## Deploy and verify
 
