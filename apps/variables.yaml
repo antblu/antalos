@@ -98,7 +98,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/alam00000/bentopdf-simple
   BENTOPDF_IMAGE_TAG: 2.8.7
   # renovate: datasource=docker depName=couchdb
-  COUCHDB_IMAGE_TAG: 3.5.2
+  COUCHDB_IMAGE_TAG: 3.5.3
   # renovate: datasource=docker depName=haproxy
   COUCHDB_HAPROXY_IMAGE_TAG: 3.2.23-alpine
   # renovate: datasource=docker depName=curlimages/curl
