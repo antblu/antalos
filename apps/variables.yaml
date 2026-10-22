@@ -128,7 +128,7 @@ variables:
   CONTEXT_CHAT_LAUNCHER_REVISION: "5"
   CONTEXT_CHAT_BACKEND_VERSION: 5.4.1
   # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/context_chat_backend
-  CONTEXT_CHAT_BACKEND_IMAGE_TAG: 5.4.1
+  CONTEXT_CHAT_BACKEND_IMAGE_TAG: 5.5.0
   CONTEXT_CHAT_BACKEND_PORT: "10034"
   CONTEXT_CHAT_BACKEND_HOST: nextcloud-context-chat-backend.nextcloud.svc.cluster.local
   CONTEXT_CHAT_COMPUTE_DEVICE: cpu
