@@ -70,7 +70,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/zammad/zammad
   ZAMMAD_IMAGE_TAG: 7.1.3-0006
   # renovate: datasource=docker depName=invoiceninja/invoiceninja-debian
-  INVOICENINJA_IMAGE_TAG: 5.13.26
+  INVOICENINJA_IMAGE_TAG: 5.13.50
   # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
   INVOICENINJA_NGINX_IMAGE_TAG: 1.29.8-alpine
   # renovate: datasource=docker depName=busybox
