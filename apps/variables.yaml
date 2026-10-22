@@ -62,7 +62,7 @@ variables:
   STALWART_CLI_IMAGE_TAG: 1.0.13
   DEBIAN_ARC_IP: 10.30.0.28
   # renovate: datasource=docker depName=docker.elastic.co/elasticsearch/elasticsearch
-  ELASTICSEARCH_IMAGE_TAG: 9.5.1
+  ELASTICSEARCH_IMAGE_TAG: 9.5.5
   # renovate: datasource=docker depName=redis
   REDIS_IMAGE_TAG: 8.10.1
   # renovate: datasource=docker depName=haproxy
