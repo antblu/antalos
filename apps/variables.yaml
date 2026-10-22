@@ -34,7 +34,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-docs
   DOCS_IMAGE_TAG: main
   # renovate: datasource=docker depName=ghcr.io/renovatebot/renovate
-  RENOVATE_IMAGE_TAG: 44.106.0
+  RENOVATE_IMAGE_TAG: 44.178.3
   RENOVATE_SCHEDULE: "17 * * * *"
   RENOVATE_GITHUB_APP_ID: "5033067"
   RENOVATE_GITHUB_INSTALLATION_ID: "163769372"
