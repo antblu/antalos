@@ -342,18 +342,33 @@ data:
            + os.environ['KUBERNETES_SERVICE_PORT_HTTPS']
            + '/apis/apps/v1/namespaces/odoo/deployments/odoo/scale')
     headers = {'Authorization': 'Bearer ' + (account / 'token').read_text()}
-    # The serving Deployment is submitted with replicas=0 for this one-time migration.
-    selector = urllib.parse.urlencode({'labelSelector': 'app.kubernetes.io/name=odoo'})
-    pods_url = url.split('/apis/apps/')[0] + '/api/v1/namespaces/odoo/pods?' + selector
-    for attempt in range(120):
-        with urllib.request.urlopen(urllib.request.Request(pods_url, headers=headers), context=context, timeout=30) as response:
-            pods = json.load(response)['items']
-        if not pods:
-            break
-        time.sleep(5)
-    else:
-        raise RuntimeError('Serving pods have not terminated; refusing offline migration')
-    subprocess.run(['python3', '/config/bootstrap.py'], check=True)
+    # A failed launch may be retried after the migration committed. Do not
+    # stop or wait on serving pods when that durable marker already exists.
+    import psycopg2
+    with psycopg2.connect(
+        host='odoo-db-rw.odoo.svc.cluster.local', dbname=os.environ['SESSION_DB_URI'],
+        user=Path('/credentials/database/username').read_text(),
+        password=Path('/credentials/database/password').read_text(), sslmode='require',
+    ) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT to_regclass('public.ir_config_parameter')")
+            prepared = cursor.fetchone()[0] is not None
+            if prepared:
+                cursor.execute("SELECT value FROM ir_config_parameter WHERE key = 'antalos.odoo.ha_ready'")
+                prepared = cursor.fetchone() == ('1',)
+    if not prepared:
+        # The serving Deployment is submitted with replicas=0 for this one-time migration.
+        selector = urllib.parse.urlencode({'labelSelector': 'app.kubernetes.io/name=odoo'})
+        pods_url = url.split('/apis/apps/')[0] + '/api/v1/namespaces/odoo/pods?' + selector
+        for attempt in range(120):
+            with urllib.request.urlopen(urllib.request.Request(pods_url, headers=headers), context=context, timeout=30) as response:
+                pods = json.load(response)['items']
+            if not pods:
+                break
+            time.sleep(5)
+        else:
+            raise RuntimeError('Serving pods have not terminated; refusing offline migration')
+        subprocess.run(['python3', '/config/bootstrap.py'], check=True)
     try:
         with urllib.request.urlopen(urllib.request.Request(url, headers=headers), context=context, timeout=30) as response:
             scale = json.load(response)
@@ -361,7 +376,7 @@ data:
         if exc.code != 404:
             raise
     else:
-        if scale['spec']['replicas'] == 0:
+        if scale.get('spec', {}).get('replicas', 0) == 0:
             headers['Content-Type'] = 'application/merge-patch+json'
             request = urllib.request.Request(url, headers=headers, method='PATCH', data=b'{"spec":{"replicas":2}}')
             with urllib.request.urlopen(request, context=context, timeout=30):
