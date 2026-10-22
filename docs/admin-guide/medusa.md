@@ -17,7 +17,7 @@ The expected backend hostname is `medusa.antblu.net`. DNS and edge routing must 
 
 ## antID administrator login
 
-The repository's custom OIDC provider in `apps/medusa/image/src/modules/antid/` is registered as `antid`, with display name `antID`. It uses the open-source `openid-client` library through Medusa's custom-provider interface; it does not load Medusa's licensed native OIDC provider. Admin offers **Continue with antID** and accepts only this provider for the `user` actor. The email/password provider remains available only to customers. No custom Admin widget is needed.
+The repository's custom OIDC provider in `apps/medusa/image/src/modules/antid/` is registered as `antid`, with display name `antID`. It uses the open-source `openid-client` library through Medusa's custom-provider interface; it does not load Medusa's licensed native OIDC provider. Admin offers both its email/password form and **Continue with antID** for the `user` actor. Existing Medusa local email/password credentials remain usable; Authentik passwords are not copied into Medusa. Customers continue to use email/password authentication. The custom `/auth/emailpass/user` route rejects public self-provisioning and email-based claiming of administrator accounts; local administrator creation uses invitations or operator provisioning. No custom Admin widget is needed.
 
 Configure the existing Authentik Medusa confidential client with this exact redirect URI (including its query string):
 

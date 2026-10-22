@@ -529,7 +529,7 @@ variables:
   MEDUSA_NODE_IMAGE_TAG: 24-bookworm-slim
   MEDUSA_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-medusa
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-medusa
-  MEDUSA_IMAGE_TAG: 2.22.0-4
+  MEDUSA_IMAGE_TAG: 2.22.0-5
   MEDUSA_HOST: medusa.antblu.net
   MEDUSA_OIDC_DISPLAY_NAME: antID
   MEDUSA_OIDC_ISSUER: https://auth.antblu.net/application/o/medusa/
