@@ -153,10 +153,12 @@ data:
         's3fs==' + os.environ['S3FS_VERSION'],
         'python-slugify==' + os.environ['SLUGIFY_VERSION'],
         'packaging==${ODOO_PACKAGING_VERSION}',
+        'python-jose[cryptography]==${ODOO_PYTHON_JOSE_VERSION}',
     ], check=True)
     repositories = [
         ('storage', os.environ['OCA_STORAGE_REVISION'], ('fs_storage', 'fs_attachment', 'fs_attachment_s3')),
         ('server-tools', os.environ['OCA_SERVER_TOOLS_REVISION'], ('session_db',)),
+        ('server-auth', os.environ['OCA_SERVER_AUTH_REVISION'], ('auth_oidc',)),
     ]
     for repository, revision, modules in repositories:
         url = f'https://codeload.github.com/OCA/{repository}/tar.gz/{revision}'
@@ -389,3 +391,79 @@ data:
             request = urllib.request.Request(url, headers=headers, method='PATCH', data=b'{"spec":{"replicas":2}}')
             with urllib.request.urlopen(request, context=context, timeout=30):
                 pass
+  install-auth-oidc.py: |
+    import json
+    import os
+    from pathlib import Path
+    import ssl
+    import subprocess
+    import time
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    import psycopg2
+
+    # Generate runtime configuration and wait for the existing HA bootstrap.
+    subprocess.run(['python3', '/config/bootstrap.py'], check=True)
+    connection = psycopg2.connect(
+        host='odoo-db-rw.odoo.svc.cluster.local', dbname=os.environ['SESSION_DB_URI'],
+        user=Path('/credentials/database/username').read_text(),
+        password=Path('/credentials/database/password').read_text(), sslmode='require',
+    )
+    connection.autocommit = True
+    with connection.cursor() as cursor:
+        cursor.execute('SELECT pg_advisory_lock(19650621)')
+        cursor.execute("SELECT state FROM ir_module_module WHERE name = 'auth_oidc'")
+        if cursor.fetchone() == ('installed',):
+            print('auth_oidc is already installed', flush=True)
+            connection.close()
+            raise SystemExit(0)
+
+    account = Path('/var/run/secrets/kubernetes.io/serviceaccount')
+    context = ssl.create_default_context(cafile=str(account / 'ca.crt'))
+    base = ('https://' + os.environ['KUBERNETES_SERVICE_HOST'] + ':'
+            + os.environ['KUBERNETES_SERVICE_PORT_HTTPS'])
+    scale_url = base + '/apis/apps/v1/namespaces/odoo/deployments/odoo/scale'
+    headers = {'Authorization': 'Bearer ' + (account / 'token').read_text()}
+
+
+    def request(url, method='GET', payload=None):
+        request_headers = dict(headers)
+        if payload is not None:
+            request_headers['Content-Type'] = 'application/merge-patch+json'
+        data = json.dumps(payload).encode() if payload is not None else None
+        req = urllib.request.Request(url, headers=request_headers, method=method, data=data)
+        with urllib.request.urlopen(req, context=context, timeout=30) as response:
+            return json.load(response)
+
+
+    try:
+        request(scale_url)
+    except urllib.error.HTTPError as exc:
+        if exc.code != 404:
+            raise
+        else:
+            request(scale_url, 'PATCH', {'spec': {'replicas': 0}})
+
+    selector = urllib.parse.urlencode({'labelSelector': 'app.kubernetes.io/name=odoo'})
+    for attempt in range(120):
+        if not request(base + '/api/v1/namespaces/odoo/pods?' + selector)['items']:
+            break
+        time.sleep(5)
+    else:
+        raise RuntimeError('Serving pods remain; refusing schema installation')
+
+    # On failure, leave serving stopped for deliberate repair and retry.
+    subprocess.run([
+        'odoo', '--config=/run/odoo/odoo.conf', '--init=auth_oidc',
+        '--without-demo=true', '--stop-after-init', '--no-http',
+    ], check=True)
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT state FROM ir_module_module WHERE name = 'auth_oidc'")
+        if cursor.fetchone() != ('installed',):
+            raise RuntimeError('auth_oidc installation did not complete')
+    connection.close()
+    # Argo applies the addon-equipped serving template in the next wave.
+    # Keep existing pods stopped until then, so old code never serves the new schema.
+    print('auth_oidc installed; the next sync wave restores two serving replicas', flush=True)

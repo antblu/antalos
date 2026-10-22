@@ -21,6 +21,14 @@ Do not rerun schema initialization against serving replicas. An ordinary complet
 
 DNS and the edge route must deliver `odoo.antblu.net` to Traefik. The Ingress and Certificate do not create external DNS or firewall rules. Init containers download pinned addon source revisions and install direct Python dependency versions from `apps/variables.yaml`; startup depends on GitHub and PyPI, and transitive Python dependencies resolve at installation time.
 
+## OpenID Connect addon
+
+OCA [`auth_oidc`](https://github.com/OCA/server-auth/tree/19.0/auth_oidc) is installed with its standard `auth_oauth` dependency. The addon installer downloads the pinned `ODOO_OCA_SERVER_AUTH_REVISION` and installs `python-jose[cryptography]` at `ODOO_PYTHON_JOSE_VERSION`, both owned by `apps/variables.yaml`. Every serving pod receives these dependencies.
+
+The retained `odoo-auth-oidc-v1` Job runs at Sync wave 1, after the HA bootstrap at wave 0. It checks whether the module is already installed, stops existing serving pods before schema installation, and leaves them stopped on failure. The Deployment at wave 2 restores two replicas with the addon available. This first installation briefly interrupts access. Completed Job templates are ignored during subsequent syncs; changing the pins does not rerun database upgrades. If this Job fails, repair the cause and deliberately recreate it during a sync before allowing wave 2 to proceed.
+
+Installation does not enable a provider. In developer mode, configure an OAuth Provider in Settings with **OpenID Connect (authorization code flow)**, client ID and secret, scope `openid email`, and the authorization, token, and JWKS endpoints from the provider's discovery document. Register `https://odoo.antblu.net/auth_oauth/signin` as its redirect URI. Store any repository-managed client secret only in an application-owned SealedSecret. Enable the provider only after reviewing its account-linking and signup policy. Keep the existing local administrator available. Verify a real login and logout separately once provider configuration is supplied.
+
 ## Initial administrator access
 
 Open `https://odoo.antblu.net/web/login` with login `admin`. Retrieve the generated initial password privately:

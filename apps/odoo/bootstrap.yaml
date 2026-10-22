@@ -45,6 +45,8 @@ spec:
               value: ${ODOO_S3FS_VERSION}
             - name: SLUGIFY_VERSION
               value: ${ODOO_SLUGIFY_VERSION}
+            - name: OCA_SERVER_AUTH_REVISION
+              value: ${ODOO_OCA_SERVER_AUTH_REVISION}
             - name: OCA_SERVER_TOOLS_REVISION
               value: ${ODOO_OCA_SERVER_TOOLS_REVISION}
           resources:

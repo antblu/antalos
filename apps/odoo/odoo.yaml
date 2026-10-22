@@ -4,7 +4,7 @@ metadata:
   name: odoo
   namespace: odoo
   annotations:
-    argocd.argoproj.io/sync-wave: '1'
+    argocd.argoproj.io/sync-wave: '2'
 spec:
   replicas: 2
   strategy:
@@ -61,6 +61,8 @@ spec:
               value: ${ODOO_S3FS_VERSION}
             - name: SLUGIFY_VERSION
               value: ${ODOO_SLUGIFY_VERSION}
+            - name: OCA_SERVER_AUTH_REVISION
+              value: ${ODOO_OCA_SERVER_AUTH_REVISION}
             - name: OCA_SERVER_TOOLS_REVISION
               value: ${ODOO_OCA_SERVER_TOOLS_REVISION}
           resources:
