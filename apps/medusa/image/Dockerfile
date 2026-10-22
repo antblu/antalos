@@ -11,6 +11,8 @@ RUN JWT_SECRET=build-only COOKIE_SECRET=build-only \
     OIDC_ISSUER=https://build.invalid/ OIDC_CLIENT_ID=build-only \
     OIDC_CALLBACK_URL=https://build.invalid/app/login?auth_provider=antid \
     npm run build
+COPY tests ./tests
+RUN MEDUSA_TEST_ROOT=/app/.medusa/server node --test tests/*.cjs
 
 FROM node:${NODE_IMAGE_TAG}
 ENV NODE_ENV=production MEDUSA_TELEMETRY_DISABLED=true PORT=9000

@@ -12,7 +12,7 @@ description: Replicated Medusa backend and Admin with CNPG, Redis Sentinel, and 
 | Component | Design |
 | --- | --- |
 | HTTP API and Admin | Two server pods, required hostname anti-affinity across the left/right workers; Traefik routes `medusa.antblu.net` to ready Service endpoints. Admin is served under `/app`. |
-| Admin identity | Authentik OIDC through the native `antid` provider, displayed as `antID`; Admin users authenticate only through that provider. Verified-email provisioning creates or links a Medusa user. Authentik application bindings define who may become an administrator. |
+| Admin identity | Authentik OIDC through the repository's custom `antid` provider and `openid-client`, displayed as `antID`; Admin users authenticate only through that provider. The custom callback provisions or links a Medusa user using verified email. Authentik application bindings define who may become an administrator. No licensed native OIDC provider is loaded. |
 | Background processing | Two worker pods across the same workers; Redis coordinates workflows, events, scheduled work, caching, sessions, and distributed locks. Workers are not exposed by the HTTP Service. |
 | PostgreSQL | Two CNPG instances on separate OpenEBS local volumes; streaming replication, `any / 1 / preferred` synchronous policy, operator promotion, and the `medusa-db-rw` writer Service. |
 | Redis | Two data pods on separate local volumes, AOF persistence, no eviction, and a Sentinel sidecar on each. A third Sentinel-only voter runs on the RTX worker with the `quorum` toleration. Quorum is two. |

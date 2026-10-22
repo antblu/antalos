@@ -5,7 +5,9 @@ FROM node:${NODE_IMAGE_TAG} AS build
 WORKDIR /workspace
 
 COPY site/package.json site/pnpm-lock.yaml site/pnpm-workspace.yaml ./site/
-RUN npm install --global pnpm@11.19.0 && cd site && pnpm install --frozen-lockfile
+RUN cd site \
+    && npm install --global "$(node -p 'require("./package.json").packageManager')" \
+    && pnpm install --frozen-lockfile
 
 COPY docs ./docs
 COPY site ./site

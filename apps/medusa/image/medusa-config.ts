@@ -43,7 +43,7 @@ module.exports = defineConfig({
         providers: [
           { resolve: "@medusajs/medusa/auth-emailpass", id: "emailpass" },
           {
-            resolve: "@medusajs/medusa/auth-oidc",
+            resolve: "./src/modules/antid",
             id: "antid",
             options: {
               display_name: process.env.OIDC_DISPLAY_NAME,
@@ -51,16 +51,6 @@ module.exports = defineConfig({
               client_id: process.env.OIDC_CLIENT_ID,
               client_secret: process.env.OIDC_CLIENT_SECRET,
               callback_url: process.env.OIDC_CALLBACK_URL,
-              allowed_callback_urls: [process.env.OIDC_CALLBACK_URL!],
-              scopes: ["openid", "email", "profile"],
-              require_verified_email: true,
-              claim_mappings: {
-                entity_id: "sub",
-                email: "email",
-                name: "name",
-                given_name: "given_name",
-                family_name: "family_name",
-              },
             },
           },
         ],

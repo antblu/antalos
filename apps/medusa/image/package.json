@@ -12,7 +12,8 @@
     "@medusajs/cli": "2.22.0",
     "@medusajs/framework": "2.22.0",
     "@medusajs/medusa": "2.22.0",
-    "@medusajs/caching-redis": "2.22.0"
+    "@medusajs/caching-redis": "2.22.0",
+    "openid-client": "6.8.8"
   },
   "devDependencies": {
     "@swc/core": "1.15.8",
