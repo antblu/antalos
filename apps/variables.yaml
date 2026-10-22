@@ -106,7 +106,7 @@ variables:
   # renovate: datasource=docker depName=litestream/litestream
   LITESTREAM_IMAGE_TAG: 0.5.16
   # renovate: datasource=docker depName=nextcloud
-  NEXTCLOUD_IMAGE_TAG: 34.0.4-apache
+  NEXTCLOUD_IMAGE_TAG: 34.0.5-apache
   NEXTCLOUD_INSTANCE_ID: ocxyyr3nkdoj
   NEXTCLOUD_SERVER_VERSION: 34.0.4.1
   NEXTCLOUD_CONFIG_REVISION: "13"
