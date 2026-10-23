@@ -9,7 +9,7 @@ The storefront source is in `antblu/emiliany`; Kubernetes resources belong to `a
 
 Publish the Antalos shared inputs first. The Emiliany repository's `.github/workflows/image.yaml` reads those inputs from Antalos `main`, builds the standalone Next.js server, runs lint, type checking, and the production build, and publishes `ghcr.io/antblu/emiliany`. Its self-hosted runner needs Docker and access to both repositories. The default token can read the public Antalos repository; if Antalos becomes private, configure a dedicated read token for that checkout.
 
-Increment `EMILIANY_IMAGE_TAG` for each release before building; do not overwrite an already deployed release tag. The workflow also publishes a full `sha-<commit>` tag. Make the GHCR package publicly readable before reconciliation, or add a service-owned sealed registry credential and `imagePullSecrets` before deploying a private package. Never bake local `.env` files or credentials into the image.
+Increment `EMILIANY_IMAGE_TAG` for each release before building; do not overwrite an already deployed release tag. The workflow also publishes a full `sha-<commit>` tag. The GHCR package is private. `registry.yaml` supplies the namespace-scoped `emiliany-registry` SealedSecret, and `service-account.yaml` attaches it as an image pull Secret to the namespace default ServiceAccount. New pods receive that reference at admission. Keep registry credentials valid and reseal replacements to the same namespace/name; never store the plaintext Docker configuration in Git. Never bake local `.env` files or credentials into the image.
 
 The canonical URL and allowed Medusa image origin are build arguments derived from the shared hostnames. Changing either requires rebuilding the image. Server runtime values are declared on the Deployment. The first deployment retains demo commerce and disabled Google sign-in; publishing the website does not activate checkout, payments, or customer OAuth. Enabling real commerce requires a Store API publishable key, working Medusa regions/catalog, and publicly reachable media URLs; see [Medusa operations](/admin-guide/medusa/).
 
@@ -38,3 +38,9 @@ Both replicas use the same built image and its Server Function encryption key. A
 Roll back by restoring the previous published image tag in shared inputs. There is no storefront PVC to restore; customer/cart/order data and credentials belong to Medusa and its recovery plan. Two replicas with hard hostname anti-affinity, a disruption budget, and a one-at-a-time rollout protect the serving tier when both workers have capacity. DNS, Cloudflare, edge proxies, ingress, and backend dependencies retain their separate failure limits.
 
 [Next.js self-hosting](https://nextjs.org/docs/app/guides/self-hosting) and [Traefik Ingress routing](https://doc.traefik.io/traefik/reference/routing-configuration/kubernetes/ingress/) describe the upstream behavior used here.
+
+## Private image pull failures
+
+If the public endpoint returns HTTP 503 with `no available server`, inspect pod events before changing ingress or DNS. `ImagePullBackOff` with a GHCR anonymous-token 401 means the pods cannot authenticate to the private image. Confirm the SealedSecret is Synced and the default ServiceAccount references `emiliany-registry`. Pods created before that ServiceAccount configuration need a controlled Deployment restart to receive the pull Secret.
+
+The certificate is independent: a DNS-01 challenge marked Presented but awaiting propagation can remain pending while recursive DNS caches expire. Inspect its status and public TXT answers; successful image pulls do not establish certificate readiness.

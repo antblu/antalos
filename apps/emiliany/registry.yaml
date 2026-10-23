@@ -1,0 +1,13 @@
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: emiliany-registry
+  namespace: emiliany
+spec:
+  encryptedData:
+    .dockerconfigjson: AgBlgTbRmeKa4T2ap5NKpvbm1ZAF71aMZTtJvbBtdPwQQ26DkLERbJOye3Rsi2Fl5ewsdL3EBM3j285f1koUTzanwUaT44tKe+xCSovisYY3J5JAm6gnqQJEZBqMy+pz8OtLznsFcPlJ06MwgOeJZL2UpoeccP7OLDAp7KRw9A1qGb39KNPQV9wHRGglW9SRGEfiveJLz0Nvf60ADjhOOH9w7Dy9mjse1uFkorK+iCApCodjkMXKZVL4ewU/snUpgr/O/fkxiXI+HtVUVEgIw+Gbh8Lk0roVFT9Hmvkj7L4FoRw9Cinm4YbQEgjQ0PYrlnxvpXsCTv5Io7beS0g12zyGAjuZu+H0ySPutlc9Bx74SEdMi5+Z8E+VNfadIDSkN/sKTyuF84dZ9vaPfP66M3UYdZzmQ+WCxWtMtwe9HS/96cUSgdBA3hkrv/TXhYOX/Pd5vKLcW7MoP3rM8bl5ueLK3lMQhtGbMG6jkQOWtPWGu192wTJLsap8JuC4DruEyGyXfbyqIC1smzUpNxzXcftez+qEp8I+Mx0tIee2LQPyVQfLk/LsLAifPxbec72AYqdDs9d+xtIVBArkKcDgK/BpqF/RoWmiryJfdnAOz14TZbXyVwBAj1iGjxonkSPc9f+fYi5CkF0IMfVBmZOv+PeBpbuQjJhi02yXoApAQy3wdQKfFzcj5ElhbKvtduNkABPQ0Qkx2NxuFXgJmUDP0gLmFG8o/lnvpqLTTc7uUf6e1OlG/W2pa5JiM3O1vPA3OST0bWhz6Np1Oh82v+5sz3GRovcKkMVSLBLSsHZg8bLi1496bX4UBZb2PIprWmOLDSBMRg+U
+  template:
+    metadata:
+      name: emiliany-registry
+      namespace: emiliany
+    type: kubernetes.io/dockerconfigjson
