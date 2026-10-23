@@ -25,7 +25,7 @@ Generate and seal credentials in `apps/obsidian/`. The CouchDB and HAProxy secre
 1. Prepare OpenEBS capacity, the certificate issuer, Traefik, and Authentik.
 2. Configure an Authentik provider/application for this hostname and assign only the intended trusted identities. The current proxy maps accepted identities to CouchDB `_admin`.
 3. Reconcile `apps/obsidian/app.yaml` through the [application workflow](/admin-guide/deploy-an-application/).
-4. Confirm both CouchDB members initialize and the replication Job configures both directions. A completed Job does not establish that ongoing replication is current.
+4. Confirm both CouchDB members initialize and the replication Job configures both directions. The Job runs as a Sync hook in wave 1, after the database resources in wave 0 become healthy. Argo deletes a previous instance before creating the hook and removes successful hooks, so image updates do not patch an immutable Job template and TTL cleanup does not trigger self-heal recreation. A completed Job does not establish that ongoing replication is current.
 5. Complete browser access and native-client access separately. A client must receive database responses using its supported authentication method, not an HTML sign-in page.
 6. Provision a small test vault and confirm a note synchronizes between two devices before using an existing vault.
 
@@ -41,4 +41,4 @@ Inspect both database members, replication scheduler state, and the specific vau
 
 Restore data before reconnecting clients to an empty replacement. Retain local vault backups and encryption material. After a failed member returns, resolve replication lag and conflicts before calling redundancy restored. Follow CouchDB's [replication status guidance](https://docs.couchdb.org/en/stable/replication/intro.html) for the supported APIs.
 
-A desired-state difference involving immutable StatefulSet fields is not a reason to delete healthy database claims. Use the exact field difference to plan a data-preserving migration. A TTL-cleaned replication Job may also be recreated by Argo self-heal because it is an ordinary managed Job in this source.
+A desired-state difference involving immutable StatefulSet fields is not a reason to delete healthy database claims. Use the exact field difference to plan a data-preserving migration. If an older ordinary replication Job blocks a sync with an immutable `spec.template` error, remove only that completed Job and resync. This does not remove the database pods, claims, or persistent replication documents. The Sync hook lifecycle prevents that template-update failure after the updated manifest is published.

@@ -3,12 +3,15 @@ kind: Job
 metadata:
   name: obsidian-couchdb-replication
   namespace: obsidian
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    argocd.argoproj.io/sync-wave: '1'
   labels:
     app.kubernetes.io/name: obsidian-couchdb-replication
     app.kubernetes.io/part-of: obsidian
 spec:
   backoffLimit: 12
-  ttlSecondsAfterFinished: 86400
   template:
     metadata:
       labels:
