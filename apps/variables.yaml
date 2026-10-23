@@ -400,7 +400,7 @@ variables:
   # Vaultwarden: app data on the existing NFS export; CNPG data on OpenEBS.
   VAULTWARDEN_CHART_VERSION: 0.46.1
   # renovate: datasource=docker depName=vaultwarden/server
-  VAULTWARDEN_IMAGE_TAG: 1.37.2-alpine
+  VAULTWARDEN_IMAGE_TAG: 1.37.4-alpine
   VAULTWARDEN_HOST: vault.antblu.net
   VAULTWARDEN_DATABASE_HOST: vaultwarden-db-rw.vaultwarden.svc.cluster.local
   VAULTWARDEN_NFS_SHARE: /mnt/nvme/vaultwarden
