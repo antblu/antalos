@@ -46,7 +46,9 @@ spec:
             - name: COMMERCE_DEMO_MODE
               value: '${EMILIANY_COMMERCE_DEMO_MODE}'
             - name: GOOGLE_CUSTOMER_LOGIN_ENABLED
-              value: 'false'
+              value: '${EMILIANY_GOOGLE_CUSTOMER_LOGIN_ENABLED}'
+            - name: MEDUSA_PUBLISHABLE_KEY
+              value: '${EMILIANY_MEDUSA_PUBLISHABLE_KEY}'
             - name: MEDUSA_BACKEND_URL
               value: https://${MEDUSA_HOST}
           securityContext:
