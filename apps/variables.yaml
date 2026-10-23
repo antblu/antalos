@@ -194,7 +194,7 @@ variables:
   # renovate: datasource=nextcloud depName=notes registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_NOTES_VERSION: 6.0.2
   # renovate: datasource=nextcloud depName=notify_push registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_NOTIFY_PUSH_VERSION: 1.4.0
+  NEXTCLOUD_NOTIFY_PUSH_VERSION: 1.4.2
   # renovate: datasource=nextcloud depName=side_menu registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_SIDE_MENU_VERSION: 6.0.1
   # renovate: datasource=nextcloud depName=spreed registryUrl=https://apps.nextcloud.com/api/v1/apps.json
