@@ -5,6 +5,7 @@
   gather_facts: true
   vars_files:
     - vars/main.yml
+    - variables.yaml
     - vars/vault.yml
   tasks:
     - name: Require Debian on the RTX VM

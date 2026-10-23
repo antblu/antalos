@@ -7,11 +7,8 @@ rtx_model_root: /srv/llama-models
 rtx_speaches_root: /srv/speaches-models
 nvidia_cuda_keyring_version: 1.1-1
 
-llama_swap_image: ghcr.io/mostlygeek/llama-swap:unified-cuda13
-llama_baseline_restorer_image: alpine:3.22
 llama_cpp_port: "8080"
 
-speaches_image: ghcr.io/speaches-ai/speaches:0.9.0-rc.3-cuda-12.6.3@sha256:5c6206a349e90b9a6782342917e72f84fc7cb60e8afd540f6aa625831ac1fd0f
 speaches_port: "8000"
 
 rtx_host_packages:

@@ -4,7 +4,7 @@ metadata:
   name: nextcloud-context-chat-backend-env
   namespace: nextcloud
 data:
-  AA_VERSION: "3.0.0"
+  AA_VERSION: "${CONTEXT_CHAT_APPAPI_VERSION}"
   APP_ID: context_chat_backend
   APP_DISPLAY_NAME: Context Chat Backend
   APP_VERSION: ${CONTEXT_CHAT_BACKEND_VERSION}

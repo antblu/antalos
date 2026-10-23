@@ -1,8 +1,10 @@
-FROM caddy:2-builder AS builder
+ARG CADDY_BUILDER_IMAGE
+ARG CADDY_RUNTIME_IMAGE
+FROM ${CADDY_BUILDER_IMAGE} AS builder
 
 RUN xcaddy build \
     --with github.com/caddy-dns/cloudflare
 
-FROM caddy:2
+FROM ${CADDY_RUNTIME_IMAGE}
 
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy

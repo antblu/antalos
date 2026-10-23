@@ -5,33 +5,54 @@
 variables:
   # Bump when changing the yaml-envsubst plugin; its subPath mount needs new pods.
   ARGOCD_PLUGIN_CONFIG_REVISION: "2"
+  # renovate: datasource=docker depName=mikefarah/yq
+  ARGOCD_YQ_IMAGE_TAG: 4.45.4
+  # renovate: datasource=docker depName=quay.io/argoproj/argocd
+  ARGOCD_CMP_IMAGE_TAG: v3.5.1
+  # renovate: datasource=helm depName=argo-cd registryUrl=https://argoproj.github.io/argo-helm
   ARGOCD_CHART_VERSION: 10.4.0
+  # renovate: datasource=helm depName=authentik registryUrl=https://charts.goauthentik.io
   AUTHENTIK_CHART_VERSION: 2026.8.3
+  # renovate: datasource=helm depName=cert-manager registryUrl=https://charts.jetstack.io
   CERT_MANAGER_CHART_VERSION: v1.18.2
   CERT_MANAGER_DNS01_RECURSIVE_NAMESERVER: https://1.1.1.1/dns-query
+  # renovate: datasource=helm depName=cloudnative-pg registryUrl=https://cloudnative-pg.github.io/charts
   CNPG_OPERATOR_CHART_VERSION: 0.29.0
+  # renovate: datasource=helm depName=metallb registryUrl=https://metallb.github.io/metallb
   METALLB_CHART_VERSION: 0.16.1
+  # renovate: datasource=helm depName=mariadb-operator registryUrl=https://mariadb-operator.github.io/mariadb-operator
   MARIADB_OPERATOR_CHART_VERSION: 26.6.0
+  # renovate: datasource=helm depName=csi-driver-nfs registryUrl=https://kubernetes-csi.github.io/csi-driver-nfs
   NFS_DRIVER_CHART_VERSION: 4.13.4
+  # renovate: datasource=helm depName=metrics-server registryUrl=https://kubernetes-sigs.github.io/metrics-server/
   METRICS_SERVER_CHART_VERSION: 3.14.0
+  # renovate: datasource=helm depName=nextcloud registryUrl=https://nextcloud.github.io/helm/
   NEXTCLOUD_CHART_VERSION: 9.2.6
+  # renovate: datasource=helm depName=open-webui registryUrl=https://helm.openwebui.com
   OPEN_WEBUI_CHART_VERSION: 16.5.0
+  # renovate: datasource=helm depName=openebs registryUrl=https://openebs.github.io/openebs
   OPENEBS_CHART_VERSION: 4.5.1
+  # renovate: datasource=helm depName=rancher registryUrl=https://releases.rancher.com/server-charts/latest
   RANCHER_CHART_VERSION: 2.15.0
+  # renovate: datasource=helm depName=sealed-secrets registryUrl=https://bitnami.github.io/sealed-secrets
   SEALED_SECRETS_CHART_VERSION: 2.19.3
+  # renovate: datasource=helm depName=traefik registryUrl=https://helm.traefik.io/traefik
   TRAEFIK_CHART_VERSION: 41.3.0
+  # renovate: datasource=helm depName=crowdsec registryUrl=https://crowdsecurity.github.io/helm-charts
   CROWDSEC_CHART_VERSION: 0.24.2
+  # renovate: datasource=github-tags depName=maxlerebourg/crowdsec-bouncer-traefik-plugin
   CROWDSEC_BOUNCER_PLUGIN_VERSION: v1.7.0
   CROWDSEC_TRUSTED_HEADSCALE_CLIENT_IP: 100.64.0.8/32
+  # renovate: datasource=helm depName=victoria-metrics-k8s-stack registryUrl=https://victoriametrics.github.io/helm-charts/
   VICTORIAMETRICS_CHART_VERSION: 0.91.2
+  # renovate: datasource=helm depName=zammad registryUrl=https://zammad.github.io/zammad-helm
   ZAMMAD_CHART_VERSION: 18.0.4
-  INVOICENINJA_CHART_VERSION: 0.1.1
 
   # renovate: datasource=docker depName=node
   DOCS_NODE_IMAGE_TAG: 24.8.0-alpine3.22
   # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
   DOCS_NGINX_IMAGE_TAG: 1.29.8-alpine
-  # renovate: datasource=docker depName=ghcr.io/antblu/antalos-docs
+  # renovate: datasource=docker depName=ghcr.io/antblu/antalos-docs depType=floating
   DOCS_IMAGE_TAG: main
   # renovate: datasource=docker depName=ghcr.io/renovatebot/renovate
   RENOVATE_IMAGE_TAG: 44.178.3
@@ -49,9 +70,9 @@ variables:
   # renovate: datasource=docker depName=stalwartlabs/stalwart
   STALWART_IMAGE_TAG: v0.16.27
   SUITECRM_IMAGE_REPOSITORY: ghcr.io/antblu/suitecrm
-  # renovate: datasource=docker depName=ghcr.io/antblu/suitecrm
   SUITECRM_IMAGE_TAG: 8.10.2
   SUITECRM_IMAGE_DIGEST: sha256:13dded398bab3f42c5d6a37e1bd1c13120fb2257f2f069565a717565142c99e8
+  # renovate-image: depName=php
   SUITECRM_PHP_BASE_IMAGE: php:8.3-apache-bookworm@sha256:fa8852a2e01747ffe8c8768bfd6bbc2f296f974aa0de90ee157a66664996d263
   SUITECRM_RELEASE_SHA256: ac4693d10ea2d6cd20b3256098781d134599d88878fb24e8dc127038d624f5a8
   # renovate: datasource=docker depName=mariadb
@@ -80,10 +101,10 @@ variables:
   # renovate: datasource=docker depName=mariadb
   INVOICENINJA_GARBD_IMAGE_TAG: 11.8.9-ubi9
   CALDIY_WEB_IMAGE_REPOSITORY: ghcr.io/antblu/cal.diy-oidc
-  # renovate: datasource=docker depName=ghcr.io/antblu/cal.diy-oidc
+  # renovate: datasource=docker depName=ghcr.io/antblu/cal.diy-oidc depType=floating
   CALDIY_WEB_IMAGE_TAG: OIDC
   CALDIY_API_IMAGE_REPOSITORY: ghcr.io/antblu/cal-diy-api
-  # renovate: datasource=docker depName=ghcr.io/antblu/cal-diy-api
+  # renovate: datasource=docker depName=ghcr.io/antblu/cal-diy-api depType=floating
   CALDIY_API_IMAGE_TAG: oidc-64c8693b971c
   # renovate: datasource=docker depName=curlimages/curl
   CALDIY_CURL_IMAGE_TAG: 8.23.0
@@ -126,6 +147,9 @@ variables:
   WHITEBOARD_PORT: "3002"
 
   CONTEXT_CHAT_LAUNCHER_REVISION: "5"
+  # Context Chat AppAPI protocol version is a compatibility contract, not a release.
+  CONTEXT_CHAT_APPAPI_VERSION: "3.0.0"
+  # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/context_chat_backend
   CONTEXT_CHAT_BACKEND_VERSION: 5.4.1
   # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/context_chat_backend
   CONTEXT_CHAT_BACKEND_IMAGE_TAG: 5.5.0
@@ -143,42 +167,61 @@ variables:
   NEXTCLOUD_RELEASES_URL: https://github.com/nextcloud-releases
   NEXTCLOUD_SIDE_MENU_RELEASES_URL: https://gitnet.fr/deblan/side_menu/releases/download
   NEXTCLOUD_TASKS_RELEASES_URL: https://github.com/nextcloud/tasks/releases/download
+  # renovate: datasource=nextcloud depName=announcementcenter registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_ANNOUNCEMENTCENTER_VERSION: 7.5.0
   NEXTCLOUD_ANNOUNCEMENTCENTER_SHA512: ab7a77621b835e381f47739e365a4b376cd1654edd94c123804b1b6fc54ca8f55b43f1cdf9aaf19f8cba2c850d96a769404d594cdb1b3238772678d0bd392a34
+  # renovate: datasource=nextcloud depName=assistant registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_ASSISTANT_VERSION: 3.5.0
   NEXTCLOUD_ASSISTANT_SHA512: 0707c091c3efe7898889d576f638bf642a17b5121115773bc2ad20498d652681c5d090ce0d9557edfe43e90717f208c9900650aa5f00f512fa265832df03cb6c
+  # renovate: datasource=nextcloud depName=calendar registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_CALENDAR_VERSION: 6.5.4
+  # renovate: datasource=nextcloud depName=context_chat registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_CONTEXT_CHAT_VERSION: 5.4.0
   NEXTCLOUD_CONTEXT_CHAT_SHA512: 8a3631a2f6b8c5823cf7aea18a702b85063917b671ee13ae7327aa42f032450575a3731ae8c8df41ae9fdb04662f2d3898a039490f3ba21d5aabd0729f0000db
   NEXTCLOUD_CALENDAR_SHA512: ab11021ee234a53c05696546b3edf330a6f5810e276d60d01de0c420b73c641a4151c67b0cb1d662e3b666870000ebfca1a1731096a6eac643a433ee624294ae
+  # renovate: datasource=nextcloud depName=contacts registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_CONTACTS_VERSION: 8.8.0
   NEXTCLOUD_CONTACTS_SHA512: 666dbc01ccb5c176440b84f104930316710a9fbfb27b2b396c18de977504d6b9fa50aa9fd1de9bdda82fcfc48ee9d5484b7435806ca3a667b4bf3ee6c9a07e53
+  # renovate: datasource=nextcloud depName=deck registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_DECK_VERSION: 1.18.4
   NEXTCLOUD_DECK_SHA512: e5008a683659036920e0e07f8ecfb814ac91e5799fe47f6f50382ef8216f273ec1306690a9aa275b21ba7ebbd89e2f340f54acdacae698b4766e4d593313fe6c
+  # renovate: datasource=nextcloud depName=eurooffice registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_EUROOFFICE_VERSION: 11.0.4
   NEXTCLOUD_EUROOFFICE_SHA512: 9851e71d9aaf01a2648fe189e68b323801c30ecff13a65c9698f87ca18f8ef9eb6eec487adf3d471f2e3ad7311574eabede5fdf23d9087d3c3fb3863b0f760b1
+  # renovate: datasource=nextcloud depName=external registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_EXTERNAL_VERSION: 9.0.1
   NEXTCLOUD_EXTERNAL_SHA512: ad9dc01b1a793f502b4ef674b5006687f8d4d2f2f4a5200c46dc24fe7bdbe61e0b71f14a07098be82be7857fef5dafeb35c58f8b3865a9e0b2f0a12a83cc39e0
+  # renovate: datasource=nextcloud depName=forms registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_FORMS_VERSION: 5.3.6
   NEXTCLOUD_FORMS_SHA512: 1bf875a738f84407629d06c11127445fc8232414f3b1be3dfe07199094ae8cb7c42ed76d705c0e6ab4b49b21c29cd0b12718cad8457190fad88947a18cd28bc1
+  # renovate: datasource=nextcloud depName=groupfolders registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_GROUPFOLDERS_VERSION: 22.0.6
   NEXTCLOUD_GROUPFOLDERS_SHA512: 0590ab932c239aa7ba85c2371f2c204ec785924a114a865743bf823e430355b6ab0a8b5507cd4ad34b5dcc65e05ae1854342d40dc64e08fd734202a2567d18b4
+  # renovate: datasource=nextcloud depName=integration_openai registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_INTEGRATION_OPENAI_VERSION: 4.5.2
   NEXTCLOUD_INTEGRATION_OPENAI_SHA512: c2ee70bc1263fb1bea740d8e3c54088ffc427fe42e6b3389f0c83aec8635ca29a7d80fce1adde24c9fea66b0fcbf47bd40722e78c1c6353737863df4d267ae48
+  # renovate: datasource=nextcloud depName=mail registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_MAIL_VERSION: 5.11.4
   NEXTCLOUD_MAIL_SHA512: 6e0f012b4683d63d3b2cebfa47077ad4b1cd525a7ac11ee25e6801413e33160333ed70abfa722b4ce58ca745994f7a266e06fd0c54157a7cc786f26556268fdd
+  # renovate: datasource=nextcloud depName=notes registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_NOTES_VERSION: 6.0.2
   NEXTCLOUD_NOTES_SHA512: e2f6ca591b9516541a2fe702147bb86269994097f81f99cc2e5f782233eb427f10eed6c4db8f3bddb84379e859e75ab4772b37edc530cf3c0e87408eabfe78b1
+  # renovate: datasource=nextcloud depName=notify_push registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_NOTIFY_PUSH_VERSION: 1.4.0
   NEXTCLOUD_NOTIFY_PUSH_SHA512: f493465ed3bd9868392fb048460110c34ae177474abdd490a95c80c9cde21ddefa988d5bcf503b0dab6f96beb7eeeeaaf68c7836458208c64f65b5f495c38a6b
+  # renovate: datasource=nextcloud depName=side_menu registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_SIDE_MENU_VERSION: 6.0.1
   NEXTCLOUD_SIDE_MENU_SHA512: 7ccf1566f3d67e1e015d9a341f7f6aee4c205ecc871334d8be644864c0e23c49b321d8cb02a5a651ec5cfd3ffeeea36dd0c8c0ef0358378438d642342bc2dbe4
+  # renovate: datasource=nextcloud depName=spreed registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_SPREED_VERSION: 24.0.4
   NEXTCLOUD_SPREED_SHA512: 2f47e1310a3a172b6d2faf97cf8ae4c1da2b824185952dccbcfdae9183e583202f6ccccc59af30ce32a43738e4831684c44a83ac1437e558c5f80d53475d2ebb
+  # renovate: datasource=nextcloud depName=tasks registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_TASKS_VERSION: 0.18.1
   NEXTCLOUD_TASKS_SHA512: 4c4885c527484c73d3ea592a5e202671fb531967cc877dd1415bbbb9713c207b437e9fd89caa8236ad658a43c7cc03e850e5db928b70da38f815b37a9884ac29
+  # renovate: datasource=nextcloud depName=user_oidc registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_USER_OIDC_VERSION: 8.11.0
   NEXTCLOUD_USER_OIDC_SHA512: e7447a5e72bc9fc9516dd30ee1139f6779ab4f5a279628643a8b367eb37fb089a2734e4b222fd481a7f2c20445a9ea401e3c8d39a39a66d37e6303f7ab052fc4
+  # renovate: datasource=nextcloud depName=whiteboard registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_WHITEBOARD_VERSION: 1.5.9
   NEXTCLOUD_WHITEBOARD_SHA512: 732a5708724251cc94af7163fbfa819e8e471c30fc107dfec69429ca4b02cd28e4ac893ce08ff532ac37f9a7fa7ed0eecd94175bce51d8acbbc75bf49d672de6
 
@@ -225,6 +268,7 @@ variables:
   NODE_RED_OIDC_STRATEGY_NAME: openidconnect
   NODE_RED_OIDC_LOGIN_LABEL: Sign in with antID
   NODE_RED_OIDC_SCOPES: profile,email
+  # renovate: datasource=npm depName=passport-openidconnect
   NODE_RED_PASSPORT_OPENIDCONNECT_VERSION: 0.1.2
   HEADSCALE_BASE_DOMAIN: tailnet.antblu.net
   HEADSCALE_OIDC_ISSUER: https://auth.antblu.net/application/o/headscale/
@@ -344,7 +388,7 @@ variables:
   NEXTCLOUD_S3_BUCKET: nextcloud
   NEXTCLOUD_S3_ACCESS_KEY: GKf1cf070fd131e347984c1b08
   NFS_SERVER: 10.30.0.5
-  # renovate: datasource=docker depName=uroni/urbackup-server
+  # renovate: datasource=docker depName=uroni/urbackup-server depType=floating
   URBACKUP_IMAGE_TAG: 2.5.x
   URBACKUP_HOST: backup.antblu.net
   URBACKUP_PUID: "1004"
@@ -380,7 +424,7 @@ variables:
   # Talk HPB: one AIO replica couples signaling, Janus and TURN. Multiple Janus
   # backends require dedicated signaling proxies rather than AIO replicas.
   NEXTCLOUD_TALK_CONFIG_REVISION: "3"
-  # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/aio-talk
+  # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/aio-talk depType=floating
   NEXTCLOUD_TALK_IMAGE_TAG: latest
   # renovate: datasource=docker depName=nats
   NEXTCLOUD_TALK_NATS_IMAGE_TAG: 2.14.5-alpine
@@ -398,6 +442,7 @@ variables:
 
 
   # Vaultwarden: app data on the existing NFS export; CNPG data on OpenEBS.
+  # renovate: datasource=helm depName=vaultwarden registryUrl=https://guerzon.github.io/vaultwarden
   VAULTWARDEN_CHART_VERSION: 0.46.1
   # renovate: datasource=docker depName=vaultwarden/server
   VAULTWARDEN_IMAGE_TAG: 1.37.4-alpine
@@ -513,17 +558,22 @@ variables:
   # renovate: datasource=docker depName=python
   ODOO_ADDON_INSTALLER_IMAGE_TAG: 3.12-slim-bookworm
   ODOO_OCA_STORAGE_REVISION: 55f7de06ae47c7b8521cab2ed901853bd3ad259e
+  # renovate: datasource=pypi depName=s3fs
   ODOO_S3FS_VERSION: 2026.9.0
+  # renovate: datasource=pypi depName=python-slugify
   ODOO_SLUGIFY_VERSION: 9.1.3
   ODOO_OCA_SERVER_TOOLS_REVISION: ef290478c70f99d6aeea26b165edfa9058a9bb2d
   ODOO_OCA_SERVER_AUTH_REVISION: 4f5bf8a18a087b83808a832c4414ad605aa09289
+  # renovate: datasource=pypi depName=python-jose
   ODOO_PYTHON_JOSE_VERSION: "3.5.0"
   ODOO_JIT_ADDON_REVISION: "2"
   ODOO_JIT_PROVIDER_NAME: antID
   ODOO_JIT_TEMPLATE_LOGIN: jit-template@invalid.local
+  # renovate: datasource=pypi depName=packaging
   ODOO_PACKAGING_VERSION: "25.0"
 
   # Medusa backend and Admin only; storefront is deployed separately.
+  # renovate: datasource=npm depName=@medusajs/medusa depType=coordinated
   MEDUSA_VERSION: 2.22.0
   # renovate: datasource=docker depName=node
   MEDUSA_NODE_IMAGE_TAG: 24-bookworm-slim
@@ -551,8 +601,9 @@ variables:
   # renovate: datasource=docker depName=mautic/mautic
   MAUTIC_BASE_IMAGE_TAG: 7.2.1-apache
   MAUTIC_IMAGE_REPOSITORY: ghcr.io/antblu/mautic
+  # renovate: datasource=docker depName=ghcr.io/antblu/mautic
   MAUTIC_IMAGE_TAG: 7.2.1-1010-v3
-  # renovate: datasource=github-releases depName=phpredis/phpredis extractVersion=^{{version}}$
+  # renovate: datasource=github-releases depName=phpredis/phpredis
   MAUTIC_PHPREDIS_VERSION: 6.3.0
   # Match Invoice Ninja's MariaDB/Galera images.
   # renovate: datasource=docker depName=mariadb

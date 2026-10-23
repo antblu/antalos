@@ -10,6 +10,7 @@
 
 - Kubernetes applications and their supporting resources live under `apps/<service>/` and are reconciled by Argo CD.
 - Shared, environment-specific Kubernetes application inputs live under the `variables:` key in `apps/variables.yaml`. This includes public hostnames and addresses, node names, Helm chart versions, container image tags, and provisioned volume sizes.
+- Keep Kubernetes deployment and application-build version pins in `apps/variables.yaml`; keep Debian workload pins in the owning Ansible project's `variables.yaml`. Add a supported Renovate annotation for each external workload version or image. See `docs/admin-guide/renovate.md` and `tools/check-renovate-coverage.mjs` for annotation formats and coverage rules. Native package, provider, and GitHub Action metadata must remain in the formats required by those tools.
 - Talos and VM hardware/topology belong to the matching project under `infrastructure/opentofu/`.
 - Debian guest packages and workloads belong to the matching project under `infrastructure/ansible/`.
 - Home HAProxy guests are provisioned from `infrastructure/opentofu/haproxy/`; editing cloud-init does not update an existing guest automatically.

@@ -63,3 +63,7 @@ The project prompts for the Debian user's sudo password at startup. The
 playbook installs the NVIDIA Container Toolkit, checks the passed-through GPU,
 and starts the Compose project. Its normal package and kernel tasks can reboot
 the VM if upgrades require it.
+
+## Workload image versions
+
+Renovate-tracked workload and build-base pins live in project-local `variables.yaml`. `site.yml` loads this file alongside `vars/main.yml`, and the existing Compose environment template passes the values to Docker Compose. Keep deployment settings and protected vault inputs in their existing files. Local source edits do not update a running guest; deploy through the owning playbook.

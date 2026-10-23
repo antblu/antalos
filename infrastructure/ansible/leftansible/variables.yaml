@@ -1,0 +1,51 @@
+# VM image pins; Compose files are rendered by site.yml.
+# renovate-image: depName=ghcr.io/seerr-team/seerr
+media_ghcr_io_seerr_team_seerr_image: ghcr.io/seerr-team/seerr:latest
+# renovate-image: depName=lscr.io/linuxserver/sonarr
+media_lscr_io_linuxserver_sonarr_image: lscr.io/linuxserver/sonarr:latest
+# renovate-image: depName=lscr.io/linuxserver/radarr
+media_lscr_io_linuxserver_radarr_image: lscr.io/linuxserver/radarr:latest
+# renovate-image: depName=lscr.io/linuxserver/prowlarr
+media_lscr_io_linuxserver_prowlarr_image: lscr.io/linuxserver/prowlarr:latest
+# renovate-image: depName=ghcr.io/flaresolverr/flaresolverr
+media_ghcr_io_flaresolverr_flaresolverr_image: ghcr.io/flaresolverr/flaresolverr:latest
+# renovate-image: depName=lscr.io/linuxserver/qbittorrent
+media_lscr_io_linuxserver_qbittorrent_image: lscr.io/linuxserver/qbittorrent:latest
+# renovate-image: depName=qmcgaw/gluetun
+media_qmcgaw_gluetun_image: qmcgaw/gluetun:latest
+# renovate-image: depName=ghcr.io/recyclarr/recyclarr
+media_ghcr_io_recyclarr_recyclarr_image: ghcr.io/recyclarr/recyclarr:8
+# renovate-image: depName=lscr.io/linuxserver/bazarr
+media_lscr_io_linuxserver_bazarr_image: lscr.io/linuxserver/bazarr:latest
+# renovate-image: depName=mccloud/subgen
+media_mccloud_subgen_image: mccloud/subgen:cpu
+# renovate-image: depName=ghcr.io/dan-online/autopulse
+media_ghcr_io_dan_online_autopulse_image: ghcr.io/dan-online/autopulse:stable
+# renovate-image: depName=ghcr.io/maintainerr/maintainerr
+media_ghcr_io_maintainerr_maintainerr_image: ghcr.io/maintainerr/maintainerr:latest
+# renovate-image: depName=ghcr.io/ghomashudson/jellyfin-auto-collections
+media_ghcr_io_ghomashudson_jellyfin_auto_collections_image: ghcr.io/ghomashudson/jellyfin-auto-collections:latest
+# renovate-image: depName=ghcr.io/nothing2obvi/pixelfin
+media_ghcr_io_nothing2obvi_pixelfin_image: ghcr.io/nothing2obvi/pixelfin:latest
+# renovate-image: depName=ghcr.io/fredrikburmester/streamystats-aio
+media_ghcr_io_fredrikburmester_streamystats_aio_image: ghcr.io/fredrikburmester/streamystats-aio:latest
+# renovate-image: depName=lscr.io/linuxserver/lidarr
+media_lscr_io_linuxserver_lidarr_image: lscr.io/linuxserver/lidarr:latest
+# renovate-image: depName=redis
+media_redis_image: redis:7-alpine
+# renovate-image: depName=postgres
+media_postgres_image: postgres:15-alpine
+# renovate-image: depName=ghcr.io/neptunehub/audiomuse-ai
+media_ghcr_io_neptunehub_audiomuse_ai_image: ghcr.io/neptunehub/audiomuse-ai:latest
+# renovate-image: depName=foxxmd/multi-scrobbler
+media_foxxmd_multi_scrobbler_image: foxxmd/multi-scrobbler:latest
+# renovate-image: depName=ghcr.io/lumepart/explo
+media_ghcr_io_lumepart_explo_image: ghcr.io/lumepart/explo:latest
+# renovate-image: depName=ghcr.io/techsquidtv/cliparr
+media_ghcr_io_techsquidtv_cliparr_image: ghcr.io/techsquidtv/cliparr:latest
+# renovate-image: depName=caddy
+caddy_builder_image: caddy:2-builder
+# renovate-image: depName=caddy
+caddy_runtime_image: caddy:2
+# renovate-image: depName=fe80grau/ytdlp2strm
+ytdlp2strm_base_image: fe80grau/ytdlp2strm:latest

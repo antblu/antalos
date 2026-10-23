@@ -5,6 +5,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        CADDY_BUILDER_IMAGE: "{{ caddy_builder_image }}"
+        CADDY_RUNTIME_IMAGE: "{{ caddy_runtime_image }}"
     container_name: caddy
     restart: unless-stopped
 

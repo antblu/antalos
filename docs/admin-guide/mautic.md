@@ -56,7 +56,79 @@ application secret are sealed with the repository's Sealed Secrets controller.
 Outbound mail starts disabled with `null://null`. Remove `MAUTIC_MAILER_DSN` from the ConfigMap and seal a real SMTP DSN under the
 same key in `mautic-app`, then roll web and worker pods before enabling campaigns;
 the initial null transport accepts and discards mail. Do not enqueue production
-mail before completing that setup. No SSO or SMTP credentials are provisioned here.
+mail before completing that setup. SMTP credentials are not provisioned here.
+
+## SAML with Authentik
+
+The integration uses Mautic's native SAML support, following the
+[Mautic authentication documentation](https://docs.mautic.org/en/7.2/authentication/authentication.html)
+and [Authentik integration guide](https://docs.goauthentik.io/integrations/services/mautic/).
+The repeatable scripts in `apps/mautic/saml/` configure application state after
+deployment. Argo CD does not execute them; preserve both application databases and
+NFS configuration when restoring this integration.
+
+Run from the repository root, using the hostnames declared in `apps/variables.yaml`:
+
+```bash
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n authentik \
+  exec -i deploy/authentik-worker -- \
+  env MAUTIC_HOST=mautic.antblu.net AUTHENTIK_HOST=auth.antblu.net ak shell \
+  < apps/mautic/saml/configure-authentik.py
+```
+
+This creates the `mautic` application/provider, four dedicated attribute mappings,
+and access bindings for `Mautic Users` and `authentik Admins`. It reuses the existing
+`authentik Self-signed Certificate`; no signing private key leaves Authentik.
+The provider sends signed responses and assertions by POST to
+`https://mautic.antblu.net/s/saml/login_check`, with audience
+`https://mautic.antblu.net`. The IdP entity ID and metadata URL are
+`https://auth.antblu.net/application/saml/mautic/metadata/`.
+
+Copy the configuration script and download the public IdP metadata into one web
+pod, then configure shared NFS state:
+
+```bash
+MAUTIC_POD=$(/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig \
+  -n mautic get pods -l app.kubernetes.io/name=mautic-web \
+  -o jsonpath='{.items[0].metadata.name}')
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n mautic \
+  exec -i "$MAUTIC_POD" -c mautic -- sh -c \
+  'umask 027; cat > /tmp/configure-mautic-saml.php' \
+  < apps/mautic/saml/configure-mautic.php
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n mautic \
+  exec "$MAUTIC_POD" -c mautic -- sh -ec \
+  'curl --fail --location --silent --show-error https://auth.antblu.net/application/saml/mautic/metadata/ -o /tmp/mautic-idp.xml
+   php /tmp/configure-mautic-saml.php /tmp/mautic-idp.xml'
+```
+
+The script preserves unrelated configuration, stores the metadata as Mautic's
+expected base64 value, and maps `email`, `username`, `firstname` and `lastname`.
+It creates a non-admin `SSO Users` role without permissions. Grant the appropriate
+permissions in Mautic before onboarding users; membership in an Authentik admin
+group does not itself grant the Mautic administrator role. Existing matching
+Mautic usernames retain their roles, including any existing administrator role.
+Review username collisions before adding group members.
+
+Clear the per-pod production cache on each web and worker pod after updating shared
+configuration, using `php bin/console cache:clear --env=prod --no-warmup`. The next
+CronJob process reads the shared settings. Re-download and apply metadata after
+rotating Authentik's signing certificate. The scripts do not remove separately
+added policy bindings; review them when changing access rules.
+
+For a requested acceptance check, open `/saml/discovery`, complete normal Authentik
+authentication, confirm the callback signs into Mautic with the expected role,
+and confirm a user outside both permitted groups is denied. Do not treat successful
+configuration commands as proof of browser login. Use `/s/login` with the preserved
+local administrator for recovery. To disable SAML, remove the IdP metadata through
+Configuration > User/Authentication Settings, then clear each pod's cache.
+Use `/saml/discovery` as the SSO launch URL. In Mautic 7.2.1, directly opening
+`/s/saml/login` without an `idp` query parameter triggers an upstream LightSAML
+controller error (`ServiceLocator::getParameter()` is undefined). Discovery selects
+the configured IdP and supplies that parameter. `/s/login` is the local password
+form and does not authenticate an Authentik password.
+
+Removing Authentik group membership blocks new authentication; separately revoke
+existing Mautic sessions and disable the Mautic account for offboarding.
 
 ## Verify each layer
 

@@ -1,3 +1,7 @@
+- name: Load Homelable workload versions
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/homelable/variables.yaml"
+
 - name: Load Homelable deployment inputs
   ansible.builtin.include_vars:
     file: "{{ playbook_dir }}/homelable/vars/main.yml"

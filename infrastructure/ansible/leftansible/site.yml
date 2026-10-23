@@ -5,6 +5,7 @@
   gather_facts: true
   vars_files:
     - vars/main.yml
+    - variables.yaml
   tasks:
     - name: Require Debian on the left VM
       ansible.builtin.assert:
@@ -125,6 +126,14 @@
         group: root
         mode: preserve
 
+    - name: Render the Caddy Compose image pins
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/caddy/compose.yaml"
+        dest: "{{ left_compose_root }}/compose.yaml"
+        owner: root
+        group: root
+        mode: "0640"
+
     - name: Create the shared media mountpoint
       ansible.builtin.file:
         path: "{{ left_media_path }}"
@@ -186,6 +195,14 @@
         owner: root
         group: root
         mode: preserve
+
+    - name: Render the media Compose image pins
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/media/compose.yaml"
+        dest: "{{ left_media_compose_root }}/compose.yaml"
+        owner: root
+        group: root
+        mode: "0640"
 
     - name: Allow Explo to read its protected configuration
       ansible.builtin.file:

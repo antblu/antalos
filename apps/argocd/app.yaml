@@ -14,6 +14,10 @@ spec:
         valueFiles:
           - $values/infrastructure/opentofu/argotofu/argocd-values.yaml
         parameters:
+          - name: repoServer.initContainers[0].image
+            value: mikefarah/yq:${ARGOCD_YQ_IMAGE_TAG}
+          - name: repoServer.extraContainers[0].image
+            value: quay.io/argoproj/argocd:${ARGOCD_CMP_IMAGE_TAG}
           - name: repoServer.podAnnotations.config\.antblu\.net/yaml-envsubst-revision
             value: "${ARGOCD_PLUGIN_CONFIG_REVISION}"
             forceString: true

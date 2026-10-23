@@ -26,9 +26,39 @@ For credential rotation, seal the replacement PEM from a readable local path; ne
 
 Retain sync wave `0` on the SealedSecret. Publish the reviewed change before revoking the previous GitHub key, and verify a new run authenticates successfully.
 
-Renovate's standard managers do not recognize image tags stored as shared variables in `apps/variables.yaml`. The repository's regex manager discovers variables with a preceding `# renovate: datasource=... depName=...` comment. For an image tag, use the exact image repository as `depName`; `OPEN_WEBUI_IMAGE_TAG` is mapped to `ghcr.io/open-webui/open-webui` and restricted to unprefixed numeric tags. Every `*_IMAGE_TAG` variable has this annotation, including build images and custom images; keep it immediately above the value and use the repository actually consumed by the workload or Dockerfile. The matcher supports quoted YAML tags. Docker annotations use Docker versioning so image flavor suffixes are retained; the Open WebUI numeric-tag restriction still applies. Add annotations to other shared version variables when their upstream datasource and package are known.
+### Dependency coverage and version ownership
 
-Annotations enable dependency lookup; floating tags such as `main`, `latest`, and `OIDC`, and commit-based tags, do not necessarily yield version-update PRs. These annotations do not add digest tracking. SuiteCRM remains digest-pinned and requires its [coordinated image, checksum, shared-file, and database upgrade procedure](/admin-guide/suitecrm/); a tag-only PR is not a complete upgrade.
+Kubernetes deployment and application-build versions belong in `apps/variables.yaml`. Debian workload versions belong in the matching Ansible project's `variables.yaml`; `site.yml` loads those files alongside operational inputs in `vars/main.yml`. Homelable has its own `homelable/variables.yaml`. Keep credentials in the existing protected vaults.
+
+The custom managers read these version files. Put an annotation immediately above each upstream version, with optional metadata in the order shown:
+
+```yaml
+variables:
+  # renovate: datasource=helm depName=authentik registryUrl=https://charts.goauthentik.io
+  AUTHENTIK_CHART_VERSION: 2026.8.3
+```
+
+For separate image tags, use `# renovate: datasource=docker depName=IMAGE_REPOSITORY`. For complete `repository:tag@sha256:...` values, use `# renovate-image: depName=IMAGE_REPOSITORY`. The latter manager extracts the tag and digest separately. `registryUrl`, `versioning`, `extractVersion`, and `depType` are optional scalar-annotation fields. Quoted values are supported. Use the actual image repository consumed by the workload, including registry names.
+
+All external application Helm chart versions and image tags are covered, including build bases and the Argo CD yq/CMP helper images. Both Argo CD self-management parameters and the OpenTofu bootstrap read the helper versions from `apps/variables.yaml`; the unrendered Helm values file has empty image placeholders. Invoice Ninja's local chart also receives image pins through Application parameters rather than versioned defaults. Its chart's own `Chart.yaml` version is local metadata, not an external chart dependency.
+
+The Kubernetes and Argo CD managers explicitly scan repository YAML. Native managers continue tracking package manifests/lockfiles, GitHub Actions, and OpenTofu providers. Those tools require literal dependency metadata in their own formats; they cannot all consume YAML variables. Protocol selections, persisted runtime metadata, schema versions, and operator-controlled configuration revisions are not upstream release pins. VM operating-system image URLs/checksums and Terraform version contracts remain in their existing OpenTofu projects; this workload-image coverage check does not claim automated OS image upgrades.
+
+Docker versioning retains image flavor suffixes. Explicit numeric-build rules handle Medusa, Mautic, Zammad, Intel PyTorch, and Jellyfin revision tags, so a new build of the same release is not silently treated as an incompatible flavor. Open WebUI remains restricted to unprefixed numeric tags. Full image references and scalar annotations marked `depType=floating` enable digest pinning and subsequent digest updates for tags such as `main`, `latest`, and `OIDC`. Digest pinning can only work when Renovate can read the upstream registry. It tracks a selected channel; it does not infer which different channel an operator intends.
+
+Nextcloud add-on releases use the Nextcloud app-store datasource. Their archive SHA-512 pins require coordinated review: Renovate opens draft PRs labelled `coordinated-upgrade`, and the coverage check rejects a changed add-on version with its previous checksum. Review compatibility with the deployed Nextcloud release, download the referenced release archive, and update its checksum before marking the PR ready. Odoo OCA commits track the `19.0` branches through Git reference digests and also require coordinated review. Medusa's shared release version is tracked in addition to its native npm dependencies; keep those versions aligned. SuiteCRM's separate image tag/digest are extracted together; preserve its [coordinated upgrade procedure](/admin-guide/suitecrm/) and release-archive checksum.
+
+The `Renovate dependency coverage` workflow validates `renovate.json` and runs `tools/check-renovate-coverage.mjs` inside the selected Renovate image. It uses Renovate's real regex extractor, rejects untracked workload version variables and literal image pins outside version files, checks every external chart reference, and verifies OCA/SuiteCRM digest extraction. It reads only Git-visible paths, excluding ignored credentials. Run the same checks locally from the repository root:
+
+```bash
+renovate_tag="$(sed -n 's/^  RENOVATE_IMAGE_TAG: //p' apps/variables.yaml)"
+docker run --rm --volume "$PWD:/workspace:ro" --workdir /workspace \
+  --entrypoint renovate-config-validator "ghcr.io/renovatebot/renovate:$renovate_tag" renovate.json
+docker run --rm --volume "$PWD:/workspace:ro" --workdir /workspace \
+  --entrypoint node "ghcr.io/renovatebot/renovate:$renovate_tag" tools/check-renovate-coverage.mjs
+```
+
+Extraction proves discovery, not upstream registry access or PR creation. Check the Dependency Dashboard for lookup failures and rate-limited updates. In particular, a private/custom image without readable tags needs package visibility or read permissions fixed before Renovate can propose an update. No configuration can guarantee a PR for an upstream release that has not been published to the configured datasource.
 
 ## Deploy and verify
 

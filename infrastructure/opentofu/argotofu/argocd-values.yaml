@@ -142,7 +142,7 @@ repoServer:
       maxUnavailable: 1
   initContainers:
     - name: install-yq
-      image: mikefarah/yq:4.45.4
+      image: "" # Supplied from apps/variables.yaml.
       command: [sh, -ec]
       args:
         - cp "$(command -v yq)" /custom-tools/yq
@@ -151,7 +151,7 @@ repoServer:
           mountPath: /custom-tools
   extraContainers:
     - name: yaml-envsubst
-      image: quay.io/argoproj/argocd:v3.5.1
+      image: "" # Supplied from apps/variables.yaml.
       command: [/var/run/argocd/argocd-cmp-server]
       env:
         - name: PATH

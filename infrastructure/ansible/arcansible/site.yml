@@ -5,6 +5,7 @@
   gather_facts: true
   vars_files:
     - vars/main.yml
+    - variables.yaml
     - vars/vault.yml
   tasks:
     - name: Require Debian on the Arc VM
@@ -890,6 +891,7 @@
   gather_facts: false
   vars_files:
     - vars/main.yml
+    - variables.yaml
     - vars/vault.yml
   vars:
     nextcloud_talk_recording_config:

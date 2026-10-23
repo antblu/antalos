@@ -1,5 +1,4 @@
 homelable_root: /opt/compose/homelable
-homelable_version: "3.5.1"
 homelable_backend_bind: 172.17.0.1
 homelable_frontend_bind: 10.30.0.28
 homelable_frontend_port: "3000"

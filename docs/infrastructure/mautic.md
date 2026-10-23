@@ -90,6 +90,22 @@ shared dependencies. CronJobs use scheduling/retry recovery rather than hot stan
 No failover timing, whole-Proxmox-host resilience or backup/restore guarantee is
 established by these manifests. Replication is not an independent backup.
 
+## Identity
+
+Native SAML uses Authentik application slug `mautic`, with Mautic's public HTTPS
+origin as the SP entity ID and `/s/saml/login_check` as the assertion consumer.
+Authentik signs both responses and assertions using its existing signing key.
+Metadata and attribute settings persist in the shared NFS `config/local.php`;
+provider, mappings and access bindings persist in Authentik's database. These are
+post-deployment application settings, configured by the scripts in
+`apps/mautic/saml/`, rather than resources reconciled by Argo CD.
+
+Access is bound to `Mautic Users` or `authentik Admins`. JIT accounts use a non-admin
+`SSO Users` role with no permissions initially. Existing accounts match by username
+and keep their roles; review matching usernames before granting identity access.
+Authentik availability is required for new SAML logins. Local recovery login at
+`/s/login` remains available. See the [SAML runbook](/admin-guide/mautic/#saml-with-authentik).
+
 See [Mautic operations](/admin-guide/mautic/), the
 [official Docker image](https://github.com/mautic/docker-mautic),
 [Mautic configuration](https://docs.mautic.org/en/7.2/configuration/settings.html)

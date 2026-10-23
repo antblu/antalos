@@ -243,3 +243,9 @@ See `docs/admin-guide/homelable.md` for OIDC/Proxmox prerequisites, DNS/firewall
 ownership, handbook import, backup/restore, updates and rollback.
 
 Homelable physical rack and EX3300 assignments are curated from the owner’s workbook in `homelable/physical.yaml`. The controller exporter requires PyYAML and includes these facts automatically; the API importer adds the **12U Rack** design and retains unrelated rack objects. See `docs/infrastructure/homelable-physical.md` for positions, port assignments and source discrepancies.
+
+## Workload image versions
+
+Renovate-tracked workload and build-base pins live in project-local `variables.yaml`. `site.yml` loads this file alongside `vars/main.yml`, and the existing Compose environment template passes the values to Docker Compose. Keep deployment settings and protected vault inputs in their existing files. Local source edits do not update a running guest; deploy through the owning playbook.
+
+Homelable loads its release pin from `homelable/variables.yaml`. Docling build arguments have no Dockerfile defaults; the Compose build supplies the project-local versions.

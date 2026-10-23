@@ -7,11 +7,82 @@
     {
       "customType": "regex",
       "managerFilePatterns": [
+        "/^apps[/]variables[.]yaml$/",
+        "/^infrastructure[/].*[/]variables[.]yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)(?: registryUrl=(?<registryUrl>[^\\s]+))?(?: versioning=(?<versioning>[^\\s]+))?(?: extractVersion=(?<extractVersion>[^\\s]+))?(?: depType=(?<depType>[^\\s]+))?\\r?\\n[ \\t]*[A-Za-z][A-Za-z0-9_]*:[ \\t]*[\"\\x27]?(?<currentValue>[^\\s\"\\x27@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?"
+      ]
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^apps[/]variables[.]yaml$/",
+        "/^infrastructure[/].*[/]variables[.]yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate-image: depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[^\\s]+))?\\r?\\n[ \\t]*[A-Za-z][A-Za-z0-9_]*:[ \\t]*[\"\\x27]?[^\\s\"\\x27]+?:(?<currentValue>[^\\s\"\\x27@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?"
+      ],
+      "datasourceTemplate": "docker",
+      "depTypeTemplate": "image"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
         "/^apps[/]variables[.]yaml$/"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+[A-Z][A-Z0-9_]*:\\s*[\"']?(?<currentValue>[^\\s\"']+)"
-      ]
+        "  ODOO_OCA_STORAGE_REVISION: (?<currentDigest>[a-f0-9]{40})"
+      ],
+      "datasourceTemplate": "git-refs",
+      "depNameTemplate": "https://github.com/OCA/storage.git",
+      "currentValueTemplate": "19.0",
+      "versioningTemplate": "git",
+      "depTypeTemplate": "coordinated",
+      "autoReplaceStringTemplate": "  ODOO_OCA_STORAGE_REVISION: {{{newDigest}}}"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^apps[/]variables[.]yaml$/"
+      ],
+      "matchStrings": [
+        "  ODOO_OCA_SERVER_TOOLS_REVISION: (?<currentDigest>[a-f0-9]{40})"
+      ],
+      "datasourceTemplate": "git-refs",
+      "depNameTemplate": "https://github.com/OCA/server-tools.git",
+      "currentValueTemplate": "19.0",
+      "versioningTemplate": "git",
+      "depTypeTemplate": "coordinated",
+      "autoReplaceStringTemplate": "  ODOO_OCA_SERVER_TOOLS_REVISION: {{{newDigest}}}"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^apps[/]variables[.]yaml$/"
+      ],
+      "matchStrings": [
+        "  ODOO_OCA_SERVER_AUTH_REVISION: (?<currentDigest>[a-f0-9]{40})"
+      ],
+      "datasourceTemplate": "git-refs",
+      "depNameTemplate": "https://github.com/OCA/server-auth.git",
+      "currentValueTemplate": "19.0",
+      "versioningTemplate": "git",
+      "depTypeTemplate": "coordinated",
+      "autoReplaceStringTemplate": "  ODOO_OCA_SERVER_AUTH_REVISION: {{{newDigest}}}"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^apps[/]variables[.]yaml$/"
+      ],
+      "matchStrings": [
+        "  SUITECRM_IMAGE_TAG: (?<currentValue>[^\\s]+)\\r?\\n  SUITECRM_IMAGE_DIGEST: (?<currentDigest>sha256:[a-f0-9]+)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "ghcr.io/antblu/suitecrm",
+      "depTypeTemplate": "coordinated",
+      "autoReplaceStringTemplate": "  SUITECRM_IMAGE_TAG: {{{newValue}}}\n  SUITECRM_IMAGE_DIGEST: {{{newDigest}}}"
     }
   ],
   "packageRules": [
@@ -32,6 +103,85 @@
         "ghcr.io/open-webui/open-webui"
       ],
       "allowedVersions": "/^[0-9]+\\.[0-9]+\\.[0-9]+$/"
+    },
+    {
+      "description": "Checksum-pinned releases require coordinated checksum and compatibility review",
+      "matchDepTypes": [
+        "coordinated"
+      ],
+      "draftPR": true,
+      "addLabels": [
+        "coordinated-upgrade"
+      ]
+    },
+    {
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchDepTypes": [
+        "image",
+        "floating"
+      ],
+      "pinDigests": true
+    },
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/antblu/antalos-medusa",
+        "ghcr.io/zammad/zammad"
+      ],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$"
+    },
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/antblu/mautic"
+      ],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>\\d+)-v(?<build>\\d+)$"
+    },
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "intel/pytorch"
+      ],
+      "versioning": "regex:^xpu-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>ubuntu\\d+\\.\\d+)-(?<build>\\d+)$"
+    },
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "jellyfin/jellyfin"
+      ],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$"
+    },
+    {
+      "matchDatasources": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "/^@medusajs[/]/"
+      ],
+      "groupName": "Medusa framework"
     }
-  ]
+  ],
+  "kubernetes": {
+    "managerFilePatterns": [
+      "/^(apps|infrastructure)[/].*[.]ya?ml$/"
+    ]
+  },
+  "argocd": {
+    "managerFilePatterns": [
+      "/^apps[/].*[/]app[.]yaml$/"
+    ]
+  }
 }

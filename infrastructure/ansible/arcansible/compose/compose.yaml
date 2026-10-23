@@ -2,7 +2,7 @@ name: antalos-debian-arc
 
 services:
   immich-machine-learning:
-    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_MACHINE_LEARNING_VERSION}-openvino
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_MACHINE_LEARNING_VERSION}
     container_name: immich-machine-learning
     restart: unless-stopped
     environment:
@@ -107,7 +107,7 @@ services:
       - no-new-privileges:true
 
   trailarr:
-    image: nandyalu/trailarr:latest
+    image: ${TRAILARR_IMAGE}
     container_name: trailarr
     restart: unless-stopped
     environment:
@@ -134,7 +134,7 @@ services:
       - c 226:* rmw
 
   tdarr:
-    image: ghcr.io/haveagitgat/tdarr:latest
+    image: ${TDARR_IMAGE}
     container_name: tdarr
     restart: unless-stopped
     environment:

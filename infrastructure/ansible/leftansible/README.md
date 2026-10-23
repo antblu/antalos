@@ -89,3 +89,7 @@ Compose media bind mounts forbid Docker from creating a missing host directory.
 Check the mounted source before starting the stack; a bare local mountpoint is
 not media storage. Back up the local Docker volumes and the protected `.env` /
 application configuration files separately from the NFS media export.
+
+## Workload image versions
+
+Image and Docker build-base pins live in this project's `variables.yaml` and carry Renovate annotations. The playbook renders both `caddy/compose.yaml` and `media/compose.yaml` with these values after copying their projects. The repository copies are Jinja templates; run Docker Compose against the rendered guest files. Rendering does not start or restart either stack. Protected `.env` files continue supplying credentials and runtime settings. The optional ytdlp2strm build receives `YTDLP2STRM_BASE_IMAGE` through Compose when enabled.

@@ -1,0 +1,32 @@
+name: Renovate dependency coverage
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    runs-on: self-hosted
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Validate configuration and dependency coverage
+        env:
+          RENOVATE_BASE_REF: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          renovate_tag="$(sed -n 's/^  RENOVATE_IMAGE_TAG: //p' apps/variables.yaml)"
+          test -n "$renovate_tag"
+          image="ghcr.io/renovatebot/renovate:$renovate_tag"
+          docker run --rm --volume "$PWD:/workspace:ro" --workdir /workspace \
+            --entrypoint renovate-config-validator "$image" renovate.json
+          docker run --rm --volume "$PWD:/workspace:ro" --workdir /workspace \
+            --env RENOVATE_BASE_REF --entrypoint node "$image" tools/check-renovate-coverage.mjs

@@ -4,9 +4,9 @@ fullnameOverride: ""
 app:
   image:
     repository: invoiceninja/invoiceninja-debian
-    tag: latest
+    tag: ""
     pullPolicy: IfNotPresent
-  busyboxTag: "1.36"
+  busyboxTag: ""
   replicaCount: 2
   resources: {}
   podSecurityContext:
@@ -37,7 +37,7 @@ app:
 nginx:
   image:
     repository: nginxinc/nginx-unprivileged
-    tag: alpine
+    tag: ""
     pullPolicy: IfNotPresent
   replicaCount: 2
   containerPort: 8080

@@ -62,7 +62,17 @@ resource "helm_release" "argocd" {
   namespace        = "argocd"
   create_namespace = true
   version          = yamldecode(file("${path.module}/../../../apps/variables.yaml")).variables.ARGOCD_CHART_VERSION
-  values           = [file("${path.module}/argocd-values.yaml")]
+  values = [file("${path.module}/argocd-values.yaml")]
+  set = [
+    {
+      name  = "repoServer.initContainers[0].image"
+      value = "mikefarah/yq:${yamldecode(file("${path.module}/../../../apps/variables.yaml")).variables.ARGOCD_YQ_IMAGE_TAG}"
+    },
+    {
+      name  = "repoServer.extraContainers[0].image"
+      value = "quay.io/argoproj/argocd:${yamldecode(file("${path.module}/../../../apps/variables.yaml")).variables.ARGOCD_CMP_IMAGE_TAG}"
+    }
+  ]
 
   # This release only bootstraps Argo CD. Once argocd-self is running, Argo CD
   # is the steady-state owner of its chart resources and configuration.

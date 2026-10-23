@@ -19,4 +19,4 @@ The SealedSecret is scoped to `renovate/renovate-github-app`. Its PEM key is mou
 
 The pod runs as UID/GID 12021, has no Kubernetes API token, and drops Linux capabilities. `/tmp` uses an 8Gi `emptyDir`; other container-local files are ephemeral too. No persistent cache or shared filesystem is required. Outbound access to GitHub and dependency registries is required; no inbound endpoint is exposed.
 
-Image tag, schedule, and public App identifiers live in `apps/variables.yaml`. Sealed credentials and all service-specific resources stay in `apps/renovate/`. See the [runbook](/admin-guide/renovate/) for rotation and verification.
+Image tag, schedule, and public App identifiers live in `apps/variables.yaml`. Dependency discovery covers centralized application Helm/image/library pins, project-local VM workload pins, and native package/provider/action manifests. The coverage workflow checks discovery with Renovate itself; registry access and actual PR creation remain separate evidence. Sealed credentials and all service-specific resources stay in `apps/renovate/`. See the [runbook](/admin-guide/renovate/) for rotation and verification.

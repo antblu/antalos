@@ -1,0 +1,7 @@
+# VM workload versions; consumed by site.yml and Compose environment templates.
+# renovate-image: depName=ghcr.io/mostlygeek/llama-swap
+llama_swap_image: ghcr.io/mostlygeek/llama-swap:unified-cuda13
+# renovate-image: depName=alpine
+llama_baseline_restorer_image: alpine:3.22
+# renovate-image: depName=ghcr.io/speaches-ai/speaches
+speaches_image: ghcr.io/speaches-ai/speaches:0.9.0-rc.3-cuda-12.6.3@sha256:5c6206a349e90b9a6782342917e72f84fc7cb60e8afd540f6aa625831ac1fd0f
