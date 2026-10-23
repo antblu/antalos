@@ -58,7 +58,7 @@ This integration reads the catalog from Odoo into Medusa. It does not export ord
 
 ### Provision the integration identity
 
-Odoo must already have the product catalog models installed, for example through Sales or Inventory. Provisioning stops if they are absent; it does not install or upgrade Odoo modules against serving replicas.
+Odoo must have the product catalog models installed, for example through Sales or Inventory, before synchronization can run. Account/key provisioning can precede that installation: the tool reports missing models and defers their read ACLs. It does not install or upgrade Odoo modules against serving replicas. Keep sync disabled while any required model is missing.
 
 From the repository root, with cluster access, run this explicit account/key creation operation:
 
@@ -66,7 +66,15 @@ From the repository root, with cluster access, run this explicit account/key cre
 python3 apps/medusa/tools/provision-odoo-integration.py
 ```
 
-The tool creates `medusa-integration` and the **Medusa Catalog Reader** group. The account has no password and belongs only to this group, with read ACLs for products, variants, attributes, currencies, companies, and units of measure. It receives no Internal User, administrator, Sales, or Inventory role, and uses the Odoo shell's current company. Existing company record rules apply. Effective create/write/delete permissions on those catalog models are rejected before issuing a key. This account is separate from Authentik JIT provisioning.
+The tool creates `medusa-integration` and the **Medusa Catalog Reader** group. The account has no password and belongs only to this group, with read ACLs for installed product, variant, attribute, currency, company, and unit-of-measure models. It receives no Internal User, administrator, Sales, or Inventory role, and uses the Odoo shell's current company. Existing company record rules apply. Effective create/write/delete permissions on those installed models are rejected before issuing a key. This account is separate from Authentik JIT provisioning.
+
+After installing missing catalog modules through a separately planned Odoo maintenance operation, reconcile their read ACLs without generating or rotating the API key:
+
+```bash
+python3 apps/medusa/tools/provision-odoo-integration.py --reconcile-access
+```
+
+On **2026-10-23 (America/Denver)**, provisioning created this dedicated account and persistent RPC key and wrote the local SealedSecret. Product templates, variants, attribute models, and units of measure were absent, so only the installed currency/company models received read ACLs. The credential was not deployed, sync remained disabled, and no product synchronization was performed.
 
 It generates a persistent RPC-scoped API key and writes only encrypted values to `apps/medusa/odoo-secret.yaml`. The SealedSecret is bound to namespace `medusa`, name `medusa-odoo`, keys `ODOO_USERNAME` and `ODOO_API_KEY`, using `sealed-secrets-controller` in namespace `sealed-secrets`. Plaintext credentials cross only process pipes and memory. The public sealing certificate is fetched before creating the account; do not enable tracing or print captured subprocess output.
 

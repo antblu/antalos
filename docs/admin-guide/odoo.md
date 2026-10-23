@@ -53,6 +53,8 @@ For offboarding, remove Authentik **Odoo Users** membership and archive the Odoo
 
 ## Medusa catalog reader
 
+Catalog ACLs are deferred for models that are not installed. After the catalog modules are installed, run the provisioning tool with `--reconcile-access` to grant their read permissions while preserving the existing API key. Keep Medusa synchronization disabled until the required models and ACLs are present.
+
 Medusa's optional catalog integration uses a dedicated `medusa-integration` account and a **Medusa Catalog Reader** group, with read-only catalog ACLs and a persistent RPC-scoped key. It has no password, Internal User role, or Authentik JIT identity. Provision it using the [Medusa integration procedure](/admin-guide/medusa/#odoo-catalog-integration); the owning credential is sealed in `apps/medusa/odoo-secret.yaml` for the consuming namespace. This is a one-way product integration; no Odoo inventory, order, or customer writes are performed. Archiving the account or revoking its key stops future synchronization. Odoo database backups preserve its account, ACLs, and key hash; preserve the sealed credential separately for Medusa recovery.
 
 ## Initial administrator access

@@ -5,6 +5,7 @@ Run from the repository root. This deliberately creates an Odoo account/key;
 it neither applies Kubernetes resources nor enables the product sync.
 """
 import base64
+import argparse
 import json
 from pathlib import Path
 import shutil
@@ -20,6 +21,7 @@ ODOO_SCRIPT = r'''
 import json
 from odoo import Command
 
+issue_key = True
 login = 'medusa-integration'
 models = [
     'product.template', 'product.product', 'product.template.attribute.value',
@@ -32,7 +34,7 @@ if not user and env['res.users'].sudo().with_context(active_test=False).search_c
     raise RuntimeError('Login already exists without the integration ownership marker; refusing to claim it')
 if user and (user.login != login or not user.active):
     raise RuntimeError('Integration account was renamed or archived; review it before provisioning')
-if user and env['res.users.apikeys'].sudo().search_count([('user_id', '=', user.id)]):
+if issue_key and user and env['res.users.apikeys'].sudo().search_count([('user_id', '=', user.id)]):
     raise RuntimeError('Integration account already has an API key; reuse its sealed credential or revoke it deliberately')
 if not group:
     group = env['res.groups'].sudo().create({'name': 'Medusa Catalog Reader', 'share': True})
@@ -40,10 +42,14 @@ if not group:
         'module': 'medusa_integration', 'name': 'catalog_reader',
         'model': 'res.groups', 'res_id': group.id, 'noupdate': True,
     })
+missing_models = []
+available_models = []
 for name in models:
     model = env['ir.model'].sudo().search([('model', '=', name)], limit=1)
     if not model:
-        raise RuntimeError('Required catalog model is missing: ' + name)
+        missing_models.append(name)
+        continue
+    available_models.append(name)
     access = env['ir.model.access'].sudo().search([('group_id', '=', group.id), ('model_id', '=', model.id)])
     values = {'name': 'Medusa reader ' + name, 'model_id': model.id, 'group_id': group.id,
               'perm_read': True, 'perm_write': False, 'perm_create': False, 'perm_unlink': False}
@@ -56,7 +62,6 @@ if not user:
         'name': 'Medusa Integration', 'login': login,
         'group_ids': [Command.set(group.ids)],
         'company_id': env.company.id, 'company_ids': [Command.set(env.company.ids)],
-        'password': False,
     })
     env['ir.model.data'].sudo().create({
         'module': 'medusa_integration', 'name': 'user_catalog',
@@ -66,17 +71,21 @@ if user.group_ids != group:
     raise RuntimeError('Integration account has unexpected group membership; refusing to issue a key')
 # Check effective permissions, including ACLs from other installed addons.
 access = env['ir.model.access'].with_user(user)
-for model in models:
+for model in available_models:
     if not access.check(model, 'read', raise_exception=False):
         raise RuntimeError('Missing read permission: ' + model)
     for mode in ('write', 'create', 'unlink'):
         if access.check(model, mode, raise_exception=False):
             raise RuntimeError('Unexpected mutation permission: ' + model + '/' + mode)
-key = env['res.users.apikeys'].with_user(user).sudo()._generate(
-    'rpc', 'Medusa catalog sync', False,
-)
-env.cr.commit()
-print('MEDUSA_ODOO_CREDENTIAL=' + json.dumps({'ODOO_USERNAME': login, 'ODOO_API_KEY': key}))
+if issue_key:
+    key = env['res.users.apikeys'].with_user(user).sudo()._generate(
+        'rpc', 'Medusa catalog sync', False,
+    )
+    env.cr.commit()
+    print('MEDUSA_ODOO_CREDENTIAL=' + json.dumps({'ODOO_USERNAME': login, 'ODOO_API_KEY': key}))
+else:
+    env.cr.commit()
+print('MEDUSA_ODOO_PENDING=' + json.dumps(missing_models))
 '''
 
 
@@ -84,7 +93,37 @@ def run(args, **kwargs):
     return subprocess.run(args, capture_output=True, text=True, check=True, **kwargs)
 
 
+def run_odoo(script):
+    pods = json.loads(run(KUBE_ARGS + ["-n", "odoo", "get", "pods", "-l",
+                                      "app.kubernetes.io/name=odoo", "-o", "json"], timeout=25).stdout)
+    ready = [pod for pod in pods['items'] if not pod['metadata'].get('deletionTimestamp')
+             and any(c['type'] == 'Ready' and c['status'] == 'True' for c in pod['status'].get('conditions', []))]
+    if not ready:
+        raise RuntimeError("No ready Odoo pod is available")
+    return run(KUBE_ARGS + ["-n", "odoo", "exec", "-i", ready[0]['metadata']['name'], "-c", "odoo", "--",
+                           "odoo", "shell", "--config=/run/odoo/odoo.conf", "--no-http"], input=script, timeout=120)
+
+
+def report_pending(result):
+    marker = 'MEDUSA_ODOO_PENDING='
+    lines = [line[len(marker):] for line in result.stdout.splitlines() if line.startswith(marker)]
+    if len(lines) != 1:
+        raise RuntimeError("Odoo did not confirm the catalog access state")
+    missing = json.loads(lines[0])
+    if missing:
+        print('Catalog models are not installed; sync must remain disabled. Pending read ACLs: ' + ', '.join(missing))
+        print('After catalog installation, run this tool with --reconcile-access; it will preserve the existing key.')
+
+
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--reconcile-access', action='store_true', help='Reconcile read ACLs without issuing or rotating a key')
+    args = parser.parse_args()
+    if args.reconcile_access:
+        result = run_odoo(ODOO_SCRIPT.replace('issue_key = True', 'issue_key = False'))
+        report_pending(result)
+        print('Reconciled Odoo catalog read permissions without changing the API key.')
+        return
     if OUTPUT.exists():
         raise RuntimeError(f"{OUTPUT} already exists; refusing to replace integration credentials")
     kubeseal = shutil.which("kubeseal") or "/home/linuxbrew/.linuxbrew/bin/kubeseal"
@@ -97,15 +136,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="medusa-odoo-") as tmp:
         cert_path = Path(tmp) / "controller.pem"
         cert_path.write_text(cert)
-        pods = json.loads(run(KUBE_ARGS + ["-n", "odoo", "get", "pods", "-l",
-                                          "app.kubernetes.io/name=odoo", "-o", "json"], timeout=25).stdout)
-        ready = [pod for pod in pods['items'] if not pod['metadata'].get('deletionTimestamp')
-                 and any(c['type'] == 'Ready' and c['status'] == 'True' for c in pod['status'].get('conditions', []))]
-        if not ready:
-            raise RuntimeError("No ready Odoo pod is available")
-        result = run(KUBE_ARGS + ["-n", "odoo", "exec", "-i", ready[0]['metadata']['name'], "-c", "odoo", "--",
-                                 "odoo", "shell", "--config=/run/odoo/odoo.conf", "--no-http"],
-                     input=ODOO_SCRIPT, timeout=120)
+        result = run_odoo(ODOO_SCRIPT)
         lines = [line[len(MARKER):] for line in result.stdout.splitlines() if line.startswith(MARKER)]
         if len(lines) != 1:
             raise RuntimeError("Odoo did not return a credential; review account/key state before retrying")
@@ -125,6 +156,7 @@ def main():
         with OUTPUT.open('x') as handle:
             handle.write('\n'.join(content))
     print(f"Created read-only Odoo account medusa-integration and wrote {OUTPUT}. No resources applied; sync remains disabled.")
+    report_pending(result)
 
 
 if __name__ == '__main__':
