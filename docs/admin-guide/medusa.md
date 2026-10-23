@@ -17,7 +17,7 @@ The expected backend hostname is `medusa.antblu.net`. DNS and edge routing must 
 
 ## antID administrator login
 
-The repository's custom OIDC provider in `apps/medusa/image/src/modules/antid/` is registered as `antid`, with display name `antID`. It uses the open-source `openid-client` library through Medusa's custom-provider interface; it does not load Medusa's licensed native OIDC provider. Admin offers both its email/password form and **Continue with antID** for the `user` actor. Existing Medusa local email/password credentials remain usable; Authentik passwords are not copied into Medusa. Customers continue to use email/password authentication. The custom `/auth/emailpass/user` route rejects public self-provisioning and email-based claiming of administrator accounts; local administrator creation uses invitations or operator provisioning. No custom Admin widget is needed.
+The repository's custom OIDC provider in `apps/medusa/image/src/modules/antid/` is registered as `antid`, with display name `antID`. It uses the open-source `openid-client` library through Medusa's custom-provider interface; it does not load Medusa's licensed native OIDC provider. Admin offers both its email/password form and **Continue with antID** for the `user` actor. Existing Medusa local email/password credentials remain usable; Authentik passwords are not copied into Medusa. The custom `/auth/emailpass/user` route rejects public self-provisioning and email-based claiming of administrator accounts; local administrator creation uses invitations or operator provisioning. No custom Admin widget is needed.
 
 Configure the existing Authentik Medusa confidential client with this exact redirect URI (including its query string):
 
@@ -32,6 +32,17 @@ Bind the Authentik application to the identities or groups allowed to administer
 The provider uses authorization code with S256 PKCE, nonce validation, issuer/audience/expiry checks, and JWKS signature verification. It accepts only the configured callback URL. Discovery is lazy, so building the image requires neither IdP access nor a client secret; authentication requires the runtime `OIDC_CLIENT_SECRET`. OAuth state expires after ten minutes and is consumed on callback through the Sentinel-backed legacy Redis cache required by the Auth module, alongside the existing modern caching provider, so a callback can reach a different server pod. The callback uses Medusa's token-generation helper to retain verification and MFA checks. Losing Redis state during failover may require restarting login. Logging out of Medusa does not establish that the Authentik browser session has ended.
 
 After publishing and deployment, verify that `/auth/user/providers` advertises `antid` with display name `antID`, the Admin button redirects to Authentik with the exact callback, and a permitted user returns to Admin successfully. Confirm that an identity denied by the Authentik application policy cannot sign in. An external interactive login is still required after deploying a changed image to prove the complete user transaction.
+
+## Google customer login
+
+The storefront's Google sign-in uses Medusa's Google auth provider directly for the `customer` actor. The `user` actor remains limited to `emailpass` and `antid`; a Google customer login cannot provision an Admin user. Customers can still use email/password.
+
+1. In Google Cloud, create a **Web application** OAuth client and allow `https://emiliany.com/api/auth/google/callback` as its exact authorized redirect URI. Complete any Google consent-screen requirements for the intended audience.
+2. Seal a `medusa-google` Secret in namespace `medusa` with keys `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, using the `sealed-secrets-controller` controller in namespace `sealed-secrets`. Keep the plaintext inputs outside Git. The Secret references in the server, worker, and migration workloads are optional so an unconfigured installation remains startable; the provider registers only when both values exist.
+3. Publish the new backend image tag and reconcile the Medusa Application. Restart the server and worker pods after adding or rotating the optional Secret because environment variables are read at process start.
+4. In the Emiliany deployment, set `COMMERCE_DEMO_MODE=false`, configure a real Medusa publishable key, and set `GOOGLE_CUSTOMER_LOGIN_ENABLED=true` only after the provider is available. The storefront callback is server-side and writes the existing HttpOnly customer session cookie.
+
+On first successful Google callback, the storefront creates the Medusa customer through the authenticated Store API and refreshes the token so it has a customer actor ID. Later Google logins reuse that identity. An existing email/password customer with the same email requires an explicit authenticated provider-linking flow; Google email alone must not claim that account. Verify first login, repeat login, `/store/customers/me`, and the existing Admin sign-in separately. An uncommitted image/configuration edit or a redirect to Google is not proof of a working customer session.
 
 ### Login returns to Admin and fails with HTTP 401
 

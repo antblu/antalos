@@ -43,6 +43,9 @@ spec:
             name: medusa-s3
         - secretRef:
             name: medusa-oidc
+        - secretRef:
+            name: medusa-google
+            optional: true
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

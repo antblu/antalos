@@ -1,6 +1,9 @@
 import { defineConfig } from "@medusajs/framework/utils"
 
 const redisUrl = process.env.REDIS_URL
+const googleCustomerConfigured = Boolean(
+  process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_CALLBACK_URL,
+)
 const redisOptions = {
   sentinels: (process.env.REDIS_SENTINELS || "").split(",").filter(Boolean)
     .map((host) => ({ host, port: 26379 })),
@@ -28,7 +31,7 @@ module.exports = defineConfig({
       cookieSecret: process.env.COOKIE_SECRET!,
       authMethodsPerActor: {
         user: ["emailpass", "antid"],
-        customer: ["emailpass"],
+        customer: ["emailpass", ...(googleCustomerConfigured ? ["google"] : [])],
       },
     },
   },
@@ -42,6 +45,17 @@ module.exports = defineConfig({
       options: {
         providers: [
           { resolve: "@medusajs/medusa/auth-emailpass", id: "emailpass" },
+          ...(googleCustomerConfigured
+            ? [{
+                resolve: "@medusajs/medusa/auth-google",
+                id: "google",
+                options: {
+                  clientId: process.env.GOOGLE_CLIENT_ID,
+                  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+                  callbackUrl: process.env.GOOGLE_CALLBACK_URL,
+                },
+              }]
+            : []),
           {
             resolve: "./src/modules/antid",
             id: "antid",
