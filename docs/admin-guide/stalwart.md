@@ -81,6 +81,12 @@ Relay authentication, DNS, outbound TCP access, recipient rejection, and local m
 
 ## Troubleshooting
 
+The HTTP listener behind Traefik must keep `Http.useXForwarded` enabled, as declared in the bootstrap configuration, so visitor traffic is attributed to the forwarded client address. Port 8080 is internal; expose the web interface through the trusted ingress. Without forwarded client IPs, scanner requests can cause Stalwart to ban the Traefik pod addresses and return HTTP 502 for every visitor while readiness remains healthy. Check Stalwart's `security.ip-blocked` events against the current Traefik pod addresses, correct the HTTP setting, and remove only the corresponding proxy `BlockedIp` records. Verify the public account and administration pages afterward; do not clear unrelated client bans.
+
+Bootstrap also upserts non-expiring `AllowedIp` entries for `KUBERNETES_POD_CIDR` and the two `STALWART_PROXY_TRUSTED_NETWORK_*` addresses. The pod-network entry covers Traefik after pod replacement; it also exempts other internal pods from automatic bans. Public clients retain their own forwarded addresses and remain subject to automatic bans. These allow entries do not grant authentication or relay permission and do not expand the networks trusted to send PROXY protocol headers.
+
+After saving the correction, run the `ReloadSettings` and `ReloadBlockedIps` actions so settings and the in-memory allowed/blocked IP lists refresh across the mail replicas. Saving the objects alone does not prove the serving processes have loaded the change.
+
 For bootstrap 401 responses, verify the administrator Secret format and the active recovery-auth configuration without printing the credential. For mail delays, inspect queue and delivery errors, DNS, and upstream reachability. A healthy HTTPS page does not prove SMTP delivery.
 
 ## Manifest and upstream reference
