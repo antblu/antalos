@@ -2,7 +2,7 @@
 # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
 immich_machine_learning_version: v3.1.0-openvino
 # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/aio-talk-recording depType=floating
-nextcloud_talk_recording_version: latest@sha256:68ef053d0271d202f03b43f41f7bf1369d03b691d67aa5debca741ab363b4ac8
+nextcloud_talk_recording_version: latest@sha256:8c8e5451b276e2f49bc2ec4940bec6a231ab28de7c0b9c20c71cba8f9dfba8a6
 # renovate: datasource=docker depName=jellyfin/jellyfin
 jellyfin_version: 12.0.20260908-012347
 # renovate: datasource=docker depName=registry.gitlab.com/storyteller-platform/storyteller depType=floating
