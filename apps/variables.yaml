@@ -86,7 +86,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/antblu/cal-diy-api
   CALDIY_API_IMAGE_TAG: oidc-64c8693b971c
   # renovate: datasource=docker depName=curlimages/curl
-  CALDIY_CURL_IMAGE_TAG: 8.16.0
+  CALDIY_CURL_IMAGE_TAG: 8.23.0
   # renovate: datasource=docker depName=ghcr.io/juanfont/headscale
   HEADSCALE_IMAGE_TAG: v0.29.5
   # renovate: datasource=docker depName=ghcr.io/tale/headplane
@@ -102,7 +102,7 @@ variables:
   # renovate: datasource=docker depName=haproxy
   COUCHDB_HAPROXY_IMAGE_TAG: 3.2.23-alpine
   # renovate: datasource=docker depName=curlimages/curl
-  COUCHDB_CURL_IMAGE_TAG: 8.16.0
+  COUCHDB_CURL_IMAGE_TAG: 8.23.0
   # renovate: datasource=docker depName=litestream/litestream
   LITESTREAM_IMAGE_TAG: 0.5.17
   # renovate: datasource=docker depName=nextcloud
