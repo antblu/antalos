@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emiliany
+  namespace: emiliany
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: emiliany
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: emiliany
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: emiliany
+      containers:
+        - name: storefront
+          image: ${EMILIANY_IMAGE_REPOSITORY}:${EMILIANY_IMAGE_TAG}
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: NEXT_PUBLIC_SITE_URL
+              value: https://${EMILIANY_HOST}
+            - name: COMMERCE_DEMO_MODE
+              value: '${EMILIANY_COMMERCE_DEMO_MODE}'
+            - name: GOOGLE_CUSTOMER_LOGIN_ENABLED
+              value: 'false'
+            - name: MEDUSA_BACKEND_URL
+              value: https://${MEDUSA_HOST}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: '1'
+              memory: 768Mi
+          volumeMounts:
+            - name: cache
+              mountPath: /app/.next/cache
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: cache
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: emiliany
+  namespace: emiliany
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: emiliany
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emiliany
+  namespace: emiliany
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: emiliany
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
