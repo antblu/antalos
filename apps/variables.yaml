@@ -186,7 +186,7 @@ variables:
   NEXTCLOUD_DECK_VERSION: 1.18.4
   NEXTCLOUD_DECK_SHA512: e5008a683659036920e0e07f8ecfb814ac91e5799fe47f6f50382ef8216f273ec1306690a9aa275b21ba7ebbd89e2f340f54acdacae698b4766e4d593313fe6c
   # renovate: datasource=nextcloud depName=eurooffice registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
-  NEXTCLOUD_EUROOFFICE_VERSION: 11.0.4
+  NEXTCLOUD_EUROOFFICE_VERSION: 11.0.6
   NEXTCLOUD_EUROOFFICE_SHA512: 9851e71d9aaf01a2648fe189e68b323801c30ecff13a65c9698f87ca18f8ef9eb6eec487adf3d471f2e3ad7311574eabede5fdf23d9087d3c3fb3863b0f760b1
   # renovate: datasource=nextcloud depName=external registryUrl=https://apps.nextcloud.com/api/v1/apps.json depType=coordinated
   NEXTCLOUD_EXTERNAL_VERSION: 9.0.1
