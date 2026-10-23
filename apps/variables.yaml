@@ -168,7 +168,7 @@ variables:
   NEXTCLOUD_SIDE_MENU_RELEASES_URL: https://gitnet.fr/deblan/side_menu/releases/download
   NEXTCLOUD_TASKS_RELEASES_URL: https://github.com/nextcloud/tasks/releases/download
   # renovate: datasource=nextcloud depName=announcementcenter registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_ANNOUNCEMENTCENTER_VERSION: 7.5.0
+  NEXTCLOUD_ANNOUNCEMENTCENTER_VERSION: 7.5.1
   # renovate: datasource=nextcloud depName=assistant registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_ASSISTANT_VERSION: 3.5.1
   # renovate: datasource=nextcloud depName=calendar registryUrl=https://apps.nextcloud.com/api/v1/apps.json
