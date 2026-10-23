@@ -19,6 +19,8 @@ This runbook deploys the service from `apps/nextcloud/` and completes the config
 
 ## 2. Reconcile the application
 
+Nextcloud add-on archives are selected by the release versions in `apps/variables.yaml`, without repository-pinned SHA-512 checksums. The installer records each installed version in a `.APP_ID.gitops-version` file beside the app directory and skips that version on later runs. Existing checksum markers are replaced on the first installation with this scheme, which downloads the configured releases again.
+
 Publish the reviewed manifests and shared variables to the branch tracked by your Argo CD Applications. Local edits are not deployment inputs until that branch contains them. Let the root app-of-apps discover this service and retain its declared hook order; do not apply files containing unresolved variable placeholders directly.
 
 From the repository root, inspect the Application and its namespace:

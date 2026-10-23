@@ -19,8 +19,6 @@ jobs:
         with:
           fetch-depth: 0
       - name: Validate configuration and dependency coverage
-        env:
-          RENOVATE_BASE_REF: ${{ github.event.pull_request.base.sha }}
         shell: bash
         run: |
           renovate_tag="$(sed -n 's/^  RENOVATE_IMAGE_TAG: //p' apps/variables.yaml)"
@@ -29,4 +27,4 @@ jobs:
           docker run --rm --volume "$PWD:/workspace:ro" --workdir /workspace \
             --entrypoint renovate-config-validator "$image" renovate.json
           docker run --rm --volume "$PWD:/workspace:ro" --workdir /workspace \
-            --env RENOVATE_BASE_REF --entrypoint node "$image" tools/check-renovate-coverage.mjs
+            --entrypoint node "$image" tools/check-renovate-coverage.mjs

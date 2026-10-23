@@ -69,14 +69,6 @@ for (const file of [...walk('apps'), ...walk('infrastructure/ansible')]) {
     if (/^ARG\s+\w*(?:IMAGE|VERSION|TAG)\w*=/.test(line)) errors.push(`${file}: hardcoded build-argument default`);
   }
 }
-// A version-only PR must never silently retain a checksum for the old archive.
-if (process.env.RENOVATE_BASE_REF) {
-  const previous = execFileSync('git', ['-c', `safe.directory=${root}`, 'show', `${process.env.RENOVATE_BASE_REF}:apps/variables.yaml`], { encoding: 'utf8' });
-  const get = (text, key) => new RegExp(`^  ${key}: (.+)$`, 'm').exec(text)?.[1];
-  for (const [, key] of variables.matchAll(/^  (NEXTCLOUD_\w+)_SHA512:/gm)) {
-    if (get(previous, `${key}_VERSION`) !== get(variables, `${key}_VERSION`) && get(previous, `${key}_SHA512`) === get(variables, `${key}_SHA512`)) errors.push(`${key}: update the archive checksum with the version`);
-  }
-}
 const authentik = extracted.find((dep) => dep.depName === 'authentik');
 assert.equal(authentik?.currentValue, /^  AUTHENTIK_CHART_VERSION: (.+)$/m.exec(variables)?.[1]);
 assert(authentik?.registryUrls?.some((url) => url.startsWith('https://charts.goauthentik.io')));
