@@ -579,7 +579,7 @@ variables:
   MEDUSA_NODE_IMAGE_TAG: 24-bookworm-slim
   MEDUSA_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-medusa
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-medusa
-  MEDUSA_IMAGE_TAG: 2.22.0-6
+  MEDUSA_IMAGE_TAG: 2.22.0-7
   MEDUSA_HOST: medusa.antblu.net
   MEDUSA_OIDC_DISPLAY_NAME: antID
   MEDUSA_OIDC_ISSUER: https://auth.antblu.net/application/o/medusa/
@@ -587,6 +587,8 @@ variables:
   # Trust email addresses administered by Authentik for the Medusa application.
   MEDUSA_OIDC_REQUIRE_VERIFIED_EMAIL: 'false'
   MEDUSA_CUSTOMER_GOOGLE_CALLBACK_URL: https://emiliany.com/api/auth/google/callback
+  # Enable after provisioning the medusa-odoo SealedSecret and publishing the image.
+  MEDUSA_ODOO_SYNC_ENABLED: 'false'
   MEDUSA_DATABASE_HOST: medusa-db-rw.medusa.svc.cluster.local
   MEDUSA_DATABASE_STORAGE_SIZE: 10Gi
   MEDUSA_REDIS_STORAGE_SIZE: 2Gi

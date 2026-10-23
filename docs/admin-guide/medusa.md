@@ -50,6 +50,45 @@ A successful Authentik token exchange does not mean Medusa accepted the identity
 
 On 2026-10-22, live failed logins had a successful Authentik token exchange but `email_verified: false`. The prior provider rejected those claims. The configured trust policy above permits these Authentik-managed addresses while retaining token signature, issuer, audience, expiry, PKCE, nonce, and state checks. Changing that policy requires publishing the configured backend image and reconciling the ConfigMap; source changes alone do not repair the deployed service.
 
+## Odoo catalog integration
+
+The custom `odoo` module, `sync-from-odoo` workflow, and daily worker job follow [Medusa's Odoo recipe](https://docs.medusajs.com/resources/recipes/erp/odoo). Native Node `fetch` implements the same JSON-RPC protocol without another client dependency. The module uses Odoo 19's standard `search_read`/`read`, `default_code`, and `product_template_attribute_value_ids`, avoiding optional/custom fields in the recipe. [Odoo documents this RPC transport as deprecated](https://www.odoo.com/documentation/19.0/developer/reference/external_rpc_api.html); plan a transport migration before upgrading to a release that removes it.
+
+This integration reads the catalog from Odoo into Medusa. It does not export orders or customers, import images, synchronize stock, map taxes, or evaluate customer pricelists. Prices use Odoo's `lst_price`, including variant extras, in the product's currency and Medusa v2 major units. Review tax inclusion and accepted currencies before selling imported products.
+
+### Provision the integration identity
+
+Odoo must already have the product catalog models installed, for example through Sales or Inventory. Provisioning stops if they are absent; it does not install or upgrade Odoo modules against serving replicas.
+
+From the repository root, with cluster access, run this explicit account/key creation operation:
+
+```bash
+python3 apps/medusa/tools/provision-odoo-integration.py
+```
+
+The tool creates `medusa-integration` and the **Medusa Catalog Reader** group. The account has no password and belongs only to this group, with read ACLs for products, variants, attributes, currencies, companies, and units of measure. It receives no Internal User, administrator, Sales, or Inventory role, and uses the Odoo shell's current company. Existing company record rules apply. Effective create/write/delete permissions on those catalog models are rejected before issuing a key. This account is separate from Authentik JIT provisioning.
+
+It generates a persistent RPC-scoped API key and writes only encrypted values to `apps/medusa/odoo-secret.yaml`. The SealedSecret is bound to namespace `medusa`, name `medusa-odoo`, keys `ODOO_USERNAME` and `ODOO_API_KEY`, using `sealed-secrets-controller` in namespace `sealed-secrets`. Plaintext credentials cross only process pipes and memory. The public sealing certificate is fetched before creating the account; do not enable tracing or print captured subprocess output.
+
+Provisioning refuses to overwrite a sealed file, claim an unrelated login, or rotate an existing API key. Odoo external IDs under `medusa_integration` identify its group and user. If Odoo commits a key but sealing subsequently fails, inspect the dedicated account's API-key list privately and deliberately revoke the unusable key before retrying. Do not rotate credentials on pod startup. Back up Odoo's identity/ACL/key-hash state and the SealedSecret with the sealing recovery material. To rotate, deliberately revoke the old key, retain the old sealed file as protected recovery material if needed, generate/seal its replacement, publish it, and restart both Medusa Deployments after reconciliation. Sync is interrupted until the replacement is loaded.
+
+### Activate and operate
+
+`MEDUSA_ODOO_SYNC_ENABLED` defaults to `false` in `apps/variables.yaml`. `medusa-env` derives `ODOO_URL` from `ODOO_HOST` and `ODOO_DB_NAME` from `ODOO_DATABASE_NAME`. Servers, workers, and migrations reference the optional `medusa-odoo` Secret. Disabled integrations make no Odoo requests; enabling without all credentials fails startup. Module construction does not contact Odoo.
+
+1. Provision the account and sealed credential. Prepare the Medusa store's default sales channel, a default shipping profile, and supported currencies; the integration creates none of these implicitly.
+2. Build and publish the configured immutable backend image. Publish the SealedSecret and set the enable flag to `true`, following the normal Argo migration and rollout waves. Account creation alone does not deploy or activate sync.
+3. The worker job runs daily at **00:00 UTC**, with the container's default UTC timezone (18:00 Denver daylight time or 17:00 standard time on the preceding day). For an immediate run, send an authenticated administrator `POST` with an empty body to `https://medusa.antblu.net/admin/odoo/sync`. Normal Medusa Admin authentication applies. The response reports `synced`; scheduled runs log start/completion counts. Large manual runs may outlast an HTTP proxy timeout; inspect workflow/worker state before retrying.
+4. When checks are explicitly requested, verify authentication and read-only permissions, run a sync, compare IDs, options, prices, currencies, and publication status, and repeat it to confirm stable Medusa IDs. Assign inventory and media before testing a real storefront transaction. Readiness alone does not prove synchronization.
+
+Templates, including archived templates, are scanned in ascending ID batches of 50. Product `external_id` is `odoo:product.template:<id>` with `metadata.odoo_template_id`; variants use `metadata.odoo_variant_id`. These IDs retain associations when SKUs change. Missing SKUs receive `odoo-variant-<id>`. Existing unlinked Medusa products are not adopted by matching a title or SKU. Newly created handles contain the template ID and initial name; later syncs preserve handles, categories, images, shipping profiles, sales-channel assignments, and unrelated metadata.
+
+Odoo owns names, sale descriptions, SKUs, catalog prices, and publication status when the optional `is_published` field exists. Without that field, new imports are drafts and subsequent syncs preserve Medusa publication status. Archived or non-saleable templates become drafts. New variants enable inventory management and disallow backorders; assign Medusa inventory before sale. Existing inventory settings and quantities remain under Medusa control.
+
+Removed variants, renamed options, or new option values on existing products stop the batch for explicit reconciliation in Medusa, avoiding silent deletion of inventory relationships. New variants using existing option definitions can be added. Deleted or newly inaccessible templates are not deletion instructions; previously imported products require explicit reconciliation. SKU conflicts and inaccessible attributes fail rather than merging another product.
+
+Manual and scheduled runs share the existing Redis-backed, renewed distributed lock. A competing run fails to acquire it. Standard Medusa workflows provide compensation per batch; earlier completed batches remain after a later failure. A full rerun converges by external IDs. Redis failover can lose locks, and concurrent Odoo edits may require another run; this is neither exactly-once processing nor a cross-system snapshot. Disable the flag and roll the processes to stop future runs without deleting imported products. This describes source behavior; activation and end-to-end results require separate runtime evidence.
+
 ## Recovery and failure drills
 
 Confirm that CNPG routes `medusa-db-rw` to the current primary and that all Sentinels agree on one Redis master. Returning Redis members must follow that master. Check replication catch-up before declaring redundancy restored. Do not reset the PVCs to repair a role discrepancy.

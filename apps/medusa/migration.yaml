@@ -46,6 +46,9 @@ spec:
         - secretRef:
             name: medusa-google
             optional: true
+        - secretRef:
+            name: medusa-odoo
+            optional: true
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

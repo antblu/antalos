@@ -36,6 +36,16 @@ module.exports = defineConfig({
     },
   },
   modules: [
+    {
+      resolve: "./src/modules/odoo",
+      options: {
+        enabled: process.env.ODOO_SYNC_ENABLED === "true",
+        url: process.env.ODOO_URL,
+        dbName: process.env.ODOO_DB_NAME,
+        username: process.env.ODOO_USERNAME,
+        apiKey: process.env.ODOO_API_KEY,
+      },
+    },
     // Auth still consumes the legacy cache interface for OAuth state. Keep it
     // shared through Sentinel so initiation and callback can hit different pods.
     { resolve: "@medusajs/medusa/cache-redis", options: { redisUrl, redisOptions } },

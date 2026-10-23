@@ -51,6 +51,10 @@ The current Authentik **Verified Email** mapping unconditionally asserts `email_
 
 For offboarding, remove Authentik **Odoo Users** membership and archive the Odoo account. Existing Odoo sessions require separate revocation according to the incident or offboarding policy. This addon performs initial template assignment and identity linking; it does not synchronize Authentik groups into Odoo roles or revoke existing sessions when group membership changes.
 
+## Medusa catalog reader
+
+Medusa's optional catalog integration uses a dedicated `medusa-integration` account and a **Medusa Catalog Reader** group, with read-only catalog ACLs and a persistent RPC-scoped key. It has no password, Internal User role, or Authentik JIT identity. Provision it using the [Medusa integration procedure](/admin-guide/medusa/#odoo-catalog-integration); the owning credential is sealed in `apps/medusa/odoo-secret.yaml` for the consuming namespace. This is a one-way product integration; no Odoo inventory, order, or customer writes are performed. Archiving the account or revoking its key stops future synchronization. Odoo database backups preserve its account, ACLs, and key hash; preserve the sealed credential separately for Medusa recovery.
+
 ## Initial administrator access
 
 Open `https://odoo.antblu.net/web/login` with login `admin`. Retrieve the generated initial password privately:

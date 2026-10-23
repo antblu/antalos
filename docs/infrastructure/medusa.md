@@ -20,6 +20,7 @@ description: Replicated Medusa backend and Admin with CNPG, Redis Sentinel, and 
 | Redis clients | Authenticated native Sentinel discovery in every Medusa Redis consumer, including sessions, cache, events, workflow pub/sub/queues, and locking. Promotion notifications force reconnection even if the old primary socket remains open. No singleton proxy. |
 | OAuth state | The Auth module depends on the legacy `cache` interface, explicitly backed by `cache-redis` with the same Sentinel options. Modern caching remains configured separately. Both serving pods can read the login state; no sticky session is required. |
 | Files | Existing Garage S3 endpoint, region `garage`, bucket `medusa`; path-style requests and no ACL header. Access credentials are namespace-scoped SealedSecrets. |
+| Odoo catalog | Optional one-way product sync through a custom module, daily worker workflow, and authenticated Admin trigger. A dedicated catalog reader uses an RPC key sealed as `medusa-odoo`. `MEDUSA_ODOO_SYNC_ENABLED` defaults to false. Runs share the Redis lock provider; Odoo IDs identify imported products/variants. Stock, images, orders, customers, and taxes remain outside this integration. |
 
 ## Availability and recovery
 

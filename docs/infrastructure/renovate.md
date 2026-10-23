@@ -9,7 +9,7 @@ Renovate is a **non-HA stateless CronJob**, not a continuously running service. 
 
 ## Placement and availability
 
-There is no node selector or affinity. Explicit tolerations permit the cluster's control-plane and `quorum` NoSchedule taints, so all six current nodes are eligible when schedulable and sufficiently resourced. Other taints, resource pressure, or cordons can still prevent scheduling. Each pod requests 100m CPU, 512Mi memory, and 1Gi ephemeral storage; limits are two CPUs, 2Gi memory, and 10Gi ephemeral storage.
+Required node affinity excludes nodes labelled `node-role.kubernetes.io/control-plane` or `node-role.kubernetes.io/master`. Renovate does not tolerate the control-plane taint. The `quorum` NoSchedule toleration remains, so all three workers are eligible when schedulable and sufficiently resourced. Other taints, resource pressure, or cordons can still prevent scheduling. Each pod requests 100m CPU, 512Mi memory, and 1Gi ephemeral storage; limits are two CPUs, 2Gi memory, and 10Gi ephemeral storage.
 
 A lost node interrupts its current run. Kubernetes retries within the Job's one-retry budget and 50-minute deadline, or work waits for a later hourly Job. In-progress work is not replicated and immediate failover is not guaranteed. GitHub stores durable branches, pull requests, and onboarding state; local clones and cache are rebuilt on each run.
 
