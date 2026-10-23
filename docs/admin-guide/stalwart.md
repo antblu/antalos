@@ -43,6 +43,18 @@ The manifests bootstrap a local Stalwart administrator; they do not configure Au
 
 3. Verify TLS on every exposed mail protocol, mailbox search, object storage writes, and the database backup/restore procedure.
 
+### Automatic Cloudflare DNS management
+
+DNS providers and per-domain DNS management are configured in Stalwart and persisted in its database. Create a separate Cloudflare provider under **Settings → Network → DNS → DNS Providers** for each zone-scoped API token, then select that provider in the domain's automatic DNS management settings under **Management → Domains → Domains**. Keep tokens in Stalwart; do not put them in shared variables, manifests, or documentation. Include provider credentials in the protected database recovery plan.
+
+Use the provider defaults: a 30-second request timeout, five-minute record TTL, 15-second polling interval, and one-minute propagation timeout. The default publication set covers DKIM, SPF, MX, DMARC, service discovery, MTA-STS, TLS reporting, CAA, and client autoconfiguration. Enable automatic DKIM management for signing-key generation and rotation. Keep the existing certificate-management workflow unless a separate certificate migration is intended.
+
+Before enabling SPF publication, compare the generated policy with the existing record. Stalwart generates `v=spf1 mx -all`; a domain that also sends through Microsoft 365 or another service needs its additional authorization preserved. Exclude SPF from that domain's publication set and maintain its combined SPF policy separately. Do not publish a second SPF record.
+
+Saving automatic DNS management schedules asynchronous `DnsManagement` tasks; automatic DKIM also schedules `DkimManagement`. Inspect scheduled and failed tasks and verify the resulting records at Cloudflare and public DNS. A saved domain setting alone is not proof of successful publication. The bootstrap domain upsert deliberately omits `dnsManagement` so later bootstrap runs preserve the provider selection and publication set managed in Stalwart.
+
+See the official [DNS management lifecycle](https://stalw.art/docs/domains/dns-records/) and [DNS provider reference](https://stalw.art/docs/ref/object/dns-server/).
+
 ## Availability before maintenance
 
 **Partially HA; loss of the RTX-only Redis proxy is an explicit single-worker failure gap.**
