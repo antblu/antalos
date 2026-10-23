@@ -198,7 +198,7 @@ variables:
   # renovate: datasource=nextcloud depName=side_menu registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_SIDE_MENU_VERSION: 6.0.1
   # renovate: datasource=nextcloud depName=spreed registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_SPREED_VERSION: 24.0.4
+  NEXTCLOUD_SPREED_VERSION: 24.0.6
   # renovate: datasource=nextcloud depName=tasks registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_TASKS_VERSION: 0.18.1
   # renovate: datasource=nextcloud depName=user_oidc registryUrl=https://apps.nextcloud.com/api/v1/apps.json
