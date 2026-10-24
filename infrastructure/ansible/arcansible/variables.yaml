@@ -10,7 +10,7 @@ storyteller_version: latest-sycl
 # renovate: datasource=docker depName=lscr.io/linuxserver/lazylibrarian depType=floating
 lazylibrarian_version: latest
 # renovate: datasource=pypi depName=docling-serve
-docling_serve_version: 1.30.0
+docling_serve_version: 1.38.1
 # renovate-image: depName=intel/pytorch
 intel_pytorch_xpu_image: intel/pytorch:xpu-2.13.0-ubuntu24.04-20260907
 # renovate-image: depName=nandyalu/trailarr
