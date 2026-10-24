@@ -1,0 +1,87 @@
+name: Select build runner
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        default: auto
+    outputs:
+      runner:
+        description: JSON runner labels for the build job
+        value: ${{ jobs.select.outputs.runner }}
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      actions: write
+    outputs:
+      runner: ${{ steps.select.outputs.runner }}
+    steps:
+      - name: Prefer a ready self-hosted runner
+        id: select
+        uses: actions/github-script@v9
+        env:
+          REQUESTED_RUNNER: ${{ inputs.runner }}
+        with:
+          script: |
+            const hosted = JSON.stringify(['ubuntu-latest']);
+            const selfHosted = JSON.stringify(['self-hosted', 'Linux', 'X64', 'antalos']);
+            core.setOutput('runner', hosted);
+            const requested = process.env.REQUESTED_RUNNER;
+            if (!['auto', 'ubuntu-latest', 'self-hosted'].includes(requested)) {
+              throw new Error('Unsupported build runner');
+            }
+            // Pull request builds stay on GitHub-hosted machines.
+            if (context.eventName === 'pull_request' || requested === 'ubuntu-latest') return;
+            if (requested === 'self-hosted') {
+              core.setOutput('runner', selfHosted);
+              return;
+            }
+            const {owner, repo} = context.repo;
+            const workflow_id = 'runner-probe.yaml';
+            const requestId = `${context.runId}-${process.env.GITHUB_JOB}-${process.env.GITHUB_RUN_ATTEMPT}`;
+            const title = `runner-probe-${requestId}`;
+            let probe;
+            try {
+              await github.rest.actions.createWorkflowDispatch({
+                owner, repo, workflow_id,
+                ref: context.payload.repository.default_branch,
+                inputs: {request_id: requestId},
+              });
+              for (let attempt = 0; attempt < 12; attempt++) {
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                const {data} = await github.rest.actions.listWorkflowRuns({
+                  owner, repo, workflow_id, event: 'workflow_dispatch', per_page: 100,
+                });
+                probe = data.workflow_runs.find(run => run.display_title === title);
+                if (probe) core.setOutput('probe-id', String(probe.id));
+                if (probe?.status !== 'completed') continue;
+                if (probe.conclusion === 'success') {
+                  core.info('Self-hosted runner responded and Docker is ready.');
+                  core.setOutput('runner', selfHosted);
+                } else {
+                  core.info('Self-hosted probe failed; using GitHub-hosted runner.');
+                }
+                return;
+              }
+              core.info('No successful self-hosted response within 60 seconds; using GitHub-hosted runner.');
+            } catch (error) {
+              core.warning(`Runner probe unavailable (${error.status || error.name}); using GitHub-hosted runner.`);
+            }
+      - name: Cancel any unfinished readiness probe
+        continue-on-error: true
+        if: always() && steps.select.outputs.probe-id != ''
+        uses: actions/github-script@v9
+        env:
+          PROBE_RUN_ID: ${{ steps.select.outputs.probe-id }}
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+            const run_id = Number(process.env.PROBE_RUN_ID);
+            const {data: run} = await github.rest.actions.getWorkflowRun({owner, repo, run_id});
+            if (run.status !== 'completed') {
+              await github.rest.actions.cancelWorkflowRun({owner, repo, run_id});
+            }

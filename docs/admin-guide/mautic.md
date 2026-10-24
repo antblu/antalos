@@ -27,9 +27,7 @@ can remain private. Reseal that credential here when rotating registry access.
 Existing pods do not inherit service account changes retroactively: recreate a
 blocked install pod after the Secret is ready, then check its pull events.
 
-The self-hosted build runner must be online for workflow jobs to start. A queued
-build has not published an image; inspect runner availability before treating a
-registry 403 as a container startup or NFS problem.
+Automatic builds prefer a ready self-hosted runner and fall back to GitHub-hosted Ubuntu if the Docker readiness probe does not succeed within roughly 60 seconds. Pull requests use hosted runners. Manual runs can select `auto`, `ubuntu-latest`, or `self-hosted`; the last choice explicitly waits for the workstation. See [runner selection](/admin-guide/docs/#runner-selection). A queued or successful probe has not published an image; verify the build-and-publish job separately.
 
 If pod events report `applyFSGroup failed` on this export, verify that the pod
 omits `fsGroup` and uses the local-volume permission init container. Do not loosen

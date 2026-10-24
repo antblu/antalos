@@ -6,13 +6,30 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Prefer self-hosted automatically, or choose a runner explicitly
+        type: choice
+        default: auto
+        options:
+          - auto
+          - ubuntu-latest
+          - self-hosted
 
 permissions:
   contents: read
 
 jobs:
+  select-runner:
+    uses: ./.github/workflows/select-runner.yaml
+    permissions:
+      actions: write
+    with:
+      runner: ${{ inputs.runner || 'auto' }}
   coverage:
-    runs-on: self-hosted
+    needs: select-runner
+    timeout-minutes: 15
+    runs-on: ${{ fromJSON(needs.select-runner.outputs.runner) }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v7

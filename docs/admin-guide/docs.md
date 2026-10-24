@@ -9,7 +9,7 @@ This runbook deploys the service from `apps/docs/` and completes the configurati
 
 ## Build and publish
 
-`.github/workflows/docs-image.yaml` defaults to a GitHub-hosted Ubuntu runner to build `site/Dockerfile` from the repository root. The Docker build installs the pnpm version declared in `site/package.json`, uses `site/pnpm-lock.yaml` with `--frozen-lockfile`, then runs `astro check` and the static build. Node and nginx image tags come from `apps/variables.yaml`.
+`.github/workflows/docs-image.yaml` automatically prefers a ready self-hosted runner, with a GitHub-hosted Ubuntu fallback, to build `site/Dockerfile` from the repository root. The Docker build installs the pnpm version declared in `site/package.json`, uses `site/pnpm-lock.yaml` with `--frozen-lockfile`, then runs `astro check` and the static build. Node and nginx image tags come from `apps/variables.yaml`.
 
 pnpm's default minimum release age remains enabled. `site/pnpm-workspace.yaml` lists exact release-age exceptions for the six Astro package versions already selected by the lockfile, allowing those releases to build during their first day. Future versions remain subject to the age gate. Review the lockfile and these exceptions together when updating dependencies.
 
@@ -17,7 +17,15 @@ Publish `site/package.json` and `site/pnpm-lock.yaml` together for dependency up
 
 ## Runner selection
 
-Pushes and pull requests use `ubuntu-latest`. In GitHub Actions → Build documentation image → Run workflow, select either `ubuntu-latest` or `self-hosted`. The latter requires an online runner registered to `antblu/antalos`; it does not fall back automatically if the runner is offline or busy. Both runner types need Docker, which the hosted image supplies. GitHub treats multiple `runs-on` labels as requirements for a single runner, not alternatives.
+Documentation, Mautic, and Medusa image builds and the Renovate dependency-coverage check use `.github/workflows/select-runner.yaml`. Push builds prefer a ready self-hosted runner. Pull requests use GitHub-hosted Ubuntu. Manual Run workflow requests offer `auto` (the default), `ubuntu-latest`, and `self-hosted`.
+
+The selection job runs on GitHub-hosted Ubuntu and dispatches `runner-probe.yaml` with its short-lived Actions token. The probe targets the repository's `self-hosted`, `Linux`, `X64`, and `antalos` labels and checks that Docker responds. A successful response within the roughly 60-second readiness window selects those labels for the build. A busy/offline runner, failed Docker check, or probe API failure selects `ubuntu-latest`. Unfinished probes are cancelled after selection on a best-effort basis. No administrator PAT is required; the selection job has only `actions: write`, separate from build permissions.
+
+Manual `self-hosted` explicitly waits for the workstation; it does not fall back. Availability is checked before scheduling and does not reserve the runner. If it disconnects or becomes busy after a successful probe, the build can still queue; rerun with `ubuntu-latest` to bypass it. Publish the selector, probe, and calling workflows to the default branch together. Local edits do not activate this behavior.
+
+Native authorization reconciliation remains self-hosted because it needs the local repository and infrastructure credentials. Its five-minute schedule can occupy the same listener; portable builds can fall back rather than wait indefinitely behind it.
+
+Run `node .github/tests/select-runner.cjs` from the repository root for nine selection scenarios, and run `actionlint` for workflow syntax. `.github/actionlint.yaml` declares the custom `antalos` label.
 
 Repository-level runners serve only the repository where they are registered. To
 reuse a workstation for another repository, register a separate listener in its

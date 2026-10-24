@@ -7,6 +7,8 @@ on:
       - site/**
       - apps/variables.yaml
       - .github/workflows/docs-image.yaml
+      - .github/workflows/select-runner.yaml
+      - .github/workflows/runner-probe.yaml
   push:
     branches:
       - main
@@ -15,13 +17,16 @@ on:
       - site/**
       - apps/variables.yaml
       - .github/workflows/docs-image.yaml
+      - .github/workflows/select-runner.yaml
+      - .github/workflows/runner-probe.yaml
   workflow_dispatch:
     inputs:
       runner:
-        description: Build runner (self-hosted must be registered to this repository)
+        description: Prefer self-hosted automatically, or choose a runner explicitly
         type: choice
-        default: ubuntu-latest
+        default: auto
         options:
+          - auto
           - ubuntu-latest
           - self-hosted
 
@@ -34,8 +39,15 @@ env:
   IMAGE_NAME: ${{ github.repository_owner }}/antalos-docs
 
 jobs:
+  select-runner:
+    uses: ./.github/workflows/select-runner.yaml
+    permissions:
+      actions: write
+    with:
+      runner: ${{ inputs.runner || 'auto' }}
   build:
-    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
+    needs: select-runner
+    runs-on: ${{ fromJSON(needs.select-runner.outputs.runner) }}
     timeout-minutes: 45
     permissions:
       contents: read

@@ -1,0 +1,24 @@
+name: Check self-hosted build runner
+run-name: runner-probe-${{ inputs.request_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on:
+      - self-hosted
+      - Linux
+      - X64
+      - antalos
+    timeout-minutes: 1
+    steps:
+      - name: Verify Docker is ready
+        run: docker info --format '{{.ServerVersion}}'
