@@ -104,3 +104,29 @@ Confirm that CNPG routes `medusa-db-rw` to the current primary and that all Sent
 Before a controlled worker-loss drill, obtain approval for the disruptive action. Prove an authenticated write and read plus a background job across promotion, then test the original primary's return. Check S3 from Medusa using a dedicated test object; do not delete user objects. Store backup and restore evidence separately from the source-design claims.
 
 The storefront is deferred. Set `STORE_CORS` and extend `AUTH_CORS` only when its actual origin is known. Configure and verify an externally reachable media URL and appropriate object read policy before relying on browser images. See the [availability limits](/infrastructure/medusa/#availability-and-recovery).
+
+## Optional customer integration module
+
+The image includes a `customer_sync` module with versioned account legal evidence,
+marketing decisions and a durable retry queue in its own Medusa-managed tables.
+The migration runs through the existing predeploy database migration step.
+`CUSTOMER_SYNC_ENABLED` gates external delivery and reconciliation, independently
+of the catalog import flag. Configure the server-only Mautic API credentials,
+Odoo contact writer, newsletter backend credential and policy versions before
+enabling it. `medusa-marketing` is an optional service-owned Secret reference;
+only encrypted SealedSecret manifests belong in source.
+
+The customer account completion route requires explicit versioned acceptance;
+the stock Store customer creation endpoint is blocked to prevent bypass.
+Administrators/imports can still create business contacts without manufacturing
+legal or marketing acceptance. This changes the Store API contract for account
+registration: clients must use the new completion route. The optional integration
+does not change administrator authentication.
+
+The worker uses supported Medusa customer/order/payment events, supported Mautic
+contact/field/segment/DNC APIs, and the existing Odoo JSON-RPC client. External
+service outages leave decisions queued; account creation and checkout do not
+synchronously call those services. Reconciliation repairs missed events and
+observes external contact/unsubscribe changes every fifteen minutes. Stable IDs
+and normalized email are used for matching; ambiguous records require review.
+Do not equate contact existence or customer segments with marketing consent.

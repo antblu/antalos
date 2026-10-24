@@ -597,6 +597,9 @@ variables:
   MEDUSA_CUSTOMER_GOOGLE_CALLBACK_URL: https://emiliany.com/api/auth/google/callback
   # Enable after provisioning the medusa-odoo SealedSecret and publishing the image.
   MEDUSA_ODOO_SYNC_ENABLED: 'false'
+  MEDUSA_CUSTOMER_SYNC_ENABLED: 'false'
+  MEDUSA_CUSTOMER_TERMS_VERSION: draft-2026-10-23
+  MEDUSA_CUSTOMER_PRIVACY_VERSION: draft-2026-10-23
   MEDUSA_DATABASE_HOST: medusa-db-rw.medusa.svc.cluster.local
   MEDUSA_DATABASE_STORAGE_SIZE: 10Gi
   MEDUSA_REDIS_STORAGE_SIZE: 2Gi

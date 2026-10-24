@@ -36,10 +36,12 @@ module.exports = defineConfig({
     },
   },
   modules: [
+    { resolve: "./src/modules/customer-sync" },
     {
       resolve: "./src/modules/odoo",
       options: {
         enabled: process.env.ODOO_SYNC_ENABLED === "true",
+        contactsEnabled: process.env.CUSTOMER_SYNC_ENABLED === "true",
         url: process.env.ODOO_URL,
         dbName: process.env.ODOO_DB_NAME,
         username: process.env.ODOO_USERNAME,

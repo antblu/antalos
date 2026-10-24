@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto"
 
 type Options = {
   enabled?: boolean
+  contactsEnabled?: boolean
   url?: string
   dbName?: string
   username?: string
@@ -38,16 +39,18 @@ export default class OdooModuleService {
   private uid?: number
   private templateFields?: Record<string, unknown>
   readonly enabled: boolean
+  readonly contactsEnabled: boolean
 
   constructor(_container: Record<string, unknown>, private options: Options) {
+    this.contactsEnabled = options.contactsEnabled === true
     this.enabled = options.enabled === true
-    if (this.enabled && (!options.url || !options.dbName || !options.username || !options.apiKey)) {
+    if ((this.enabled || this.contactsEnabled) && (!options.url || !options.dbName || !options.username || !options.apiKey)) {
       throw new Error("Odoo sync requires ODOO_URL, ODOO_DB_NAME, ODOO_USERNAME and ODOO_API_KEY")
     }
   }
 
   private async rpc<T>(service: string, method: string, args: unknown[]): Promise<T> {
-    if (!this.enabled) throw new Error("Odoo product sync is disabled")
+    if (!this.enabled && !this.contactsEnabled) throw new Error("Odoo product sync is disabled")
     const id = randomUUID()
     let response: Response
     try {
@@ -76,7 +79,7 @@ export default class OdooModuleService {
     return payload.result as T
   }
 
-  private async execute<T>(model: string, method: string, args: unknown[], kwargs = {}): Promise<T> {
+  async execute<T>(model: string, method: string, args: unknown[], kwargs = {}): Promise<T> {
     if (!this.uid) {
       const uid = await this.rpc<number | false>("common", "authenticate", [
         this.options.dbName, this.options.username, this.options.apiKey, {},

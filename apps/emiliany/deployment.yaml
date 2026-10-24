@@ -64,6 +64,9 @@ spec:
               value: '${EMILIANY_CONTACT_REDIS_MASTER}'
           envFrom:
             - secretRef:
+                name: emiliany-newsletter
+                optional: true
+            - secretRef:
                 name: emiliany-contact
           securityContext:
             allowPrivilegeEscalation: false
