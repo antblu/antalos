@@ -14,6 +14,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
+      - name: Test Stalwart administrator role synchronization
+        run: python3 apps/stalwart/tests/access-sync.py
       - name: Reconcile native roles from effective Authentik groups
         env:
           ANTALOS_REPO_ROOT: ${{ vars.ANTALOS_REPO_ROOT }}
