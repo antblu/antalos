@@ -61,6 +61,8 @@ spec:
                 limits:
                   cpu: 200m
                   memory: 128Mi
+          podAnnotations:
+            antalos.net/authorization-revision: "2"
           fullnameOverride: vaultwarden
           resourceType: Deployment
           replicas: 1

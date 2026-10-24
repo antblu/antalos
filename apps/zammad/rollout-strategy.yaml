@@ -1,0 +1,73 @@
+# Chart 18.0.4 omits Deployment.strategy. Set the two-worker rollout budget
+# before the serving-tier update, using narrowly scoped Kubernetes permissions.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: zammad-rollout
+  namespace: zammad
+  annotations:
+    argocd.argoproj.io/sync-wave: '-5'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: zammad-rollout
+  namespace: zammad
+  annotations:
+    argocd.argoproj.io/sync-wave: '-5'
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    resourceNames:
+      - zammad-railsserver
+      - zammad-nginx
+    verbs:
+      - get
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: zammad-rollout
+  namespace: zammad
+  annotations:
+    argocd.argoproj.io/sync-wave: '-5'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: zammad-rollout
+subjects:
+  - kind: ServiceAccount
+    name: zammad-rollout
+    namespace: zammad
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: zammad-rollout-strategy
+  namespace: zammad
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: '-1'
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      serviceAccountName: zammad-rollout
+      restartPolicy: Never
+      containers:
+        - name: configure
+          image: registry.k8s.io/kubectl:${AUTHORIZATION_KUBECTL_IMAGE_TAG}
+          command:
+            - sh
+            - -ec
+            - |
+              for deployment in zammad-nginx zammad-railsserver; do
+                if kubectl --cache-dir=/tmp/kube-cache get deployment "$deployment" --ignore-not-found -o name | grep -q .; then
+                  kubectl --cache-dir=/tmp/kube-cache patch deployment "$deployment" --type merge \
+                    -p '{"spec":{"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxSurge":0,"maxUnavailable":1}}}}'
+                fi
+              done

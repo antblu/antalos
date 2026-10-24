@@ -144,6 +144,17 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: zammad
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: zammad-nginx
+      jsonPointers:
+        - /spec/strategy
+    - group: apps
+      kind: Deployment
+      name: zammad-railsserver
+      jsonPointers:
+        - /spec/strategy
   syncPolicy:
     automated:
       prune: true

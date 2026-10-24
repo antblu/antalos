@@ -71,3 +71,9 @@ If Argo remains Progressing while Rails serves traffic, inspect the current init
 - [`secrets.yaml`](https://github.com/antblu/antalos/blob/main/apps/zammad/secrets.yaml)
 
 [Official Zammad documentation](https://user-docs.zammad.org/en/latest/).
+
+The pinned chart omits Deployment rollout settings. `rollout-strategy.yaml` sets
+`maxSurge: 0` and `maxUnavailable: 1` for Rails and Nginx before updates, using a
+scoped Sync hook. Argo excludes those hook-owned strategy fields from comparison.
+This releases a worker slot while preserving one serving replica; the default
+percentage budget otherwise stalls against required two-worker anti-affinity.
