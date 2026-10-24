@@ -53,9 +53,17 @@ membership **from child to ancestor**: the admins group has users as a parent.
 `emiliany-admin` therefore has `mautic-admins`, `medusa-admins`, `zammad-admins`,
 `odoo-admins`, and `stalwart-users` as parents. Its direct users are
 `estefania.cc` and the separately identified `emiliany-admin` user. None of these
-relationships grants Authentik superuser permissions. Existing `authentik
-Admins` operators inherit each application's administrator group; application
-admins do not inherit the operator group.
+relationships grants Authentik superuser permissions.
+
+`antalos-admins` is the global administrator group: it has Authentik superuser
+status and inherits every application admin group and `antalos-users`.
+`antalos-users` inherits every application user group without administrator
+privileges. `antblu` is a direct member of `antalos-admins`. Existing `authentik
+Admins` operators remain compatible by inheriting `antalos-admins`; application
+admins do not inherit either global administrator group. A person needs only
+one app admin group, or one global umbrella group, rather than duplicate direct
+membership in each user group. Standard global users still cannot enter
+integrations that expose only an administrator surface.
 
 Legacy groups remain as compatibility children of the corresponding standard
 group. Their names, members, existing application bindings, and downstream

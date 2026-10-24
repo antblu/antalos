@@ -60,3 +60,37 @@ for app in Application.objects.exclude(slug__in=PUBLIC):
     engine.build()
     assert not engine.result.passing, app.slug
 print('ACCESS_CHECK outsider denied for every restricted application')
+
+# A single umbrella membership must be sufficient; no direct per-app groups.
+for label, umbrella, administrator in (
+    ('admin', GLOBAL_ADMINS, True), ('user', GLOBAL_USERS, False),
+):
+    person = User.objects.create(username='antalos-transaction-global-' + label, is_active=True)
+    person.groups.add(Group.objects.get(name=umbrella))
+    assert person.groups.count() == 1
+    assert person.is_superuser == administrator
+    effective = set(person.all_groups().values_list('name', flat=True))
+    for app in Application.objects.all():
+        prefix = GROUP_PREFIX.get(app.slug, app.slug)
+        assert prefix + '-users' in effective, (label, app.slug)
+        assert (prefix + '-admins' in effective) == administrator, (label, app.slug)
+        engine = PolicyEngine(app, person)
+        engine.use_cache = False
+        engine.build()
+        assert engine.result.passing == (administrator or app.slug not in ADMIN_ONLY), (label, app.slug)
+    print('ACCESS_CHECK global ' + label + ': single-group membership and privilege boundaries passed')
+
+person = User.objects.create(username='antalos-transaction-app-admin', is_active=True)
+for app in Application.objects.all():
+    prefix = GROUP_PREFIX.get(app.slug, app.slug)
+    person.groups.set([Group.objects.get(name=prefix + '-admins')])
+    assert person.all_groups().filter(name=prefix + '-users').exists(), app.slug
+    assert not person.is_superuser, app.slug
+    engine = PolicyEngine(app, person)
+    engine.use_cache = False
+    engine.build()
+    assert engine.result.passing, app.slug
+print('ACCESS_CHECK every app admin alone inherits user access without Authentik superuser privileges')
+operator = User.objects.get(username='antblu')
+assert operator.groups.filter(name=GLOBAL_ADMINS).exists() and operator.is_superuser
+print('ACCESS_CHECK antblu has the global administrator group and Authentik superuser access')

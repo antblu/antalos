@@ -34,6 +34,8 @@ data:
         'odoo': {'users': ['Odoo Users']},
         'mautic': {'users': ['Mautic Users']},
     }
+    GLOBAL_ADMINS = 'antalos-admins'
+    GLOBAL_USERS = 'antalos-users'
     ORG_ADMINS = ('mautic', 'medusa', 'zammad', 'odoo')
     # This application is a public status-page bookmark, with a separate admin app.
     PUBLIC = {'uptime-kuma'}
@@ -68,6 +70,15 @@ data:
                               'meta_launch_url': 'https://' + os.environ['VAULTWARDEN_AUTH_HOST'] + '/admin',
                               'policy_engine_mode': 'any'})
                 Outpost.objects.get(name='authentik Embedded Outpost').providers.add(proxy)
+            global_users, _ = Group.objects.get_or_create(name=GLOBAL_USERS)
+            global_admins, _ = Group.objects.update_or_create(
+                name=GLOBAL_ADMINS, defaults={'is_superuser': True})
+            global_admins.parents.add(global_users)
+            global_admins.users.add(User.objects.get(username='antblu', is_active=True))
+            # Preserve existing operators through the new umbrella role. The reverse
+            # relationship would incorrectly make application admins superusers.
+            operators = Group.objects.get(name='authentik Admins')
+            operators.parents.add(global_admins)
             organization, _ = Group.objects.get_or_create(name='emiliany-admin')
             people = [User.objects.get(username=name, is_active=True)
                       for name in ('estefania.cc', 'emiliany-admin')]
@@ -88,6 +99,8 @@ data:
                 # Authentik User.all_groups() uses with_ancestors().
                 admins.parents.add(users)
                 groups[app.slug] = (users, admins)
+                global_users.parents.add(users)
+                global_admins.parents.add(admins)
                 for kind, aliases in LEGACY.get(app.slug, {}).items():
                     parent = admins if kind == 'admins' else users
                     for name in aliases:
@@ -114,8 +127,9 @@ data:
                         defaults={'order': 100, 'enabled': True},
                     )
                     # Preserve operator access previously provided by unbound apps.
-                    operators = Group.objects.get(name='authentik Admins')
-                    operators.parents.add(admins)
+                    # These direct edges were owned by the previous reconciler;
+                    # access now follows the global umbrella group instead.
+                    operators.parents.remove(admins)
                 provider = app.get_provider() if app.provider_id else None
                 if isinstance(provider, OAuth2Provider):
                     # Replace only this provider's profile mapping, retaining name,
