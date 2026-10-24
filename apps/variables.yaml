@@ -436,7 +436,7 @@ variables:
 
   # Vaultwarden: app data on the existing NFS export; CNPG data on OpenEBS.
   # renovate: datasource=helm depName=vaultwarden registryUrl=https://guerzon.github.io/vaultwarden
-  VAULTWARDEN_CHART_VERSION: 0.46.1
+  VAULTWARDEN_CHART_VERSION: 0.46.3
   # renovate: datasource=docker depName=vaultwarden/server
   VAULTWARDEN_IMAGE_TAG: 1.37.4-alpine
   VAULTWARDEN_HOST: vault.antblu.net
