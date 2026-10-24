@@ -43,7 +43,7 @@ variables:
   # renovate: datasource=helm depName=crowdsec registryUrl=https://crowdsecurity.github.io/helm-charts
   CROWDSEC_CHART_VERSION: 0.24.2
   # renovate: datasource=github-tags depName=maxlerebourg/crowdsec-bouncer-traefik-plugin
-  CROWDSEC_BOUNCER_PLUGIN_VERSION: v1.7.0
+  CROWDSEC_BOUNCER_PLUGIN_VERSION: v1.8.1
   CROWDSEC_TRUSTED_HEADSCALE_CLIENT_IP: 100.64.0.8/32
   # renovate: datasource=helm depName=victoria-metrics-k8s-stack registryUrl=https://victoriametrics.github.io/helm-charts/
   VICTORIAMETRICS_CHART_VERSION: 0.91.2
