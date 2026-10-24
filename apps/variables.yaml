@@ -60,6 +60,10 @@ variables:
   WEBSITE_IMAGE_REFRESH_PYTHON_IMAGE_TAG: 3.14.9-alpine3.24
   # Emiliany storefront; its source and image build live in antblu/emiliany.
   EMILIANY_HOST: emiliany.com
+  EMILIANY_DOCS_HOST: docs.emiliany.com
+  EMILIANY_DOCS_IMAGE_REPOSITORY: ghcr.io/antblu/emiliany-docs
+  # renovate: datasource=docker depName=ghcr.io/antblu/emiliany-docs depType=floating
+  EMILIANY_DOCS_IMAGE_TAG: main
   EMILIANY_IMAGE_REPOSITORY: ghcr.io/antblu/emiliany
   # renovate: datasource=docker depName=ghcr.io/antblu/emiliany depType=floating
   EMILIANY_IMAGE_TAG: main
@@ -311,6 +315,10 @@ variables:
   # Zammad: two application/data replicas on the untainted workers, with
   # Redis Sentinel and Elasticsearch voting-only capacity on the RTX worker.
   ZAMMAD_HOST: support.antblu.net
+  EMILIANY_ZAMMAD_URL: http://zammad-nginx.zammad.svc.cluster.local:8080
+  EMILIANY_ZAMMAD_CONTACT_GROUP: Emiliany - Website Contact
+  EMILIANY_CONTACT_REDIS_SENTINELS: zammad-redis-data-0.zammad-redis-data.zammad.svc.cluster.local:26379,zammad-redis-data-1.zammad-redis-data.zammad.svc.cluster.local:26379,zammad-redis-sentinel-2.zammad.svc.cluster.local:26379
+  EMILIANY_CONTACT_REDIS_MASTER: zammad
   ZAMMAD_DATABASE_HOST: zammad-db-rw.zammad.svc.cluster.local
   ZAMMAD_DATABASE_STORAGE_SIZE: 20Gi
   ZAMMAD_REDIS_DATA_0_HOST: zammad-redis-data-0.zammad-redis-data.zammad.svc.cluster.local

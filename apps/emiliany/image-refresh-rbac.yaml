@@ -10,6 +10,7 @@ rules:
       - deployments
     resourceNames:
       - emiliany
+      - emiliany-docs
     verbs:
       - get
       - patch

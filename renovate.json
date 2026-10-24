@@ -180,7 +180,8 @@
       ],
       "matchPackageNames": [
         "ghcr.io/antblu/antalos-docs",
-        "ghcr.io/antblu/emiliany"
+        "ghcr.io/antblu/emiliany",
+        "ghcr.io/antblu/emiliany-docs"
       ],
       "pinDigests": false
     }

@@ -104,6 +104,8 @@ Make durable VM workload changes in the owning OpenTofu or Ansible project. Chan
 
 ## Documentation
 
+- Antalos is a reusable template for people hosting their own application stack and VMs. Keep its handbook focused on that purpose; do not document the Emiliany store, its business workflows, accounts, or site-specific operations here.
+- Emiliany store documentation belongs in `/home/antblu/Github/emiliany` and is published separately at `https://docs.emiliany.com`. Keep necessary environment-specific Emiliany inputs in `apps/variables.yaml`; retain operational resource references required by existing deployments without adding store-specific handbook content.
 - Update the handbook when a change affects architecture, configuration ownership, deployment, operations, recovery, or user-visible behavior.
 - Keep handbook content in `docs/` and add or update the corresponding navigation in `site/` when a new page must appear on `docs.antblu.net`.
 - Documentation describes checked-in design unless it explicitly reports separately collected live evidence. Do not present a source review as current workload health.

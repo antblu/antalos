@@ -3,7 +3,7 @@ title: antalos Documentation
 description: Use the services, understand the infrastructure, and deploy your own antalos stack.
 ---
 
-antalos is a self-hosted platform built from a Talos Kubernetes cluster, Debian application VMs, and an edge network. This handbook explains what you can use, where it runs, and how to build and maintain it from this repository.
+antalos is a reusable template for hosting your own application stack and VMs, built from a Talos Kubernetes cluster, Debian application VMs, and an edge network. This handbook explains what you can use, where it runs, and how to build and maintain it from this repository.
 
 <div class="guide-cards">
 <a class="guide-card" href="/user-guide/"><span class="card-number">01 / USE</span><strong>I want to use a service</strong><span>Find an application, sign in, and complete a first task. Follow official manuals for deeper product help.</span></a>

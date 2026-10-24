@@ -50,10 +50,9 @@ not continuously after every directory change.
 
 Every application gets `<slug>-users` and `<slug>-admins`. Authentik inherits
 membership **from child to ancestor**: the admins group has users as a parent.
-`emiliany-admin` therefore has `mautic-admins`, `medusa-admins`, `zammad-admins`,
-`odoo-admins`, and `stalwart-users` as parents. Its direct users are
-`estefania.cc` and the separately identified `emiliany-admin` user. None of these
-relationships grants Authentik superuser permissions.
+An organization-specific umbrella group can inherit selected application admin
+groups and a standard mail group. Assign its permitted identities explicitly;
+these relationships do not grant Authentik superuser permissions.
 
 `antalos-admins` is the global administrator group: it has Authentik superuser
 status and inherits every application admin group and `antalos-users`.
@@ -157,8 +156,8 @@ From the repository root, after the mounted source is published:
 Before publication, the same source can be passed through stdin to `ak shell`;
 supply `STALWART_AUTH_GROUP_DOMAIN` from `MAIL_DOMAIN`. Do not apply unresolved
 Kubernetes manifests. The reconciler uses an atomic database transaction and an
-advisory lock, resolves objects by name/slug, and verifies both EMILIANY accounts'
-effective membership before committing. It does not remove unrelated objects.
+advisory lock, resolves objects by name/slug, and verifies the configured
+identities' effective membership before committing. It does not remove unrelated objects.
 
 `access-control/test.py` is intended to run after the reconciler inside a
 rollback-only outer transaction. It checks the actual Authentik policy engine,
@@ -174,9 +173,8 @@ On 2026-10-23, the group reconciler was applied directly to the live Authentik
 database and both requested users passed effective-membership and policy/claim
 checks. Stalwart's existing OIDC directory was updated to read its scoped claim;
 its two mail groups were created and existing matched accounts were migrated to
-normal direct roles plus group-derived access. Both EMILIANY mail accounts were
-assigned standard access, including removal of the former direct administrator
-role from `admin@emiliany.com`. These facts are separate from deployment of the
+normal direct roles plus group-derived access. The scoped mail identities were
+assigned standard access, including removal of a former direct administrator role. These facts are separate from deployment of the
 application adapters and from a real browser login. No end-user browser login
 was performed for this migration.
 

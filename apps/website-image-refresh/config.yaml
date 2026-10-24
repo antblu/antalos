@@ -7,10 +7,11 @@ data:
   targets.json: |
     [
       {"namespace": "docs", "deployment": "docs", "container": "nginx"},
-      {"namespace": "emiliany", "deployment": "emiliany", "container": "storefront", "pullSecret": "emiliany-registry"}
+      {"namespace": "emiliany", "deployment": "emiliany", "container": "storefront", "pullSecret": "emiliany-registry"},
+      {"namespace": "emiliany", "deployment": "emiliany-docs", "container": "nginx", "pullSecret": "emiliany-registry"}
     ]
   refresh.py: |
-    """Roll out the two websites when the registry digest of their selected tag changes."""
+    """Roll out configured websites when the registry digest of their selected tag changes."""
     import base64
     import json
     import os

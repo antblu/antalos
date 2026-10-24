@@ -70,8 +70,8 @@ every five minutes using a temporary loopback-only API tunnel. Runner queueing
 and availability can delay changes. OIDC login independently updates group
 membership; it does not set the native administrator role. Rerun the helper for
 immediate role synchronization and sign in again to renew cached permissions.
-The two EMILIANY accounts must belong only to the users mail
-group, with native `User` roles and no administrator grant. Unmatched local
+Standard mail identities must belong only to the users mail group, with native
+`User` roles and no administrator grant. Unmatched local
 recovery accounts, credentials and unrelated memberships are preserved.
 
 [Stalwart v0.16.27 permission construction](https://github.com/stalwartlabs/stalwart/blob/v0.16.27/crates/common/src/auth/access_token.rs)

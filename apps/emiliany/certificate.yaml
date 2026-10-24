@@ -10,3 +10,16 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - ${EMILIANY_HOST}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: emiliany-docs-tls
+  namespace: emiliany
+spec:
+  secretName: emiliany-docs-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - ${EMILIANY_DOCS_HOST}

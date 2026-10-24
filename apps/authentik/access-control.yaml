@@ -85,7 +85,7 @@ data:
             applications = list(Application.objects.all())
             required = set(ORG_ADMINS) | {'stalwart'}
             if not required.issubset({app.slug for app in applications}):
-                raise RuntimeError('Required EMILIANY application is missing')
+                raise RuntimeError('Required Emiliany application is missing')
             groups = {}
             for app in applications:
                 if PolicyBinding.objects.filter(target=app).filter(
@@ -226,8 +226,8 @@ data:
                 expected = {f'{slug}-admins' for slug in ORG_ADMINS} | {
                     f'{slug}-users' for slug in ORG_ADMINS} | {'stalwart-users'}
                 if not expected.issubset(effective) or forbidden.name in effective:
-                    raise RuntimeError('EMILIANY effective membership violates the access contract')
-            print(f'Reconciled group structure for {len(applications)} applications; EMILIANY membership verified.')
+                    raise RuntimeError('Emiliany effective membership violates the access contract')
+            print(f'Reconciled group structure for {len(applications)} applications; Emiliany membership verified.')
 
 
     reconcile()

@@ -21,6 +21,12 @@ spec:
       namespace: emiliany
       jsonPointers:
         - /spec/template/metadata/annotations/images.antblu.net~1published-image
+    - group: apps
+      kind: Deployment
+      name: emiliany-docs
+      namespace: emiliany
+      jsonPointers:
+        - /spec/template/metadata/annotations/images.antblu.net~1published-image
   syncPolicy:
     automated:
       prune: true

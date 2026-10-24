@@ -38,10 +38,6 @@ export const serviceGroups = [
         "label": "Mautic"
       },
       {
-        "slug": "emiliany",
-        "label": "Emiliany"
-      },
-      {
         "slug": "medusa",
         "label": "Medusa"
       },

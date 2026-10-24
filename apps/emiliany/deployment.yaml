@@ -52,6 +52,17 @@ spec:
               value: '${EMILIANY_MEDUSA_PUBLISHABLE_KEY}'
             - name: MEDUSA_BACKEND_URL
               value: https://${MEDUSA_HOST}
+            - name: ZAMMAD_URL
+              value: '${EMILIANY_ZAMMAD_URL}'
+            - name: ZAMMAD_CONTACT_GROUP
+              value: '${EMILIANY_ZAMMAD_CONTACT_GROUP}'
+            - name: CONTACT_REDIS_SENTINELS
+              value: '${EMILIANY_CONTACT_REDIS_SENTINELS}'
+            - name: CONTACT_REDIS_MASTER
+              value: '${EMILIANY_CONTACT_REDIS_MASTER}'
+          envFrom:
+            - secretRef:
+                name: emiliany-contact
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

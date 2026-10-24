@@ -19,7 +19,10 @@ Publish `site/package.json` and `site/pnpm-lock.yaml` together for dependency up
 
 Pushes and pull requests use `ubuntu-latest`. In GitHub Actions → Build documentation image → Run workflow, select either `ubuntu-latest` or `self-hosted`. The latter requires an online runner registered to `antblu/antalos`; it does not fall back automatically if the runner is offline or busy. Both runner types need Docker, which the hosted image supplies. GitHub treats multiple `runs-on` labels as requirements for a single runner, not alternatives.
 
-The existing workstation listener at `/home/antblu/actions-runner` is registered to Antalos as `AnthonyPC`. Repository-level runners cannot serve a second repository. Because `antblu` is a personal account, sharing this workstation with Emiliany requires a second listener in a separate installation/work directory, registered to `antblu/emiliany` (for example `AnthonyPC-emiliany`). Preserve the existing registration and listener. Follow [GitHub's runner setup](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners) from each repository's Settings → Actions → Runners. Registration credentials stay on the workstation. Organization-level runner sharing would require repositories owned by an organization instead.
+Repository-level runners serve only the repository where they are registered. To
+reuse a workstation for another repository, register a separate listener in its
+own installation and work directory. Preserve existing listeners and keep
+registration credentials on the workstation. See [GitHub's runner setup](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners).
 
 ## Automatic website updates
 
@@ -27,7 +30,7 @@ A successful build on `main` publishes the `ghcr.io/antblu/antalos-docs:main` pr
 
 The shared `apps/website-image-refresh/` Application runs a small CronJob every minute on an eligible worker. It reads the image selected by each website Deployment and compares its GHCR manifest digest with the pod-template annotation `images.antblu.net/published-image`. A changed digest updates that annotation, triggering a rolling replacement; `imagePullPolicy: Always` makes each replacement resolve the published tag. Allow the polling interval plus rollout time. Rapid publications converge to the newest channel image and can supersede intermediate releases.
 
-Docs uses anonymous registry reads. Its service-owned `image-refresh-rbac.yaml` grants the refresh ServiceAccount only `get` and `patch` on the named docs Deployment. Emiliany separately grants access to its own Deployment and registry Secret. The refresh account cannot list Secrets or modify other Deployments. Both Applications ignore only the refresh annotation and respect that exception during sync; Argo CD continues to own image selection, replicas, and rollout settings. Renovate leaves these two website channel tags unpinned so digest pinning cannot silently stop automatic updates.
+Docs uses anonymous registry reads. Its service-owned `image-refresh-rbac.yaml` grants the refresh ServiceAccount only `get` and `patch` on the named docs Deployment. Other websites declare their own scoped Deployment permissions and, when needed, registry Secret access. The refresh account cannot list Secrets or modify other Deployments. Participating Applications ignore only the refresh annotation and respect that exception during sync; Argo CD continues to own image selection, replicas, and rollout settings. Renovate leaves website production channel tags unpinned so digest pinning cannot silently stop automatic updates.
 
 Docs rolls with zero surge and one unavailable replica, allowing updates with its two existing eligible worker slots. At least one ready replica remains during a healthy rollout. A failed image cannot establish a successful rollout; inspect readiness and public requests separately from a successful refresh Job.
 
