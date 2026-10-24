@@ -29,6 +29,8 @@ tofu -chdir=infrastructure/opentofu/talostofu apply
 
 Review the proposed changes before accepting the apply. The stack creates the VMs, applies Talos configuration, bootstraps the cluster, and writes the repository-root `kubeconfig` with restricted permissions. The RTX control-plane address is the configured API endpoint; the current design does not create a control-plane VIP.
 
+Control-plane VMs are allocated 5120 MiB each through `control_vm_memory`. No API-server Go soft memory budget is configured. Apply control-plane configuration changes one node at a time, verifying API readiness and etcd quorum between nodes. Obtain approval before any reboot.
+
 Use the [CLI configuration guide](/admin-guide/cli/) to establish Talos access and inspect node readiness.
 
 ## 3. Establish or restore the sealing identity

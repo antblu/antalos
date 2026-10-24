@@ -104,7 +104,7 @@ variable "internal_bridge" {
 variable "control_vm_memory" {
   type        = number
   description = "Memory in MiB for control plane VMs"
-  default     = 4608
+  default     = 5120
 }
 
 variable "control_vm_cores" {
