@@ -130,7 +130,7 @@ variables:
   # renovate: datasource=docker depName=curlimages/curl
   CALDIY_CURL_IMAGE_TAG: 8.23.0
   # renovate: datasource=docker depName=ghcr.io/juanfont/headscale
-  HEADSCALE_IMAGE_TAG: v0.29.5
+  HEADSCALE_IMAGE_TAG: v0.29.6
   # renovate: datasource=docker depName=ghcr.io/tale/headplane
   HEADPLANE_IMAGE_TAG: 0.7.1
   # renovate: datasource=docker depName=louislam/uptime-kuma
