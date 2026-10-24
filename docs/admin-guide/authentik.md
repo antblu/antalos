@@ -172,6 +172,19 @@ role from `admin@emiliany.com`. These facts are separate from deployment of the
 application adapters and from a real browser login. No end-user browser login
 was performed for this migration.
 
+During the subsequent deployment on 2026-10-23, the Mautic and Medusa image
+tags were published and both serving/worker tiers reached two ready replicas.
+All applications changed by the authorization deployment reported Synced and
+Healthy. Deployed Mautic, Zammad, and Odoo grant/removal/denial tests passed,
+alongside the Authentik policy/claim and repeat-run checks. Vaultwarden passed
+authenticated HTTP admin access, unauthenticated redirect, direct-backend 401,
+and loopback-listener isolation checks. Its NetworkPolicy alone was found not
+to enforce isolation in this cluster; the in-pod gateway provides enforcement.
+Nextcloud's native group configuration was applied, but its database still
+reports `needsDbUpgrade: true`; readiness does not establish login success.
+Jellyfin continued to return HTTP 502. No claim of full end-user login coverage
+is implied by these deployment and adapter tests.
+
 [Authentik group inheritance](https://docs.goauthentik.io/users-sources/groups/)
 and [Stalwart OIDC directory behavior](https://stalw.art/docs/auth/backend/oidc/)
 describe the upstream semantics used here.
