@@ -33,7 +33,7 @@ Wait for required controllers, database initialization, and migration Jobs befor
 
 ## 3. Complete identity and first access
 
-The manifests bootstrap a local Stalwart administrator and reuse an Authentik OIDC directory by issuer, selecting it for authentication. The dedicated `stalwart_groups` claim maps only the users/admins mail groups; the admins mail group inherits the existing System Administrator role by description lookup. Normal direct account roles remain `User`. Establish the administrator through the `stalwart-bootstrap-admin` Secret workflow, then create the domain and mailbox accounts using the deployed version’s administration interface. Mail protocols need their own supported authentication and must remain reachable without an interactive ingress login.
+The manifests bootstrap a local Stalwart administrator and reuse an Authentik OIDC directory by issuer, selecting it for authentication. The dedicated `stalwart_groups` claim maps only the users/admins mail groups; the mail groups alone do not confer system administration in Stalwart v0.16.27. The native role synchronizer sets an existing matched account to `Admin` when its Authentik effective groups include `stalwart-admins`, and to `User` otherwise. Establish the administrator through the `stalwart-bootstrap-admin` Secret workflow, then create the domain and mailbox accounts using the deployed version’s administration interface. Mail protocols need their own supported authentication and must remain reachable without an interactive ingress login.
 
 ### Migrate existing direct roles
 
@@ -57,14 +57,29 @@ python3 apps/stalwart/tools/reconcile-access.py --apply
 The first invocation prints a plan. The second matches exact Authentik-managed
 email addresses, looks up the active directory, mail domain and built-in role,
 creates or updates the two owned mail groups, enables the scoped claim, and
-migrates matched accounts to a normal direct role with group-derived access.
+synchronizes matched accounts to the native `Admin` or `User` role from effective
+Authentik membership. Removing admin membership, removing all Stalwart membership,
+or disabling the Authentik identity demotes the native account to `User` and
+removes the owned admin-group membership.
 It preserves credentials, unrelated memberships, accounts and providers. It
 refuses ambiguous identities or explicit account permissions that require
 review. Bootstrap credentials are read privately from the existing Secret and
-are never printed. Settings reload follows a successful application. Rerun when
-migrating legacy direct roles; ordinary future group synchronization happens
-through OIDC login. The two EMILIANY accounts must belong only to the users mail
-group, with no direct or inherited administrator role. See
+are never printed. Settings reload follows an actual change. The existing
+`.github/workflows/authorization-sync.yaml` controller runs this reconciliation
+every five minutes using a temporary loopback-only API tunnel. Runner queueing
+and availability can delay changes. OIDC login independently updates group
+membership; it does not set the native administrator role. Rerun the helper for
+immediate role synchronization and sign in again to renew cached permissions.
+The two EMILIANY accounts must belong only to the users mail
+group, with native `User` roles and no administrator grant. Unmatched local
+recovery accounts, credentials and unrelated memberships are preserved.
+
+[Stalwart v0.16.27 permission construction](https://github.com/stalwartlabs/stalwart/blob/v0.16.27/crates/common/src/auth/access_token.rs)
+uses the account role for system permissions and group IDs for resource ACLs.
+The corrected mapping passed a privileged `Authentication/get` request using
+`antblu`’s OIDC access token on 2026-10-24; the temporary token and Authentik
+session were revoked afterward. Promotion, demotion, full membership removal,
+and repeat-run behavior are covered by `apps/stalwart/tests/access-sync.py`. See
 [application authorization](/admin-guide/authentik/#application-authorization).
 
 ## 4. Connect and operate the service

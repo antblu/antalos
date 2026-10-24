@@ -101,7 +101,7 @@ configure a relying application's authorization.
 | Medusa | Separate storefront customer flow | Medusa Admin accepts only verified OIDC claims containing `medusa-admins`, before identity provisioning or login |
 | Zammad | Built-in `Customer` role | Verified OIDC userinfo `zammad-admins` selects `Admin` and `Agent`; built-ins synchronize on login and custom roles remain |
 | Odoo | Existing internal-user template | Validated `odoo-admins` grants `base.group_system`; its absence removes Settings/Access Rights administration on each JIT login |
-| Stalwart | `User` account role and `stalwart-users` mail group | Dedicated `stalwart_groups` claim contains only the two mail-group addresses; the admins group inherits the built-in System Administrator role |
+| Stalwart | `User` account role and `stalwart-users` mail group | Dedicated `stalwart_groups` claim contains only the two mail-group addresses; the periodic native role synchronizer sets account `roles` to `Admin` for `stalwart-admins`, otherwise `User` |
 | Argo CD | `role:readonly` | `argo-cd-admins` maps to `role:admin` |
 | Grafana | `Viewer` | `grafana-admins` maps to organization `Admin` with role synchronization enabled |
 | Forgejo | Normal native account | OAuth source maps `groups`/`forgejo-admins` through its native administrator-group option |
@@ -131,7 +131,7 @@ from the Authentik group graph or the presence of a role claim.
 | Vaultwarden | Separate admin-only Authentik proxy application gates `/admin`; an in-pod Nginx authorization subrequest protects admin paths and native Rocket binds only to loopback; the NetworkPolicy is defense in depth |
 
 The existing self-hosted runner runs `.github/workflows/authorization-sync.yaml`
-every five minutes for Cal.diy and Storyteller. It uses the existing private
+every five minutes for Stalwart, Cal.diy, and Storyteller. It uses the existing private
 checkout kubeconfig and Debian SSH alias; runner availability bounds role-change
 propagation. Run `sync-native-roles.py --root /path/to/private/checkout` manually
 when immediate synchronization is needed. Local recovery accounts are preserved.

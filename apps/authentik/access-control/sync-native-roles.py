@@ -7,6 +7,10 @@ import argparse
 import base64
 import json
 import subprocess
+import re
+import select
+import time
+import sys
 from pathlib import Path
 
 import yaml
@@ -31,6 +35,35 @@ if len(emails) != len(set(emails)):
 variables = yaml.safe_load((source/'apps/variables.yaml').read_text())['variables']
 payload = json.dumps(identities)
 encoded = base64.b64encode(payload.encode()).decode()
+# Use a temporary loopback-only tunnel to the existing native API. No new
+# network exposure or copied credentials; the Stalwart helper reads its existing
+# bootstrap Secret privately and matches accounts by exact Authentik email.
+forward = subprocess.Popen(command + ['-n', 'stalwart', 'port-forward',
+    '--address=127.0.0.1', 'service/stalwart-web', ':8080'],
+    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=root)
+try:
+    deadline = time.monotonic() + 30
+    port = None
+    while time.monotonic() < deadline and forward.poll() is None:
+        if select.select([forward.stdout], [], [], 1)[0]:
+            match = re.search(r'Forwarding from 127\.0\.0\.1:(\d+) -> 8080', forward.stdout.readline())
+            if match:
+                port = match.group(1)
+                break
+    if not port:
+        raise RuntimeError('Stalwart API tunnel did not become ready')
+    subprocess.run([sys.executable, str(source/'apps/stalwart/tools/reconcile-access.py'),
+        '--root', str(root), '--identities', '--apply', '--url',
+        'http://127.0.0.1:' + port + '/jmap/'], input=payload, text=True, check=True, cwd=root)
+finally:
+    forward.terminate()
+    try:
+        forward.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        forward.kill()
+        forward.wait()
+    forward.stdout.close()
+
 # Query the current CNPG primary by its role label, rather than pinning a pod ID.
 primary = json.loads(subprocess.check_output(command+['-n','cal-diy','get','pods','-l',
     'cnpg.io/cluster=cal-diy-db,role=primary','-o','json'],text=True,cwd=root))['items']
