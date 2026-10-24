@@ -50,7 +50,7 @@ metadata:
   namespace: zammad
   annotations:
     argocd.argoproj.io/hook: Sync
-    argocd.argoproj.io/sync-wave: '-1'
+    argocd.argoproj.io/sync-wave: '0'
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
 spec:
   backoffLimit: 3
@@ -62,12 +62,13 @@ spec:
         - name: configure
           image: registry.k8s.io/kubectl:${AUTHORIZATION_KUBECTL_IMAGE_TAG}
           command:
-            - sh
-            - -ec
-            - |
-              for deployment in zammad-nginx zammad-railsserver; do
-                if kubectl --cache-dir=/tmp/kube-cache get deployment "$deployment" --ignore-not-found -o name | grep -q .; then
-                  kubectl --cache-dir=/tmp/kube-cache patch deployment "$deployment" --type merge \
-                    -p '{"spec":{"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxSurge":0,"maxUnavailable":1}}}}'
-                fi
-              done
+            - kubectl
+            - --cache-dir=/tmp/kube-cache
+            - patch
+            - deployment
+            - zammad-nginx
+            - zammad-railsserver
+            - --type
+            - merge
+            - -p
+            - '{"spec":{"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxSurge":0,"maxUnavailable":1}}}}'
