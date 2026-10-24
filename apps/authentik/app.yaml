@@ -96,6 +96,26 @@ spec:
 
           worker:
             replicas: 2
+            # Reconcile from the new worker image rather than waiting for the
+            # upstream four-hour schedule or queueing work on an older worker.
+            lifecycle:
+              postStart:
+                exec:
+                  command:
+                    - ak
+                    - shell
+                    - -c
+                    - |
+                      from authentik.outposts.models import Outpost, OutpostType
+                      from authentik.outposts.tasks import controller_for_outpost
+
+                      for outpost in Outpost.objects.filter(type=OutpostType.LDAP, service_connection__isnull=False):
+                          controller_type = controller_for_outpost(outpost)
+                          if controller_type is None:
+                              raise RuntimeError(f"No controller for {outpost.name}")
+                          with controller_type(outpost, outpost.service_connection) as controller:
+                              for entry in controller.up_with_logs():
+                                  entry.log()
             deploymentStrategy:
               type: RollingUpdate
               rollingUpdate:

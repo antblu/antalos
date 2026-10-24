@@ -59,6 +59,24 @@ Back up PostgreSQL, the media export, and the original `AUTHENTIK_SECRET_KEY`. T
 
 Before an upgrade, read the release notes for the pinned target and record a recovery point. A previous image tag is not a database rollback after a schema migration. Use [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/) for the platform sequence.
 
+### LDAP outpost upgrades
+
+Keep **LDAP Outpost** attached to the **Local Kubernetes Cluster** integration, with `container_image: null` and the `deployment` component enabled. Authentik owns its generated Deployment, Service, and token Secret; do not add a separately pinned LDAP Deployment to Git. The default image template derives the LDAP tag from the running Authentik version, so `AUTHENTIK_CHART_VERSION` remains the only release input.
+
+The worker's `postStart` hook in `apps/authentik/app.yaml` immediately reconciles managed LDAP outposts through Authentik's controller, using the new worker's version. This avoids waiting for the upstream four-hour controller schedule and avoids dispatching an upgrade task to an older worker during a rolling update. It preserves the outpost's configured Kubernetes patches and disabled components. The hook runs on worker restarts as well as upgrades; controller failures fail the hook and surface as `FailedPostStartHook` events. It uses Authentik's internal Python controller API, so verify it when upgrading Authentik.
+
+After publishing the change and after every upgrade, check the image versions and LDAP rollout:
+
+```bash
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig \
+  -n authentik get deployments \
+  -o custom-columns=NAME:.metadata.name,IMAGES:.spec.template.spec.containers[*].image,READY:.status.readyReplicas
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig \
+  -n authentik rollout status deployment/ak-outpost-ldap-outpost
+```
+
+Confirm an LDAP bind/search using an existing relying application separately; matching versions and ready pods do not prove credentials or provider permissions.
+
 ## Troubleshooting
 
 If authentication loops, compare the requested callback URI with the provider allowlist, then check the issuer, signing keys, and server clock. If a protected hostname returns an outpost 404, inspect the host-specific outpost route and provider assignment before changing the protected application.
