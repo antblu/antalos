@@ -441,6 +441,8 @@ variables:
   VAULTWARDEN_CHART_VERSION: 0.46.3
   # renovate: datasource=docker depName=vaultwarden/server
   VAULTWARDEN_IMAGE_TAG: 1.37.4-alpine
+  # renovate: datasource=docker depName=nginx
+  VAULTWARDEN_GATEWAY_NGINX_IMAGE_TAG: 1.29.8-alpine
   VAULTWARDEN_HOST: vault.antblu.net
   VAULTWARDEN_DATABASE_HOST: vaultwarden-db-rw.vaultwarden.svc.cluster.local
   VAULTWARDEN_NFS_SHARE: /mnt/nvme/vaultwarden

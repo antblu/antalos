@@ -25,6 +25,42 @@ spec:
             extraVars:
               - key: DISABLE_ADMIN_TOKEN
                 value: "true"
+              - key: ROCKET_ADDRESS
+                value: 127.0.0.1
+              - key: ROCKET_PORT
+                value: "8082"
+          # Service and probes use the authenticated gateway; native Rocket is loopback-only.
+          rocket:
+            port: 8080
+          extraVolumes:
+            - name: authorization-gateway
+              configMap:
+                name: vaultwarden-authorization-gateway
+          sidecars:
+            - name: authorization-gateway
+              image: nginx:${VAULTWARDEN_GATEWAY_NGINX_IMAGE_TAG}
+              command:
+                - nginx
+                - -c
+                - /etc/authorization/nginx.conf
+                - -g
+                - daemon off;
+              volumeMounts:
+                - name: authorization-gateway
+                  mountPath: /etc/authorization
+                  readOnly: true
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
           fullnameOverride: vaultwarden
           resourceType: Deployment
           replicas: 1

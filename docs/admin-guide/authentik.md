@@ -120,7 +120,7 @@ from the Authentik group graph or the presence of a role claim.
 | Home Assistant | Existing auth_oidc integration options select `home-assistant-admins` and `home-assistant-users`; use `apps/home-assistant/tools/configure-access.py` with private `HOME_ASSISTANT_TOKEN` and explicit `HOME_ASSISTANT_URL` |
 | Cal.diy | Existing OIDC-linked accounts synchronize native `ADMIN`/`USER` by exact email |
 | Storyteller | Native group permissions provision new accounts; linked accounts' permissions are reconciled by exact email |
-| Vaultwarden | Separate admin-only Authentik proxy application gates `/admin`; a NetworkPolicy limits backend ingress to Traefik before the shared admin-token prompt is disabled |
+| Vaultwarden | Separate admin-only Authentik proxy application gates `/admin`; an in-pod Nginx authorization subrequest protects admin paths and native Rocket binds only to loopback; the NetworkPolicy is defense in depth |
 
 The existing self-hosted runner runs `.github/workflows/authorization-sync.yaml`
 every five minutes for Cal.diy and Storyteller. It uses the existing private
