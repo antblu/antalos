@@ -569,7 +569,7 @@ variables:
   ODOO_S3FS_VERSION: 2026.9.0
   # renovate: datasource=pypi depName=python-slugify
   ODOO_SLUGIFY_VERSION: 9.1.3
-  ODOO_OCA_SERVER_TOOLS_REVISION: feddb04c6e2e0e64d32a7a4a7d9ae92ff30f93cd
+  ODOO_OCA_SERVER_TOOLS_REVISION: ee3803163bacb18f609c225a911d7d24dfab21ac
   ODOO_OCA_SERVER_AUTH_REVISION: 4f5bf8a18a087b83808a832c4414ad605aa09289
   # renovate: datasource=pypi depName=python-jose
   ODOO_PYTHON_JOSE_VERSION: "3.5.0"
