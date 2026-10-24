@@ -194,7 +194,7 @@ variables:
   # renovate: datasource=nextcloud depName=contacts registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_CONTACTS_VERSION: 8.9.2
   # renovate: datasource=nextcloud depName=deck registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_DECK_VERSION: 1.18.4
+  NEXTCLOUD_DECK_VERSION: 1.19.1
   # renovate: datasource=nextcloud depName=eurooffice registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_EUROOFFICE_VERSION: 11.0.6
   # renovate: datasource=nextcloud depName=external registryUrl=https://apps.nextcloud.com/api/v1/apps.json
