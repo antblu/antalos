@@ -5,7 +5,7 @@ description: "What Nextcloud does, how to use it in antalos, and where to find i
 
 <nav class="guide-switcher" aria-label="Nextcloud guide sections"><a aria-current="page" href="/user-guide/nextcloud/">Use</a><a href="/infrastructure/nextcloud/">Architecture</a><a href="/admin-guide/nextcloud/">Operate</a></nav>
 
-Nextcloud is the collaboration workspace for files, calendars, contacts, notes, shared boards, and conversations. antalos adds document editing, Whiteboard, Talk, push notifications, and Context Chat backends. Access to these tools follows your account and sharing permissions; some integrations also need administrator setup.
+Nextcloud is the collaboration workspace for files, calendars, tasks, contacts, notes, shared boards, and conversations. Use Tasks to keep to-do lists and calendar-linked tasks in sync across your Nextcloud clients. antalos adds document editing, Whiteboard, Talk, push notifications, and Context Chat backends. Access to these tools follows your account and sharing permissions; some integrations also need administrator setup.
 
 ## Access and audience
 

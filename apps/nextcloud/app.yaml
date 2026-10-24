@@ -26,7 +26,7 @@ spec:
                   cd /var/www/html
                   until php occ status >/dev/null 2>&1; do sleep 2; done
                   php occ app:enable --no-interaction \
-                    announcementcenter calendar notify_push contacts side_menu \
+                    announcementcenter calendar tasks notify_push contacts side_menu \
                     deck external forms mail integration_openai assistant app_api eurooffice \
                     notes user_oidc spreed groupfolders whiteboard
                   php /access-control/configure.php
