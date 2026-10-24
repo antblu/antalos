@@ -45,7 +45,12 @@ Galera's automatic ID spacing remains enabled, including its adjustment for the
 arbitrator's membership. Image upgrades fail to build if that upstream lookup
 changes and requires review.
 
-Redis is used for shared PHP sessions with locking. Mautic's bundled Doctrine
+Redis is used for shared PHP sessions with locking in database 0 and Mautic's
+application cache in database 1 with the `mautic_cache` namespace. SAML request
+correlation uses this shared application cache; PHP sessions alone do not share
+outstanding authentication requests between web replicas. The install hook
+persists the Redis cache adapter settings in shared NFS `config/local.php`.
+Mautic's bundled Doctrine
 Messenger transport stores queues in MariaDB; no Redis Messenger dependency is
 added. Failed messages remain in the failed Doctrine transport for operator review.
 The Redis image and database use their own supported Unix identities on local
@@ -56,8 +61,8 @@ volumes. UID/GID `1010:1010` applies to Mautic application processes and NFS fil
 The Retain PV binds only to `mautic-data`; it does not create an export. NFS must
 already allow UID/GID 1010 to create directories. A non-root init container creates
 `config`, `files`, `images` and `logs` and seeds bundled media without replacing
-existing files. It never changes ownership of the export. Per-pod cache and temporary
-files are ephemeral; Apache logs go to container output. Protect NFS configuration
+existing files. It never changes ownership of the export. Per-pod compiled Symfony
+cache and temporary files are ephemeral; Apache logs go to container output. Protect NFS configuration
 files because Mautic writes credentials and integration settings there.
 
 Mautic pods deliberately omit `fsGroup`: the NFS CSI driver's recursive ownership

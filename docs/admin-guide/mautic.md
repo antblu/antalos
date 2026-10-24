@@ -60,6 +60,38 @@ mail before completing that setup. SMTP credentials are not provisioned here.
 
 ## SAML with Authentik
 
+### Shared request cache
+
+Mautic stores outstanding SAML requests in its application cache, separately from
+PHP sessions. Both web replicas must use the same cache; the filesystem default
+stores requests in each pod's temporary directory. When the callback reaches the
+other replica, validation cannot find the request and redirects to
+`/saml/login_retry` with the generic authentication error.
+
+The image's install hook runs `image/configure-cache.php` to configure Mautic's
+[Redis application cache](https://devdocs.mautic.org/en/7.2/plugins/cache.html)
+through the existing primary-routing Service. Cache entries use database 1 and
+the `mautic_cache` namespace; PHP sessions remain in database 0. The script
+preserves unrelated settings and stores the existing Redis credential only in
+the protected shared `config/local.php`. Reapply it after rotating that credential.
+
+For an existing installation, apply the script without waiting for an image build:
+
+```bash
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n mautic \
+  exec -i deploy/mautic-web -c mautic -- php \
+  < apps/mautic/image/configure-cache.php
+```
+
+Then clear the compiled production cache on every web and worker pod using
+`php bin/console cache:clear --env=prod --no-warmup`, one pod at a time. Cache
+clearing can invalidate outstanding SAML requests; begin a fresh login after all
+pods finish. Verify that a short-lived diagnostic `RequestState` written through
+Mautic's `RequestStateStore` on one web pod can be read on the other, then remove
+that diagnostic entry. Complete a normal browser SSO login separately.
+
+### Provider and user configuration
+
 The integration uses Mautic's native SAML support, following the
 [Mautic authentication documentation](https://docs.mautic.org/en/7.2/authentication/authentication.html)
 and [Authentik integration guide](https://docs.goauthentik.io/integrations/services/mautic/).

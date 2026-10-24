@@ -18,6 +18,7 @@ RUN apt-get update \
 
 COPY patch-installer.php /usr/local/share/mautic/patch-installer.php
 COPY configure-proxies.php /usr/local/share/mautic/configure-proxies.php
+COPY configure-cache.php /usr/local/share/mautic/configure-cache.php
 COPY patch-saml-roles.php /usr/local/share/mautic/patch-saml-roles.php
 RUN php /usr/local/share/mautic/patch-installer.php \
     && php /usr/local/share/mautic/patch-saml-roles.php \
