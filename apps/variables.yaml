@@ -12,7 +12,7 @@ variables:
   # renovate: datasource=helm depName=argo-cd registryUrl=https://argoproj.github.io/argo-helm
   ARGOCD_CHART_VERSION: 10.4.0
   # renovate: datasource=helm depName=authentik registryUrl=https://charts.goauthentik.io
-  AUTHENTIK_CHART_VERSION: 2026.8.3
+  AUTHENTIK_CHART_VERSION: 2026.8.5
   # renovate: datasource=helm depName=cert-manager registryUrl=https://charts.jetstack.io
   CERT_MANAGER_CHART_VERSION: v1.18.2
   CERT_MANAGER_DNS01_RECURSIVE_NAMESERVER: https://1.1.1.1/dns-query
