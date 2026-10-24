@@ -172,6 +172,17 @@
         "/^@medusajs[/]/"
       ],
       "groupName": "Medusa framework"
+    },
+    {
+      "description": "Website main channels are refreshed in-cluster; keep the deployment tags mutable.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/antblu/antalos-docs",
+        "ghcr.io/antblu/emiliany"
+      ],
+      "pinDigests": false
     }
   ],
   "kubernetes": {

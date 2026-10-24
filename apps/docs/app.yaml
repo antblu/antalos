@@ -14,9 +14,17 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: docs
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: docs
+      namespace: docs
+      jsonPointers:
+        - /spec/template/metadata/annotations/images.antblu.net~1published-image
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true

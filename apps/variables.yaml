@@ -56,11 +56,13 @@ variables:
   DOCS_NGINX_IMAGE_TAG: 1.29.8-alpine
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-docs depType=floating
   DOCS_IMAGE_TAG: main
+  # renovate: datasource=docker depName=python
+  WEBSITE_IMAGE_REFRESH_PYTHON_IMAGE_TAG: 3.14.9-alpine3.24
   # Emiliany storefront; its source and image build live in antblu/emiliany.
   EMILIANY_HOST: emiliany.com
   EMILIANY_IMAGE_REPOSITORY: ghcr.io/antblu/emiliany
-  # renovate: datasource=docker depName=ghcr.io/antblu/emiliany
-  EMILIANY_IMAGE_TAG: 0.1.0-1
+  # renovate: datasource=docker depName=ghcr.io/antblu/emiliany depType=floating
+  EMILIANY_IMAGE_TAG: main
   # renovate: datasource=docker depName=node
   EMILIANY_NODE_IMAGE_TAG: 24.21.0-bookworm-slim
   # renovate: datasource=npm depName=npm

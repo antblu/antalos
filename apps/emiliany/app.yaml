@@ -14,9 +14,17 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: emiliany
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: emiliany
+      namespace: emiliany
+      jsonPointers:
+        - /spec/template/metadata/annotations/images.antblu.net~1published-image
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true

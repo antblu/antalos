@@ -21,7 +21,7 @@ Content, CSS, components, navigation, and build definitions live in Git. The ser
 
 ## Availability and failure behavior
 
-**Availability classification: HA static serving tier for node loss; current zero-unavailable rollout can be blocked by placement.**
+**Availability classification: replicated static serving tier with placement-compatible rolling updates.**
 
 This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
 
@@ -32,7 +32,7 @@ This is an interpretation of the checked-in configuration, assuming the declared
 | NGINX | 2 stateless replicas; required host anti-affinity | The Service routes to ready copies of the same image. |
 | Persistent state | None in serving pods | Pages and search assets are reconstructed from Git and the built image. |
 | Eviction | PDB minimum 1 | A voluntary eviction should retain a healthy serving pod. |
-| Rollout | maxSurge 1; maxUnavailable 0 | Requires space for a third anti-affined pod before removing an old one. |
+| Rollout | maxSurge 0; maxUnavailable 1 | Replaces one replica at a time within the two existing eligible worker slots. |
 
 ### How a failure is handled
 
@@ -50,17 +50,17 @@ An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure.
 
 ### Upgrades and voluntary maintenance
 
-With exactly two eligible nodes already occupied by the two old replicas, the surge pod cannot schedule and zero-unavailable prevents freeing a slot. This is a rollout deadlock condition, not evidence that steady-state node failover is broken.
+The rollout frees one occupied worker slot before scheduling its replacement, avoiding the former third-slot surge requirement. A failed replacement leaves one old ready replica serving while operators inspect image pulls or readiness.
 
 ### What prevents a stronger HA claim
 
-Ingress, DNS, network, and API-driven endpoint updates remain shared dependencies. A mutable image tag does not provide rollback provenance or automatically trigger a rollout.
+Ingress, DNS, network, and API-driven endpoint updates remain shared dependencies. The shared website image-refresh CronJob polls GHCR every minute and triggers a rollout when the selected mutable tag changes digest. It uses a pod-template annotation rather than taking ownership of the image field. Registry or refresh-Job failure delays delivery while existing pods continue serving. The recorded digest is rollout intent; actual pod image IDs establish which image is running.
 
 ### What would improve the availability contract
 
-For predictable updates, provide a third eligible failure domain or change the rollout to a placement-compatible strategy as a separate manifest change. Use immutable images and a real request test during one-node maintenance.
+Retain commit-tagged images for rollback and exercise real requests during one-node maintenance. Monitor refresh Jobs, rollout readiness, and public delivery separately.
 
-These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service's source.
+These statements describe the checked-in design, not live rollout evidence. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service's source.
 
 ## Configuration ownership
 

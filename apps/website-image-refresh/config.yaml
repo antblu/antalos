@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: website-image-refresh
+  namespace: website-image-refresh
+data:
+  targets.json: |
+    [
+      {"namespace": "docs", "deployment": "docs", "container": "nginx"},
+      {"namespace": "emiliany", "deployment": "emiliany", "container": "storefront", "pullSecret": "emiliany-registry"}
+    ]
+  refresh.py: |
+    """Roll out the two websites when the registry digest of their selected tag changes."""
+    import base64
+    import json
+    import os
+    import re
+    import ssl
+    import urllib.parse
+    import urllib.request
+    from pathlib import Path
+    
+    ANNOTATION = "images.antblu.net/published-image"
+    TOKEN_DIR = Path("/var/run/secrets/kubernetes.io/serviceaccount")
+    ACCEPT = ", ".join([
+        "application/vnd.oci.image.index.v1+json",
+        "application/vnd.docker.distribution.manifest.list.v2+json",
+        "application/vnd.oci.image.manifest.v1+json",
+        "application/vnd.docker.distribution.manifest.v2+json",
+    ])
+    
+    
+    def request(url, headers=None, method="GET", data=None, context=None):
+        req = urllib.request.Request(url, headers=headers or {}, method=method, data=data)
+        with urllib.request.urlopen(req, timeout=15, context=context) as response:
+            return response.headers, response.read()
+    
+    
+    def kube(path, method="GET", body=None):
+        headers = {"Authorization": "Bearer " + (TOKEN_DIR / "token").read_text().strip()}
+        if body is not None:
+            headers["Content-Type"] = "application/merge-patch+json"
+        _, data = request(
+            "https://kubernetes.default.svc" + path, headers, method,
+            json.dumps(body).encode() if body is not None else None,
+            ssl.create_default_context(cafile=str(TOKEN_DIR / "ca.crt")),
+        )
+        return json.loads(data)
+    
+    
+    def registry_digest(image, secret=None):
+        if not image.startswith("ghcr.io/"):
+            raise ValueError("Only GHCR website images are supported")
+        repository, tag = image.removeprefix("ghcr.io/").rsplit(":", 1)
+        headers = {}
+        if secret:
+            config = json.loads(base64.b64decode(secret["data"][".dockerconfigjson"]))
+            auth = config["auths"]["ghcr.io"]
+            encoded = auth.get("auth") or base64.b64encode(
+                (auth["username"] + ":" + auth["password"]).encode()
+            ).decode()
+            headers["Authorization"] = "Basic " + encoded
+        query = urllib.parse.urlencode({"service": "ghcr.io", "scope": "repository:" + repository + ":pull"})
+        _, data = request("https://ghcr.io/token?" + query, headers)
+        token = json.loads(data)["token"]
+        headers = {"Authorization": "Bearer " + token, "Accept": ACCEPT}
+        response_headers, _ = request(
+            "https://ghcr.io/v2/" + repository + "/manifests/" + urllib.parse.quote(tag, safe=""),
+            headers,
+        )
+        digest = response_headers.get("Docker-Content-Digest", "")
+        if not re.fullmatch(r"sha256:[a-f0-9]{64}", digest):
+            raise ValueError("Registry returned no valid SHA256 manifest digest")
+        return digest
+    
+    
+    def refresh(target):
+        namespace, name = target["namespace"], target["deployment"]
+        path = "/apis/apps/v1/namespaces/" + namespace + "/deployments/" + name
+        deployment = kube(path)
+        template = deployment["spec"]["template"]
+        container = next(c for c in template["spec"]["containers"] if c["name"] == target["container"])
+        image = container["image"]
+        if "@" in image:
+            print(namespace + ": digest pinned; automatic refresh disabled", flush=True)
+            return
+        if container.get("imagePullPolicy") != "Always":
+            raise ValueError("Website must use imagePullPolicy Always before refreshing")
+        secret = None
+        if target.get("pullSecret"):
+            secret = kube("/api/v1/namespaces/" + namespace + "/secrets/" + target["pullSecret"])
+        published = image + "@" + registry_digest(image, secret)
+        if template["metadata"].get("annotations", {}).get(ANNOTATION) == published:
+            print(namespace + ": published image unchanged", flush=True)
+            return
+        # Reject a concurrent source/image change instead of recording an old digest.
+        kube(path, "PATCH", {
+            "metadata": {"resourceVersion": deployment["metadata"]["resourceVersion"]},
+            "spec": {"template": {"metadata": {"annotations": {ANNOTATION: published}}}},
+        })
+        print(namespace + ": rollout requested for " + published, flush=True)
+    
+    
+    def main():
+        failed = False
+        for target in json.loads(Path(os.environ.get("TARGETS_FILE", "/config/targets.json")).read_text()):
+            try:
+                refresh(target)
+            except Exception as error:
+                # Do not log request/response bodies or credentials.
+                print(target["namespace"] + ": refresh failed (" + type(error).__name__ + ")", flush=True)
+                failed = True
+        return int(failed)
+    
+    
+    if __name__ == "__main__":
+        raise SystemExit(main())

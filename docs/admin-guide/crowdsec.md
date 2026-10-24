@@ -40,6 +40,31 @@ In stream mode, the bouncer's default `updateMaxFailure: 0` blocks requests when
 
 ## Maintenance and recovery
 
+### Recover a processor with a missing LAPI registration
+
+If the processor exits with `authenticate watcher` and `API error: ent: machine
+not found`, compare its pod name with `cscli machines list` on the LAPI. The
+chart registers the processor in an init container and keeps its credentials
+in a pod-local `emptyDir`. Restarting only the main container reuses those
+credentials without registering again. A database restore or removal of the
+machine registration can therefore leave the processor in a crash loop.
+
+Once LAPI is healthy, recreate only the failed processor pod so its registration
+init container runs again. From the repository root:
+
+```bash
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n crowdsec exec deployment/crowdsec-lapi -c crowdsec-lapi -- cscli machines list
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n crowdsec delete pod <failed-agent-pod>
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n crowdsec rollout status deployment/crowdsec-agent
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n crowdsec exec deployment/crowdsec-agent -- cscli lapi status
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n crowdsec exec deployment/crowdsec-agent -- cscli metrics
+```
+
+Confirm the replacement authenticates, becomes Ready, and resumes VictoriaLogs
+acquisition. This interrupts only the singleton processor; it does not require
+restarting LAPI or rotating the shared registration or bouncer credentials.
+See the official [machine registration guide](https://docs.crowdsec.net/u/user_guides/machines_mgmt/).
+
 The AppSec acquisition uses the local `antalos/virtual-patching` configuration
 from `apps/crowdsec/app.yaml`. It retains the upstream base and virtual-patching
 rules, with one request-specific exception: `crowdsecurity/vpatch-CVE-2025-34291`

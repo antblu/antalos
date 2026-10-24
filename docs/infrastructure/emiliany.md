@@ -5,7 +5,7 @@ description: "The Next.js storefront serving tier and its external dependencies.
 
 `apps/emiliany/` declares the public `https://emiliany.com` storefront. Traefik terminates TLS using the service-owned cert-manager certificate and forwards to a ClusterIP Service on port 80, then the standalone Next.js server on port 3000. There is no Authentik forward-auth on the customer storefront.
 
-Application code and image build live in `antblu/emiliany`. Antalos owns shared deployment/build inputs and the Argo CD Application. The private GHCR image is pulled using the namespace-scoped `emiliany-registry` SealedSecret attached to the default ServiceAccount. The image excludes local environment files, runs as UID 1000 with a read-only root filesystem, and uses disposable cache and temporary volumes.
+Application code and image build live in `antblu/emiliany`. GitHub-hosted build runners publish a mutable `main` production channel and commit tags. The shared `apps/website-image-refresh/` CronJob polls the selected channel every minute and changes a pod-template annotation when its GHCR digest changes; replacement pods use `imagePullPolicy: Always`. Argo CD retains image/tag ownership and ignores only that annotation. The refresh ServiceAccount has service-scoped access to the Deployment and the existing registry Secret. Antalos owns shared deployment/build inputs and the Argo CD Application. The private GHCR image is pulled using the namespace-scoped `emiliany-registry` SealedSecret attached to the default ServiceAccount. The image excludes local environment files, runs as UID 1000 with a read-only root filesystem, and uses disposable cache and temporary volumes.
 
 ## Availability and failure behavior
 
