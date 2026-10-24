@@ -72,6 +72,7 @@ variables:
   # renovate: datasource=npm depName=npm
   EMILIANY_NPM_VERSION: 12.2.1
   EMILIANY_COMMERCE_DEMO_MODE: 'false'
+  EMILIANY_CATALOG_DEMO_MODE: 'true'
   EMILIANY_GOOGLE_CUSTOMER_LOGIN_ENABLED: 'true'
   EMILIANY_MEDUSA_PUBLISHABLE_KEY: pk_0684e91ed6aeb470968a07d413fc0ebc2fdb04a6e9fc46f4f75fe60bcbf04ddf
   # renovate: datasource=docker depName=ghcr.io/renovatebot/renovate

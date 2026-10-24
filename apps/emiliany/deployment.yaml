@@ -46,6 +46,8 @@ spec:
               value: https://${EMILIANY_HOST}
             - name: COMMERCE_DEMO_MODE
               value: '${EMILIANY_COMMERCE_DEMO_MODE}'
+            - name: CATALOG_DEMO_MODE
+              value: '${EMILIANY_CATALOG_DEMO_MODE}'
             - name: GOOGLE_CUSTOMER_LOGIN_ENABLED
               value: '${EMILIANY_GOOGLE_CUSTOMER_LOGIN_ENABLED}'
             - name: MEDUSA_PUBLISHABLE_KEY
