@@ -104,10 +104,13 @@ MAUTIC_POD=$(/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig \
 The script preserves unrelated configuration, stores the metadata as Mautic's
 expected base64 value, and maps `email`, `username`, `firstname` and `lastname`.
 It creates a non-admin `SSO Users` role without permissions. Grant the appropriate
-permissions in Mautic before onboarding users; membership in an Authentik admin
-group does not itself grant the Mautic administrator role. Existing matching
-Mautic usernames retain their roles, including any existing administrator role.
-Review username collisions before adding group members.
+permissions to that ordinary role in Mautic before onboarding users. The guarded
+SAML adapter in the application image selects an existing administrator role for
+`mautic-admins` and `SSO Users` otherwise, on both first and returning logins.
+The decision uses effective group attributes from the validated SAML response.
+Deploy the updated image before relying on this behavior. Review username/email
+collisions before adding members; SSO login now synchronizes the account role.
+See [application authorization](/admin-guide/authentik/#application-authorization).
 
 Clear the per-pod production cache on each web and worker pod after updating shared
 configuration, using `php bin/console cache:clear --env=prod --no-warmup`. The next

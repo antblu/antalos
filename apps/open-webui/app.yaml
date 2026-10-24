@@ -67,6 +67,14 @@ spec:
           openaiApiKey: ""
           databaseUrl: ""
           extraEnvVars:
+            - name: ENABLE_OAUTH_ROLE_MANAGEMENT
+              value: "true"
+            - name: OAUTH_ROLES_CLAIM
+              value: groups
+            - name: OAUTH_ALLOWED_ROLES
+              value: open-web-ui-users,open-web-ui-admins
+            - name: OAUTH_ADMIN_ROLES
+              value: open-web-ui-admins
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:

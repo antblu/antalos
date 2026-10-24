@@ -21,6 +21,21 @@ class ResUsers(models.Model):
             _logger.warning('JIT login rejected for provider %s: %s', provider, reason)
             raise AccessDenied()
 
+        groups = validation.get('groups')
+        if not isinstance(groups, list) or 'odoo-users' not in groups:
+            reject('application membership is required')
+
+        def sync_role(user):
+            # The claims originate in the validated OIDC response. Apply on
+            # every login, including previously linked identities. Local-only
+            # recovery accounts never pass through this JIT path.
+            administrators = self.env.ref('base.group_system')
+            access_rights = self.env.ref('base.group_erp_manager')
+            if 'odoo-admins' in groups:
+                user.write({'group_ids': [(4, administrators.id)]})
+            else:
+                user.write({'group_ids': [(3, administrators.id), (3, access_rights.id)]})
+
         subject = validation.get('user_id')
         if not isinstance(subject, str) or not subject.strip():
             reject('missing subject')
@@ -40,6 +55,7 @@ class ResUsers(models.Model):
             if len(user) != 1 or not user.active or user == provider_rec.jit_user_template_id:
                 reject('inactive, ambiguous, or template identity')
             user.write({'oauth_access_token': params['access_token']})
+            sync_role(user)
             return user.login
 
         # Respect callers that explicitly disallow account creation or linking.
@@ -73,6 +89,7 @@ class ResUsers(models.Model):
                 'oauth_uid': subject,
                 'oauth_access_token': params['access_token'],
             })
+            sync_role(user)
             return user.login
 
         template = provider_rec.jit_user_template_id
@@ -92,6 +109,7 @@ class ResUsers(models.Model):
             'oauth_uid': subject,
             'oauth_access_token': params['access_token'],
         })
+        sync_role(user)
         # The OAuth controller commits with an anonymous default environment.
         # Finish related avatar/attachment computations with a real user first;
         # their SVG access checks deliberately drop sudo and need a valid uid.

@@ -44,12 +44,22 @@ data:
               if (issuer !== process.env.OIDC_ISSUER || !idProfile?.id || userInfo?.id !== idProfile.id) {
                 return done(null, false);
               }
-              return done(null, { username: idProfile.id });
+              const groups = userInfo?._json?.groups;
+              if (!Array.isArray(groups) || !groups.includes("node-red-users")) {
+                return done(null, false);
+              }
+              // Bind the role to the verified identity passed to Node-RED's
+              // users callback; never accept a browser-supplied role value.
+              const role = groups.includes("node-red-admins") ? "admin" : "user";
+              return done(null, { username: `${idProfile.id}#${role}` });
             }
           }
         },
         users: function (username) {
-          return Promise.resolve(username ? { username, permissions: "*" } : null);
+          if (typeof username !== "string" || !/#(?:admin|user)$/.test(username)) {
+            return Promise.resolve(null);
+          }
+          return Promise.resolve({ username, permissions: username.endsWith("#admin") ? "*" : "read" });
         }
       }
     };

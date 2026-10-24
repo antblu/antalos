@@ -4,15 +4,15 @@
 $root = '/var/www/html';
 $path = $root . '/app/Http/Controllers/Auth/LoginController.php';
 $source = file_get_contents($path);
-$marker = '// antalos-antid-jit-v1';
+$marker = '// antalos-antid-jit-v2';
 $needle = <<<'PHP'
         if (!$user) {
             return response()->json(['message' => 'No Invoice Ninja account is linked to this OIDC identity. Ask an administrator to invite you first.'], 400);
         }
 PHP;
 $replacement = <<<'PHP'
-        // antalos-antid-jit-v1
-        if (!$user && config('services.oidc.jit_company_id', getenv('OIDC_JIT_COMPANY_ID'))) {
+        // antalos-antid-jit-v2
+        if (config('services.oidc.jit_company_id', getenv('OIDC_JIT_COMPANY_ID'))) {
             try {
                 $user = \App\Services\Auth\AntIdJitProvisioner::provision($socialite_user);
             } catch (\DomainException $e) {
@@ -21,6 +21,19 @@ $replacement = <<<'PHP'
         }
 
 PHP;
+
+// Migrate the existing v1 callback in place without inserting a second block.
+$previousReplacement = str_replace(
+    ['antalos-antid-jit-v2', "if (config('services.oidc.jit_company_id'"],
+    ['antalos-antid-jit-v1', "if (!\$user && config('services.oidc.jit_company_id'"],
+    $replacement
+);
+if (str_contains($source, '// antalos-antid-jit-v1')) {
+    if (substr_count($source, $previousReplacement) !== 1) {
+        throw new RuntimeException('Unsupported v1 antID callback; review role synchronization.');
+    }
+    $source = str_replace($previousReplacement, $replacement, $source);
+}
 
 if (!str_contains($source, $marker)) {
     // Refuse incompatible upstream changes instead of silently disabling JIT.

@@ -3,6 +3,8 @@
 # Argo CD's yaml-envsubst config-management plugin expands these values into the
 # application manifests at render time. Do not add Kubernetes resources here.
 variables:
+  # renovate: datasource=docker depName=registry.k8s.io/kubectl
+  AUTHORIZATION_KUBECTL_IMAGE_TAG: v1.35.0
   # Bump when changing the yaml-envsubst plugin; its subPath mount needs new pods.
   ARGOCD_PLUGIN_CONFIG_REVISION: "2"
   # renovate: datasource=docker depName=mikefarah/yq
@@ -142,7 +144,7 @@ variables:
   NEXTCLOUD_IMAGE_TAG: 34.0.5-apache
   NEXTCLOUD_INSTANCE_ID: ocxyyr3nkdoj
   NEXTCLOUD_SERVER_VERSION: 34.0.4.1
-  NEXTCLOUD_CONFIG_REVISION: "13"
+  NEXTCLOUD_CONFIG_REVISION: "14"
   NEXTCLOUD_DATABASE_CLUSTER: nextcloud-db-s3
   # The app export must remain reachable from every worker and writable by uid/gid 33 (www-data).
   # If the NFS mount is not NVME, have the application pod copy those apps from the NFS PVC into an emptyDir at startup and point apps_paths there, instead of current behavior.
@@ -559,7 +561,7 @@ variables:
   ODOO_OCA_SERVER_AUTH_REVISION: 4f5bf8a18a087b83808a832c4414ad605aa09289
   # renovate: datasource=pypi depName=python-jose
   ODOO_PYTHON_JOSE_VERSION: "3.5.0"
-  ODOO_JIT_ADDON_REVISION: "2"
+  ODOO_JIT_ADDON_REVISION: "3"
   ODOO_JIT_PROVIDER_NAME: antID
   ODOO_JIT_TEMPLATE_LOGIN: jit-template@invalid.local
   # renovate: datasource=pypi depName=packaging
@@ -572,7 +574,7 @@ variables:
   MEDUSA_NODE_IMAGE_TAG: 24-bookworm-slim
   MEDUSA_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-medusa
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-medusa
-  MEDUSA_IMAGE_TAG: 2.22.0-7
+  MEDUSA_IMAGE_TAG: 2.22.0-8
   MEDUSA_HOST: medusa.antblu.net
   MEDUSA_OIDC_DISPLAY_NAME: antID
   MEDUSA_OIDC_ISSUER: https://auth.antblu.net/application/o/medusa/
@@ -598,7 +600,7 @@ variables:
   MAUTIC_BASE_IMAGE_TAG: 7.2.1-apache
   MAUTIC_IMAGE_REPOSITORY: ghcr.io/antblu/mautic
   # renovate: datasource=docker depName=ghcr.io/antblu/mautic
-  MAUTIC_IMAGE_TAG: 7.2.1-1010-v3
+  MAUTIC_IMAGE_TAG: 7.2.1-1010-v4
   # renovate: datasource=github-releases depName=phpredis/phpredis
   MAUTIC_PHPREDIS_VERSION: 6.3.0
   # Match Invoice Ninja's MariaDB/Galera images.

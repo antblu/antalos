@@ -142,6 +142,12 @@ export default class AntidProvider extends AbstractAuthModuleProvider {
       if (this.options.require_verified_email !== false && claims.email_verified !== true) {
         return { success: false, error: "antID requires a verified email and subject" }
       }
+      // This provider serves the Medusa user (administrator) actor. Customer
+      // authentication uses its own provider; ordinary application membership
+      // must never create or authenticate a Medusa administrator.
+      if (!Array.isArray(claims.groups) || !claims.groups.includes("medusa-admins")) {
+        return { success: false, error: "antID requires medusa-admins membership" }
+      }
       const metadata = {
         email: claims.email.trim().toLowerCase(),
         name: claims.name,

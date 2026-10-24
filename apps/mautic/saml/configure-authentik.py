@@ -41,7 +41,8 @@ with transaction.atomic():
             "signing_kp": CertificateKeyPair.objects.get(name="authentik Self-signed Certificate"),
         },
     )
-    provider.property_mappings.set(mappings)
+    # Preserve role/group mappings owned by the global authorization reconciler.
+    provider.property_mappings.add(*mappings)
     application, _ = Application.objects.update_or_create(
         slug="mautic",
         defaults={
@@ -51,7 +52,7 @@ with transaction.atomic():
             "policy_engine_mode": "any",
         },
     )
-    users, _ = Group.objects.get_or_create(name="Mautic Users")
+    users, _ = Group.objects.get_or_create(name="mautic-users")
     admins = Group.objects.get(name="authentik Admins")
     for order, group in enumerate((users, admins)):
         PolicyBinding.objects.update_or_create(
@@ -59,4 +60,4 @@ with transaction.atomic():
             defaults={"order": order, "enabled": True},
         )
 
-print("Configured Mautic SAML provider and Mautic Users / authentik Admins access.")
+print("Configured Mautic SAML provider and mautic-users / authentik Admins access.")

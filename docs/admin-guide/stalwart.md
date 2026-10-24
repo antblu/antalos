@@ -33,7 +33,39 @@ Wait for required controllers, database initialization, and migration Jobs befor
 
 ## 3. Complete identity and first access
 
-The manifests bootstrap a local Stalwart administrator; they do not configure Authentik OIDC. Establish the administrator through the `stalwart-bootstrap-admin` Secret workflow, then create the domain and mailbox accounts using the deployed version’s administration interface. Mail protocols need their own supported authentication and must remain reachable without an interactive ingress login.
+The manifests bootstrap a local Stalwart administrator and reuse an Authentik OIDC directory by issuer, selecting it for authentication. The dedicated `stalwart_groups` claim maps only the users/admins mail groups; the admins mail group inherits the existing System Administrator role by description lookup. Normal direct account roles remain `User`. Establish the administrator through the `stalwart-bootstrap-admin` Secret workflow, then create the domain and mailbox accounts using the deployed version’s administration interface. Mail protocols need their own supported authentication and must remain reachable without an interactive ingress login.
+
+### Migrate existing direct roles
+
+The OIDC directory synchronizes group membership at login. Existing direct
+administrator roles must also be migrated, since adding a standard-user group
+does not remove a direct administrator grant. From the repository root, forward
+the existing HTTP Service and run the account migration:
+
+```bash
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig \
+  -n stalwart port-forward service/stalwart-web 18080:8080
+```
+
+In another terminal:
+
+```bash
+python3 apps/stalwart/tools/reconcile-access.py
+python3 apps/stalwart/tools/reconcile-access.py --apply
+```
+
+The first invocation prints a plan. The second matches exact Authentik-managed
+email addresses, looks up the active directory, mail domain and built-in role,
+creates or updates the two owned mail groups, enables the scoped claim, and
+migrates matched accounts to a normal direct role with group-derived access.
+It preserves credentials, unrelated memberships, accounts and providers. It
+refuses ambiguous identities or explicit account permissions that require
+review. Bootstrap credentials are read privately from the existing Secret and
+are never printed. Settings reload follows a successful application. Rerun when
+migrating legacy direct roles; ordinary future group synchronization happens
+through OIDC login. The two EMILIANY accounts must belong only to the users mail
+group, with no direct or inherited administrator role. See
+[application authorization](/admin-guide/authentik/#application-authorization).
 
 ## 4. Connect and operate the service
 

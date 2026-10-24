@@ -38,7 +38,8 @@ spec:
           fi
           auth "$@" --name "$OIDC_PROVIDER_NAME" --provider openidConnect \
             --key "$OIDC_CLIENT_ID" --secret "$OIDC_CLIENT_SECRET" \
-            --auto-discover-url "$OIDC_DISCOVERY_URL"
+            --auto-discover-url "$OIDC_DISCOVERY_URL" \
+            --group-claim-name groups --admin-group forgejo-admins
         env:
         - name: OIDC_PROVIDER_NAME
           value: ${FORGEJO_OIDC_PROVIDER_NAME}

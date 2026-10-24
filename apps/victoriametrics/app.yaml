@@ -194,6 +194,9 @@ spec:
                 maxSurge: 0
                 maxUnavailable: 1
             grafana.ini:
+              auth.generic_oauth:
+                role_attribute_path: contains(groups[*], 'grafana-admins') && 'Admin' || 'Viewer'
+                skip_org_role_sync: false
               server:
                 root_url: https://${GRAFANA_HOST}
               database:

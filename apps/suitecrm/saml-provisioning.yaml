@@ -21,6 +21,10 @@ data:
     {
         public function createUser(string $identifier, array $attributes): UserInterface
         {
+            $groups = $attributes['http://schemas.xmlsoap.org/claims/Group'] ?? [];
+            if (!is_array($groups) || !in_array('suitecrm-users', $groups, true)) {
+                throw new RuntimeException('SuiteCRM application membership is required');
+            }
             $this->userHandler->init();
             $previousUser = $GLOBALS['current_user'] ?? null;
 
@@ -51,6 +55,11 @@ data:
       App\Extension\antalos\backend\Security\Saml\LoginPageSubscriber:
         tags:
           - kernel.event_subscriber
+      App\Extension\antalos\backend\Security\Saml\SamlRoleSubscriber:
+        arguments:
+          $userHandler: '@App\Authentication\LegacyHandler\UserHandler'
+        tags:
+          - kernel.event_subscriber
       App\Extension\antalos\backend\Security\Saml\SamlUserFactory:
         arguments:
           $userHandler: '@App\Authentication\LegacyHandler\UserHandler'
@@ -59,6 +68,63 @@ data:
       saml_user_factory:
         alias: App\Extension\antalos\backend\Security\Saml\SamlUserFactory
         public: true
+  SamlRoleSubscriber.php: |
+    <?php
+    namespace App\Extension\antalos\backend\Security\Saml;
+
+    use App\Authentication\LegacyHandler\UserHandler;
+    use BeanFactory;
+    use Nbgrp\OneloginSamlBundle\Security\Http\Authenticator\Passport\Badge\SamlAttributesBadge;
+    use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+    use Symfony\Component\Security\Core\Exception\BadCredentialsException;
+    use Symfony\Component\Security\Http\Event\CheckPassportEvent;
+
+    final class SamlRoleSubscriber implements EventSubscriberInterface
+    {
+        public function __construct(private UserHandler $userHandler) {}
+
+        public static function getSubscribedEvents(): array
+        {
+            return [CheckPassportEvent::class => ['synchronize', 0]];
+        }
+
+        public function synchronize(CheckPassportEvent $event): void
+        {
+            $passport = $event->getPassport();
+            if (!$passport->hasBadge(SamlAttributesBadge::class)) {
+                return;
+            }
+            // The SAML authenticator validates the response before this event.
+            $attributes = $passport->getBadge(SamlAttributesBadge::class)->getAttributes();
+            $groups = $attributes['http://schemas.xmlsoap.org/claims/Group'] ?? [];
+            if (!is_array($groups) || !in_array('suitecrm-users', $groups, true)) {
+                throw new BadCredentialsException('SuiteCRM application membership is required');
+            }
+            $administrator = in_array('suitecrm-admins', $groups, true);
+            $user = $passport->getUser();
+            $this->userHandler->init();
+            $previousUser = $GLOBALS['current_user'] ?? null;
+            try {
+                $systemUser = BeanFactory::newBean('Users')->getSystemUser();
+                if (empty($systemUser->id) || !is_admin($systemUser)) {
+                    throw new BadCredentialsException('SuiteCRM system actor is unavailable');
+                }
+                $GLOBALS['current_user'] = $systemUser;
+                $legacyUser = BeanFactory::getBean('Users', $user->getId());
+                if (empty($legacyUser->id) || !$legacyUser->isEnabled()) {
+                    throw new BadCredentialsException('SuiteCRM account is unavailable');
+                }
+                if ((bool) $legacyUser->is_admin !== $administrator) {
+                    $legacyUser->is_admin = $administrator ? 1 : 0;
+                    $legacyUser->save();
+                }
+                $user->setIsAdmin($administrator);
+            } finally {
+                $GLOBALS['current_user'] = $previousUser;
+                $this->userHandler->close();
+            }
+        }
+    }
   LoginEntryPoint.php: |
     <?php
 

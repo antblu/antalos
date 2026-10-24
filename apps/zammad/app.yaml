@@ -60,6 +60,15 @@ spec:
               secretName: zammad-storage
               secretKey: s3-url
           zammadConfig:
+            customVolumes:
+              - name: authentik-roles
+                configMap:
+                  name: zammad-authentik-roles
+            customVolumeMounts:
+              - name: authentik-roles
+                mountPath: /opt/zammad/config/initializers/antalos_authentik_roles.rb
+                subPath: authentik_roles.rb
+                readOnly: true
             initJob:
               annotations:
                 argocd.argoproj.io/hook: Sync

@@ -11,6 +11,7 @@ with env.registry.cursor() as cr:
     nonce = uuid.uuid4().hex
     try:
         login = users._auth_oauth_signin(provider.id, {
+            'groups': ['odoo-users'],
             'user_id': 'flush-check-' + nonce,
             'email': 'flush-check-' + nonce + '@example.invalid',
             'email_verified': True,

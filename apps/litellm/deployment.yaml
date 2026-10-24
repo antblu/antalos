@@ -57,6 +57,32 @@ spec:
         - --num_workers
         - '1'
         env:
+        - name: GENERIC_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: litellm-oidc
+              key: client-id
+        - name: GENERIC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: litellm-oidc
+              key: client-secret
+        - name: GENERIC_AUTHORIZATION_ENDPOINT
+          value: https://${AUTHENTIK_HOST}/application/o/authorize/
+        - name: GENERIC_TOKEN_ENDPOINT
+          value: https://${AUTHENTIK_HOST}/application/o/token/
+        - name: GENERIC_USERINFO_ENDPOINT
+          value: https://${AUTHENTIK_HOST}/application/o/userinfo/
+        - name: GENERIC_SCOPE
+          value: openid email profile
+        - name: GENERIC_USER_ID_ATTRIBUTE
+          value: sub
+        - name: GENERIC_ROLE_MAPPINGS_GROUP_CLAIM
+          value: groups
+        - name: GENERIC_ROLE_MAPPINGS_DEFAULT_ROLE
+          value: internal_user
+        - name: GENERIC_ROLE_MAPPINGS_ROLES
+          value: '{"proxy_admin": ["lite-llm-admins"], "internal_user": ["lite-llm-users"]}'
         - name: DATABASE_USERNAME
           valueFrom:
             secretKeyRef:

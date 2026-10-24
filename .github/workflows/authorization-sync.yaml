@@ -1,0 +1,22 @@
+name: Reconcile native application authorization
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+concurrency:
+  group: native-application-authorization
+  cancel-in-progress: false
+jobs:
+  reconcile:
+    runs-on: self-hosted
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Reconcile native roles from effective Authentik groups
+        env:
+          ANTALOS_REPO_ROOT: ${{ vars.ANTALOS_REPO_ROOT }}
+        run: |
+          repo_root="${ANTALOS_REPO_ROOT:-$HOME/Github/antalos}"
+          python3 apps/authentik/access-control/sync-native-roles.py --root "$repo_root"

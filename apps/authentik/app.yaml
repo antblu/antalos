@@ -16,6 +16,9 @@ spec:
             affinity:
               podAntiAffinity: hard
             volumeMounts:
+              - name: access-control
+                mountPath: /access-control
+                readOnly: true
               - name: media
                 mountPath: /data
               - name: cal-diy-blueprint
@@ -23,6 +26,9 @@ spec:
                 subPath: cal-diy.yaml
                 readOnly: true
             volumes:
+              - name: access-control
+                configMap:
+                  name: authentik-access-control
               - name: media
                 persistentVolumeClaim:
                   claimName: authentik-media
@@ -30,6 +36,10 @@ spec:
                 configMap:
                   name: authentik-cal-diy-blueprint
             env:
+              - name: VAULTWARDEN_AUTH_HOST
+                value: ${VAULTWARDEN_HOST}
+              - name: STALWART_AUTH_GROUP_DOMAIN
+                value: ${MAIL_DOMAIN}
               - name: AUTHENTIK_POSTGRESQL__HOST
                 value: authentik-db-rw.authentik.svc.cluster.local
               - name: AUTHENTIK_POSTGRESQL__PASSWORD
@@ -106,6 +116,8 @@ spec:
                     - shell
                     - -c
                     - |
+                      exec(compile(open('/access-control/reconcile.py').read(), '/access-control/reconcile.py', 'exec'))
+
                       from authentik.outposts.models import Outpost, OutpostType
                       from authentik.outposts.tasks import controller_for_outpost
 

@@ -30,6 +30,32 @@ data:
     metadata:
       name: antalos - Cal.diy OIDC
     entries:
+      - model: authentik_providers_oauth2.scopemapping
+        id: cal-diy-effective-profile
+        identifiers:
+          name: "antalos cal-diy: effective profile"
+        attrs:
+          scope_name: profile
+          expression: |
+            avatar = request.user.avatar
+            return delete_none_values({
+                "name": request.user.name,
+                "given_name": ak_obj_attr(request.user, "given_name", "name"),
+                "family_name": ak_obj_attr(request.user, "family_name"),
+                "preferred_username": request.user.username,
+                "nickname": request.user.username,
+                "groups": list(request.user.all_groups().values_list("name", flat=True)),
+                "picture": avatar if avatar and not avatar.startswith("data:") else None,
+            })
+      - model: authentik_providers_oauth2.scopemapping
+        id: cal-diy-application-roles
+        identifiers:
+          name: "antalos cal-diy: application roles"
+        attrs:
+          scope_name: profile
+          expression: |
+            admin = request.user.all_groups().filter(name='cal-diy-admins').exists()
+            return {"application_role": "admin" if admin else "user"}
       - model: authentik_providers_oauth2.oauth2provider
         state: present
         id: cal-diy-provider
@@ -65,10 +91,8 @@ data:
               - authentik_providers_oauth2.scopemapping
               - - scope_name
                 - email
-            - !Find
-              - authentik_providers_oauth2.scopemapping
-              - - scope_name
-                - profile
+            - !KeyOf cal-diy-effective-profile
+            - !KeyOf cal-diy-application-roles
           redirect_uris:
             - matching_mode: strict
               redirect_uri_type: authorization

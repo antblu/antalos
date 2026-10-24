@@ -31,7 +31,7 @@ Wait for required controllers, database initialization, and migration Jobs befor
 
 ## 3. Complete identity and first access
 
-The manifests do not configure a native OIDC provider. Complete the initial administrator wizard, then use Zammad’s supported third-party authentication settings for the deployed version. If integrating Authentik, copy the callback or service-provider metadata supplied by Zammad into the provider, configure the corresponding client secret or signing certificate, and map identities deliberately. Keep a local administrator until role and group access work for ordinary users.
+The deployment mounts an OIDC authorization adapter that maps verified `zammad-users` to `Customer` and `zammad-admins` to `Admin` plus `Agent`, synchronizing built-in roles on login while retaining custom roles. The underlying OIDC provider credentials remain post-deployment configuration. Complete the initial administrator wizard, then use Zammad’s supported third-party authentication settings for the deployed version. If integrating Authentik, copy the callback or service-provider metadata supplied by Zammad into the provider, configure the corresponding client secret or signing certificate, and map identities deliberately. Keep a local administrator until role and group access work for ordinary users.
 
 ## 4. Connect and operate the service
 

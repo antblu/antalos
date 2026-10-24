@@ -104,6 +104,7 @@ spec:
 
               # Reinstall the SAML extension even when shared application code exists.
               mkdir -p extensions/antalos/backend/Security/Saml extensions/antalos/config
+              cp /mnt/saml-provisioning/SamlRoleSubscriber.php extensions/antalos/backend/Security/Saml/
               cp /mnt/saml-provisioning/SamlUserFactory.php extensions/antalos/backend/Security/Saml/
               cp /mnt/saml-provisioning/LoginEntryPoint.php extensions/antalos/backend/Security/Saml/
               cp /mnt/saml-provisioning/LoginPageSubscriber.php extensions/antalos/backend/Security/Saml/

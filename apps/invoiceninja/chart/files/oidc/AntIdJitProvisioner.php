@@ -22,7 +22,13 @@ final class AntIdJitProvisioner
             throw new \DomainException('antID must provide a verified email address for automatic provisioning.');
         }
 
-        return DB::transaction(function () use ($companyId, $identity, $email): User {
+        $groups = $identity->getRaw()['groups'] ?? [];
+        if (!is_array($groups) || !in_array('invoice-ninja-users', $groups, true)) {
+            throw new \DomainException('Invoice Ninja application membership is required.');
+        }
+        $administrator = in_array('invoice-ninja-admins', $groups, true);
+
+        return DB::transaction(function () use ($companyId, $identity, $email, $administrator): User {
             // Serialize first logins so repeated/concurrent callbacks cannot duplicate users.
             $company = Company::query()->whereKey($companyId)->lockForUpdate()->first();
             if (!$company) {
@@ -35,6 +41,13 @@ final class AntIdJitProvisioner
                 if ($user->trashed() || $user->is_deleted || $user->account_id != $company->account_id) {
                     throw new \DomainException('This antID identity cannot join the configured company.');
                 }
+                $membership = $user->companies()->where('companies.id', $company->id)->first();
+                if (!$membership) {
+                    throw new \DomainException('This identity is not a member of the configured company.');
+                }
+                // Company ownership is a separate recovery/business role.
+                // Synchronize administrator access, never transfer ownership.
+                $user->companies()->updateExistingPivot($company->id, ['is_admin' => $administrator]);
                 return $user;
             }
 
@@ -58,7 +71,7 @@ final class AntIdJitProvisioner
             $user->companies()->attach($company->id, [
                 'account_id' => $company->account_id,
                 'is_owner' => false,
-                'is_admin' => false,
+                'is_admin' => $administrator,
                 'is_locked' => false,
                 'permissions' => '',
                 'notifications' => (object) ['email' => []],

@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zammad-authentik-roles
+  namespace: zammad
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+data:
+  authentik_roles.rb: |
+    # OmniAuth has already validated the OIDC exchange before constructing an
+    # Authorization provider. Never decode an unverified browser token here.
+    module AntalosAuthentikRoles
+      def initialize(auth_hash, user = nil)
+        claims = auth_hash.dig('extra', 'raw_info') || {}
+        groups = claims['groups'] || claims[:groups]
+        unless groups.is_a?(Array) && groups.include?('zammad-users')
+          raise Authorization::Provider::AccountError
+        end
+        super
+        return unless @user
+
+        @user.with_lock do
+          managed = Role.where(name: %w[Admin Agent Customer])
+          desired = groups.include?('zammad-admins') ? %w[Admin Agent] : %w[Customer]
+          selected = Role.where(name: desired, active: true)
+          raise 'Required Zammad authorization role is missing' unless selected.count == desired.length
+          # Preserve application-specific custom roles; synchronize built-ins.
+          @user.roles = (@user.roles.to_a - managed.to_a + selected.to_a).uniq
+          @user.save!
+        end
+      end
+    end
+
+    Rails.application.config.to_prepare do
+      provider = Authorization::Provider::OpenidConnect
+      provider.prepend(AntalosAuthentikRoles) unless provider < AntalosAuthentikRoles
+    end

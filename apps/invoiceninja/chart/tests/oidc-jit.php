@@ -35,7 +35,7 @@ $companyId = (int) ($argv[2] ?? 3);
 config(['services.oidc.jit_company_id' => $companyId]);
 $before = User::withTrashed()->count();
 $suffix = bin2hex(random_bytes(12));
-$identity = (new Identity())->setRaw(['email_verified' => true])->map([
+$identity = (new Identity())->setRaw(['email_verified' => true, 'groups' => ['invoice-ninja-users']])->map([
     'id' => 'antalos-test-' . $suffix,
     'name' => 'JIT Diagnostic',
     'email' => 'jit-' . $suffix . '@example.invalid',
@@ -51,8 +51,15 @@ try {
     check(AntIdJitProvisioner::provision($identity)->id === $user->id, 'repeat identity reuses the same user');
     check(User::withTrashed()->count() === $before + 1, 'repeat login does not create duplicate users');
 
+    $identity->setRaw(['email_verified' => true, 'groups' => ['invoice-ninja-users', 'invoice-ninja-admins']]);
+    AntIdJitProvisioner::provision($identity);
+    check((bool) $cu->fresh()->is_admin, 'administrator group grants native company administrator');
+    $identity->setRaw(['email_verified' => true, 'groups' => ['invoice-ninja-users']]);
+    AntIdJitProvisioner::provision($identity);
+    check(!$cu->fresh()->is_admin, 'removing administrator group removes native administrator');
+
     // Exercise the installed callback after the already-validated Socialite boundary.
-    $callbackIdentity = (new Identity())->setRaw(['email_verified' => true])->map([
+    $callbackIdentity = (new Identity())->setRaw(['email_verified' => true, 'groups' => ['invoice-ninja-users']])->map([
         'id' => 'antalos-callback-' . $suffix,
         'name' => 'Callback Diagnostic',
         'email' => 'callback-' . $suffix . '@example.invalid',

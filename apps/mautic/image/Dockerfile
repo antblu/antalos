@@ -18,7 +18,11 @@ RUN apt-get update \
 
 COPY patch-installer.php /usr/local/share/mautic/patch-installer.php
 COPY configure-proxies.php /usr/local/share/mautic/configure-proxies.php
+COPY patch-saml-roles.php /usr/local/share/mautic/patch-saml-roles.php
 RUN php /usr/local/share/mautic/patch-installer.php \
+    && php /usr/local/share/mautic/patch-saml-roles.php \
+    && php -l /var/www/html/docroot/app/bundles/UserBundle/Security/SAML/User/UserMapper.php \
+    && php -l /var/www/html/docroot/app/bundles/UserBundle/Security/SAML/User/UserCreator.php \
     && php -l /var/www/html/docroot/app/bundles/InstallBundle/Install/InstallService.php
 
 COPY --chmod=755 entrypoint.sh /usr/local/bin/antalos-mautic

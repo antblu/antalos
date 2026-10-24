@@ -21,6 +21,10 @@ spec:
           - name: database.host
             value: ${VAULTWARDEN_DATABASE_HOST}
         valuesObject:
+          image:
+            extraVars:
+              - key: DISABLE_ADMIN_TOKEN
+                value: "true"
           fullnameOverride: vaultwarden
           resourceType: Deployment
           replicas: 1

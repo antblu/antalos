@@ -1,0 +1,89 @@
+apiVersion: management.cattle.io/v3
+kind: GlobalRoleBinding
+metadata:
+  name: authentik-rancher-admins
+globalRoleName: admin
+groupPrincipalName: genericoidc_group://rancher-admins
+---
+apiVersion: management.cattle.io/v3
+kind: GlobalRoleBinding
+metadata:
+  name: authentik-rancher-users
+globalRoleName: user
+groupPrincipalName: genericoidc_group://rancher-users
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rancher-authentik-access
+  namespace: cattle-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rancher-authentik-access
+rules:
+  - apiGroups:
+      - management.cattle.io
+    resources:
+      - authconfigs
+    resourceNames:
+      - genericoidc
+    verbs:
+      - get
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rancher-authentik-access
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rancher-authentik-access
+subjects:
+  - kind: ServiceAccount
+    name: rancher-authentik-access
+    namespace: cattle-system
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rancher-authentik-access
+  namespace: cattle-system
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      serviceAccountName: rancher-authentik-access
+      restartPolicy: OnFailure
+      containers:
+        - name: configure
+          image: registry.k8s.io/kubectl:${AUTHORIZATION_KUBECTL_IMAGE_TAG}
+          command:
+            - kubectl
+            - --cache-dir=/tmp/kube-cache
+            - patch
+            - authconfigs.management.cattle.io
+            - genericoidc
+            - --type=merge
+            - -p
+            - '{"groupsField":"groups","groupSearchEnabled":true}'
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 65532
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi

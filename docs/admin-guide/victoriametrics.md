@@ -33,7 +33,7 @@ Wait for required controllers, database initialization, and migration Jobs befor
 
 ## 3. Complete identity and first access
 
-The repository does not configure Grafana OIDC. Use the generated Grafana administrator Secret through your private credential workflow, then create appropriate viewer/editor access. If adding Authentik later, configure Grafana Generic OAuth with its exact `/login/generic_oauth` callback and explicit role mapping, using a sealed client secret. Document whether UI changes or Git own each setting.
+The repository supplies the Generic OAuth role mapping (`grafana-admins` becomes organization `Admin`, otherwise `Viewer`) and enables role synchronization. The provider connection, credentials and enablement remain separately configured. Use the generated Grafana administrator Secret through your private credential workflow, then create appropriate viewer/editor access. If adding Authentik later, configure Grafana Generic OAuth with its exact `/login/generic_oauth` callback and explicit role mapping, using a sealed client secret. Document whether UI changes or Git own each setting.
 
 ## 4. Connect and operate the service
 

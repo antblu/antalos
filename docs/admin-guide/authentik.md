@@ -35,6 +35,147 @@ Wait for required controllers, database initialization, and migration Jobs befor
 
 On a new database, complete the upstream initial setup flow at `/if/flow/initial-setup/` and establish an administrator. Create one application/provider pair per relying application, bind the permitted users or groups, and copy the provider metadata into that app’s settings. Use the [SSO integration guide](/admin-guide/single-sign-on/) for the exact distinction between OIDC, SAML, and forward-auth. Provider objects are post-deployment configuration; the Kubernetes manifests alone do not create them.
 
+## Application authorization
+
+`apps/authentik/access-control/reconcile.py` manages the group layer using the
+same `ak shell`/Django automation already used for provider configuration. Its
+generated ConfigMap is mounted by the Authentik chart; the worker startup hook
+runs the reconciler before the existing LDAP-outpost reconciliation. Regenerate
+`apps/authentik/access-control.yaml` with
+`python3 apps/authentik/access-control/render-configmap.py` after editing it.
+It discovers Application objects, including providerless dashboard links, and
+reuses their providers. Unattached providers/outposts do not get application
+groups. Rerun after creating an application; discovery runs at worker startup,
+not continuously after every directory change.
+
+Every application gets `<slug>-users` and `<slug>-admins`. Authentik inherits
+membership **from child to ancestor**: the admins group has users as a parent.
+`emiliany-admin` therefore has `mautic-admins`, `medusa-admins`, `zammad-admins`,
+`odoo-admins`, and `stalwart-users` as parents. Its direct users are
+`estefania.cc` and the separately identified `emiliany-admin` user. None of these
+relationships grants Authentik superuser permissions. Existing `authentik
+Admins` operators inherit each application's administrator group; application
+admins do not inherit the operator group.
+
+Legacy groups remain as compatibility children of the corresponding standard
+group. Their names, members, existing application bindings, and downstream
+references are retained. This includes Argo CD, Grafana, Jellyfin, Home Assistant,
+Obsidian, Odoo, and Mautic. The existing `jellyfin-ldap` service account receives
+`jellyfin-users` so the access gate preserves the LDAP client's bind access.
+The existing misspelled `home-assitant` application slug is retained to preserve
+its issuer and callbacks; its canonical group prefix is `home-assistant`. Legacy
+misspelled group names remain compatibility children.
+
+Most previously unbound applications now require their users group. Medusa,
+Traefik, Homelable, UrBackup, Obsidian Live Sync, Vaultwarden administration, and
+the Uptime Kuma admin proxy require their admins
+group because those integrations expose a privileged surface. Medusa customers
+use the storefront's separate customer authentication; `medusa-users` does not
+turn a customer into a Medusa Admin actor. The public `uptime-kuma` status-page
+bookmark intentionally remains unbound. New identities no longer gain access to
+restricted applications merely by existing in Authentik. Existing policy and
+user bindings are retained; a future application with expression or negated
+bindings stops the migration for review instead of silently bypassing them.
+
+OIDC providers receive a provider-specific profile mapping that emits
+`request.user.all_groups()`, plus `application_role=admin|user`. The shared
+upstream profile mapping remains unchanged. Both SAML providers receive an
+effective-groups assertion named `http://schemas.xmlsoap.org/claims/Group`.
+Cal.diy's existing blueprint declares the same effective mappings so its
+periodic provider reconciliation does not remove them. Claims alone do not
+configure a relying application's authorization.
+
+### Downstream role adapters in source
+
+| Application | Standard access | Administrator mapping |
+| --- | --- | --- |
+| Mautic | Existing non-admin `SSO Users` role | `mautic-admins` selects an existing `isAdmin` role by lookup; guarded image patch applies on new and returning SAML logins |
+| Medusa | Separate storefront customer flow | Medusa Admin accepts only verified OIDC claims containing `medusa-admins`, before identity provisioning or login |
+| Zammad | Built-in `Customer` role | Verified OIDC userinfo `zammad-admins` selects `Admin` and `Agent`; built-ins synchronize on login and custom roles remain |
+| Odoo | Existing internal-user template | Validated `odoo-admins` grants `base.group_system`; its absence removes Settings/Access Rights administration on each JIT login |
+| Stalwart | `User` account role and `stalwart-users` mail group | Dedicated `stalwart_groups` claim contains only the two mail-group addresses; the admins group inherits the built-in System Administrator role |
+| Argo CD | `role:readonly` | `argo-cd-admins` maps to `role:admin` |
+| Grafana | `Viewer` | `grafana-admins` maps to organization `Admin` with role synchronization enabled |
+| Forgejo | Normal native account | OAuth source maps `groups`/`forgejo-admins` through its native administrator-group option |
+| Open WebUI | Normal `user` | Native OAuth role management reads the effective `groups` claim and selects `open-web-ui-admins` |
+| Node-RED | Read-only editor/API | Verified userinfo `node-red-admins` selects `*`; role is bound to the authenticated, role-suffixed subject |
+
+These changes are deployment inputs only after publication. Build the Mautic and
+Medusa images at the updated tags before reconciliation. Odoo needs the new addon
+revision loaded by both replicas; Zammad and Node-RED need their new configuration
+mounted and processes restarted. Do not infer deployed application permissions
+from the Authentik group graph or the presence of a role claim.
+
+### Additional native integrations and operational limits
+
+| Application | Native authorization mechanism |
+| --- | --- |
+| Rancher | Generic OIDC `groups` plus GlobalRoleBindings for native `admin` and `user` roles |
+| Nextcloud | Existing user_oidc provider provisions `nextcloud_groups`; only `admin` and `nextcloud-users` are managed |
+| Headplane | `headplane_role` selects native `admin` or `viewer` |
+| LiteLLM | Generic SSO maps effective groups to `proxy_admin` or `internal_user` |
+| SuiteCRM | Validated SAML groups synchronize native `is_admin` on login |
+| Invoice Ninja | Validated OIDC groups synchronize the existing company membership's administrator flag |
+| Immich | Existing native `immich_role` claim selects `admin` or `user` |
+| Home Assistant | Existing auth_oidc integration options select `home-assistant-admins` and `home-assistant-users`; use `apps/home-assistant/tools/configure-access.py` with private `HOME_ASSISTANT_TOKEN` and explicit `HOME_ASSISTANT_URL` |
+| Cal.diy | Existing OIDC-linked accounts synchronize native `ADMIN`/`USER` by exact email |
+| Storyteller | Native group permissions provision new accounts; linked accounts' permissions are reconciled by exact email |
+| Vaultwarden | Separate admin-only Authentik proxy application gates `/admin`; a NetworkPolicy limits backend ingress to Traefik before the shared admin-token prompt is disabled |
+
+The existing self-hosted runner runs `.github/workflows/authorization-sync.yaml`
+every five minutes for Cal.diy and Storyteller. It uses the existing private
+checkout kubeconfig and Debian SSH alias; runner availability bounds role-change
+propagation. Run `sync-native-roles.py --root /path/to/private/checkout` manually
+when immediate synchronization is needed. Local recovery accounts are preserved.
+
+Jellyfin's external endpoint returned HTTP 502 during implementation; its native
+LDAP role settings could not be verified or updated. Existing LDAP groups and
+credentials remain intact. Nextcloud reports an outstanding native upgrade,
+which blocks login verification. Homelable and UrBackup are gated as privileged
+surfaces; separate lesser native roles have not been established. BentoPDF and
+VictoriaLogs have no separate native administrator role in these integrations.
+These limits prevent claiming complete native role verification for every app.
+
+### Apply and verify the group layer
+
+From the repository root, after the mounted source is published:
+
+```bash
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig \
+  -n authentik exec deploy/authentik-worker -- ak shell -c \
+  "exec(compile(open('/access-control/reconcile.py').read(), '/access-control/reconcile.py', 'exec'))"
+```
+
+Before publication, the same source can be passed through stdin to `ak shell`;
+supply `STALWART_AUTH_GROUP_DOMAIN` from `MAIL_DOMAIN`. Do not apply unresolved
+Kubernetes manifests. The reconciler uses an atomic database transaction and an
+advisory lock, resolves objects by name/slug, and verifies both EMILIANY accounts'
+effective membership before committing. It does not remove unrelated objects.
+
+`access-control/test.py` is intended to run after the reconciler inside a
+rollback-only outer transaction. It checks the actual Authentik policy engine,
+emitted OIDC/SAML claims for both accounts, Stalwart's standard-only claim, and
+denial of an ungrouped identity for every restricted application. The Mautic
+adapter contract test is `apps/mautic/saml/test-roles.php`; Zammad's
+`apps/zammad/tests/authentik-roles.rb` runs with the source initializer loaded
+inside a rolled-back Rails transaction. Odoo's existing rollback tests exercise
+administrator grant/removal and missing-group denial. Medusa's image build runs
+its token-validation and callback tests.
+
+On 2026-10-23, the group reconciler was applied directly to the live Authentik
+database and both requested users passed effective-membership and policy/claim
+checks. Stalwart's existing OIDC directory was updated to read its scoped claim;
+its two mail groups were created and existing matched accounts were migrated to
+normal direct roles plus group-derived access. Both EMILIANY mail accounts were
+assigned standard access, including removal of the former direct administrator
+role from `admin@emiliany.com`. These facts are separate from deployment of the
+application adapters and from a real browser login. No end-user browser login
+was performed for this migration.
+
+[Authentik group inheritance](https://docs.goauthentik.io/users-sources/groups/)
+and [Stalwart OIDC directory behavior](https://stalw.art/docs/auth/backend/oidc/)
+describe the upstream semantics used here.
+
 ## 4. Connect and operate the service
 
 1. Configure and test outbound email before relying on password recovery. The declared SMTP endpoint is Stalwart, so retain a recovery path that does not depend on both services being healthy.

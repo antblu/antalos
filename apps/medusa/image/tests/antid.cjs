@@ -73,7 +73,7 @@ test("antID verifies OIDC tokens, consumes state and keeps subject identity", as
     claims = {
       iss: options.issuer, aud: options.client_id, sub: "stable-subject",
       iat: now, exp: now + 300, nonce: redirect.searchParams.get("nonce"),
-      email: "Admin@Example.com", email_verified: true,
+      email: "Admin@Example.com", email_verified: true, groups: ["medusa-users", "medusa-admins"],
     }
     return { query: { state: redirect.searchParams.get("state"), code: "test-code" } }
   }
@@ -95,6 +95,8 @@ test("antID verifies OIDC tokens, consumes state and keeps subject identity", as
     ["unverified email", { email_verified: false }],
     ["missing email", { email: undefined }],
     ["missing subject", { sub: undefined }],
+    ["ordinary application user", { groups: ["medusa-users"] }],
+    ["missing authorization claim", { groups: undefined }],
   ]) {
     await t.test(name, async () => {
       const input = await start()

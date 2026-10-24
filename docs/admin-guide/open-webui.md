@@ -74,3 +74,5 @@ If browser login succeeds but callbacks fail, compare the OIDC redirect and disc
 - [`secrets.yaml`](https://github.com/antblu/antalos/blob/main/apps/open-webui/secrets.yaml)
 
 [Official Open WebUI documentation](https://docs.openwebui.com/).
+
+OAuth role management reads effective `groups`: `open-web-ui-users` permits ordinary use and `open-web-ui-admins` selects administrator access. Confirm existing database-persisted OAuth settings do not override the declared environment during rollout. See [application authorization](/admin-guide/authentik/#application-authorization).

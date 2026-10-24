@@ -29,6 +29,7 @@ spec:
                     announcementcenter calendar notify_push contacts side_menu \
                     deck external forms mail integration_openai assistant app_api eurooffice \
                     notes user_oidc spreed groupfolders whiteboard
+                  php /access-control/configure.php
                   # Kubernetes manages Context Chat directly; this registration
                   # is not a Docker/HaRP endpoint for automatic ExApp deployment.
                   if [ "$(php occ config:app:get app_api default_daemon_config)" = context_chat_kubernetes ]; then
@@ -143,6 +144,9 @@ spec:
                 max_execution_time=3600
                 max_input_time=3600
             extraVolumes:
+              - name: oidc-access
+                configMap:
+                  name: nextcloud-oidc-access
               - name: nextcloud-shared-config
                 configMap:
                   name: nextcloud-shared-config
@@ -150,6 +154,9 @@ spec:
                 persistentVolumeClaim:
                   claimName: nextcloud-apps
             extraVolumeMounts:
+              - name: oidc-access
+                mountPath: /access-control
+                readOnly: true
               - name: nextcloud-apps
                 mountPath: /var/www/html/gitops_apps
                 readOnly: true

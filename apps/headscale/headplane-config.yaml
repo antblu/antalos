@@ -37,6 +37,7 @@ data:
       disable_api_key_login: true
       token_endpoint_auth_method: ${HEADPLANE_OIDC_TOKEN_ENDPOINT_AUTH_METHOD}
       default_role: ${HEADPLANE_OIDC_DEFAULT_ROLE}
+      role_claim: headplane_role
   litestream.yml: |
     dbs:
       - path: /var/lib/headplane/hp_persist.db

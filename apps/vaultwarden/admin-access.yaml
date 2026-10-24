@@ -1,0 +1,83 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: vaultwarden-admin-authentik
+  namespace: vaultwarden
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  forwardAuth:
+    address: http://authentik-server.authentik.svc.cluster.local/outpost.goauthentik.io/auth/traefik
+    trustForwardHeader: true
+    authResponseHeaders:
+    - X-authentik-username
+    - X-authentik-groups
+    - X-authentik-email
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: vaultwarden-administration
+  namespace: vaultwarden
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - kind: Rule
+    match: Host(`${VAULTWARDEN_HOST}`) && PathPrefix(`/admin`)
+    priority: 100
+    middlewares:
+    - name: vaultwarden-admin-authentik
+    services:
+    - name: vaultwarden
+      port: 80
+  tls:
+    secretName: vaultwarden-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: vaultwarden-ingress
+  namespace: vaultwarden
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: vaultwarden
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: traefik
+    ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vaultwarden-authentik-callback
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+    traefik.ingress.kubernetes.io/router.priority: '110'
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: ${VAULTWARDEN_HOST}
+    http:
+      paths:
+      - path: /outpost.goauthentik.io/
+        pathType: Prefix
+        backend:
+          service:
+            name: authentik-server
+            port:
+              number: 80

@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-oidc-access
+  namespace: nextcloud
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+data:
+  configure.php: |
+    <?php
+    // Preserve existing provider IDs, subjects, credentials and UID settings.
+    require '/var/www/html/lib/base.php';
+    OC_App::loadApp('user_oidc');
+    $mapper = OC::$server->get(OCA\UserOIDC\Db\ProviderMapper::class);
+    $service = OC::$server->get(OCA\UserOIDC\Service\ProviderService::class);
+    $matches = array_filter($mapper->getProviders(), static fn($provider) =>
+        $provider->getDiscoveryEndpoint() === 'https://${AUTHENTIK_HOST}/application/o/nextcloud/.well-known/openid-configuration');
+    if (count($matches) !== 1) {
+        throw new RuntimeException('Expected one existing Authentik Nextcloud provider');
+    }
+    $provider = array_values($matches)[0];
+    $service->setSetting($provider->getId(), $service::SETTING_GROUP_PROVISIONING, '1');
+    $service->setSetting($provider->getId(), $service::SETTING_MAPPING_GROUPS, 'nextcloud_groups');
+    // Only these groups are owned here. Unrelated local group memberships stay.
+    $service->setSetting($provider->getId(), $service::SETTING_GROUP_WHITELIST_REGEX, '/^(admin|nextcloud-users)$/');
+    echo "Configured Nextcloud group-based authorization\n";

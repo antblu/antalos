@@ -208,6 +208,8 @@ configs:
       argocd.argoproj.io/sync-wave: "-1"
   rbac:
     policy.csv: |
+      g, argo-cd-admins, role:admin
+      g, argo-cd-users, role:readonly
       g, Argo CD Admins, role:admin
       g, Argo CD Viewers, role:readonly
   params:
