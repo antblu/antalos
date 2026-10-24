@@ -17,7 +17,7 @@ variables:
   CERT_MANAGER_CHART_VERSION: v1.18.2
   CERT_MANAGER_DNS01_RECURSIVE_NAMESERVER: https://1.1.1.1/dns-query
   # renovate: datasource=helm depName=cloudnative-pg registryUrl=https://cloudnative-pg.github.io/charts
-  CNPG_OPERATOR_CHART_VERSION: 0.29.0
+  CNPG_OPERATOR_CHART_VERSION: 0.29.1
   # renovate: datasource=helm depName=metallb registryUrl=https://metallb.github.io/metallb
   METALLB_CHART_VERSION: 0.16.1
   # renovate: datasource=helm depName=mariadb-operator registryUrl=https://mariadb-operator.github.io/mariadb-operator
