@@ -8,11 +8,18 @@ const { normalizeEmail, legalCurrent, marketingState, backoff } = app('./src/lib
 const { Mautic } = app('./src/lib/customer-sync/mautic')
 const { identity, record, status } = app('./src/lib/customer-sync/store')
 const { drain, enqueueCustomer } = app('./src/lib/customer-sync/worker')
-const { upsertPartner } = app('./src/lib/customer-sync/odoo')
+const { upsertPartner, partners } = app('./src/lib/customer-sync/odoo')
 process.env.CUSTOMER_TERMS_VERSION = 'terms-v1'
 process.env.CUSTOMER_PRIVACY_VERSION = 'privacy-v1'
 process.env.CUSTOMER_SYNC_ENABLED = 'true'
 const { fixture } = require("./support/customer-fixture.cjs")
+test('Odoo imports exclude login-linked contacts without hiding identity matches', async () => {
+  let domain
+  const odoo = { execute: async (model, method, args) => { assert.equal(model, 'res.partner'); assert.equal(method, 'search_read'); domain = args[0]; return [] } }
+  await partners(odoo, 7)
+  assert.ok(domain.some(condition => JSON.stringify(condition) === JSON.stringify(['user_ids', '=', false])))
+  assert.ok(domain.some(condition => JSON.stringify(condition) === JSON.stringify(['id', '>', 7])))
+})
 function mockMautic(t, initial) {
   let contact = initial, saves = [], dncRemovals = 0, dncAdds = 0, creates = 0
   t.mock.method(Mautic.prototype, 'resolve', async () => contact)

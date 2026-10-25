@@ -12,7 +12,9 @@ export async function upsertPartner(odoo: OdooModuleService, data: Record<string
   return odoo.execute<number>("res.partner", "create", [data])
 }
 export async function partners(odoo: OdooModuleService, after = 0) {
-  return odoo.execute<Partner[]>("res.partner", "search_read", [[["id", ">", after], ["email", "!=", false], ["active", "=", true]]], {
+  // Login-linked partners remain visible to identity matching, but are not
+  // customer imports and cannot be updated by the integration's record rules.
+  return odoo.execute<Partner[]>("res.partner", "search_read", [[["id", ">", after], ["email", "!=", false], ["active", "=", true], ["user_ids", "=", false]]], {
     fields: ["id", "name", "email", "phone", "lang", "country_id", "x_medusa_customer_id"], limit: 100, order: "id asc",
   })
 }
