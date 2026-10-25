@@ -29,12 +29,12 @@ if access:
     access.write(values)
 else:
     env['ir.model.access'].sudo().create(values)
-for model_name in ['res.country', 'res.country.state']:
+for model_name in ['res.country', 'res.country.state', 'res.partner.category']:
     location = env['ir.model'].sudo().search([('model', '=', model_name)], limit=1)
     if not location:
         raise RuntimeError('Missing location model: ' + model_name)
     if not env['ir.model.access'].sudo().search_count([('group_id', '=', group.id), ('model_id', '=', location.id)]):
-        env['ir.model.access'].sudo().create({'name': 'Integration location reader', 'model_id': location.id,
+        env['ir.model.access'].sudo().create({'name': 'Integration contact reference reader', 'model_id': location.id,
             'group_id': group.id, 'perm_read': True, 'perm_write': False, 'perm_create': False, 'perm_unlink': False})
 env.cr.commit()
 # Odoo shell does not finish an HTTP request, which normally signals registry
