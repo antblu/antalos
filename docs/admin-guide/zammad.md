@@ -41,6 +41,21 @@ The deployment mounts an OIDC authorization adapter that maps verified `zammad-u
 
 3. Establish database/object backups and document recovery of scheduled and real-time processing.
 
+## Website contact forms
+
+Zammad’s built-in form channel creates customer tickets without distributing an
+agent API token. Enable it under Channels → Form and select the receiving group.
+These settings live in the Zammad database and must be preserved in backups.
+Keep the honeypot and per-IP/global submission limits enabled. Browser clients
+request `/api/v1/form_config` with a fingerprint, then submit its token and the
+same fingerprint to `/api/v1/form_submit`. They must handle validation errors
+returned with HTTP 200 and report success only when a ticket number is returned.
+If CAPTCHA is enabled, the client must implement the selected provider’s challenge.
+
+Ticket creation and delivery of an email reply are separate operations. Configure
+and verify the receiving group’s outbound email channel for replies. See the
+[official form channel guide](https://admin-docs.zammad.org/en/latest/channels/form.html).
+
 ## Availability before maintenance
 
 **Partially HA: paired HTTP tiers and data services, with singleton real-time/background roles and Redis/search caveats.**
