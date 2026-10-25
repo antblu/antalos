@@ -132,7 +132,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/juanfont/headscale
   HEADSCALE_IMAGE_TAG: v0.29.6
   # renovate: datasource=docker depName=ghcr.io/tale/headplane
-  HEADPLANE_IMAGE_TAG: 0.7.1
+  HEADPLANE_IMAGE_TAG: 0.8.2
   # renovate: datasource=docker depName=louislam/uptime-kuma
   UPTIME_KUMA_IMAGE_TAG: 2.5.7-rootless
   # renovate: datasource=docker depName=nodered/node-red
