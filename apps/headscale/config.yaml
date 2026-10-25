@@ -79,6 +79,7 @@ data:
       email_verified_required: ${HEADSCALE_OIDC_EMAIL_VERIFIED_REQUIRED}
       allowed_domains:
         - ${HEADSCALE_OIDC_ALLOWED_DOMAIN}
+        - ${HEADSCALE_OIDC_ADDITIONAL_ALLOWED_DOMAIN}
       pkce:
         enabled: ${HEADSCALE_OIDC_PKCE_ENABLED}
         method: S256

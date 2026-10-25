@@ -9,7 +9,7 @@ This runbook deploys the service from `apps/headscale/` and completes the config
 
 ## 1. Prepare dependencies and inputs
 
-1. Set the `HEADSCALE_*` and `HEADPLANE_*` variables, including DNS, issuer, allowed email domain, and storage.
+1. Set the `HEADSCALE_*` and `HEADPLANE_*` variables, including DNS, issuer, allowed email domains, and storage. `HEADSCALE_OIDC_ALLOWED_DOMAIN` and `HEADSCALE_OIDC_ADDITIONAL_ALLOWED_DOMAIN` supply the enrollment domain allowlist. Both require verified email addresses. The pod template records these domains so changing either input restarts Headscale to load the updated configuration.
 
 2. Prepare the NFS export and reseal `headscale-oidc` plus `headplane`; the first includes both the OIDC client secret and the Headscale API credential used by Headplane.
 
@@ -60,6 +60,8 @@ Before an upgrade, read the release notes for the pinned target and record a rec
 ## Troubleshooting
 
 If Headscale will not start, check issuer discovery and NFS restore first. If the VPN works but Headplane fails, check its backend API key and separate database. A policy denying a connection can be correct behavior even when both services are healthy.
+
+An OIDC callback returning `401` with `authenticated principal does not match any allowed domain` means the authenticated email domain is outside the enrollment allowlist. An existing user record does not bypass this check. Update the domain inputs in `apps/variables.yaml`, publish the change, and confirm Argo CD reconciliation and the Headscale rollout before retrying enrollment. Start a fresh enrollment in the client if an old callback reports a missing state cookie.
 
 ## Manifest and upstream reference
 

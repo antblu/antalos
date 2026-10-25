@@ -64,6 +64,8 @@ spec:
       app.kubernetes.io/name: headscale
   template:
     metadata:
+      annotations:
+        antalos.io/oidc-allowed-domains: "${HEADSCALE_OIDC_ALLOWED_DOMAIN},${HEADSCALE_OIDC_ADDITIONAL_ALLOWED_DOMAIN}"
       labels:
         app.kubernetes.io/name: headscale
         app.kubernetes.io/part-of: antalos
