@@ -16,6 +16,8 @@ const contracts = new Map([
   ['NEXTCLOUD_SERVER_VERSION', 'Persisted Nextcloud config.php version, migrated with the server; not an independent release'],
   ['NEXTCLOUD_NFS_VERSION', 'NFS protocol selection'],
   ['CONTEXT_CHAT_APPAPI_VERSION', 'AppAPI protocol compatibility contract'],
+  ['MEDUSA_CUSTOMER_TERMS_VERSION', 'Customer legal acceptance policy version, explicitly changed by the operator'],
+  ['MEDUSA_CUSTOMER_PRIVACY_VERSION', 'Customer privacy acceptance policy version, explicitly changed by the operator'],
 ]);
 const errors = [];
 const counts = {};
