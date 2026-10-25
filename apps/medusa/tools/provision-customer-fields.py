@@ -37,6 +37,10 @@ for model_name in ['res.country', 'res.country.state']:
         env['ir.model.access'].sudo().create({'name': 'Integration location reader', 'model_id': location.id,
             'group_id': group.id, 'perm_read': True, 'perm_write': False, 'perm_create': False, 'perm_unlink': False})
 env.cr.commit()
+# Odoo shell does not finish an HTTP request, which normally signals registry
+# changes. Notify every serving worker after the committed manual-field schema.
+env.registry.registry_invalidated = True
+env.registry.signal_changes()
 print('CUSTOMER_FIELDS_READY')
 '''
 if __name__ == '__main__':
