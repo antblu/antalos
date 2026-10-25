@@ -23,7 +23,7 @@ variables:
   # renovate: datasource=helm depName=metallb registryUrl=https://metallb.github.io/metallb
   METALLB_CHART_VERSION: 0.16.1
   # renovate: datasource=helm depName=mariadb-operator registryUrl=https://mariadb-operator.github.io/mariadb-operator
-  MARIADB_OPERATOR_CHART_VERSION: 26.6.0
+  MARIADB_OPERATOR_CHART_VERSION: 26.10.2
   # renovate: datasource=helm depName=csi-driver-nfs registryUrl=https://kubernetes-csi.github.io/csi-driver-nfs
   NFS_DRIVER_CHART_VERSION: 4.13.6
   # renovate: datasource=helm depName=metrics-server registryUrl=https://kubernetes-sigs.github.io/metrics-server/
