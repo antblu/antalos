@@ -6,6 +6,7 @@ const base = process.env.MEDUSA_TEST_ROOT || path.resolve(__dirname, '../.medusa
 const app = createRequire(path.join(base, 'package.json'))
 const { normalizeEmail, legalCurrent, marketingState, backoff } = app('./src/lib/customer-sync/policy')
 const { Mautic } = app('./src/lib/customer-sync/mautic')
+const { mauticCountry } = app('./src/lib/customer-sync/mautic-country')
 const { identity, record, status } = app('./src/lib/customer-sync/store')
 const { drain, enqueueCustomer } = app('./src/lib/customer-sync/worker')
 const { upsertPartner, partners } = app('./src/lib/customer-sync/odoo')
@@ -13,6 +14,11 @@ process.env.CUSTOMER_TERMS_VERSION = 'terms-v1'
 process.env.CUSTOMER_PRIVACY_VERSION = 'privacy-v1'
 process.env.CUSTOMER_SYNC_ENABLED = 'true'
 const { fixture } = require("./support/customer-fixture.cjs")
+test('Mautic country values use provider names across markets and legacy labels', () => {
+  for (const [code, name] of [['us', 'United States'], ['CO', 'Colombia'], ['GB', 'United Kingdom'], ['JP', 'Japan'], ['CZ', 'Czech Republic'], ['CI', 'Ivory Coast']]) assert.equal(mauticCountry(code), name)
+  assert.equal(mauticCountry('ZZ'), undefined)
+  assert.equal(mauticCountry(null), undefined)
+})
 test('Odoo imports exclude login-linked contacts without hiding identity matches', async () => {
   let domain
   const odoo = { execute: async (model, method, args) => { assert.equal(model, 'res.partner'); assert.equal(method, 'search_read'); domain = args[0]; return [] } }
@@ -28,6 +34,25 @@ function mockMautic(t, initial) {
   t.mock.method(Mautic.prototype, 'request', async path => { if (path.endsWith('/remove')) { dncRemovals++; contact.doNotContact = [] } if (path.endsWith('/add')) { dncAdds++; contact.doNotContact = [{ channel: 'email', reason: 1 }] } return {} })
   return { saves, get creates() { return creates }, get dncRemovals() { return dncRemovals }, get dncAdds() { return dncAdds } }
 }
+test('address synchronization converts US and Colombian ISO codes before Mautic delivery', async t => {
+  const f = fixture(), m = mockMautic(t)
+  for (const [code, name] of [['us', 'United States'], ['co', 'Colombia']]) {
+    f.customers[0].addresses = [{ country_code: code, is_default_billing: true }]
+    await enqueueCustomer(f.container, 'cus_1')
+    assert.equal((await drain(f.container)).failed, 0)
+    assert.equal(m.saves.at(-1).country, name)
+  }
+  assert.equal(m.creates, 1)
+})
+test('Odoo-only country labels are resolved by code rather than trusting a translated name', async t => {
+  const f = fixture(), m = mockMautic(t)
+  const original = f.odoo.execute
+  f.odoo.execute = async (model, method, ...args) => model === 'res.country' && method === 'read' ? [{ code: 'CO' }] : original(model, method, ...args)
+  const link = await identity(f.container, 'odoo@example.com', undefined, 9)
+  await record(f.container, link.id, 'profile', { partner: { name: 'Contact', country_id: [49, 'Colombie'] } })
+  assert.equal((await drain(f.container)).failed, 0)
+  assert.equal(m.saves.at(-1).country, 'Colombia')
+})
 test('Mautic provisioning appends fields explicitly and preserves existing aliases', async t => {
   const created = []
   t.mock.method(Mautic.prototype, 'request', async (path, method, body) => {

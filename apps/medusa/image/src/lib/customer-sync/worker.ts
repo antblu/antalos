@@ -3,6 +3,7 @@ import { Modules } from "@medusajs/framework/utils"
 import type OdooModuleService from "../../modules/odoo/service"
 import { ODOO_MODULE } from "../../modules/odoo"
 import { Mautic } from "./mautic"
+import { mauticCountry } from "./mautic-country"
 import { partners, upsertPartner, upsertAddresses, type CustomerAddress } from "./odoo"
 import { service, locked, identity, record } from "./store"
 import { backoff, marketingState } from "./policy"
@@ -84,7 +85,8 @@ export async function drain(c: MedusaContainer) {
             const address = customer.addresses?.find(a => a.is_default_billing) || customer.addresses?.[0]
             const partnerData: Record<string, unknown> = { name: [customer.first_name, customer.last_name].filter(Boolean).join(" ") || link.email, email: link.email, phone: customer.phone || false, x_medusa_customer_id: customer.id, ...(address ? { street: address.address_1 || false, street2: address.address_2 || false, city: address.city || false, zip: address.postal_code || false } : {}) }
             if (address?.country_code) {
-              fields.country = address.country_code.toUpperCase()
+              const country = mauticCountry(address.country_code)
+              if (country) fields.country = country
               const countries = await odoo.execute<{ id: number }[]>("res.country", "search_read", [[["code", "=", address.country_code.toUpperCase()]]], { fields: ["id"], limit: 1 })
               if (countries[0]) partnerData.country_id = countries[0].id
             }
@@ -94,7 +96,12 @@ export async function drain(c: MedusaContainer) {
             await upsertAddresses(odoo, partnerId, customer.addresses || [])
           } else if (decision?.source !== "account_closure" && task.payload.partner && typeof task.payload.partner === "object") {
             const p = task.payload.partner as Record<string, unknown>
-            fields = { ...fields, firstname: p.name, phone: p.phone || "", preferred_language: p.lang || "", customer_source: "odoo", customer_type: "contact", tags: ["source:odoo"], ...(Array.isArray(p.country_id) ? { country: p.country_id[1] } : {}) }
+            fields = { ...fields, firstname: p.name, phone: p.phone || "", preferred_language: p.lang || "", customer_source: "odoo", customer_type: "contact", tags: ["source:odoo"] }
+            if (Array.isArray(p.country_id) && typeof p.country_id[0] === "number") {
+              const countries = await odoo.execute<{ code: string }[]>("res.country", "read", [[p.country_id[0]]], { fields: ["code"] })
+              const country = mauticCountry(countries[0]?.code)
+              if (country) fields.country = country
+            }
           }
           if (!customer && !task.payload.partner && decision?.source === "website_newsletter") {
             fields.customer_source = "newsletter"
