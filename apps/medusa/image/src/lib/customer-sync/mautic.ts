@@ -47,7 +47,9 @@ export class Mautic {
     const fields = await this.request<{ fields: Record<string, { alias: string }> }>("fields/contact?limit=1000")
     const aliases = new Set(Object.values(fields.fields || {}).map(f => f.alias))
     for (const [alias, type] of Object.entries(definitions)) if (!aliases.has(alias)) {
-      await this.request("fields/contact/new", "POST", { label: alias.replaceAll("_", " "), alias, type, group: "core", isPublished: true, isPubliclyUpdatable: false, isUniqueIdentifier: ["medusa_customer_id", "odoo_partner_id"].includes(alias) })
+      // Mautic's form interprets a numeric order as an existing field choice.
+      // Explicit null appends a field; an omitted order can fail validation.
+      await this.request("fields/contact/new", "POST", { label: alias.replaceAll("_", " "), alias, type, group: "core", order: null, isPublished: true, isPubliclyUpdatable: false, isUniqueIdentifier: ["medusa_customer_id", "odoo_partner_id"].includes(alias), ...(type === "boolean" ? { properties: { yes: "Yes", no: "No" }, defaultValue: "0" } : {}) })
     }
     for (const [alias, name] of Object.entries({ "emiliany-newsletter": "EMILIANY Newsletter", "emiliany-medusa-customers": "EMILIANY Medusa Customers", "emiliany-odoo-customers": "EMILIANY Odoo Customers" })) {
       const result = await this.request<{ lists: Record<string, { alias: string }> }>(`segments?search=${alias}&limit=100`)

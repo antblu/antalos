@@ -587,7 +587,7 @@ variables:
   MEDUSA_NODE_IMAGE_TAG: 24-bookworm-slim
   MEDUSA_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-medusa
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-medusa
-  MEDUSA_IMAGE_TAG: 2.22.1-2
+  MEDUSA_IMAGE_TAG: 2.22.1-3
   MEDUSA_ACCOUNT_SMTP_PORT: '465'
   MEDUSA_ACCOUNT_SMTP_USERNAME: admin@emiliany.com
   MEDUSA_ACCOUNT_MAIL_FROM: noreply@emiliany.com

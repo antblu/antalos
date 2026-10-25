@@ -21,6 +21,28 @@ function mockMautic(t, initial) {
   t.mock.method(Mautic.prototype, 'request', async path => { if (path.endsWith('/remove')) { dncRemovals++; contact.doNotContact = [] } if (path.endsWith('/add')) { dncAdds++; contact.doNotContact = [{ channel: 'email', reason: 1 }] } return {} })
   return { saves, get creates() { return creates }, get dncRemovals() { return dncRemovals }, get dncAdds() { return dncAdds } }
 }
+test('Mautic provisioning appends fields explicitly and preserves existing aliases', async t => {
+  const created = []
+  t.mock.method(Mautic.prototype, 'request', async (path, method, body) => {
+    if (path === 'fields/contact?limit=1000') return { fields: [{ alias: 'medusa_customer_id' }] }
+    if (path === 'fields/contact/new') {
+      assert.equal(method, 'POST')
+      assert.equal(body.order, null)
+      assert.equal(body.isPubliclyUpdatable, false)
+      if (body.type === 'boolean') {
+        assert.deepEqual(body.properties, { yes: 'Yes', no: 'No' })
+        assert.equal(body.defaultValue, '0')
+      }
+      created.push(body.alias)
+      return {}
+    }
+    if (path.startsWith('segments?')) return { lists: {} }
+    return {}
+  })
+  await new Mautic().provision()
+  assert.equal(created.includes('medusa_customer_id'), false)
+  assert.equal(created.length, 14)
+})
 test('email normalization rejects invalid addresses', () => { assert.equal(normalizeEmail(' Person@Example.com '), 'person@example.com'); for (const value of ['', 'a', 'x @a.com', null]) assert.throws(() => normalizeEmail(value)) })
 test('current terms/privacy must both exist in historical acceptance', () => { assert.equal(legalCurrent([]), false); const history = [{ payload: { terms_version: 'terms-v1', privacy_policy_version: 'privacy-v1' } }]; assert.equal(legalCurrent(history), true); process.env.CUSTOMER_TERMS_VERSION = 'terms-v2'; assert.equal(legalCurrent(history), false); process.env.CUSTOMER_TERMS_VERSION = 'terms-v1' })
 test('ordinary profile synchronization cannot remove unsubscribe, bounce or manual DNC', () => { for (const reason of [1, 2, 3]) assert.equal(marketingState({ consent: true }, [{ reason }], false).subscribed, false); assert.equal(marketingState({ consent: true }, [{ reason: 1 }], true).removeUnsubscribe, true); for (const reason of [2, 3]) assert.equal(marketingState({ consent: true }, [{ reason }], true).subscribed, false) })
