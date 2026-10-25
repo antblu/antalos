@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: antblu
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/antblu/antalos.git
+    targetRevision: main
+    path: apps/antblu
+    plugin:
+      name: yaml-envsubst
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: antblu
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: antblu
+      namespace: antblu
+      jsonPointers:
+        - /spec/template/metadata/annotations/images.antblu.net~1published-image
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true

@@ -58,6 +58,14 @@ variables:
   DOCS_IMAGE_TAG: main
   # renovate: datasource=docker depName=python
   WEBSITE_IMAGE_REFRESH_PYTHON_IMAGE_TAG: 3.14.9-alpine3.24
+  # Static personal website; source and image build live in antblu/antblu.
+  ANTBLU_HOST: antblu.net
+  ANTBLU_IMAGE_REPOSITORY: ghcr.io/antblu/antblu-website
+  # renovate: datasource=docker depName=ghcr.io/antblu/antblu-website depType=floating
+  ANTBLU_IMAGE_TAG: main
+  # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
+  ANTBLU_NGINX_IMAGE_TAG: 1.29.8-alpine
+
   # Emiliany storefront; its source and image build live in antblu/emiliany.
   EMILIANY_HOST: emiliany.com
   EMILIANY_DOCS_HOST: docs.emiliany.com

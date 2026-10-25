@@ -6,6 +6,7 @@ metadata:
 data:
   targets.json: |
     [
+      {"namespace": "antblu", "deployment": "antblu", "container": "nginx"},
       {"namespace": "docs", "deployment": "docs", "container": "nginx"},
       {"namespace": "emiliany", "deployment": "emiliany", "container": "storefront", "pullSecret": "emiliany-registry"},
       {"namespace": "emiliany", "deployment": "emiliany-docs", "container": "nginx", "pullSecret": "emiliany-registry"}

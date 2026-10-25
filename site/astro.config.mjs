@@ -77,6 +77,7 @@ export default defineConfig({
                 { label: 'CLI and access', link: '/admin-guide/cli/' },
                 { label: 'Bootstrap the platform', link: '/admin-guide/bootstrap/' },
                 { label: 'Application workflow', link: '/admin-guide/deploy-an-application/' },
+                { label: 'Publish a static website', link: '/admin-guide/static-websites/' },
                 { label: 'Sealed credentials', link: '/admin-guide/secrets/' },
                 { label: 'SSO and integrations', link: '/admin-guide/single-sign-on/' },
                 { label: 'Debian VM lifecycle', link: '/admin-guide/virtual-machines/' },
