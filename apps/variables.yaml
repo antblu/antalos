@@ -199,7 +199,7 @@ variables:
   # renovate: datasource=nextcloud depName=contacts registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_CONTACTS_VERSION: 8.9.2
   # renovate: datasource=nextcloud depName=deck registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_DECK_VERSION: 1.19.1
+  NEXTCLOUD_DECK_VERSION: 1.18.4
   # renovate: datasource=nextcloud depName=eurooffice registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_EUROOFFICE_VERSION: 11.0.6
   # renovate: datasource=nextcloud depName=external registryUrl=https://apps.nextcloud.com/api/v1/apps.json
@@ -587,7 +587,10 @@ variables:
   MEDUSA_NODE_IMAGE_TAG: 24-bookworm-slim
   MEDUSA_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-medusa
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-medusa
-  MEDUSA_IMAGE_TAG: 2.22.0-8
+  MEDUSA_IMAGE_TAG: 2.22.1-1
+  MEDUSA_ACCOUNT_SMTP_PORT: '465'
+  MEDUSA_ACCOUNT_SMTP_USERNAME: admin@emiliany.com
+  MEDUSA_ACCOUNT_MAIL_FROM: noreply@emiliany.com
   MEDUSA_HOST: medusa.antblu.net
   MEDUSA_OIDC_DISPLAY_NAME: antID
   MEDUSA_OIDC_ISSUER: https://auth.antblu.net/application/o/medusa/

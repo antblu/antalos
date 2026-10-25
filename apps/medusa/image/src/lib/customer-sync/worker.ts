@@ -3,12 +3,12 @@ import { Modules } from "@medusajs/framework/utils"
 import type OdooModuleService from "../../modules/odoo/service"
 import { ODOO_MODULE } from "../../modules/odoo"
 import { Mautic } from "./mautic"
-import { partners, upsertPartner, upsertAddresses } from "./odoo"
+import { partners, upsertPartner, upsertAddresses, type CustomerAddress } from "./odoo"
 import { service, locked, identity, record } from "./store"
 import { backoff, marketingState } from "./policy"
 import { RemoteError } from "./transport"
 
-type Customer = { id: string; email: string; first_name?: string | null; last_name?: string | null; phone?: string | null; addresses?: { id?: string; address_1?: string | null; address_2?: string | null; city?: string | null; postal_code?: string | null; country_code?: string | null; is_default_billing?: boolean; is_default_shipping?: boolean }[] }
+type Customer = { id: string; email: string; first_name?: string | null; last_name?: string | null; phone?: string | null; addresses?: CustomerAddress[] }
 export async function enqueueCustomer(c: MedusaContainer, id: string, event = "customer.updated") {
   const customer = await c.resolve<ICustomerModuleService>(Modules.CUSTOMER).retrieveCustomer(id)
   if (!customer.email) return
@@ -74,7 +74,10 @@ export async function drain(c: MedusaContainer) {
           // An older retry must never replay a superseded opt-in.
           let decision = latest?.payload
           let explicit = !!latest && !latest.delivered && decision?.source !== "mautic_unsubscribe"
-          const customer = link.customer_id ? await c.resolve<ICustomerModuleService>(Modules.CUSTOMER).retrieveCustomer(link.customer_id, { relations: ["addresses"] }) as Customer : undefined
+          let customer: Customer | undefined
+          if (link.customer_id && decision?.source !== "account_closure") {
+            customer = await c.resolve<ICustomerModuleService>(Modules.CUSTOMER).retrieveCustomer(link.customer_id, { relations: ["addresses"] }) as Customer
+          }
           let fields: Record<string, unknown> = { email: link.email }
           if (customer) {
             fields = { ...fields, firstname: customer.first_name || "", lastname: customer.last_name || "", phone: customer.phone || "", medusa_customer_id: customer.id, customer_type: "customer", customer_source: "medusa", tags: ["source:medusa", "customer"] }
@@ -89,7 +92,7 @@ export async function drain(c: MedusaContainer) {
             const partnerId = await upsertPartner(odoo, partnerData, link.odoo_id)
             link = await s.updateIdentities({ id: link.id, odoo_id: partnerId })
             await upsertAddresses(odoo, partnerId, customer.addresses || [])
-          } else if (task.payload.partner && typeof task.payload.partner === "object") {
+          } else if (decision?.source !== "account_closure" && task.payload.partner && typeof task.payload.partner === "object") {
             const p = task.payload.partner as Record<string, unknown>
             fields = { ...fields, firstname: p.name, phone: p.phone || "", preferred_language: p.lang || "", customer_source: "odoo", customer_type: "contact", tags: ["source:odoo"], ...(Array.isArray(p.country_id) ? { country: p.country_id[1] } : {}) }
           }
@@ -141,7 +144,7 @@ export async function drain(c: MedusaContainer) {
           if (state.removeUnsubscribe) await mautic.request(`contacts/${contact.id}/dnc/email/remove`, "POST", {})
           if (!state.subscribed && !dnc.length) await mautic.request(`contacts/${contact.id}/dnc/email/add`, "POST", { reason: 1, comments: "No explicit marketing consent" })
           await mautic.membership("emiliany-newsletter", contact.id, state.subscribed)
-          if (link.customer_id) await mautic.membership("emiliany-medusa-customers", contact.id, true)
+          if (link.customer_id) await mautic.membership("emiliany-medusa-customers", contact.id, decision?.source !== "account_closure")
           if (link.odoo_id) {
             await mautic.membership("emiliany-odoo-customers", contact.id, true)
             await odoo.execute("res.partner", "write", [[link.odoo_id], { x_marketing_consent: state.subscribed }])

@@ -32,5 +32,7 @@ export async function status(c: MedusaContainer, customerId: string) {
   const link = (await service(c).listIdentities({ customer_id: customerId }))[0]
   const history = link ? await service(c).listDecisions({ identity_id: link.id, kind: "legal" }, { order: { created_at: "DESC" } }) : []
   const decisions = link ? await service(c).listDecisions({ identity_id: link.id, kind: ["marketing", "legal"] }, { order: { revision: "DESC" }, take: 10000 }) : []
-  return { legal_required: !legalCurrent(history), versions: policyVersions(), marketing_consent: decisions.find(d => typeof d.payload.consent === "boolean")?.payload.consent === true }
+  const pending = link ? await service(c).listDecisions({ identity_id: link.id, delivered: false }, { take: 10000 }) : []
+  const delivery_state = process.env.CUSTOMER_SYNC_ENABLED !== "true" ? "disabled" : pending.some(d => d.attempts > 0) ? "retrying" : pending.length ? "pending" : "up_to_date"
+  return { delivery_state, legal_required: !legalCurrent(history), versions: policyVersions(), marketing_consent: decisions.find(d => typeof d.payload.consent === "boolean")?.payload.consent === true }
 }

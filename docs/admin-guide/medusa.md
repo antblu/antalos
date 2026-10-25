@@ -130,3 +130,81 @@ synchronously call those services. Reconciliation repairs missed events and
 observes external contact/unsubscribe changes every fifteen minutes. Stable IDs
 and normalized email are used for matching; ambiguous records require review.
 Do not equate contact existence or customer segments with marketing consent.
+
+### Customer settings API
+
+`GET /store/account/settings` reports only the authenticated customer's Google
+and password provider labels, legal/marketing state and integration delivery
+state. `POST` accepts explicit operations: `password`, `disconnect-google`,
+`set-password`, `export`, and `close`. Google-only password setup requires a
+one-use proof from the actual Google callback, bound to its exact JWT and expiring
+in five minutes; refresh tokens cannot manufacture proof. It adds authentication
+to the existing customer and refuses provider-identity collisions. Bearer customer authentication is mandatory; browser
+customer IDs are ignored. Sensitive requests share a distributed per-customer
+lock and a fifteen-minute attempt budget. Password operations verify ownership
+through a fresh email/password authentication. Email identifier changes require fresh credential proof and a code delivered to
+the new address. The code is customer-bound, expires in ten minutes and permits
+five guesses. A compensated workflow updates customer email, password-provider
+identifier and integration identity, then queues the profile update. Conflicting
+customers, auth identities or integration mappings stop the change.
+
+Closing an account records a durable marketing withdrawal before soft-deleting
+the customer and deleting its associated authentication identities. Password
+accounts must confirm their current password and exact email. Google-only
+accounts require a Google login within five minutes and exact email confirmation.
+Store routes check that the customer and authentication identity still exist,
+so an old JWT cannot retain access after closure. Financial records and Odoo
+partners are retained. The worker suppresses marketing and removes customer
+segment membership without rebuilding a closed customer's profile. External
+failures retry through the existing queue; `CUSTOMER_SYNC_ENABLED=false` means
+external delivery remains disabled even when local preferences are saved.
+
+The export allowlists profile, address, shopping-preference and consent fields.
+It includes order summaries but excludes authentication data, arbitrary metadata and internal IDs. It is a
+storefront export, not a complete response covering all personal data held by
+external systems. Full access/erasure requests, retention review and any further
+anonymization require the operator's privacy process. Soft deletion is not an
+assertion that retained backups or financial records have been erased.
+
+Publish the changed backend image and storefront together before exposing these
+controls. Verify password proof, cross-customer denial, Google linking, closed
+JWT denial, marketing opt-out delivery and retained accounting records using
+dedicated test identities. Source tests and browser fixtures do not prove live
+configuration or delivery.
+
+Address synchronization now carries recipient name, phone, company and matched
+country/state values to the existing Odoo child partner. Before deploying this
+version, run the existing `apps/medusa/tools/provision-customer-fields.py` through
+the operator workflow to add read-only `res.country.state` access. It retains
+contact write/create rights, refuses unlink, and issues no credentials. No live
+ACL reconciliation is implied by this source change.
+
+### Transactional account email
+
+Account verification and recovery use a server-only SMTP transport with strict
+certificate validation and mandatory TLS, independently of marketing consent.
+Host, port, sender, username and storefront origin come from shared deployment
+inputs; `ACCOUNT_SMTP_PASSWORD` comes from the service-owned
+`medusa-account-mail` SealedSecret. Optional references allow an unconfigured
+installation to start; the settings API reports email delivery unavailable.
+
+Use `python3 apps/medusa/tools/seal-account-mail.py` to seal an existing SMTP
+application password through a hidden prompt, or pass a protected local input
+with `--password-file`. The tool refuses to overwrite an existing sealed file,
+creates no mailbox credentials, and prints no plaintext. Preserve or revoke the
+mail service credential through its owning account when rotating; do not use a
+mail-server recovery/admin credential as the application's SMTP password.
+
+Password-reset requests use a generic response and identical event enqueue path
+for unknown and registered email addresses. The existing Redis-backed Medusa
+event bus delivers the email with retries; it does not use marketing DNC or
+segments. Links contain a 256-bit token in a browser-only fragment. Only its hash
+is cached; expiry is fifteen minutes, later requests supersede old links, and
+completion consumes the token under a distributed lock. Tokens/codes never enter
+Medusa notification records or application logs. Courtesy old-address alerts do
+not hold the shared customer-identity lock or roll back verified changes.
+
+The reset screen and both storefront/backend releases must be published together.
+Confirm actual inbox delivery with a dedicated test account, expiry/replay
+rejection, identity ownership, and failure handling after reconciliation. A TLS
+connection or accepted SMTP envelope does not prove a received email.

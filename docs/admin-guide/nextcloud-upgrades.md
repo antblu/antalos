@@ -5,6 +5,8 @@ description: "A repeatable migration procedure for antalos read-only configurati
 
 This deployment generates read-only configuration and uses disposable per-pod runtime files. Upgrading requires a coordinated maintenance window and one database migration owner; changing an image tag alone is insufficient.
 
+App-only updates can also trigger the “Update needed” page even when the server image and internal version match. Complete the same maintenance, backup, single-owner `occ upgrade`, and verification procedure for those updates. Check every app’s declared Nextcloud compatibility before changing its pin; the latest app release may target a newer server major.
+
 ## 1. Select a supported upgrade path
 
 Read the release notes and app compatibility for the current and target versions. Upgrade to the current major release’s latest supported maintenance release before advancing to the next major, never skip a major release, and finish pending background migrations before advancing again. Use the [official upgrade guide](https://docs.nextcloud.com/server/latest/admin_manual/maintenance/upgrade.html) with documentation matching the deployed release.

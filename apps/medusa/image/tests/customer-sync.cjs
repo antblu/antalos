@@ -59,3 +59,18 @@ test('newsletter subscription updates existing Mautic contact', async t => {
   assert.equal(f.identities[0].mautic_id, 99)
   assert.equal(m.saves[0].marketing_consent, 1)
 })
+
+test('account closure delivers suppression after customer removal and does not replay profile data', async t => {
+  const f = fixture(), m = mockMautic(t, { id: 17 });
+  const link = await identity(f.container, 'person@example.com', 'cus_1', 10);
+  await record(f.container, link.id, 'profile', { partner: { name: 'Old private profile' } });
+  await record(f.container, link.id, 'marketing', { consent: false, at: new Date().toISOString(), source: 'account_closure' });
+  f.customers.length = 0;
+  const calls = [];
+  f.odoo.execute = async (model, method, args) => { calls.push({ model, method, args }); return true };
+  const result = await drain(f.container);
+  assert.equal(result.failed, 0); assert.equal(result.delivered, 2);
+  assert.ok(m.saves.every(fields => fields.marketing_consent === 0 && !fields.firstname && !fields.medusa_customer_id));
+  assert.equal(m.dncAdds, 1);
+  assert.ok(calls.every(c => c.model === 'res.partner' && c.method === 'write' && c.args[1].x_marketing_consent === false));
+})

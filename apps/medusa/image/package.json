@@ -9,15 +9,17 @@
   },
   "dependencies": {
     "@medusajs/admin-sdk": "2.22.1",
+    "@medusajs/caching-redis": "2.22.1",
     "@medusajs/cli": "2.22.1",
     "@medusajs/framework": "2.22.1",
     "@medusajs/medusa": "2.22.1",
-    "@medusajs/caching-redis": "2.22.1",
+    "nodemailer": "10.2.1",
     "openid-client": "6.8.8"
   },
   "devDependencies": {
     "@swc/core": "1.16.20",
     "@types/node": "22.20.5",
+    "@types/nodemailer": "8.0.2",
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
     "react": "18.3.1",
