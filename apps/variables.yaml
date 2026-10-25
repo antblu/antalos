@@ -31,7 +31,7 @@ variables:
   # renovate: datasource=helm depName=nextcloud registryUrl=https://nextcloud.github.io/helm/
   NEXTCLOUD_CHART_VERSION: 9.2.6
   # renovate: datasource=helm depName=open-webui registryUrl=https://helm.openwebui.com
-  OPEN_WEBUI_CHART_VERSION: 16.5.0
+  OPEN_WEBUI_CHART_VERSION: 16.6.0
   # renovate: datasource=helm depName=openebs registryUrl=https://openebs.github.io/openebs
   OPENEBS_CHART_VERSION: 4.6.2
   # renovate: datasource=helm depName=rancher registryUrl=https://releases.rancher.com/server-charts/latest
