@@ -12,6 +12,9 @@ model = env['ir.model'].sudo().search([('model', '=', 'res.partner')], limit=1)
 group = env.ref('medusa_integration.catalog_reader', raise_if_not_found=False)
 if not group:
     raise RuntimeError('Provision the existing integration user first')
+user = env.ref('medusa_integration.user_catalog', raise_if_not_found=False)
+if not user or not user.active or user.group_ids != group:
+    raise RuntimeError('Integration user has unexpected status or groups; review before changing access')
 for name, label, kind in [
     ('x_medusa_customer_id', 'Medusa Customer ID', 'char'),
     ('x_medusa_address_id', 'Medusa Address ID', 'char'),
@@ -36,6 +39,22 @@ for model_name in ['res.country', 'res.country.state', 'res.partner.category']:
     if not env['ir.model.access'].sudo().search_count([('group_id', '=', group.id), ('model_id', '=', location.id)]):
         env['ir.model.access'].sudo().create({'name': 'Integration contact reference reader', 'model_id': location.id,
             'group_id': group.id, 'perm_read': True, 'perm_write': False, 'perm_create': False, 'perm_unlink': False})
+# Odoo traverses bank_ids when a contact name changes. Allow that relation to be
+# searched, while a dedicated record rule hides every bank record from this
+# integration. Storefront profile changes must not rewrite bank account holders.
+bank = env['ir.model'].sudo().search([('model', '=', 'res.partner.bank')], limit=1)
+if bank:
+    if not env['ir.model.access'].sudo().search_count([('group_id', '=', group.id), ('model_id', '=', bank.id)]):
+        env['ir.model.access'].sudo().create({'name': 'Integration bank relation traversal', 'model_id': bank.id,
+            'group_id': group.id, 'perm_read': True, 'perm_write': False, 'perm_create': False, 'perm_unlink': False})
+    rule = env['ir.rule'].sudo().search([('name', '=', 'Medusa integration excludes bank accounts'), ('model_id', '=', bank.id)])
+    rule_values = {'name': 'Medusa integration excludes bank accounts', 'model_id': bank.id,
+                   'domain_force': "[('id', '=', 0)]", 'groups': [(6, 0, group.ids)],
+                   'perm_read': True, 'perm_write': True, 'perm_create': True, 'perm_unlink': True}
+    if rule:
+        rule.write(rule_values)
+    else:
+        env['ir.rule'].sudo().create(rule_values)
 env.cr.commit()
 # Odoo shell does not finish an HTTP request, which normally signals registry
 # changes. Notify every serving worker after the committed manual-field schema.
