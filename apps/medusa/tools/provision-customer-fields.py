@@ -44,9 +44,11 @@ for model_name in ['res.country', 'res.country.state', 'res.partner.category']:
 # deny writes to user-linked partners, so hiding user_ids cannot bypass Odoo's
 # guard against changing contacts that own an application login. Keep those
 # partners readable for email matching: hiding them would create duplicates.
-for model_name, label in [('res.partner.bank', 'bank accounts'), ('res.users', 'user records')]:
+for model_name, label in [('res.partner.bank', 'bank accounts'), ('res.users', 'user records'), ('snailmail.letter', 'postal letters')]:
     reference = env['ir.model'].sudo().search([('model', '=', model_name)], limit=1)
     if not reference:
+        if model_name == 'snailmail.letter':
+            continue  # Optional addon also traverses pending letters on address changes.
         raise RuntimeError('Missing reference model: ' + model_name)
     if not env['ir.model.access'].sudo().search_count([('group_id', '=', group.id), ('model_id', '=', reference.id)]):
         env['ir.model.access'].sudo().create({'name': 'Integration protected relation traversal', 'model_id': reference.id,
