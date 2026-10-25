@@ -1,2 +1,2 @@
 # renovate: datasource=github-releases depName=pouzor/homelable extractVersion=^v?(?<version>.+)$
-homelable_version: "3.5.1"
+homelable_version: "3.6.0"
