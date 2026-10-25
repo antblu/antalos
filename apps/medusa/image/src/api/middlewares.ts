@@ -18,7 +18,7 @@ export default defineMiddlewares({ routes: [
     }
     next()
   }] },
-  { matcher: "/store/account", middlewares: [authenticate("customer", ["bearer"], { allowUnregistered: true })] },
+  { matcher: /^\/store\/account\/?$/, middlewares: [authenticate("customer", ["bearer"], { allowUnregistered: true })] },
   { matcher: "/store/account/settings", middlewares: [authenticate("customer", ["bearer"])] },
   { matcher: "/store/account/marketing", middlewares: [authenticate("customer", ["bearer"])] },
   { matcher: "/store/customers", method: "POST", middlewares: [(_req, res) => { res.status(403).json({ message: "Complete account creation through /store/account with legal acceptance" }) }] },
