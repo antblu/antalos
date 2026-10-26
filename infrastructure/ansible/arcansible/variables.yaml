@@ -12,7 +12,7 @@ lazylibrarian_version: latest
 # renovate: datasource=pypi depName=docling-serve
 docling_serve_version: 1.38.1
 # renovate-image: depName=intel/pytorch
-intel_pytorch_xpu_image: intel/pytorch:xpu-2.13.0-ubuntu24.04-20260907
+intel_pytorch_xpu_image: intel/pytorch:xpu-2.14.0-ubuntu24.04-20261021
 # renovate-image: depName=nandyalu/trailarr
 trailarr_image: nandyalu/trailarr:latest
 # renovate-image: depName=ghcr.io/haveagitgat/tdarr
