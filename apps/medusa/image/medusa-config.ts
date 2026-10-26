@@ -1,6 +1,10 @@
 import { defineConfig } from "@medusajs/framework/utils"
 
 const redisUrl = process.env.REDIS_URL
+const stripeEnabled = process.env.STRIPE_ENABLED === "true"
+const paypalEnabled = process.env.PAYPAL_ENABLED === "true"
+if (stripeEnabled && (!process.env.STRIPE_API_KEY || !process.env.STRIPE_WEBHOOK_SECRET))
+  throw new Error("Stripe requires an API key and webhook signing secret")
 const googleCustomerConfigured = Boolean(
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_CALLBACK_URL,
 )
@@ -36,6 +40,33 @@ module.exports = defineConfig({
     },
   },
   modules: [
+    {
+      resolve: "@medusajs/medusa/payment",
+      options: { providers: [
+        ...(stripeEnabled ? [{
+          resolve: "@medusajs/medusa/payment-stripe",
+          id: "stripe",
+          options: {
+            apiKey: process.env.STRIPE_API_KEY,
+            webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+            automaticPaymentMethods: true,
+            capture: false,
+          },
+        }] : []),
+        ...(paypalEnabled ? [{
+          resolve: "./src/modules/paypal",
+          id: "paypal",
+          options: {
+            clientId: process.env.PAYPAL_CLIENT_ID,
+            clientSecret: process.env.PAYPAL_CLIENT_SECRET,
+            webhookId: process.env.PAYPAL_WEBHOOK_ID,
+            environment: process.env.PAYPAL_ENVIRONMENT || "sandbox",
+            autoCapture: process.env.PAYPAL_AUTO_CAPTURE === "true",
+            storefrontUrl: process.env.CUSTOMER_STOREFRONT_URL,
+          },
+        }] : []),
+      ] },
+    },
     { resolve: "./src/modules/customer-sync" },
     {
       resolve: "./src/modules/odoo",

@@ -58,6 +58,9 @@ spec:
         - secretRef:
             name: medusa-oidc
         - secretRef:
+            name: medusa-payments
+            optional: true
+        - secretRef:
             name: medusa-account-mail
             optional: true
         - secretRef:
@@ -174,6 +177,9 @@ spec:
             name: medusa-s3
         - secretRef:
             name: medusa-oidc
+        - secretRef:
+            name: medusa-payments
+            optional: true
         - secretRef:
             name: medusa-account-mail
             optional: true

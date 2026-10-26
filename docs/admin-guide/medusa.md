@@ -208,3 +208,9 @@ The reset screen and both storefront/backend releases must be published together
 Confirm actual inbox delivery with a dedicated test account, expiry/replay
 rejection, identity ownership, and failure handling after reconciliation. A TLS
 connection or accepted SMTP envelope does not prove a received email.
+
+## Optional payment providers
+
+The image supports the bundled Stripe provider and a local PayPal Orders v2 provider. Provider selection is controlled through `MEDUSA_STRIPE_ENABLED` and `MEDUSA_PAYPAL_ENABLED` in `apps/variables.yaml`; `MEDUSA_PAYPAL_ENVIRONMENT` selects `sandbox` or `live`, and `MEDUSA_PAYPAL_AUTO_CAPTURE` selects automatic capture after authorization. Enabling Stripe requires `STRIPE_API_KEY` and `STRIPE_WEBHOOK_SECRET`. PayPal requires `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` and `PAYPAL_WEBHOOK_ID`, with an HTTPS `CUSTOMER_STOREFRONT_URL`. Keep these in the optional `medusa-payments` Secret, sealed in this application's directory. Server, worker and migration pods consume it. Missing credentials for an enabled provider fail startup.
+
+Register signed processor webhooks at `/hooks/payment/stripe_stripe` and `/hooks/payment/paypal_paypal`, then enable the providers in supported Medusa regions. Both use authorization with subsequent capture. PayPal can automatically capture after authorization; Stripe remains configured for manual capture. The PayPal provider rejects unsupported currencies and amount changes that would reuse an approved order. It verifies webhook signatures with PayPal and correlates supported authorization, void, capture and denial events with the originating session. Refunds and voids run through Medusa; external refunds, disputes and reversals require separate reconciliation. Provider code and source settings do not establish live payment readiness. Publish an immutable image before selecting its new tag and verify the full payment lifecycle separately.

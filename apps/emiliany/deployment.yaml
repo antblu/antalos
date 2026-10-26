@@ -54,6 +54,12 @@ spec:
               value: '${EMILIANY_MEDUSA_PUBLISHABLE_KEY}'
             - name: MEDUSA_BACKEND_URL
               value: https://${MEDUSA_HOST}
+            - name: STRIPE_PUBLISHABLE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: emiliany-payments
+                  key: STRIPE_PUBLISHABLE_KEY
+                  optional: true
             - name: ZAMMAD_URL
               value: '${EMILIANY_ZAMMAD_URL}'
             - name: ZAMMAD_CONTACT_GROUP
