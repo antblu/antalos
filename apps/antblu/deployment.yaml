@@ -38,6 +38,9 @@ spec:
         - name: nginx
           image: ${ANTBLU_IMAGE_REPOSITORY}:${ANTBLU_IMAGE_TAG}
           imagePullPolicy: Always
+          env:
+            - name: CONTACT_UPSTREAM
+              value: ${ANTBLU_CONTACT_UPSTREAM}
           ports:
             - name: http
               containerPort: 8080

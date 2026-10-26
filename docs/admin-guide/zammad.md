@@ -52,6 +52,14 @@ same fingerprint to `/api/v1/form_submit`. They must handle validation errors
 returned with HTTP 200 and report success only when a ticket number is returned.
 If CAPTCHA is enabled, the client must implement the selected provider’s challenge.
 
+For a public website with a private Zammad hostname, proxy only the form
+configuration and submission POST endpoints through the website’s origin.
+`apps/antblu/` supplies the portfolio container’s `CONTACT_UPSTREAM` from
+`ANTBLU_CONTACT_UPSTREAM` in `apps/variables.yaml`. The website image owns
+its Nginx template; publish that image together with the deployment input.
+The proxy preserves Zammad’s honeypot and submission limits and forwards the
+client address. It grants no access to authenticated ticket administration.
+
 Ticket creation and delivery of an email reply are separate operations. Configure
 and verify the receiving group’s outbound email channel for replies. See the
 [official form channel guide](https://admin-docs.zammad.org/en/latest/channels/form.html).

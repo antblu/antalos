@@ -59,6 +59,7 @@ variables:
   # renovate: datasource=docker depName=python
   WEBSITE_IMAGE_REFRESH_PYTHON_IMAGE_TAG: 3.14.9-alpine3.24
   # Static personal website; source and image build live in antblu/antblu.
+  ANTBLU_CONTACT_UPSTREAM: http://zammad-nginx.zammad.svc.cluster.local:8080
   ANTBLU_HOST: antblu.net
   ANTBLU_IMAGE_REPOSITORY: ghcr.io/antblu/antblu-website
   # renovate: datasource=docker depName=ghcr.io/antblu/antblu-website depType=floating
