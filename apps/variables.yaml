@@ -110,7 +110,7 @@ variables:
   # renovate: datasource=docker depName=mariadb
   SUITECRM_GARBD_IMAGE_TAG: 11.8.9-ubi9
   # renovate: datasource=docker depName=ghcr.io/stalwartlabs/cli
-  STALWART_CLI_IMAGE_TAG: 1.0.13
+  STALWART_CLI_IMAGE_TAG: 1.0.14
   DEBIAN_ARC_IP: 10.30.0.28
   # renovate: datasource=docker depName=docker.elastic.co/elasticsearch/elasticsearch
   ELASTICSEARCH_IMAGE_TAG: 9.5.5
