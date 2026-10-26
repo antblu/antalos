@@ -442,7 +442,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/aio-talk depType=floating
   NEXTCLOUD_TALK_IMAGE_TAG: latest
   # renovate: datasource=docker depName=nats
-  NEXTCLOUD_TALK_NATS_IMAGE_TAG: 2.14.5-alpine
+  NEXTCLOUD_TALK_NATS_IMAGE_TAG: 2.15.1-alpine
   NEXTCLOUD_TALK_HOST: talk.antblu.net
   NEXTCLOUD_TALK_TURN_HOST: turn.antblu.net
   NEXTCLOUD_TALK_LOAD_BALANCER_IP: 10.30.0.241
