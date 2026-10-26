@@ -53,7 +53,7 @@ variables:
   # renovate: datasource=docker depName=node
   DOCS_NODE_IMAGE_TAG: 24.8.0-alpine3.22
   # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
-  DOCS_NGINX_IMAGE_TAG: 1.29.8-alpine
+  DOCS_NGINX_IMAGE_TAG: 1.31.7-alpine
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-docs depType=floating
   DOCS_IMAGE_TAG: main
   # renovate: datasource=docker depName=python
@@ -65,7 +65,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/antblu/antblu-website depType=floating
   ANTBLU_IMAGE_TAG: main
   # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
-  ANTBLU_NGINX_IMAGE_TAG: 1.29.8-alpine
+  ANTBLU_NGINX_IMAGE_TAG: 1.31.7-alpine
 
   # Emiliany storefront; its source and image build live in antblu/emiliany.
   EMILIANY_HOST: emiliany.com
@@ -123,7 +123,7 @@ variables:
   # renovate: datasource=docker depName=invoiceninja/invoiceninja-debian
   INVOICENINJA_IMAGE_TAG: 5.13.50
   # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
-  INVOICENINJA_NGINX_IMAGE_TAG: 1.29.8-alpine
+  INVOICENINJA_NGINX_IMAGE_TAG: 1.31.7-alpine
   # renovate: datasource=docker depName=busybox
   INVOICENINJA_BUSYBOX_IMAGE_TAG: 1.38.0
   # renovate: datasource=docker depName=mariadb
