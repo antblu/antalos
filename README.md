@@ -4,6 +4,8 @@
 
 antalos is a reusable template for hosting your own application stack and VMs. Its reference configuration includes Talos Kubernetes on Proxmox, Debian application VMs, and a public/private edge network. OpenTofu provisions machines, Argo CD reconciles Kubernetes applications, and Ansible configures the declared Debian workloads.
 
+![argocd dashboard](docs/images/argocd-dash.png)
+
 **Start with the [antalos handbook](https://docs.antblu.net).** It separates everyday service use, infrastructure explanations, and deployment/operating procedures.
 
 | You want to… | Read |
