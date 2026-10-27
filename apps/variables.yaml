@@ -57,7 +57,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-docs depType=floating
   DOCS_IMAGE_TAG: main
   # renovate: datasource=docker depName=python
-  WEBSITE_IMAGE_REFRESH_PYTHON_IMAGE_TAG: 3.14.9-alpine3.24
+  WEBSITE_IMAGE_REFRESH_PYTHON_IMAGE_TAG: 3.15.2-alpine3.24
   # Static personal website; source and image build live in antblu/antblu.
   ANTBLU_CONTACT_UPSTREAM: http://zammad-nginx.zammad.svc.cluster.local:8080
   ANTBLU_HOST: antblu.net
@@ -574,7 +574,7 @@ variables:
   ODOO_S3_BACKUP_PREFIX: backups
   ODOO_BACKUP_SCHEDULE: "0 9 * * *"
   # renovate: datasource=docker depName=python
-  ODOO_ADDON_INSTALLER_IMAGE_TAG: 3.12-slim-bookworm
+  ODOO_ADDON_INSTALLER_IMAGE_TAG: 3.15-slim-bookworm
   ODOO_OCA_STORAGE_REVISION: 55f7de06ae47c7b8521cab2ed901853bd3ad259e
   # renovate: datasource=pypi depName=s3fs
   ODOO_S3FS_VERSION: 2026.9.0
