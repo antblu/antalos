@@ -631,7 +631,7 @@ variables:
 
   # Mautic: application image adds non-root UID/GID 1010 and Redis sessions.
   # renovate: datasource=docker depName=mautic/mautic
-  MAUTIC_BASE_IMAGE_TAG: 7.2.1-apache
+  MAUTIC_BASE_IMAGE_TAG: 7.2.2-apache
   MAUTIC_IMAGE_REPOSITORY: ghcr.io/antblu/mautic
   # renovate: datasource=docker depName=ghcr.io/antblu/mautic
   MAUTIC_IMAGE_TAG: 7.2.1-1010-v4
