@@ -69,7 +69,8 @@ data:
     apps_dir=${1:-/var/www/html/custom_apps}
     work_dir=$(mktemp -d)
     trap 'rm -rf "$work_dir"' EXIT
-    install -d "$apps_dir"
+    # Preserve the setgid/group-write mode expected by OnRootMismatch.
+    install -d -m 2775 "$apps_dir"
 
     install_app() {
       app_id=$1

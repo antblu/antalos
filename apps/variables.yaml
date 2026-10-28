@@ -439,7 +439,7 @@ variables:
 
   # Talk HPB: one AIO replica couples signaling, Janus and TURN. Multiple Janus
   # backends require dedicated signaling proxies rather than AIO replicas.
-  NEXTCLOUD_TALK_CONFIG_REVISION: "3"
+  NEXTCLOUD_TALK_CONFIG_REVISION: "4"
   # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/aio-talk depType=floating
   NEXTCLOUD_TALK_IMAGE_TAG: latest
   # renovate: datasource=docker depName=nats
