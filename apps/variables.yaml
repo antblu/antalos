@@ -593,7 +593,7 @@ variables:
   ODOO_JIT_PROVIDER_NAME: antID
   ODOO_JIT_TEMPLATE_LOGIN: jit-template@invalid.local
   # renovate: datasource=pypi depName=packaging
-  ODOO_PACKAGING_VERSION: "25.0"
+  ODOO_PACKAGING_VERSION: "26.3"
 
   # Medusa backend and Admin only; storefront is deployed separately.
   # renovate: datasource=npm depName=@medusajs/medusa depType=coordinated
