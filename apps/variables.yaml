@@ -4,7 +4,7 @@
 # application manifests at render time. Do not add Kubernetes resources here.
 variables:
   # renovate: datasource=docker depName=registry.k8s.io/kubectl
-  AUTHORIZATION_KUBECTL_IMAGE_TAG: v1.35.0
+  AUTHORIZATION_KUBECTL_IMAGE_TAG: v1.37.2
   # Bump when changing the yaml-envsubst plugin; its subPath mount needs new pods.
   ARGOCD_PLUGIN_CONFIG_REVISION: "2"
   # renovate: datasource=docker depName=mikefarah/yq
