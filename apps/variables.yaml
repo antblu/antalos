@@ -51,7 +51,7 @@ variables:
   ZAMMAD_CHART_VERSION: 18.2.1
 
   # renovate: datasource=docker depName=node
-  DOCS_NODE_IMAGE_TAG: 24.8.0-alpine3.22
+  DOCS_NODE_IMAGE_TAG: 24.16.0-alpine3.22
   # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
   DOCS_NGINX_IMAGE_TAG: 1.31.7-alpine
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-docs depType=floating
@@ -77,7 +77,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/antblu/emiliany depType=floating
   EMILIANY_IMAGE_TAG: main
   # renovate: datasource=docker depName=node
-  EMILIANY_NODE_IMAGE_TAG: 24.21.0-bookworm-slim
+  EMILIANY_NODE_IMAGE_TAG: 24.22.1-bookworm-slim
   # renovate: datasource=npm depName=npm
   EMILIANY_NPM_VERSION: 12.2.1
   EMILIANY_COMMERCE_DEMO_MODE: 'false'
