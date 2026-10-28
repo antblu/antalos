@@ -98,9 +98,15 @@ The scale API may omit `spec.replicas` when its value is zero. The bootstrap lau
 `apps/odoo/addons/medusa_bridge/` supplies a separate optional addon; render its
 ConfigMap with `python3 apps/odoo/addons/render-commerce-configmap.py`. The init
 container copies its files into the existing addon directory. Mounting the code
-does not install its database models. Plan and test installation of
-`medusa_bridge` and its Sales/Inventory dependencies in an isolated Odoo database
-before installing on the operational database. Existing authentication and
+does not install its database models. The versioned `odoo-commerce-v1` Sync-wave-2 Job installs `medusa_bridge`
+and its Product, Sales and Inventory dependencies. It takes the existing advisory
+lock, stops serving pods and waits for their termination before changing the
+schema. Wave 3 restores the two addon-equipped replicas. Failure leaves serving
+stopped for deliberate repair; do not run concurrent schema installations.
+Completed Job templates are ignored, so future upgrades require a new versioned
+Job and a maintenance plan. Take a completed backup and run
+`apps/odoo/tests/commerce-acceptance.py` through `odoo shell` in an isolated database
+before the operational installation. The test rolls back its commerce records. Existing authentication and
 storage addons remain independent.
 
 The addon uses unique sales-order/event references and transaction-scoped locks
@@ -117,3 +123,18 @@ fulfillment mapping on each picking, actual tracking information, an HTTPS
 through service-owned SealedSecrets, not a public ConfigMap. Delivery is recorded
 only from explicit delivery evidence. Check queued failures separately from Odoo
 readiness. Inventory quantities are not synchronized by this addon.
+
+
+After installation, reconcile the existing catalog ACLs with
+`python3 apps/medusa/tools/provision-odoo-integration.py --reconcile-access`, then
+use `--commerce-access` to add the bridge, Contact Creation, Sales user and Inventory user groups to
+the existing integration identity without rotating its API key. These are standard
+operational user roles, with broader rights than a catalog reader; they do not
+grant Settings, Sales manager or Inventory manager access. Re-running the
+catalog-only verifier after granting commerce roles deliberately refuses the
+changed role contract. Keep order export and the fulfillment cron disabled until
+real SKU, currency, tax, shipping and fulfillment mappings are accepted. Installing
+modules does not create those business mappings.
+
+Backup Jobs install only their S3 client dependency. They do not install Odoo
+addons, require custom-addon mounts, or require a Kubernetes service account.

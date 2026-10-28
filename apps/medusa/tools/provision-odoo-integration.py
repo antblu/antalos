@@ -118,7 +118,29 @@ def report_pending(result):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reconcile-access', action='store_true', help='Reconcile read ACLs without issuing or rotating a key')
+    parser.add_argument('--commerce-access', action='store_true', help='Grant existing integration user Sales, Inventory and bridge access; preserve its API key')
     args = parser.parse_args()
+    if args.commerce_access:
+        script = """
+from odoo import Command
+user = env.ref('medusa_integration.user_catalog')
+if not user.active or user.login != 'medusa-integration':
+    raise RuntimeError('Integration identity requires operator review')
+for name in ('sale_management', 'sale_stock', 'medusa_bridge'):
+    if env['ir.module.module'].search([('name', '=', name)]).state != 'installed':
+        raise RuntimeError('Required commerce module missing: ' + name)
+groups = [env.ref(name) for name in ('base.group_user', 'base.group_partner_manager', 'sales_team.group_sale_salesman', 'stock.group_stock_user', 'medusa_bridge.group_medusa_bridge')]
+user.write({'group_ids': [Command.link(group.id) for group in groups]})
+if user.has_group('base.group_system') or user.has_group('sales_team.group_sale_manager') or user.has_group('stock.group_stock_manager'):
+    raise RuntimeError('Integration account unexpectedly has administrative access')
+env.cr.commit()
+print('COMMERCE_ACCESS_RECONCILED')
+"""
+        result = run_odoo(script)
+        if 'COMMERCE_ACCESS_RECONCILED' not in result.stdout:
+            raise RuntimeError('Commerce access was not confirmed')
+        print('Reconciled commerce permissions without rotating the API key.')
+        return
     if args.reconcile_access:
         result = run_odoo(ODOO_SCRIPT.replace('issue_key = True', 'issue_key = False'))
         report_pending(result)

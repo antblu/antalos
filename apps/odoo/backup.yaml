@@ -35,7 +35,13 @@ spec:
               image: docker.io/library/python:${ODOO_ADDON_INSTALLER_IMAGE_TAG}
               command:
                 - python3
-                - /config/install-addons.py
+                - -m
+                - pip
+                - install
+                - --disable-pip-version-check
+                - --no-cache-dir
+                - --target=/opt/python
+                - s3fs==${ODOO_S3FS_VERSION}
               env:
                 - name: OCA_STORAGE_REVISION
                   value: ${ODOO_OCA_STORAGE_REVISION}
@@ -136,7 +142,9 @@ spec:
               configMap:
                 name: odoo-config
             - name: python-dependencies
-              emptyDir: {}
+              emptyDir:
+                medium: ""
             - name: addons
-              emptyDir: {}
+              emptyDir:
+                medium: ""
           automountServiceAccountToken: false

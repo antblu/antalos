@@ -578,3 +578,79 @@ data:
     subprocess.run([
         'odoo', 'shell', '--config=/run/odoo/odoo.conf', '--no-http',
     ], input=Path('/config/configure-jit.py').read_text(), text=True, check=True)
+  install-commerce.py: |
+    import json
+    import os
+    from pathlib import Path
+    import ssl
+    import subprocess
+    import time
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    import psycopg2
+
+    # Generate runtime configuration and wait for the existing HA bootstrap.
+    subprocess.run(['python3', '/config/bootstrap.py'], check=True)
+    connection = psycopg2.connect(
+        host='odoo-db-rw.odoo.svc.cluster.local', dbname=os.environ['SESSION_DB_URI'],
+        user=Path('/credentials/database/username').read_text(),
+        password=Path('/credentials/database/password').read_text(), sslmode='require',
+    )
+    connection.autocommit = True
+    with connection.cursor() as cursor:
+        cursor.execute('SELECT pg_advisory_lock(19650621)')
+        cursor.execute("SELECT state FROM ir_module_module WHERE name = 'medusa_bridge'")
+        if cursor.fetchone() == ('installed',):
+            print('medusa_bridge is already installed', flush=True)
+            connection.close()
+            raise SystemExit(0)
+
+    account = Path('/var/run/secrets/kubernetes.io/serviceaccount')
+    context = ssl.create_default_context(cafile=str(account / 'ca.crt'))
+    base = ('https://' + os.environ['KUBERNETES_SERVICE_HOST'] + ':'
+            + os.environ['KUBERNETES_SERVICE_PORT_HTTPS'])
+    scale_url = base + '/apis/apps/v1/namespaces/odoo/deployments/odoo/scale'
+    headers = {'Authorization': 'Bearer ' + (account / 'token').read_text()}
+
+
+    def request(url, method='GET', payload=None):
+        request_headers = dict(headers)
+        if payload is not None:
+            request_headers['Content-Type'] = 'application/merge-patch+json'
+        data = json.dumps(payload).encode() if payload is not None else None
+        req = urllib.request.Request(url, headers=request_headers, method=method, data=data)
+        with urllib.request.urlopen(req, context=context, timeout=30) as response:
+            return json.load(response)
+
+
+    try:
+        request(scale_url)
+    except urllib.error.HTTPError as exc:
+        if exc.code != 404:
+            raise
+    else:
+        request(scale_url, 'PATCH', {'spec': {'replicas': 0}})
+
+    selector = urllib.parse.urlencode({'labelSelector': 'app.kubernetes.io/name=odoo'})
+    for attempt in range(120):
+        if not request(base + '/api/v1/namespaces/odoo/pods?' + selector)['items']:
+            break
+        time.sleep(5)
+    else:
+        raise RuntimeError('Serving pods remain; refusing schema installation')
+
+    # On failure, leave serving stopped for deliberate repair and retry.
+    subprocess.run([
+        'odoo', '--config=/run/odoo/odoo.conf', '--init=medusa_bridge',
+        '--without-demo=true', '--stop-after-init', '--no-http',
+    ], check=True)
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT state FROM ir_module_module WHERE name = 'medusa_bridge'")
+        if cursor.fetchone() != ('installed',):
+            raise RuntimeError('medusa_bridge installation did not complete')
+    connection.close()
+    # Argo applies the addon-equipped serving template in the next wave.
+    # Keep existing pods stopped until then, so old code never serves the new schema.
+    print('medusa_bridge installed; the next sync wave restores two serving replicas', flush=True)
