@@ -562,6 +562,7 @@ variables:
   # Odoo Community 19; two serving replicas and replicated PostgreSQL.
   # renovate: datasource=docker depName=odoo
   ODOO_IMAGE_TAG: "19.0"
+  ODOO_MEDUSA_FULFILLMENT_URL: https://medusa.antblu.net/hooks/commerce/fulfillment
   ODOO_HOST: odoo.antblu.net
   ODOO_DATABASE_NAME: odoo
   ODOO_DATABASE_USERNAME: odoo
@@ -605,6 +606,10 @@ variables:
   MEDUSA_PAYPAL_AUTO_CAPTURE: 'true'
   MEDUSA_ACCOUNT_SMTP_PORT: '465'
   MEDUSA_ACCOUNT_SMTP_USERNAME: admin@emiliany.com
+  MEDUSA_TRANSACTIONAL_EMAIL_ENABLED: 'false'
+  MEDUSA_ODOO_ORDER_SYNC_ENABLED: 'false'
+  MEDUSA_EMAIL_LOGO_URL: https://emiliany.com/brand/emiliany-logo.png
+  MEDUSA_SUPPORT_EMAIL: support@emiliany.com
   MEDUSA_ACCOUNT_MAIL_FROM: noreply@emiliany.com
   MEDUSA_HOST: medusa.antblu.net
   MEDUSA_OIDC_DISPLAY_NAME: antID

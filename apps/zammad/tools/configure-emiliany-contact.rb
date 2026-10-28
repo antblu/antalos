@@ -1,10 +1,12 @@
-# Run with `rails runner` inside Zammad 7.1 after supplying EMILIANY_CONTACT_CONFIG
+require_relative 'emiliany-email-branding'
+# Run with `rails runner` inside Zammad 7.x after supplying EMILIANY_CONTACT_CONFIG
 # as JSON in the environment (smtp_password required). Never print the configuration.
 require 'json'
 configuration = JSON.parse(ENV.fetch('EMILIANY_CONTACT_CONFIG'))
 UserInfo.current_user_id = 1
 ActiveRecord::Base.transaction do
-  group = Group.find_or_initialize_by(name: 'EMILIANY - Website Contact')
+  group = Group.find_by(name: 'Emiliany - Website Contact') || Group.find_by(name: 'EMILIANY - Website Contact') || Group.new
+  group.name = 'Emiliany - Website Contact'
   group.assign_attributes(active: true, assignment_timeout: 0, updated_by_id: 1, created_by_id: group.created_by_id || 1)
   group.save!
   %w[antblu@antblu.net estefania.cc@emiliany.com].each do |email|
@@ -53,7 +55,7 @@ ActiveRecord::Base.transaction do
       'article.sender_id' => { operator: 'is', value: customer } },
     perform: { 'notification.email' => { recipient: 'ticket_customer',
       subject: 'We received your message — EMILIANY',
-      body: '<p>Hello #{ticket.customer.firstname},</p><p>Thank you for contacting EMILIANY. We have received your message and a member of our team will get back to you as soon as possible.</p><p>Your request has been added to our support system so our team can track it through completion.</p><p>Your reference: #{config.ticket_hook}#{ticket.number}. Please keep this reference available. For additional information, please use our website contact page and include this reference.</p><p>— EMILIANY</p>' } },
+      body: emiliany_email_branding(File.read(File.join(__dir__, 'emiliany-acknowledgement.html'))) } },
     updated_by_id: 1, created_by_id: trigger.created_by_id || 1)
   trigger.save!
   # Preserve the general-purpose trigger, excluding this group to prevent two acknowledgements.

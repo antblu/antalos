@@ -33,7 +33,7 @@ global.fetch = async(url, options={})=>{
     const capture={id:'CAPTURE1',status:'COMPLETED',amount:unit().amount}
     order.purchase_units[0].payments.captures=[capture];return response(capture)
   }
-  if (path.endsWith('/refund')) return response({id:'REFUND1',status:'COMPLETED'})
+  if (path.endsWith('/refund') || path==='/v2/payments/refunds/REFUND1') return response({id:'REFUND1',status:'COMPLETED'})
   if (path.endsWith('/void')) { order.purchase_units[0].payments.authorizations[0].status='VOIDED'; return new Response(null,{status:204}) }
   throw new Error(`Unexpected HTTP call: ${path}`)
 }

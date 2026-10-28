@@ -44,7 +44,7 @@ module.exports = defineConfig({
       resolve: "@medusajs/medusa/payment",
       options: { providers: [
         ...(stripeEnabled ? [{
-          resolve: "@medusajs/medusa/payment-stripe",
+          resolve: "./src/modules/stripe",
           id: "stripe",
           options: {
             apiKey: process.env.STRIPE_API_KEY,
@@ -68,6 +68,7 @@ module.exports = defineConfig({
       ] },
     },
     { resolve: "./src/modules/customer-sync" },
+    { resolve: "./src/modules/lifecycle" },
     {
       resolve: "./src/modules/odoo",
       options: {

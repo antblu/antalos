@@ -139,8 +139,12 @@ export default class PayPalProvider extends AbstractPaymentProvider<Options> {
     const result = await this.request<Transaction>(`/v2/payments/captures/${capture.id}/refund`, {
       amount: this.money(input.amount, String(input.data?.currency_code)),
     }, `refund:${input.context.idempotency_key}`)
-    if (result.status !== "COMPLETED") throw new Error("PayPal refund is pending; reconcile before retrying")
-    return { data: { ...input.data, refund_id: result.id } }
+    const confirmed = await this.request<Transaction>(`/v2/payments/refunds/${result.id}`)
+    if (confirmed.status !== "COMPLETED") throw new Error("PayPal refund is pending; reconcile using the same refund idempotency key")
+    return { data: { ...input.data, refund_id: confirmed.id, confirmed_refunds: {
+      ...(input.data?.confirmed_refunds as Record<string, unknown> || {}),
+      [input.context.idempotency_key]: { id: confirmed.id, amount: Number(new BigNumber(input.amount).numeric) },
+    } } }
   }
   async cancelPayment(input: CancelPaymentInput) {
     const order = await this.order(input.data)

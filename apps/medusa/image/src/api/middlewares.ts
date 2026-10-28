@@ -4,6 +4,7 @@ import type { ICustomerModuleService, IAuthModuleService } from "@medusajs/frame
 import { Modules, MedusaError } from "@medusajs/framework/utils"
 import { authenticate, defineMiddlewares } from "@medusajs/framework/http"
 export default defineMiddlewares({ routes: [
+  { matcher: "/hooks/commerce/fulfillment", bodyParser: { sizeLimit: "64kb", preserveRawBody: true }, middlewares: [] },
   { matcher: "/store/*", middlewares: [authenticate("customer", ["bearer", "session"], { allowUnregistered: true, allowUnauthenticated: true }), async (req, _res, next) => {
     const context = (req as unknown as AuthenticatedMedusaRequest).auth_context
     if (context?.actor_id) {

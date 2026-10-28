@@ -214,3 +214,28 @@ connection or accepted SMTP envelope does not prove a received email.
 The image supports the bundled Stripe provider and a local PayPal Orders v2 provider. Provider selection is controlled through `MEDUSA_STRIPE_ENABLED` and `MEDUSA_PAYPAL_ENABLED` in `apps/variables.yaml`; `MEDUSA_PAYPAL_ENVIRONMENT` selects `sandbox` or `live`, and `MEDUSA_PAYPAL_AUTO_CAPTURE` selects automatic capture after authorization. Enabling Stripe requires `STRIPE_API_KEY` and `STRIPE_WEBHOOK_SECRET`. PayPal requires `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` and `PAYPAL_WEBHOOK_ID`, with an HTTPS `CUSTOMER_STOREFRONT_URL`. Keep these in the optional `medusa-payments` Secret, sealed in this application's directory. Server, worker and migration pods consume it. Missing credentials for an enabled provider fail startup.
 
 Register signed processor webhooks at `/hooks/payment/stripe_stripe` and `/hooks/payment/paypal_paypal`, then enable the providers in supported Medusa regions. Both use authorization with subsequent capture. PayPal can automatically capture after authorization; Stripe remains configured for manual capture. The PayPal provider rejects unsupported currencies and amount changes that would reuse an approved order. It verifies webhook signatures with PayPal and correlates supported authorization, void, capture and denial events with the originating session. Refunds and voids run through Medusa; external refunds, disputes and reversals require separate reconciliation. Provider code and source settings do not establish live payment readiness. Publish an immutable image before selecting its new tag and verify the full payment lifecycle separately.
+
+## Optional commerce lifecycle outbox
+
+The custom `lifecycle` module adds a migration-managed `lifecycle_event` table.
+Order, capture, shipment, delivery, cancellation and confirmed-refund subscribers
+queue independent email and ERP deliveries. The minute worker retries transient
+failures. Enable `TRANSACTIONAL_EMAIL_ENABLED` and `ODOO_ORDER_SYNC_ENABLED` only
+after configuring and testing the selected services. The authenticated
+`GET /admin/integrations/status` reports queue counts and activation flags without
+returning recipients or payloads. It is not an external-service health check.
+
+SMTP cannot atomically commit acceptance and a local delivery receipt. An
+interrupted/ambiguous SMTP send is held in `review`; reconcile the stable
+Message-ID against the mail provider before changing its state. Never bulk-reset
+sent or uncertain events. Keep the outbox during restores to prevent duplicate
+notifications. ERP retries require the remote atomic bridge operation and its
+unique order/event constraints.
+
+`POST /hooks/commerce/fulfillment` accepts HMAC-SHA256 authenticated shipment and
+delivery updates for an existing, explicitly mapped fulfillment. Sign the raw JSON
+as `timestamp + "." + body`, send `X-Commerce-Timestamp` (Unix seconds) and
+`X-Commerce-Signature` (hex), and configure `FULFILLMENT_WEBHOOK_SECRET` on both
+ends. Requests expire after five minutes. The handler validates the order link,
+uses Medusa workflows, and suppresses repeated lifecycle notifications. No
+inventory ownership or carrier tracking state is inferred from this endpoint.

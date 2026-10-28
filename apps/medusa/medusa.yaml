@@ -49,6 +49,9 @@ spec:
       - name: medusa
         image: ${MEDUSA_IMAGE_REPOSITORY}:${MEDUSA_IMAGE_TAG}
         envFrom:
+        - secretRef:
+            name: medusa-fulfillment
+            optional: true
         - configMapRef:
             name: medusa-env
         - secretRef:
@@ -169,6 +172,9 @@ spec:
       - name: medusa
         image: ${MEDUSA_IMAGE_REPOSITORY}:${MEDUSA_IMAGE_TAG}
         envFrom:
+        - secretRef:
+            name: medusa-fulfillment
+            optional: true
         - configMapRef:
             name: medusa-env
         - secretRef:

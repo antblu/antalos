@@ -23,6 +23,8 @@ test('account authentication does not cover public password recovery descendants
   const app = express()
   // Medusa registers methodless middleware with Express.use, which prefix-matches strings.
   for (const route of config.routes) {
+    // Body-parser configuration has no authentication middleware to mount here.
+    if (!route.middlewares?.length) continue
     const methods = route.methods || route.method
     if (methods) for (const method of Array.isArray(methods) ? methods : [methods]) app[method.toLowerCase()](route.matcher, ...route.middlewares)
     else app.use(route.matcher, ...route.middlewares)

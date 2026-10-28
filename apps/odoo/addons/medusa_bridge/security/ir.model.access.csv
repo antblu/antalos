@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_medusa_event,Medusa event,model_medusa_bridge_event,medusa_bridge.group_medusa_bridge,1,0,1,0
+access_medusa_outbound,Medusa fulfillment queue,model_medusa_bridge_outbound,medusa_bridge.group_medusa_bridge,1,1,1,0

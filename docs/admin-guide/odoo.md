@@ -92,3 +92,28 @@ Change the Odoo image within 19.0 deliberately. Major releases and module upgrad
 Live verification on **2026-10-21 (America/Denver)** after the OIDC installation confirmed the installation Job completed, both serving replicas were ready on distinct workers, and both loaded `auth_oidc` version `19.0.1.0.0` with `python-jose` version `3.5.0`. RSA token signing/verification passed in each replica. The public HTTPS login page returned HTTP 200, the existing administrator authenticated, and the same authenticated session worked through both replicas; the verification session was then logged out. Those initial OCA-installation checks did not include an identity-provider login; the later JIT verification is recorded above. Database failover, attachment access, and backup restoration were not exercised by these checks; assess those separately before claiming current recovery or failover guarantees.
 
 The scale API may omit `spec.replicas` when its value is zero. The bootstrap launcher treats an omitted field as zero so a completed migration can restore both serving replicas.
+
+## Optional Medusa commerce bridge
+
+`apps/odoo/addons/medusa_bridge/` supplies a separate optional addon; render its
+ConfigMap with `python3 apps/odoo/addons/render-commerce-configmap.py`. The init
+container copies its files into the existing addon directory. Mounting the code
+does not install its database models. Plan and test installation of
+`medusa_bridge` and its Sales/Inventory dependencies in an isolated Odoo database
+before installing on the operational database. Existing authentication and
+storage addons remain independent.
+
+The addon uses unique sales-order/event references and transaction-scoped locks
+for remote idempotency. It rejects missing/ambiguous SKUs, nonmatching totals or
+taxes, and ambiguous currency pricelists. Assign the integration group and minimum
+required Sales/Inventory rights to the integration account; it does not use sudo
+for order operations. Posted invoices or completed pickings prevent automatic
+cancellation. Confirmed-refund receipts are audit records, not posted accounting
+credit notes or new payment-provider refunds.
+
+The optional fulfillment cron starts inactive. It requires an explicit Medusa
+fulfillment mapping on each picking, actual tracking information, an HTTPS
+`MEDUSA_FULFILLMENT_URL`, and a shared `FULFILLMENT_WEBHOOK_SECRET`. Add that key
+through service-owned SealedSecrets, not a public ConfigMap. Delivery is recorded
+only from explicit delivery evidence. Check queued failures separately from Odoo
+readiness. Inventory quantities are not synchronized by this addon.

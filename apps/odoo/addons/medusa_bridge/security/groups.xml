@@ -1,0 +1,5 @@
+<odoo>
+  <record id="group_medusa_bridge" model="res.groups">
+    <field name="name">Medusa commerce integration</field>
+  </record>
+</odoo>

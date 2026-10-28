@@ -79,6 +79,9 @@ spec:
               drop:
                 - ALL
           volumeMounts:
+            - name: commerce-addons
+              mountPath: /commerce-addons
+              readOnly: true
             - name: custom-addons
               mountPath: /custom-addons
               readOnly: true
@@ -147,6 +150,14 @@ spec:
                 secretKeyRef:
                   name: odoo-s3
                   key: secret-access-key
+            - name: MEDUSA_FULFILLMENT_URL
+              value: ${ODOO_MEDUSA_FULFILLMENT_URL}
+            - name: FULFILLMENT_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: odoo-medusa-fulfillment
+                  key: FULFILLMENT_WEBHOOK_SECRET
+                  optional: true
             - name: SESSION_DB_URI
               value: ${ODOO_DATABASE_NAME}
       containers:
@@ -222,9 +233,39 @@ spec:
                 secretKeyRef:
                   name: odoo-s3
                   key: secret-access-key
+            - name: MEDUSA_FULFILLMENT_URL
+              value: ${ODOO_MEDUSA_FULFILLMENT_URL}
+            - name: FULFILLMENT_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: odoo-medusa-fulfillment
+                  key: FULFILLMENT_WEBHOOK_SECRET
+                  optional: true
             - name: SESSION_DB_URI
               value: ${ODOO_DATABASE_NAME}
       volumes:
+        - name: commerce-addons
+          configMap:
+            name: odoo-commerce-addon
+            items:
+              - key: __init__.py
+                path: medusa_bridge/__init__.py
+              - key: __manifest__.py
+                path: medusa_bridge/__manifest__.py
+              - key: data__cron.xml
+                path: medusa_bridge/data/cron.xml
+              - key: models____init__.py
+                path: medusa_bridge/models/__init__.py
+              - key: models__fulfillment.py
+                path: medusa_bridge/models/fulfillment.py
+              - key: models__sale_order.py
+                path: medusa_bridge/models/sale_order.py
+              - key: security__groups.xml
+                path: medusa_bridge/security/groups.xml
+              - key: security__ir.model.access.csv
+                path: medusa_bridge/security/ir.model.access.csv
+              - key: views__picking.xml
+                path: medusa_bridge/views/picking.xml
         - name: custom-addons
           configMap:
             name: odoo-authentik-jit-addon

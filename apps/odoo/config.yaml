@@ -179,6 +179,8 @@ data:
                     with archive.extractfile(member) as source, target.open('wb') as destination:
                         shutil.copyfileobj(source, destination)
     shutil.copytree('/custom-addons/authentik_jit', '/mnt/extra-addons/authentik_jit', dirs_exist_ok=True)
+    if os.path.isdir('/commerce-addons/medusa_bridge'):
+        shutil.copytree('/commerce-addons/medusa_bridge', '/mnt/extra-addons/medusa_bridge', dirs_exist_ok=True)
   configure-storage.py: |
     import json
     import os

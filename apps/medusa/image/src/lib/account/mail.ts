@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer"
+import { layout, escapeHtml } from "../lifecycle/templates"
 export function mailConfigured() { return Boolean(process.env.ACCOUNT_SMTP_HOST && process.env.ACCOUNT_SMTP_USER && process.env.ACCOUNT_SMTP_PASSWORD && process.env.ACCOUNT_MAIL_FROM && process.env.CUSTOMER_STOREFRONT_URL) }
 export async function sendAccountMail(to: string, subject: string, text: string) {
   if (!mailConfigured()) throw new Error("Account email delivery is unavailable")
@@ -11,7 +12,11 @@ export async function sendAccountMail(to: string, subject: string, text: string)
     disableFileAccess: true, disableUrlAccess: true,
   })
   try {
-    const result = await transport.sendMail({ from: { name: "EMILIANY", address: from }, to, subject, text,
+    // Keep account security's existing text and one-use link semantics; share
+    // the brand frame without coupling transactional delivery to consent.
+    const branded = process.env.EMAIL_LOGO_URL && process.env.SUPPORT_EMAIL
+      ? layout(subject, `<p style="line-height:1.6">${escapeHtml(text).replace(/\n/g, "<br>")}</p>`, text) : { text }
+    const result = await transport.sendMail({ from: { name: "EMILIANY", address: from }, to, subject, ...branded,
       headers: { "Auto-Submitted": "auto-generated" } })
     if (!result.accepted?.length) throw new Error("Email was not accepted")
   } catch { throw new Error("Account email could not be delivered") }
