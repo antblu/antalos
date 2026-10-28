@@ -206,7 +206,7 @@ variables:
   # renovate: datasource=nextcloud depName=context_chat registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_CONTEXT_CHAT_VERSION: 5.5.0
   # renovate: datasource=nextcloud depName=contacts registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_CONTACTS_VERSION: 8.9.2
+  NEXTCLOUD_CONTACTS_VERSION: 8.9.3
   # renovate: datasource=nextcloud depName=deck registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_DECK_VERSION: 1.19.1
   # renovate: datasource=nextcloud depName=eurooffice registryUrl=https://apps.nextcloud.com/api/v1/apps.json
