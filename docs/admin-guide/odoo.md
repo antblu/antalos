@@ -137,4 +137,6 @@ real SKU, currency, tax, shipping and fulfillment mappings are accepted. Install
 modules does not create those business mappings.
 
 Backup Jobs install only their S3 client dependency. They do not install Odoo
-addons, require custom-addon mounts, or require a Kubernetes service account.
+addons, require custom-addon mounts, or require Kubernetes API permissions. They explicitly use the namespace default
+service account with token mounting disabled, overriding obsolete account
+references left on an existing CronJob.

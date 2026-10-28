@@ -18,3 +18,14 @@ Daily backups run at 09:00 UTC without scaling down either serving replica. A co
 This design supports continued service through loss of one eligible worker while Garage, ingress, the Kubernetes API, and CNPG control remain available. Database promotion and interrupted requests can cause a brief error/retry period. Shared Garage, ingress, the API endpoint, host-level failures, and addon download availability remain dependencies. Copies of active objects and backups in the same Garage service do not provide an independent disaster-recovery destination. See [service availability](/infrastructure/availability/).
 
 All resources belong to `apps/odoo/`; shared inputs belong to `apps/variables.yaml`, and credentials are namespace-bound SealedSecrets. This page describes source design. It does not establish live replication health, successful session or attachment failover, completed backups, or a measured recovery time.
+
+
+The versioned `odoo-commerce-v2` Job installs the optional `medusa_bridge` addon
+and its Product, Sales and Inventory dependencies at Sync wave 2. It takes the
+same advisory lock as other schema installers, scales serving to zero and waits
+for the old pods to terminate. Wave 3 restores the addon-equipped serving tier.
+This is an offline schema installation, with a temporary service interruption.
+The bridge adds atomic order receipts and an outbound fulfillment queue; it does
+not synchronize stock quantities. Its fulfillment cron starts inactive, and
+installing the schema does not activate external order export or configure
+business mappings. See the [operations guide](/admin-guide/odoo/#optional-medusa-commerce-bridge).

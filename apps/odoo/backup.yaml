@@ -147,4 +147,5 @@ spec:
             - name: addons
               emptyDir:
                 medium: ""
+          serviceAccountName: default
           automountServiceAccountToken: false
