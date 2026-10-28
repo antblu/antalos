@@ -42,7 +42,7 @@ spec:
         - /spec/template
     - group: batch
       kind: Job
-      name: odoo-commerce-v1
+      name: odoo-commerce-v2
       namespace: odoo
       jsonPointers:
         - /spec/template

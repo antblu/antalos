@@ -98,7 +98,7 @@ The scale API may omit `spec.replicas` when its value is zero. The bootstrap lau
 `apps/odoo/addons/medusa_bridge/` supplies a separate optional addon; render its
 ConfigMap with `python3 apps/odoo/addons/render-commerce-configmap.py`. The init
 container copies its files into the existing addon directory. Mounting the code
-does not install its database models. The versioned `odoo-commerce-v1` Sync-wave-2 Job installs `medusa_bridge`
+does not install its database models. The versioned `odoo-commerce-v2` Sync-wave-2 Job installs `medusa_bridge`
 and its Product, Sales and Inventory dependencies. It takes the existing advisory
 lock, stops serving pods and waits for their termination before changing the
 schema. Wave 3 restores the two addon-equipped replicas. Failure leaves serving

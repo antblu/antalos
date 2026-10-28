@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: odoo-commerce-v1
+  name: odoo-commerce-v2
   namespace: odoo
   annotations:
     argocd.argoproj.io/sync-wave: '2'
@@ -89,7 +89,6 @@ spec:
               mountPath: /var/lib/odoo
             - name: runtime-config
               mountPath: /run/odoo
-              readOnly: true
             - name: python-dependencies
               mountPath: /opt/python
               readOnly: true
