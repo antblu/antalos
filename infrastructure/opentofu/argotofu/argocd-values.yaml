@@ -1,60 +1,16 @@
 global:
+  # Keep control-plane workloads eligible for the third worker after a main
+  # worker loss, even when the remaining main worker has reached its pod limit.
+  tolerations:
+    - key: quorum
+      operator: Exists
+      effect: NoSchedule
   affinity:
     podAntiAffinity: hard
 
+# Native OIDC removes the singleton Dex broker from the login path.
 dex:
-  startupProbe:
-    enabled: true
-  readinessProbe:
-    enabled: true
-  livenessProbe:
-    enabled: true
-
-configs:
-  cm:
-    resource.exclusions: |
-      - apiGroups:
-          - coordination.k8s.io
-        kinds:
-          - Lease
-      - apiGroups:
-          - authentication.k8s.io
-          - authorization.k8s.io
-        kinds:
-          - SelfSubjectReview
-          - TokenReview
-          - LocalSubjectAccessReview
-          - SelfSubjectAccessReview
-          - SelfSubjectRulesReview
-          - SubjectAccessReview
-      - apiGroups:
-          - certificates.k8s.io
-        kinds:
-          - CertificateSigningRequest
-      - apiGroups:
-          - cert-manager.io
-        kinds:
-          - CertificateRequest
-      - apiGroups:
-          - cilium.io
-        kinds:
-          - CiliumIdentity
-          - CiliumEndpoint
-          - CiliumEndpointSlice
-      - apiGroups:
-          - kyverno.io
-          - reports.kyverno.io
-          - wgpolicyk8s.io
-        kinds:
-          - PolicyReport
-          - ClusterPolicyReport
-          - EphemeralReport
-          - ClusterEphemeralReport
-          - AdmissionReport
-          - ClusterAdmissionReport
-          - BackgroundScanReport
-          - ClusterBackgroundScanReport
-          - UpdateRequest
+  enabled: false
 
 # The repo-server Deployment mounts this ConfigMap, so it must be part of the
 # Helm release itself. Managing it only through argocd-self creates a bootstrap
@@ -120,6 +76,9 @@ extraObjects:
                 done
 server:
   replicas: 2
+  pdb:
+    enabled: true
+    minAvailable: 1
   deploymentStrategy:
     type: RollingUpdate
     rollingUpdate:
@@ -190,6 +149,15 @@ redis-ha:
   enabled: true
   replicas: 3
   haproxy:
+    resources:
+      requests:
+        cpu: 25m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+    extraConfig: |
+      global
+        maxconn 1024
     deploymentStrategy:
       type: RollingUpdate
       rollingUpdate:
@@ -202,6 +170,50 @@ redis-ha:
   sentinel:
     enabled: true
 configs:
+  cm:
+    resource.exclusions: |
+      - apiGroups:
+          - coordination.k8s.io
+        kinds:
+          - Lease
+      - apiGroups:
+          - authentication.k8s.io
+          - authorization.k8s.io
+        kinds:
+          - SelfSubjectReview
+          - TokenReview
+          - LocalSubjectAccessReview
+          - SelfSubjectAccessReview
+          - SelfSubjectRulesReview
+          - SubjectAccessReview
+      - apiGroups:
+          - certificates.k8s.io
+        kinds:
+          - CertificateSigningRequest
+      - apiGroups:
+          - cert-manager.io
+        kinds:
+          - CertificateRequest
+      - apiGroups:
+          - cilium.io
+        kinds:
+          - CiliumIdentity
+          - CiliumEndpoint
+          - CiliumEndpointSlice
+      - apiGroups:
+          - kyverno.io
+          - reports.kyverno.io
+          - wgpolicyk8s.io
+        kinds:
+          - PolicyReport
+          - ClusterPolicyReport
+          - EphemeralReport
+          - ClusterEphemeralReport
+          - AdmissionReport
+          - ClusterAdmissionReport
+          - BackgroundScanReport
+          - ClusterBackgroundScanReport
+          - UpdateRequest
   secret:
     annotations:
       sealedsecrets.bitnami.com/patch: "true"

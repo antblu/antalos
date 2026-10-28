@@ -21,7 +21,7 @@ Database data and backups belong to each managed cluster. The operator chart is 
 
 ## Availability and failure behavior
 
-**Availability classification: Not explicitly HA as an operator; it manages replicated database clusters with separate availability contracts.**
+**Availability classification: Redundant operator management with leader election; managed database availability remains service-specific.**
 
 This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
 
@@ -29,7 +29,7 @@ This is an interpretation of the checked-in configuration, assuming the declared
 
 | Component | Declared layout | Mechanism |
 | --- | --- | --- |
-| Operator | Chart installed without explicit replica override | Reconciliation and promotion can wait for recovery if its active process is unavailable. |
+| Operator | 2 replicas; required hostname anti-affinity; quorum toleration | The pinned chart enables leader election; a surviving replica can acquire leadership. A one-available PDB protects voluntary eviction. |
 | Managed databases | Usually 2 instances per application | PostgreSQL primary/standby replication runs in each application namespace. |
 | Client routing | Per-cluster read/write Service | Must be directed to the correct elected/promoted writer. |
 | Storage | Separate LocalPV volumes | The operator does not make one local volume portable or replicated. |
@@ -42,7 +42,7 @@ If only the operator is lost, an existing primary and its standby can continue t
 
 | Failure | Expected behavior and remaining dependency |
 | --- | --- |
-| One main worker | Database serving depends on whether the lost worker held the primary and/or operator. Correlated loss of a primary and the single operator may extend interruption beyond simple standby promotion. |
+| One main worker | Database serving depends on whether the lost worker held the primary and/or operator. If the operator leader and primary are lost together, the surviving operator must acquire leadership and promote the surviving database instance. Replacement operators may use RTX capacity. |
 | RTX worker only | No operator-specific vote is declared. Whole-host API loss is especially significant because cluster observation and Service updates depend on it. |
 | A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
 
@@ -54,11 +54,11 @@ Operator restarts and CRD upgrades can pause management while databases keep ser
 
 ### What prevents a stronger HA claim
 
-No explicit operator replica count means this repository does not establish redundant management. Most databases have only one standby; after one member fails there is no second replica to absorb another loss.
+Operator leader takeover and promotion require a reachable Kubernetes API and sufficient eligible scheduling capacity. Most databases have only one standby; after one member fails there is no second replica to absorb another loss.
 
 ### What would improve the availability contract
 
-Make operator leader-election/replica behavior explicit for the pinned chart, protect API access, and measure primary loss both with and without a simultaneous operator disruption. Keep backup policy per database.
+Protect API access and measure primary loss with simultaneous operator leader loss. Keep backup policy per database.
 
 These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 

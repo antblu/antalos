@@ -7,27 +7,55 @@ data:
   start-redis.sh: |
     #!/bin/sh
     set -eu
-    set -- redis-server       --appendonly yes       --appendfsync everysec       --requirepass "$REDIS_PASSWORD"       --masterauth "$REDIS_PASSWORD"       --protected-mode no
-    if [ "$HOSTNAME" = nextcloud-redis-data-1 ]; then
-      set -- "$@" --replicaof nextcloud-redis-data-0.nextcloud-redis-data.nextcloud.svc.cluster.local 6379
+    # Redis must have a writable config: Sentinel persists role changes with CONFIG REWRITE.
+    if [ ! -s /data/redis.conf ]; then
+      umask 077
+      cat > /data/redis.conf <<REDIS
+    appendonly yes
+    appendfsync everysec
+    requirepass "$REDIS_PASSWORD"
+    masterauth "$REDIS_PASSWORD"
+    protected-mode no
+    dir /data
+    REDIS
+      if [ "$HOSTNAME" = nextcloud-redis-data-1 ]; then
+        echo 'replicaof nextcloud-redis-data-0.nextcloud-redis-data.nextcloud.svc.cluster.local 6379' >> /data/redis.conf
+      fi
     fi
-    exec "$@"
+    exec redis-server /data/redis.conf
   start-sentinel.sh: |
     #!/bin/sh
     set -eu
-    cat > /tmp/sentinel.conf <<SENTINEL
+    case "$HOSTNAME" in
+      nextcloud-redis-data-*)
+        identity="$HOSTNAME"
+        announce="$HOSTNAME.nextcloud-redis-data.nextcloud.svc.cluster.local"
+        ;;
+      *)
+        identity=nextcloud-redis-quorum
+        announce=nextcloud-redis-sentinel-2.nextcloud.svc.cluster.local
+        ;;
+    esac
+    # Stable IDs and DNS addresses prevent obsolete voters accumulating after pod replacement.
+    if [ ! -s /sentinel/sentinel.conf ]; then
+      umask 077
+      myid=$(printf '%s' "$identity" | sha1sum | cut -d ' ' -f 1)
+      cat > /sentinel/sentinel.conf <<SENTINEL
     port 26379
     protected-mode no
     requirepass "$REDIS_PASSWORD"
+    sentinel myid $myid
     sentinel resolve-hostnames yes
     sentinel announce-hostnames yes
+    sentinel announce-ip $announce
     sentinel monitor nextcloud nextcloud-redis-data-0.nextcloud-redis-data.nextcloud.svc.cluster.local 6379 2
     sentinel auth-pass nextcloud "$REDIS_PASSWORD"
     sentinel down-after-milliseconds nextcloud 5000
     sentinel failover-timeout nextcloud 60000
     sentinel parallel-syncs nextcloud 1
     SENTINEL
-    exec redis-sentinel /tmp/sentinel.conf
+    fi
+    exec redis-sentinel /sentinel/sentinel.conf
   haproxy.cfg: |
     global
       log stdout format raw local0
@@ -40,6 +68,11 @@ data:
       timeout connect 5s
       timeout client 30s
       timeout server 30s
+
+    resolvers kube-dns
+      parse-resolv-conf
+      hold valid 10s
+      hold nx 1s
 
     frontend redis
       bind :6379
@@ -57,8 +90,8 @@ data:
       tcp-check expect string +OK
       tcp-check send ROLE\r\n
       tcp-check expect string master
-      server redis-0 nextcloud-redis-data-0.nextcloud-redis-data.nextcloud.svc.cluster.local:6379 check inter 2s
-      server redis-1 nextcloud-redis-data-1.nextcloud-redis-data.nextcloud.svc.cluster.local:6379 check inter 2s
+      server redis-0 nextcloud-redis-data-0.nextcloud-redis-data.nextcloud.svc.cluster.local:6379 check inter 2s resolvers kube-dns init-addr last,libc,none
+      server redis-1 nextcloud-redis-data-1.nextcloud-redis-data.nextcloud.svc.cluster.local:6379 check inter 2s resolvers kube-dns init-addr last,libc,none
 ---
 apiVersion: v1
 kind: Service
@@ -95,6 +128,8 @@ spec:
       labels:
         app.kubernetes.io/name: nextcloud-redis-data
         nextcloud.antblu.net/sentinel: "true"
+      annotations:
+        config.antblu.net/revision: "${NEXTCLOUD_REDIS_HAPROXY_CONFIG_REVISION}"
     spec:
       affinity:
         nodeAffinity:
@@ -190,6 +225,8 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+            - name: data
+              mountPath: /sentinel
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -248,6 +285,8 @@ spec:
       labels:
         app.kubernetes.io/name: nextcloud-redis-quorum
         nextcloud.antblu.net/sentinel: "true"
+      annotations:
+        config.antblu.net/revision: "${NEXTCLOUD_REDIS_HAPROXY_CONFIG_REVISION}"
     spec:
       nodeSelector:
         kubernetes.io/hostname: ${TALOS_WORKER_RTX}
@@ -287,12 +326,17 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+            - name: data
+              mountPath: /sentinel
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
       volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: 1Mi
         - name: config
           configMap:
             name: nextcloud-redis-config
@@ -327,8 +371,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: nextcloud-redis-haproxy
@@ -373,9 +417,8 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8404
+            tcpSocket:
+              port: redis
             initialDelaySeconds: 15
             periodSeconds: 20
           resources:

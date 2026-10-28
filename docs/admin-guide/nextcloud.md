@@ -51,7 +51,7 @@ The repository installs `user_oidc`, but does not create its Authentik provider 
 
 **Partially HA overall: replicated web and many companions, with shared storage, session, Redis recovery, and upgrade limits.**
 
-Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy uses maxSurge 1 and maxUnavailable 0. Its `quorum:NoSchedule` toleration makes the RTX worker eligible for a third anti-affined pod during replacement, subject to available node capacity. Major Nextcloud upgrades still require the documented isolated maintenance and single-owner schema migration procedure.
+Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy also uses zero surge and one unavailable, so replacements do not require a third anti-affined placement. Major Nextcloud upgrades still require the documented isolated maintenance and single-owner schema migration procedure.
 
 Establish Redis election and safe rejoin behavior, protect shared storage, and exercise file/office/Talk workflows during degraded operation. A warm web replica does not make the whole Nextcloud suite outage-free.
 
@@ -67,7 +67,13 @@ Before an upgrade, read the release notes for the pinned target and record a rec
 
 For a 503 or incomplete rollout, separate database migration, app-code initialization, Redis discovery, and ingress failures. For missing files, verify database and object-store consistency before changing buckets. Read-only configuration requires the controlled maintenance procedure in the upgrade guide.
 
-If `/status.php` succeeds but `/login` intermittently returns 500, inspect both `nextcloud-redis-haproxy` endpoints and Nextcloud Redis errors. A HAProxy pod can accept TCP connections while its `redis-primary` backend has no available server. The HAProxy health endpoint on port 8404 reports 503 in that state, so Kubernetes removes it from the Service and restarts it if the failure persists. Confirm the login path after both proxies become ready.
+If `/status.php` succeeds but `/login` intermittently returns 500, inspect both `nextcloud-redis-haproxy` endpoints and Nextcloud Redis errors. A HAProxy pod can accept TCP connections while its `redis-primary` backend has no available server. The HAProxy health endpoint on port 8404 reports 503 in that state, so Kubernetes removes it from the Service. Liveness checks the proxy listener independently; an unavailable Redis primary must not trigger repeated proxy restarts. DNS resolvers refresh data-pod addresses after replacement. Confirm the login path after both proxies become ready.
+
+### Redis restart recovery
+
+Redis starts from a writable `redis.conf` on its existing data PVC. Sentinel can therefore persist promotion and rejoin changes with `CONFIG REWRITE`. Data-side Sentinel configuration also lives on that PVC; the third voter uses an `emptyDir` and a stable identity. All three voters announce stable DNS names. Do not replace those files with ordinal-based defaults at each start.
+
+When adopting this configuration, first establish one healthy writer and a synchronized replica; the initial configuration seeds ordinal 0 as primary. If neither instance is primary, compare replication IDs and offsets before selecting a recovery candidate. Never promote both. Inspect `INFO replication`, `SENTINEL MASTER nextcloud`, and `SENTINEL CKQUORUM nextcloud` on every voter. Stale Sentinel identities can prevent a majority even when two live voters communicate; reset stale topology only after identifying the correct writer. Wait for replica synchronization and test the login and Whiteboard paths separately from Argo health.
 
 ## Manifest and upstream reference
 

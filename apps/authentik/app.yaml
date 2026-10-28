@@ -13,6 +13,11 @@ spec:
       helm:
         values: |
           global:
+            # Leave the third worker available for identity failover/recovery.
+            tolerations:
+              - key: quorum
+                operator: Exists
+                effect: NoSchedule
             affinity:
               podAntiAffinity: hard
             volumeMounts:
@@ -36,6 +41,8 @@ spec:
                 configMap:
                   name: authentik-cal-diy-blueprint
             env:
+              - name: ARGOCD_AUTH_HOST
+                value: ${ARGOCD_HOST}
               - name: VAULTWARDEN_AUTH_HOST
                 value: ${VAULTWARDEN_HOST}
               - name: STALWART_AUTH_GROUP_DOMAIN
@@ -81,6 +88,9 @@ spec:
 
           server:
             replicas: 2
+            pdb:
+              enabled: true
+              minAvailable: 1
             deploymentStrategy:
               type: RollingUpdate
               rollingUpdate:
@@ -106,6 +116,9 @@ spec:
 
           worker:
             replicas: 2
+            pdb:
+              enabled: true
+              minAvailable: 1
             # Reconcile from the new worker image rather than waiting for the
             # upstream four-hour schedule or queueing work on an older worker.
             lifecycle:

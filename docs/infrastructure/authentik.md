@@ -5,7 +5,7 @@ description: "Backend components, persistence, placement, and failure boundaries
 
 <nav class="guide-switcher" aria-label="Authentik guide sections"><a href="/user-guide/authentik/">Use</a><a aria-current="page" href="/infrastructure/authentik/">Architecture</a><a href="/admin-guide/authentik/">Operate</a></nav>
 
-The official chart runs two server replicas and two worker replicas with required pod anti-affinity. Servers handle browser and protocol requests; workers perform background tasks. Both use the two-instance `authentik-db` CloudNativePG cluster. `media-pvc.yaml` provides shared media from NFS. Traefik sends HTTPS to the server Service, while the embedded outpost supplies forward-auth decisions for protected ingresses.
+The official chart runs two server replicas and two worker replicas with required pod anti-affinity. Both roles tolerate the RTX worker quorum taint, allowing replacements on the third worker while retaining required hostname separation. Servers handle browser and protocol requests; workers perform background tasks. Both use the two-instance `authentik-db` CloudNativePG cluster. `media-pvc.yaml` provides shared media from NFS. Traefik sends HTTPS to the server Service, while the embedded outpost supplies forward-auth decisions for protected ingresses.
 
 ## Component boundaries
 
@@ -36,7 +36,7 @@ This is an interpretation of the checked-in configuration, assuming the declared
 
 ### How a failure is handled
 
-When a server disappears, new requests can reach the remaining ready server. If the failed worker also hosted the PostgreSQL primary, CNPG must promote the surviving standby and update the read/write endpoint before database-dependent requests recover. Connections and in-progress requests may need retries; server replicas do not bypass that database failover interval.
+When a server disappears, new requests can reach the remaining ready server. If the failed worker also hosted the PostgreSQL primary, the two leader-elected CNPG operator replicas manage promotion of the surviving standby and update the read/write endpoint before database-dependent requests recover. The operator replicas also tolerate the RTX quorum taint. Connections and in-progress requests may need retries; server replicas do not bypass that database failover interval.
 
 ### Failure scenarios
 
@@ -50,7 +50,7 @@ An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure.
 
 ### Upgrades and voluntary maintenance
 
-Server and worker rolling updates use zero surge and one unavailable replica. No application PDB is explicitly declared here, so do not assume a normal drain enforces a one-healthy-server minimum.
+Server and worker rolling updates use zero surge and one unavailable replica. Each role has a PDB requiring one available pod during voluntary eviction. A PDB does not prevent abrupt node loss or govern Deployment rollouts. Confirm spare CPU, memory, and pod slots on eligible workers before maintenance.
 
 ### What prevents a stronger HA claim
 
@@ -58,7 +58,7 @@ Asynchronous PostgreSQL replication can lose recent acknowledged writes after pr
 
 ### What would improve the availability contract
 
-Protect or remove the shared-media failure boundary, explicitly budget voluntary disruption, protect the CNPG control path, and record a login/provider transaction during a controlled primary and worker failure.
+Protect or remove the shared-media failure boundary, protect the CNPG/API control path and record a login/provider transaction during a controlled primary and worker failure.
 
 These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 

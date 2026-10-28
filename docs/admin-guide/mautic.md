@@ -203,3 +203,7 @@ image tag and plan schema compatibility or a maintenance interval. Existing pods
 can run during a Sync migration; a rolling strategy does not guarantee compatibility
 between an old process and a newly migrated database. Roll application pods after
 changing shared config or credentials; new CronJob runs inherit the current inputs.
+
+### Recovery after a dependency outage
+
+A new web pod warms its own production cache in an init container after preparing local volumes. Cache generation retries while dependencies are unavailable and must finish before Apache starts. The per-pod `var` volume is ephemeral: a healthy peer's generated Doctrine proxies do not populate a replacement pod. If an older pod returns 500 with missing Doctrine proxy files after database recovery, run `php bin/console cache:clear --env=prod --no-interaction` on that affected pod and verify `/s/login` before returning it to service. `cache:warmup` alone can fail with the metadata-warmer priority error against an incomplete cache.

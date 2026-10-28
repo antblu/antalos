@@ -25,21 +25,20 @@ spec:
             value: ${ARGOCD_HOST}
           - name: configs.cm.url
             value: https://${ARGOCD_HOST}
-          - name: configs.cm.dex\.config
+          - name: configs.cm.oidc\.config
             value: |
-              connectors:
-                - config:
-                    issuer: https://${AUTHENTIK_HOST}/application/o/argo-cd/
-                    clientID: M1cYFNuKZE2pGDBMSUPHw8FCCjzIjL86jILMC1Sa
-                    clientSecret: $$dex.authentik.clientSecret
-                    insecureEnableGroups: true
-                    scopes:
-                      - openid
-                      - profile
-                      - email
-                  name: authentik
-                  type: oidc
-                  id: authentik
+              name: Authentik
+              issuer: https://${AUTHENTIK_HOST}/application/o/argo-cd/
+              clientID: M1cYFNuKZE2pGDBMSUPHw8FCCjzIjL86jILMC1Sa
+              # Reuse the existing sealed credential; $$ escapes Argo expansion.
+              clientSecret: $$dex.authentik.clientSecret
+              requestedScopes:
+                - openid
+                - profile
+                - email
+              requestedIDTokenClaims:
+                groups:
+                  essential: true
 
     - repoURL: https://github.com/antblu/antalos.git
       targetRevision: main

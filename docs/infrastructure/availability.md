@@ -89,7 +89,7 @@ Most bespoke Redis layouts use two data members and three Sentinel voters, one v
 | LiteLLM | Direct authenticated Sentinel discovery | Data-side Redis role and Sentinel topology persist; startup queries peers before choosing a role. |
 | Open WebUI | Direct discovery; Sentinel listener auth follows its client contract | Initial data roles are assigned by ordinal; Sentinel configuration is temporary. |
 | Zammad | Direct Sentinel discovery | Initial data roles are assigned by ordinal; Sentinel configuration is temporary. |
-| Nextcloud | Two HAProxy replicas checking Redis ROLE | Same ordinal-based/temporary topology concern; proxy replication does not elect or fence writers. |
+| Nextcloud | Two HAProxy replicas checking Redis ROLE with DNS refresh | Redis role changes and data-side Sentinel topology persist on existing data PVCs; the third voter has a stable identity and temporary state. Proxy replication does not elect or fence writers. |
 | Stalwart | One HAProxy inside the RTX quorum pod | Same restart concern plus a singleton client endpoint that is lost with RTX. |
 
 The ordinal-based scripts can reintroduce an old role after promotion. That is a source-derived recovery concern, not a claim that a live split-brain event was observed. A useful failure drill includes the old primary’s return and confirms that all clients converge on one writer.
@@ -150,8 +150,8 @@ The NFS and Garage defaults reference the same external host address. Its loss c
 
 | Configuration | Effect | Current examples |
 | --- | --- | --- |
-| 2 replicas, zero surge, one unavailable | Replaces one pod without needing a third anti-affined placement; leaves reduced capacity | LiteLLM proxies, BentoPDF, Traefik, Nextcloud web, SuiteCRM web, Grafana |
-| 2 replicas, one surge, zero unavailable, hard anti-affinity | Needs a third eligible node with capacity for a replacement pod; Nextcloud Redis HAProxy tolerates the RTX worker taint for this placement | Documentation serving pods, Nextcloud Redis HAProxy |
+| 2 replicas, zero surge, one unavailable | Replaces one pod without needing a third anti-affined placement; leaves reduced capacity | LiteLLM proxies, BentoPDF, Traefik, Nextcloud web and Redis HAProxy, SuiteCRM web, Grafana |
+| 2 replicas, one surge, zero unavailable, hard anti-affinity | Needs a third eligible node with capacity for a replacement pod | Documentation serving pods |
 | Recreate application | Can stop the full application during an upgrade regardless of steady-state replicas | Open WebUI, Vaultwarden; also single Headplane and Stalwart’s Redis proxy |
 | PDB minimum 1 on a singleton | Blocks ordinary eviction; does not make a hot replacement or prevent its workload-controller update | RustDesk hbbs, UrBackup |
 | Chart defaults without explicit overrides | Requires the actual chart policy before claiming a particular maintenance guarantee | Rancher and several platform controllers |
@@ -168,14 +168,14 @@ Database migrations, reindexing, cache elections, and stateful sessions can stil
 | Traefik | HA ingress process tier for one serving-node loss; upstream routing and established connections remain separate. | [Replica, failure, and maintenance contract](/infrastructure/traefik/#availability-and-failure-behavior) |
 | MetalLB | Partially HA: distributed address advertisement; controller allocation and the physical network remain separate. | [Replica, failure, and maintenance contract](/infrastructure/metallb/#availability-and-failure-behavior) |
 | cert-manager | Partially HA: replicated admission webhook; certificate issuance is not fully replicated by the manifest. | [Replica, failure, and maintenance contract](/infrastructure/cert-manager/#availability-and-failure-behavior) |
-| CloudNativePG operator | Not explicitly HA as an operator; it manages replicated database clusters with separate availability contracts. | [Replica, failure, and maintenance contract](/infrastructure/cnpg-operator/#availability-and-failure-behavior) |
+| CloudNativePG operator | Redundant operator management with leader election; managed database availability remains service-specific. | [Replica, failure, and maintenance contract](/infrastructure/cnpg-operator/#availability-and-failure-behavior) |
 | MariaDB operator | HA management design: replicated operator and webhook; database HA still belongs to each managed MariaDB. | [Replica, failure, and maintenance contract](/infrastructure/mariadb-operator/#availability-and-failure-behavior) |
 | Metrics Server | Not explicitly HA: resource-metrics collection can pause until its chart workload recovers. | [Replica, failure, and maintenance contract](/infrastructure/metrics-server/#availability-and-failure-behavior) |
 | NFS CSI | Not HA storage: the CSI path has node coverage, but all declared exports depend on one external endpoint. | [Replica, failure, and maintenance contract](/infrastructure/nfs-driver/#availability-and-failure-behavior) |
 | OpenEBS | Not replicated storage: individual LocalPV volumes cannot survive loss of their owning disk as live copies. | [Replica, failure, and maintenance contract](/infrastructure/openebs/#availability-and-failure-behavior) |
 | Sealed Secrets | Not explicitly HA as a controller; existing generated Secrets remain available independently of its process. | [Replica, failure, and maintenance contract](/infrastructure/sealed-secrets/#availability-and-failure-behavior) |
 
-Argo CD’s controller replicas are configured with cluster sharding. They do not by themselves prove hot takeover of the one managed cluster’s work; SSO and auxiliary chart components also need their own replica assessment. See [Argo CD HA and sharding](https://argo-cd.readthedocs.io/en/stable/operator-manual/high_availability/).
+Argo CD’s controller replicas are configured with cluster sharding. They do not by themselves prove hot takeover of the one managed cluster’s work. Native OIDC removes the Dex singleton from SSO; Authentik, its database, ingress, DNS, and eligible spare capacity remain dependencies. Auxiliary chart components need their own replica assessment. See [Argo CD HA and sharding](https://argo-cd.readthedocs.io/en/stable/operator-manual/high_availability/).
 
 ## Describe recovery objectives honestly
 
@@ -205,3 +205,9 @@ Its HTTPS path also depends on Debian Left Caddy and new sessions depend on
 Authentik. Running outside Kubernetes preserves the map during some cluster
 failures, but does not remove shared Proxmox/network dependencies. Local backup
 archives require a separate off-host copy for disaster recovery.
+
+### Scheduling capacity after restart
+
+Both general workers declare `max-pods=130` in `infrastructure/opentofu/talostofu/main.tf`. Keep this symmetric: a recovered worker at the default 110-pod ceiling can leave local-volume database members Pending even when CPU and memory requests fit. Compare scheduled nonterminal pod counts with each node's allocatable pod count before maintenance. Raising the ceiling does not add memory or move local volumes; retain headroom for replacement and recovery pods.
+
+Reserve the small RTX quorum worker for voters and explicitly assigned infrastructure. Invoice Ninja web, nginx, and queue workers are restricted to the two general workers. Argo CD Redis HAProxy has resource requests and a memory limit, and bounds its connection count. These controls reduce pressure and protect it from BestEffort victim selection; they do not create additional VM memory.

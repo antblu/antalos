@@ -31,7 +31,16 @@ Wait for required controllers, database initialization, and migration Jobs befor
 
 ## 3. Complete identity and first access
 
-Dex is configured for the Authentik issuer `/application/o/argo-cd/`. Create the matching Authentik provider, register the Argo HTTPS `/api/dex/callback` URI, and match the client ID in `apps/argocd/app.yaml`. Seal its secret under the referenced `dex.authentik.clientSecret` key in `argocd-secret`. Configure Argo RBAC deliberately; an authenticated identity is not automatically authorized to manage applications.
+Argo CD uses native OIDC with the Authentik issuer `/application/o/argo-cd/`; Dex is disabled. Create the matching Authentik provider, register the Argo HTTPS `/auth/callback` URI, and match the client ID in `apps/argocd/app.yaml`. The existing sealed `dex.authentik.clientSecret` key in `argocd-secret` is reused despite its historical name. Retain the provider signing key and include effective `groups` in the ID token through its `profile` mapping. Configure Argo RBAC deliberately; an authenticated identity is not automatically authorized to manage applications.
+
+### Migrate an existing Dex integration
+
+1. Publish and reconcile the CloudNativePG operator and Authentik changes first. Confirm two operator replicas on separate nodes and a healthy database primary/standby before planned maintenance. The worker's startup reconciler uses `ARGOCD_AUTH_HOST` to add the strict `/auth/callback` redirect to the existing provider, retaining its credentials and previous callbacks.
+2. Confirm that callback is present in the Authentik provider before reconciling `argocd-self` with native OIDC and Dex disabled. Keep independent kubeconfig/local administrator access during the transition. Existing Dex-issued sessions may require a fresh login.
+3. Verify a new browser login, both read-only and administrator group permissions, and logout. If CLI SSO is needed, configure its exact loopback callback separately in the provider and test that flow.
+4. For rollback, restore the preceding Dex configuration. Its callback and sealed credential remain available; do not rotate them as part of this migration.
+
+The native integration follows [Argo CD's existing OIDC provider configuration](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#existing-oidc-provider).
 
 ## 4. Connect and operate the service
 
@@ -47,7 +56,9 @@ Dex is configured for the Authentik issuer `/application/o/argo-cd/`. Create the
 
 Server/repo-server/proxy overrides use zero surge and one unavailable. Plugin subPath changes require repo-server replacement. Confirm chart-derived auxiliary replica and PDB behavior before promising seamless upgrades.
 
-Make authentication and controller recovery topology explicit, protect the API endpoint, and record both login/API access and reconciliation of the affected cluster during a controlled controller loss.
+The API servers retain two replicas with hard hostname anti-affinity and a one-available PDB. Argo CD workloads tolerate the RTX worker's `quorum:NoSchedule` taint, so replacement pods can use that worker when a surviving main worker has reached its pod limit. Native OIDC removes the Dex singleton; Authentik and its database remain dependencies.
+
+After deployment, confirm placement and spare CPU, memory, and pod slots before a failure drill. Test loss of each main worker separately, including the one hosting the Authentik database primary. Record a new browser login and an Argo API request after endpoint removal and any database promotion. A PDB protects voluntary eviction only. A failed in-progress request may need a retry. Controller sharding and the configured API endpoint still have separate limits.
 
 Use the [component-by-component failure contract](/infrastructure/argocd/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
 
@@ -68,3 +79,7 @@ For apparent stale health, inspect `argocd.argoproj.io/skip-reconcile`, operatio
 - [`secret.yaml`](https://github.com/antblu/antalos/blob/main/apps/argocd/secret.yaml)
 
 [Official Argo CD documentation](https://argo-cd.readthedocs.io/en/stable/user-guide/).
+
+### Redis proxy restart failures
+
+If an Argo Redis HAProxy restarts with exit 137, inspect Talos OOM-controller logs as well as Kubernetes container termination reasons. A host memory-pressure kill can appear as `Error` rather than `OOMKilled`. The Helm values reserve CPU/memory for HAProxy, cap its memory, and bound it to 1024 connections. Keep general application processes off the small quorum worker and check actual VM memory headroom; increasing pod limits does not increase RAM.

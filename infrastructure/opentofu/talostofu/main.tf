@@ -102,11 +102,11 @@ data "talos_machine_configuration" "worker" {
               extraArgs = {
                 "register-with-taints" = "quorum:NoSchedule"
               }
-            } : each.key == "right" ? {
+              } : {
               extraArgs = {
                 "max-pods" = "130"
               }
-            } : null
+            }
 
             nodeTaints = each.key == "rtx" ? {
               "quorum" = "NoSchedule"

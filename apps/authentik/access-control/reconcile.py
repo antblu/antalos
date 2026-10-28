@@ -9,7 +9,9 @@ from django.db import transaction
 from django.db.models import Q
 from authentik.core.models import Application, Group, User
 from authentik.policies.models import PolicyBinding
-from authentik.providers.oauth2.models import OAuth2Provider, ScopeMapping
+from authentik.providers.oauth2.models import (
+    OAuth2Provider, RedirectURI, RedirectURIMatchingMode, ScopeMapping,
+)
 from authentik.providers.saml.models import SAMLProvider, SAMLPropertyMapping
 from authentik.providers.proxy.models import ProxyProvider
 from authentik.outposts.models import Outpost
@@ -33,6 +35,19 @@ GROUP_PREFIX = {'vaultwarden-admin': 'vaultwarden', 'home-assitant': 'home-assis
 # These integrations expose only a privileged surface. Ordinary membership must
 # never imply admin privileges. Medusa customers use the separate customer flow.
 ADMIN_ONLY = {'medusa', 'uptime-kuma-admin', 'traefik', 'obsidian-live-sync', 'homelable', 'ur-backup', 'vaultwarden-admin'}
+
+
+def ensure_argocd_callback(provider, host):
+    """Prepare native OIDC without disrupting the existing Dex integration."""
+    if not host:
+        return
+    callback = RedirectURI(
+        matching_mode=RedirectURIMatchingMode.STRICT,
+        url=f"https://{host}/auth/callback",
+    )
+    if callback not in provider.redirect_uris:
+        provider.redirect_uris = [*provider.redirect_uris, callback]
+        provider.save(update_fields=['redirect_uris'])
 
 
 def reconcile():
@@ -122,6 +137,8 @@ def reconcile():
                 operators.parents.remove(admins)
             provider = app.get_provider() if app.provider_id else None
             if isinstance(provider, OAuth2Provider):
+                if app.slug == 'argo-cd':
+                    ensure_argocd_callback(provider, os.environ.get('ARGOCD_AUTH_HOST'))
                 # Replace only this provider's profile mapping, retaining name,
                 # avatar, email and all other existing scopes. Effective groups
                 # are essential: the upstream default emits direct groups only.

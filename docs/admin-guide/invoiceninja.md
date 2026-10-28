@@ -14,7 +14,7 @@ changes to the branch tracked by Argo CD. Local edits are not deployment inputs.
 The local Helm chart deploys two PHP application replicas and two nginx replicas.
 The supporting manifests provide two queue workers, a minute-by-minute scheduler,
 two MariaDB Galera data members with a separate arbitrator, and Redis with Sentinel.
-Application files use the configured Garage S3 bucket. Local application volumes
+Web, nginx, and queue worker replicas are restricted to the two general workers, leaving the small RTX worker for quorum services. Their zero-surge rollouts do not need a third worker. Application files use the configured Garage S3 bucket. Local application volumes
 are ephemeral; they are not backups. Replication does not establish a tested
 recovery procedure or prove failure tolerance for the full service.
 

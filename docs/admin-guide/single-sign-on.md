@@ -43,7 +43,7 @@ Both browser and application pods must reach the required endpoints. A successfu
 
 | Application | Callback to allow on the Authentik provider |
 | --- | --- |
-| Argo CD through Dex | `https://<argocd-host>/api/dex/callback` |
+| Argo CD native OIDC | `https://<argocd-host>/auth/callback` |
 | Headscale | `https://<headscale-host>/oidc/callback` |
 | Headplane | `https://<headscale-host>/admin/oidc/callback` |
 | Open WebUI | `https://<open-webui-host>/oauth/oidc/callback` |

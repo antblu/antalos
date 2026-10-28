@@ -9,6 +9,27 @@ spec:
     - repoURL: https://cloudnative-pg.github.io/charts
       chart: cloudnative-pg
       targetRevision: ${CNPG_OPERATOR_CHART_VERSION}
+      helm:
+        valuesObject:
+          # The pinned chart starts the operator with --leader-elect.
+          replicaCount: 2
+          updateStrategy:
+            type: RollingUpdate
+            rollingUpdate:
+              maxSurge: 0
+              maxUnavailable: 1
+          tolerations:
+            - key: quorum
+              operator: Exists
+              effect: NoSchedule
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: cloudnative-pg
+                      app.kubernetes.io/instance: cnpg-operator
     - repoURL: https://github.com/antblu/antalos.git
       targetRevision: main
       path: apps/cnpg-operator
