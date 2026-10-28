@@ -85,7 +85,7 @@ variables:
   EMILIANY_GOOGLE_CUSTOMER_LOGIN_ENABLED: 'true'
   EMILIANY_MEDUSA_PUBLISHABLE_KEY: pk_0684e91ed6aeb470968a07d413fc0ebc2fdb04a6e9fc46f4f75fe60bcbf04ddf
   # renovate: datasource=docker depName=ghcr.io/renovatebot/renovate
-  RENOVATE_IMAGE_TAG: 44.192.0
+  RENOVATE_IMAGE_TAG: 44
   RENOVATE_SCHEDULE: "17 * * * *"
   RENOVATE_GITHUB_APP_ID: "5033067"
   RENOVATE_GITHUB_INSTALLATION_ID: "163769372"
@@ -119,7 +119,7 @@ variables:
   # renovate: datasource=docker depName=haproxy
   HAPROXY_IMAGE_TAG: 3.4.7-alpine
   # renovate: datasource=docker depName=ghcr.io/zammad/zammad
-  ZAMMAD_IMAGE_TAG: 7.2.2-0028
+  ZAMMAD_IMAGE_TAG: 7.2
   # renovate: datasource=docker depName=invoiceninja/invoiceninja-debian
   INVOICENINJA_IMAGE_TAG: 5.13.50
   # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
@@ -160,7 +160,7 @@ variables:
   NEXTCLOUD_IMAGE_TAG: 34.0.5-apache
   NEXTCLOUD_INSTANCE_ID: ocxyyr3nkdoj
   NEXTCLOUD_SERVER_VERSION: 34.0.5.1
-  NEXTCLOUD_CONFIG_REVISION: "16"
+  NEXTCLOUD_CONFIG_REVISION: "17"
   NEXTCLOUD_DATABASE_CLUSTER: nextcloud-db-s3
   # The app export must remain reachable from every worker and writable by uid/gid 33 (www-data).
   # If the NFS mount is not NVME, have the application pod copy those apps from the NFS PVC into an emptyDir at startup and point apps_paths there, instead of current behavior.
@@ -208,7 +208,7 @@ variables:
   # renovate: datasource=nextcloud depName=contacts registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_CONTACTS_VERSION: 8.9.2
   # renovate: datasource=nextcloud depName=deck registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_DECK_VERSION: 1.19.1
+  NEXTCLOUD_DECK_VERSION: 1.18.6
   # renovate: datasource=nextcloud depName=eurooffice registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_EUROOFFICE_VERSION: 11.0.6
   # renovate: datasource=nextcloud depName=external registryUrl=https://apps.nextcloud.com/api/v1/apps.json

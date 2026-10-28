@@ -3,6 +3,7 @@
   "extends": [
     "config:recommended"
   ],
+  "prConcurrentLimit": 25,
   "customManagers": [
     {
       "customType": "regex",
@@ -87,6 +88,13 @@
   ],
   "packageRules": [
     {
+      "description": "Review Nextcloud app-store releases together instead of opening one PR per add-on",
+      "matchDatasources": [
+        "nextcloud"
+      ],
+      "groupName": "Nextcloud apps"
+    },
+    {
       "matchManagers": [
         "custom.regex"
       ],
@@ -128,12 +136,32 @@
       "pinDigests": true
     },
     {
+      "description": "Follow Zammad and Jellyfin release-line tags instead of opening PRs for each image rebuild",
       "matchDatasources": [
         "docker"
       ],
       "matchPackageNames": [
-        "ghcr.io/antblu/antalos-medusa",
-        "ghcr.io/zammad/zammad"
+        "ghcr.io/zammad/zammad",
+        "jellyfin/jellyfin"
+      ],
+      "allowedVersions": "/^\\d+\\.\\d+$/"
+    },
+    {
+      "description": "Follow Renovate's major channel and pull its current image for each scheduled run",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/renovatebot/renovate"
+      ],
+      "allowedVersions": "/^\\d+$/"
+    },
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/antblu/antalos-medusa"
       ],
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$"
     },
@@ -154,15 +182,6 @@
         "intel/pytorch"
       ],
       "versioning": "regex:^xpu-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>ubuntu\\d+\\.\\d+)-(?<build>\\d+)$"
-    },
-    {
-      "matchDatasources": [
-        "docker"
-      ],
-      "matchPackageNames": [
-        "jellyfin/jellyfin"
-      ],
-      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$"
     },
     {
       "matchDatasources": [

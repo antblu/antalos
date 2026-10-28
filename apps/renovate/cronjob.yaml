@@ -50,6 +50,7 @@ spec:
           containers:
             - name: renovate
               image: ghcr.io/renovatebot/renovate:${RENOVATE_IMAGE_TAG}
+              imagePullPolicy: Always
               env:
                 - name: RENOVATE_CONFIG_FILE
                   value: /etc/renovate/config.js
