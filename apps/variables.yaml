@@ -12,7 +12,7 @@ variables:
   # renovate: datasource=docker depName=quay.io/argoproj/argocd
   ARGOCD_CMP_IMAGE_TAG: v3.5.6
   # renovate: datasource=helm depName=argo-cd registryUrl=https://argoproj.github.io/argo-helm
-  ARGOCD_CHART_VERSION: 10.11.1
+  ARGOCD_CHART_VERSION: 10.11.6
   # renovate: datasource=helm depName=authentik registryUrl=https://charts.goauthentik.io
   AUTHENTIK_CHART_VERSION: 2026.8.5
   # renovate: datasource=helm depName=cert-manager registryUrl=https://charts.jetstack.io
