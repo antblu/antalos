@@ -320,6 +320,11 @@ spec:
                   secretKeyRef:
                     name: nextcloud-config
                     key: secret
+              - name: NEXTCLOUD_SMTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: nextcloud-smtp
+                    key: password
               - name: EUROOFFICE_JWT_SECRET
                 valueFrom:
                   secretKeyRef:

@@ -68,7 +68,7 @@ Use [Debian application VMs](/infrastructure/virtual-machines/) for the current 
 
 ## Mail and background work
 
-Configure server-level SMTP for notifications and user-level mail accounts where the Mail app is used. These are different settings. The declared Stalwart service can provide mail, but creating the mailbox and matching its credential remain administrator work.
+Server notifications use SMTP over implicit TLS, with the host and sender settings in `apps/variables.yaml` and the authentication password in the service-owned `nextcloud-smtp` SealedSecret. Reseal the credential for your environment and ensure the authenticated account may send as the configured address. User-level Mail app accounts are configured separately. The declared Stalwart service can provide mail, but creating the mailbox and matching its credential remain administrator work.
 
 Background jobs are configured for cron, and startup also launches task-processing workers. Check job progress after enabling integrations; a successful web request does not prove indexing, notifications, or scheduled tasks are executing.
 
