@@ -220,7 +220,7 @@ variables:
   # renovate: datasource=nextcloud depName=integration_openai registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_INTEGRATION_OPENAI_VERSION: 4.5.2
   # renovate: datasource=nextcloud depName=mail registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_MAIL_VERSION: 5.12.5
+  NEXTCLOUD_MAIL_VERSION: 5.12.6
   # renovate: datasource=nextcloud depName=notes registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_NOTES_VERSION: 6.1.0
   # renovate: datasource=nextcloud depName=notify_push registryUrl=https://apps.nextcloud.com/api/v1/apps.json
