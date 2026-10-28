@@ -304,3 +304,22 @@ variable "talos_worker_vms" {
     }
   }
 }
+
+# Opt-in for existing installations: address ownership and network changes must
+# be reviewed before applying. New clusters should reserve and set this value.
+variable "cluster_api_vip" {
+  type        = string
+  description = "Reserved unused IPv4 address on the control-plane L2 subnet; null retains the legacy RTX API endpoint"
+  default     = null
+
+  validation {
+    condition     = var.cluster_api_vip == null ? true : can(cidrnetmask("${var.cluster_api_vip}/32"))
+    error_message = "cluster_api_vip must be an IPv4 address or null."
+  }
+}
+
+variable "controlplane_network_interface" {
+  type        = string
+  description = "DHCP-enabled shared L2 interface carrying the control-plane API VIP"
+  default     = "eth0"
+}

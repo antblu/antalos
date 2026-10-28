@@ -4,7 +4,7 @@
 locals {
   cluster_endpoint = format(
     "https://%s:%d",
-    var.talos_node_ips.control["rtx"],
+    coalesce(var.cluster_api_vip, var.talos_node_ips.control["rtx"]),
     var.cluster_api_port
   )
 
@@ -40,23 +40,47 @@ data "talos_machine_configuration" "controlplane" {
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
 
-  config_patches = [
-    yamlencode({
-      machine = {
-        install = {
-          disk  = var.talos_install_disk
-          image = "https://factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515/v1.13.9/nocloud-amd64.raw.xz"
+  config_patches = concat(
+    [
+      yamlencode({
+        machine = {
+          install = {
+            disk  = var.talos_install_disk
+            image = "https://factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515/v1.13.9/nocloud-amd64.raw.xz"
+          }
         }
-      }
-    }),
-
-    yamlencode({
-      apiVersion = "v1alpha1"
-      kind       = "HostnameConfig"
-      hostname   = each.value.name
-      auto       = "off"
-    })
-  ]
+      })
+    ],
+    # Enable only after reserving this shared address outside DHCP.
+    var.cluster_api_vip == null ? [] : [
+      yamlencode({
+        machine = {
+          network = {
+            interfaces = [{
+              interface = var.controlplane_network_interface
+              dhcp      = true
+              vip = {
+                ip = var.cluster_api_vip
+              }
+            }]
+          }
+        }
+        cluster = {
+          apiServer = {
+            certSANs = [var.cluster_api_vip]
+          }
+        }
+      })
+    ],
+    [
+      yamlencode({
+        apiVersion = "v1alpha1"
+        kind       = "HostnameConfig"
+        hostname   = each.value.name
+        auto       = "off"
+      })
+    ]
+  )
 }
 # Common Talos worker configuration
 locals {
@@ -170,9 +194,9 @@ resource "proxmox_virtual_environment_vm" "talos_control" {
   node_name = each.value.node
   vm_id     = each.value.vmid
 
-  description    = "Talos Linux control plane node: ${each.value.name}"
-  tags           = ["talos", "control-plane"]
-  on_boot        = true
+  description     = "Talos Linux control plane node: ${each.value.name}"
+  tags            = ["talos", "control-plane"]
+  on_boot         = true
   stop_on_destroy = true
 
   # --- BIOS & Machine Type ---
@@ -241,10 +265,10 @@ resource "proxmox_virtual_environment_vm" "talos_worker" {
   node_name = each.value.node
   vm_id     = each.value.vmid
 
-  description    = "Talos Linux worker node: ${each.value.name}"
-  tags           = ["talos", "worker"]
-  on_boot        = true
-  stop_on_destroy = true
+  description         = "Talos Linux worker node: ${each.value.name}"
+  tags                = ["talos", "worker"]
+  on_boot             = true
+  stop_on_destroy     = true
   reboot_after_update = each.key == "rtx"
 
   # --- BIOS & Machine Type ---

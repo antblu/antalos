@@ -31,35 +31,35 @@ This is an interpretation of the checked-in configuration, assuming the declared
 | --- | --- | --- |
 | API server | 2 replicas; hard anti-affinity | New UI/API requests can use the surviving server. |
 | Repo server | 2 replicas; hard anti-affinity | Either can render Git inputs when Git and the plugin are available. |
-| Application controller | 2 replicas; round-robin cluster sharding | Shards assign reconciliation work; a second replica is not automatically a hot copy of every cluster’s reconciliation loop. |
+| Application controller | 2 Deployment replicas; dynamic round-robin cluster distribution; 5-second heartbeat | A failed controller’s cluster assignment can move to a surviving controller. This upstream feature is alpha and requires a reconciliation drill. |
 | Redis HA | 3 chart members; quorum toleration | Sentinel/proxy behavior follows the pinned chart; it is distinct from the bespoke app Redis scripts. |
 | Authentication | Native OIDC to Authentik; Dex disabled | Either API server can perform discovery and code exchange without a singleton broker. Authentik, ingress, DNS, and PostgreSQL must remain available. |
 
 ### How a failure is handled
 
-API and manifest-rendering requests can retry on the surviving replicas. Redis failover depends on the chart’s HA configuration. Reconciliation for an affected controller shard depends on the rendered controller mode and shard recovery/redistribution; the two-replica value and heartbeat setting alone do not prove seamless takeover. Native OIDC removes Dex from the login path. All Argo CD chart roles tolerate the RTX worker's quorum taint, providing another eligible worker when a main worker is full. Authentication still depends on Authentik and PostgreSQL promotion; failed in-progress requests may require a retry.
+API and manifest-rendering requests can retry on the surviving replicas. Redis failover depends on the chart’s HA configuration. Dynamic cluster distribution enables heartbeat-based reassignment of a failed controller’s cluster. This changes the controller from a StatefulSet to a Deployment; the chart migration must be reviewed before reconciliation. Native OIDC removes Dex from the login path. All Argo CD chart roles tolerate the RTX worker's quorum taint, providing another eligible worker when a main worker is full. Authentication still depends on Authentik and PostgreSQL promotion; failed in-progress requests may require a retry.
 
 ### Failure scenarios
 
 | Failure | Expected behavior and remaining dependency |
 | --- | --- |
-| One main worker | Surviving API/rendering replicas and direct OIDC can serve requests; replacement stateless pods can use RTX capacity. Authentik primary loss requires database promotion, and an affected controller shard can still pause reconciliation. Already-running applications normally do not stop just because Argo cannot reconcile them. |
-| RTX worker only | A Redis HA member may use the tainted worker because of its toleration. The whole RTX host also carries the configured Kubernetes API endpoint, making its loss a separate reconciliation dependency failure. |
+| One main worker | Surviving API/rendering replicas and direct OIDC can serve requests; replacement stateless pods can use RTX capacity. Authentik primary loss requires database promotion, and an affected controller shard must be reassigned after missed heartbeats. Already-running applications normally do not stop just because Argo cannot reconcile them. |
+| RTX worker only | A Redis HA member may use the tainted worker because of its toleration. The whole RTX host also carries the legacy external Kubernetes API endpoint. Configure the optional Talos API VIP to remove that external-client dependency; in-cluster API discovery has a separate path. |
 | A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
 
-An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and, unless the optional Talos VIP is enabled, the configured external API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
 
 ### Upgrades and voluntary maintenance
 
-Server/repo-server/proxy overrides use zero surge and one unavailable. The API server PDB requires one available replica during voluntary eviction. Plugin subPath changes require repo-server replacement. PDBs do not prevent abrupt node failure or override a Deployment rollout strategy.
+Server/repo-server/proxy overrides use zero surge and one unavailable. Server, repo-server, and application-controller PDBs require one available replica during voluntary eviction. Plugin subPath changes require repo-server replacement. PDBs do not prevent abrupt node failure or override a Deployment rollout strategy.
 
 ### What prevents a stronger HA claim
 
-Git connectivity, the single configured API endpoint, auxiliary singletons outside the login path, and shard recovery bound complete control-plane availability. A surviving web UI does not prove that manifests are being applied.
+Git connectivity, the legacy external API endpoint when VIP is unset, auxiliary singletons outside the login path, and controller reassignment bound complete control-plane availability. A surviving web UI does not prove that manifests are being applied.
 
 ### What would improve the availability contract
 
-Protect the API endpoint, reserve eligible failover capacity, and measure both direct OIDC login and reconciliation of the affected cluster during a controlled worker loss. Follow the staged Dex migration in the administrator guide before switching an existing installation.
+Configure the optional Talos API VIP, reserve eligible failover capacity, and measure both direct OIDC login and reconciliation of the affected cluster during a controlled worker loss. Follow the staged Dex migration in the administrator guide before switching an existing installation.
 
 These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
 

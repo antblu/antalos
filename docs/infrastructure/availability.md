@@ -48,7 +48,7 @@ No service should be described as unconditionally end-to-end HA solely because i
 | [Open WebUI](/infrastructure/open-webui/#availability-and-failure-behavior) | Partially HA: steady-state replicas exist, but Recreate upgrades and Redis/storage dependencies can interrupt all users. | 2 anti-affined pods on main workers; see the linked component table for the data, routing, and recovery path. |
 | [Rancher](/infrastructure/rancher/#availability-and-failure-behavior) | HA management web tier; it is not an independent control plane for recovering this cluster. | 2 replicas with required host anti-affinity; see the linked component table for the data, routing, and recovery path. |
 | [RustDesk](/infrastructure/rustdesk/#availability-and-failure-behavior) | Not continuously HA end to end: one recoverable rendezvous server, with two independent native relays. | 1 Deployment replica; see the linked component table for the data, routing, and recovery path. |
-| [Stalwart Mail](/infrastructure/stalwart/#availability-and-failure-behavior) | Partially HA; loss of the RTX-only Redis proxy is an explicit single-worker failure gap. | 2 anti-affined Stalwart replicas; see the linked component table for the data, routing, and recovery path. |
+| [Stalwart Mail](/infrastructure/stalwart/#availability-and-failure-behavior) | Replicated mail/data tiers with two independent Redis proxies; shared storage and search allocation remain limits. | 2 anti-affined Stalwart replicas; see the linked component table for the data, routing, and recovery path. |
 | [SuiteCRM](/infrastructure/suitecrm/#availability-and-failure-behavior) | Partially HA: replicated web and Galera data, but background workers and shared files have separate outage paths. | 2 anti-affined replicas; see the linked component table for the data, routing, and recovery path. |
 | [UrBackup](/infrastructure/urbackup/#availability-and-failure-behavior) | Not HA: one backup server, restored with two external NFS exports. | 1 Deployment replica; see the linked component table for the data, routing, and recovery path. |
 | [Vaultwarden](/infrastructure/vaultwarden/#availability-and-failure-behavior) | Not HA at the application layer: one vault server; PostgreSQL alone is replicated. | 1 Recreate replica; see the linked component table for the data, routing, and recovery path. |
@@ -87,12 +87,12 @@ Most bespoke Redis layouts use two data members and three Sentinel voters, one v
 | Consumer | Client path | Restart/rejoin behavior visible in its manifests |
 | --- | --- | --- |
 | LiteLLM | Direct authenticated Sentinel discovery | Data-side Redis role and Sentinel topology persist; startup queries peers before choosing a role. |
-| Open WebUI | Direct discovery; Sentinel listener auth follows its client contract | Initial data roles are assigned by ordinal; Sentinel configuration is temporary. |
-| Zammad | Direct Sentinel discovery | Initial data roles are assigned by ordinal; Sentinel configuration is temporary. |
+| Open WebUI | Direct discovery; Sentinel listener auth follows its client contract | Data-side roles and Sentinel topology persist on the existing PVC; startup consults Sentinel before rejoining. Third voter uses stable identity and temporary state. |
+| Zammad | Direct Sentinel discovery | Data-side roles and Sentinel topology persist on the existing PVC; startup consults Sentinel before rejoining. Third voter uses stable identity and temporary state. |
 | Nextcloud | Two HAProxy replicas checking Redis ROLE with DNS refresh | Redis role changes and data-side Sentinel topology persist on existing data PVCs; the third voter has a stable identity and temporary state. Proxy replication does not elect or fence writers. |
-| Stalwart | One HAProxy inside the RTX quorum pod | Same restart concern plus a singleton client endpoint that is lost with RTX. |
+| Stalwart | Two independent HAProxy replicas checking ROLE with DNS refresh | Data-side roles and Sentinel topology persist on existing PVCs; startup consults Sentinel. The third voter remains on RTX, independent of client proxies. |
 
-The ordinal-based scripts can reintroduce an old role after promotion. That is a source-derived recovery concern, not a claim that a live split-brain event was observed. A useful failure drill includes the old primary’s return and confirms that all clients converge on one writer.
+The migrated scripts no longer reset existing roles by ordinal. First migration of an existing dataset requires agreement from two voters, and persisted state alone does not prove partition safety. Redis replication remains asynchronous. A useful failure drill includes the old primary’s return and confirms that all clients converge on one writer.
 
 Keep data, replica, voter, and client authentication consistent. Password-only Sentinel setups use matching `requirepass` values for peer authentication; a missing separate `sentinel-pass` directive alone does not prove a defect. Redis replication is asynchronous. See [Redis Sentinel architecture and authentication](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/).
 
@@ -130,9 +130,11 @@ The [Debian VM layer](/infrastructure/virtual-machines/) has its own availabilit
 
 The intended layout places one control-plane VM and one worker VM on each Proxmox host. Required anti-affinity uses Kubernetes node names; it only becomes physical-host separation because of that VM placement. If VMs are moved onto the same host later, node-name separation alone no longer protects against that host’s loss.
 
-Three etcd members can retain a majority after one member fails. However, the configured client API address is `10.30.0.6` on the RTX control-plane VM; no VIP or API load balancer is defined. Losing the RTX **worker VM** removes its application voters. Losing the entire RTX **host** also removes the API address and can delay promotion, endpoint updates, scheduling, and reconciliation even though two etcd members remain.
+Three etcd members can retain a majority after one member fails. The legacy external client API address is `10.30.0.6` on the RTX control-plane VM. `infrastructure/opentofu/talostofu/` now supports `cluster_api_vip`: an opt-in shared address elected by Talos across the control-plane nodes. Reserve an unused address outside DHCP on their shared layer-2 subnet before enabling it. The default remains unset for existing installations; source support is not evidence that a VIP is live.
 
-Therefore, “survives one worker” must not be promoted to “survives any Proxmox host without interruption.” An available API endpoint is a prerequisite for stronger automatic failover claims.
+An external API VIP does not supply worker capacity, database quorum, or redundant storage. In-cluster clients normally use the Kubernetes Service and Talos KubePrism/discovery rather than the external kubeconfig endpoint; inspect those paths separately. Retain direct node addresses for Talos recovery because its VIP election depends on etcd. See [Talos virtual IP guidance](https://docs.siderolabs.com/talos/v1.11/networking/vip).
+
+Losing the RTX worker removes its application voters; losing the entire host also removes a control-plane member. A whole-host contract additionally requires physically separate VM placement, surviving storage/network services, and adequate remaining worker capacity.
 
 ### External storage and network
 
@@ -211,3 +213,28 @@ archives require a separate off-host copy for disaster recovery.
 Both general workers declare `max-pods=130` in `infrastructure/opentofu/talostofu/main.tf`. Keep this symmetric: a recovered worker at the default 110-pod ceiling can leave local-volume database members Pending even when CPU and memory requests fit. Compare scheduled nonterminal pod counts with each node's allocatable pod count before maintenance. Raising the ceiling does not add memory or move local volumes; retain headroom for replacement and recovery pods.
 
 Reserve the small RTX quorum worker for voters and explicitly assigned infrastructure. Invoice Ninja web, nginx, and queue workers are restricted to the two general workers. Argo CD Redis HAProxy has resource requests and a memory limit, and bounds its connection count. These controls reduce pressure and protect it from BestEffort victim selection; they do not create additional VM memory.
+
+## Roll out the node-failure improvements
+
+These changes are source configuration, not a completed live migration. No node shutdown is needed to review or render them.
+
+1. Restore a healthy baseline before changing topology: three control-plane members, both main workers, the third voter worker, and all application data copies. Investigate NotReady nodes, cordons, disk pressure, missing voters, and failed databases first. A PDB cannot compensate for multiple unavailable failure domains. Do not remove pressure taints to force scheduling.
+2. Run `python3 tools/check-node-failover.py` from the repository root. This read-only gate reports cordons, pressure, incomplete replica counts, and co-located ready replicas. It does not establish database replication, N-1 capacity, or successful user transactions.
+3. Reserve N-1 CPU, memory, pod slots, and ephemeral disk headroom on the eligible workers. The small tainted RTX worker is a voter domain, not capacity for the whole stack. Required anti-affinity deliberately leaves a second replica Pending when only one eligible node remains; the surviving replica still needs healthy dependencies.
+4. Review and publish application changes through the normal GitOps workflow. Argo dynamic distribution changes its application-controller kind and is upstream alpha. Verify both heartbeat-based reassignment and actual reconciliation, not just the UI. Stalwart proxy sync waves create healthy replacement endpoints before changing the Service selector.
+5. Migrate Open WebUI, Zammad, and Stalwart Redis one member at a time. Existing data without agreement from two voters deliberately blocks initial migration. Keep the current writer and two communicating voters available. Data-side writable Redis/Sentinel configs persist on existing PVCs; validate replication and old-primary rejoin before continuing. Keep existing credentials and PVCs.
+6. For external API failover, set `cluster_api_vip` only after reserving its address and reviewing the OpenTofu plan. Network and machine-configuration application needs explicit maintenance approval. Introduce and verify the VIP and certificate on control planes through direct node management addresses before moving clients. Reconfigure workers/client kubeconfigs in stages, retaining a direct API recovery path. Never use the VIP as the Talos recovery endpoint.
+7. After full redundancy is restored, separately authorize a failure drill for one worker or physical host at a time. Confirm a new authenticated login, application read/write, database promotion, background work, and Argo reconciliation. Bring the node back, verify old-primary demotion and data resynchronization, and restore every voter before the next drill.
+
+### Remaining work for an all-services contract
+
+| Boundary | Required implementation or operational decision |
+| --- | --- |
+| Recoverable singletons: Headscale/Headplane, Uptime Kuma, Node-RED, Vaultwarden, UrBackup, CrowdSec, RustDesk rendezvous | Existing one-process restart/restore designs permit an outage. StatefulSet replacement on an unreachable node can wait for fencing or node recovery. Establish fencing before force deletion or automated takeover; two writers can corrupt SQLite/shared files or duplicate work. |
+| Local OpenEBS PVCs | A bound local volume stays on its node. Replicated databases can promote another copy; a singleton local volume cannot follow a pod to another worker. Migration to replicated storage is a storage change requiring review, backup, and approval. |
+| Galera databases | Two data members plus an independent arbitrator tolerate one failure only from a healthy communicating membership. Restore data-member health and quorum first; never automate forced bootstrap from replica counts. |
+| VictoriaLogs | Two current shards are independent history, not replicas. Complete-history HA requires a supported replicated ingestion/query and retention design; adding replicas alone does not copy existing history. |
+| Nextcloud Talk and external Debian workloads | Singleton media/recording/GPU endpoints need product-supported standby placement, device capacity, and recovery routing. Existing GPU passthrough and one VM per workload are not automatic failover. |
+| NFS, Garage, NAS, router and DNS | External failure domains need independent storage/routing capacity or an approved failover design. Kubernetes application changes cannot supply that hardware. |
+
+Until those dependencies and the node-loss transactions are verified, the repository must retain its mixed-availability classification. Failover can include retries and a recovery interval; it does not transfer in-flight connections.

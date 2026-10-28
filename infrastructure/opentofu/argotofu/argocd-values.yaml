@@ -91,9 +91,18 @@ server:
     annotations:
 controller:
   replicas: 2
+  # Static shards do not transfer a failed controller's cluster to its peer.
+  # The pinned chart supports heartbeat-based redistribution (upstream alpha).
+  dynamicClusterDistribution: true
   heartbeatTime: 5
+  pdb:
+    enabled: true
+    minAvailable: 1
 repoServer:
   replicas: 2
+  pdb:
+    enabled: true
+    minAvailable: 1
   deploymentStrategy:
     type: RollingUpdate
     rollingUpdate:

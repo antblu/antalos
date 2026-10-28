@@ -3,36 +3,99 @@ kind: ConfigMap
 metadata:
   name: stalwart-redis-config
   namespace: stalwart
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 data:
+  discover-master.sh: |
+    #!/bin/sh
+    votes=""
+    for peer in redis-0.redis.stalwart.svc.cluster.local redis-1.redis.stalwart.svc.cluster.local redis-sentinel-2.stalwart.svc.cluster.local; do
+      reply=$(REDISCLI_AUTH="$REDIS_PASSWORD" timeout 3 redis-cli --raw -h "$peer" -p 26379 SENTINEL get-master-addr-by-name stalwart 2>/dev/null) || continue
+      set -- $reply
+      if [ "$#" -eq 2 ] && [ "$2" = 6379 ]; then
+        votes="$votes
+    $1 $2"
+      fi
+    done
+    # A single stale voter must not resurrect a former primary after failover.
+    master=$(printf '%s\n' "$votes" | sort | uniq -c | awk '$1 >= 2 { print $2, $3; exit }')
+    [ -n "$master" ] || exit 1
+    printf '%s\n' "$master"
   start-redis.sh: |
     #!/bin/sh
     set -eu
-    set -- redis-server \
-      --appendonly yes \
-      --appendfsync everysec \
-      --requirepass "$REDIS_PASSWORD" \
-      --masterauth "$REDIS_PASSWORD" \
-      --protected-mode no
-    if [ "$HOSTNAME" = redis-1 ]; then
-      set -- "$@" --replicaof redis-0.redis.stalwart.svc.cluster.local 6379
+    umask 077
+    config=/data/redis.conf
+    master=$(/config/discover-master.sh) || master=""
+    if [ ! -s "$config" ]; then
+      # Do not guess a writer while migrating an existing dataset without voters.
+      if [ -z "$master" ] && { [ -d /data/appendonlydir ] || [ -f /data/dump.rdb ] || [ -f /data/appendonly.aof ]; }; then
+        echo 'Existing Redis data requires agreement from two Sentinels before first config migration' >&2
+        exit 1
+      fi
+      cat > "$config" <<REDIS
+    dir /data
+    appendonly yes
+    appendfsync everysec
+    requirepass "$REDIS_PASSWORD"
+    masterauth "$REDIS_PASSWORD"
+    protected-mode no
+    replica-announce-ip $HOSTNAME.redis.stalwart.svc.cluster.local
+    REDIS
+      if [ "$HOSTNAME" = redis-1 ]; then
+        printf 'replicaof %s 6379\n' 'redis-0.redis.stalwart.svc.cluster.local' >> "$config"
+      fi
     fi
-    exec "$@"
+    # Existing members fail closed without agreement from two voters. Sentinels
+    # start independently, including during a full-cluster recovery.
+    if [ -z "$master" ] && { [ -d /data/appendonlydir ] || [ -f /data/dump.rdb ] || [ -f /data/appendonly.aof ]; }; then
+      echo 'Existing Redis data requires agreement from two Sentinels before restart' >&2
+      exit 1
+    fi
+    # Sentinel can now persist promotion/demotion with CONFIG REWRITE.
+    if [ -n "$master" ]; then
+      set -- $master
+      sed -i '/^replicaof /d; /^slaveof /d' "$config"
+      if [ "$1" != "$HOSTNAME.redis.stalwart.svc.cluster.local" ] && [ "$1" != "$(hostname -i)" ]; then
+        printf 'replicaof %s %s\n' "$1" "$2" >> "$config"
+      fi
+    fi
+    exec redis-server "$config"
   start-sentinel.sh: |
     #!/bin/sh
     set -eu
-    cat > /tmp/sentinel.conf <<EOF
+    umask 077
+    case "$HOSTNAME" in
+      redis-0|redis-1)
+        announce="$HOSTNAME.redis.stalwart.svc.cluster.local"
+        config=/sentinel/sentinel.conf
+        ;;
+      *)
+        announce=redis-sentinel-2.stalwart.svc.cluster.local
+        config=/tmp/sentinel.conf
+        ;;
+    esac
+    if [ ! -s "$config" ]; then
+      master=$(/config/discover-master.sh) || master="redis-0.redis.stalwart.svc.cluster.local 6379"
+      set -- $master
+      myid=$(printf '%s' "$announce" | sha1sum | cut -d ' ' -f 1)
+      cat > "$config" <<SENTINEL
     port 26379
     protected-mode no
     requirepass "$REDIS_PASSWORD"
+    sentinel sentinel-pass "$REDIS_PASSWORD"
+    sentinel myid $myid
     sentinel resolve-hostnames yes
     sentinel announce-hostnames yes
-    sentinel monitor stalwart redis-0.redis.stalwart.svc.cluster.local 6379 2
+    sentinel announce-ip $announce
+    sentinel monitor stalwart $1 $2 2
     sentinel auth-pass stalwart "$REDIS_PASSWORD"
     sentinel down-after-milliseconds stalwart 5000
     sentinel failover-timeout stalwart 60000
     sentinel parallel-syncs stalwart 1
-    EOF
-    exec redis-sentinel /tmp/sentinel.conf
+    SENTINEL
+    fi
+    exec redis-sentinel "$config"
   haproxy.cfg: |
     global
       log stdout format raw local0
@@ -46,6 +109,17 @@ data:
       timeout client 30s
       timeout server 30s
 
+    resolvers kube-dns
+      parse-resolv-conf
+      hold valid 10s
+      hold nx 1s
+
+    frontend redis-health
+      bind :8404
+      mode http
+      monitor-uri /healthz
+      monitor fail if { nbsrv(redis-primary) lt 1 }
+
     frontend redis
       bind :6379
       default_backend redis-primary
@@ -56,8 +130,8 @@ data:
       tcp-check expect string +OK
       tcp-check send ROLE\r\n
       tcp-check expect string master
-      server redis-0 redis-0.redis.stalwart.svc.cluster.local:6379 check inter 2s
-      server redis-1 redis-1.redis.stalwart.svc.cluster.local:6379 check inter 2s
+      server redis-0 redis-0.redis.stalwart.svc.cluster.local:6379 check inter 2s resolvers kube-dns init-addr last,libc,none
+      server redis-1 redis-1.redis.stalwart.svc.cluster.local:6379 check inter 2s resolvers kube-dns init-addr last,libc,none
 ---
 apiVersion: v1
 kind: Service
@@ -153,6 +227,8 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+            - name: data
+              mountPath: /sentinel
       volumes:
         - name: config
           configMap:
@@ -189,7 +265,7 @@ metadata:
   namespace: stalwart
 spec:
   selector:
-    app.kubernetes.io/name: stalwart-redis-quorum
+    app.kubernetes.io/name: stalwart-redis-haproxy
   ports:
     - name: redis
       port: 6379
@@ -243,6 +319,42 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+      volumes:
+        - name: config
+          configMap:
+            name: stalwart-redis-config
+            defaultMode: 0555
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-haproxy
+  namespace: stalwart
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stalwart-redis-haproxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: stalwart-redis-haproxy
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: stalwart-redis-haproxy
+              topologyKey: kubernetes.io/hostname
+      containers:
         - name: haproxy
           image: haproxy:${HAPROXY_IMAGE_TAG}
           command:
@@ -265,9 +377,12 @@ spec:
           ports:
             - name: haproxy
               containerPort: 6379
+            - name: health
+              containerPort: 8404
           readinessProbe:
-            tcpSocket:
-              port: haproxy
+            httpGet:
+              path: /healthz
+              port: health
             initialDelaySeconds: 5
             periodSeconds: 10
           volumeMounts:
@@ -278,3 +393,14 @@ spec:
           configMap:
             name: stalwart-redis-config
             defaultMode: 0555
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-haproxy
+  namespace: stalwart
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stalwart-redis-haproxy

@@ -56,7 +56,7 @@ Chart init/migration Jobs gate the upgrade. PDB/paired HTTP replicas do not guar
 
 ### What prevents a stronger HA claim
 
-Redis startup reconstructs roles from ordinal names and Sentinel config from /tmp; rejoining after promotion can reintroduce stale roles. Protected Sentinel listeners require matching credentials and working client discovery authentication. Search HA also requires actual replica-shard allocation, which is not established by the three master-eligible processes.
+Redis persists role changes and data-side Sentinel topology on each existing PVC. Startup consults Sentinel before rejoining; first migration of an existing dataset requires agreement from two voters. Verify promotion and former-primary rejoin before asserting automatic recovery. Protected Sentinel listeners require matching credentials and working client discovery authentication. Search HA also requires actual replica-shard allocation, which is not established by the three master-eligible processes.
 
 ### What would improve the availability contract
 

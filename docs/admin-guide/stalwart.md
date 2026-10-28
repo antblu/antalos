@@ -104,11 +104,11 @@ See the official [DNS management lifecycle](https://stalw.art/docs/domains/dns-r
 
 ## Availability before maintenance
 
-**Partially HA; loss of the RTX-only Redis proxy is an explicit single-worker failure gap.**
+**Replicated mail/data tiers with two independent writer-aware Redis proxies; shared storage, routing, and search allocation remain dependencies.**
 
-Stalwart’s StatefulSet updates its processes incrementally and has a PDB minimum 1. The Redis quorum/proxy Deployment uses Recreate, so updating that singleton can interrupt Redis access for both mail replicas.
+Stalwart’s StatefulSet updates its processes incrementally and has a PDB minimum 1. The independent Redis proxies use zero-surge rolling updates and a one-available PDB. The third-voter Deployment remains Recreate; keep both data-side voters healthy during its replacement.
 
-Remove the single Redis client-path dependency through a supported replicated proxy or native discovery design, establish election/rejoin correctness, and record SMTP, mailbox read, search, and blob access during failure. Protect external storage and verify per-index shard allocation.
+Verify both independent Redis proxies and election/rejoin correctness, and record SMTP, mailbox read, search, and blob access during failure. Protect external storage and verify per-index shard allocation.
 
 Use the [component-by-component failure contract](/infrastructure/stalwart/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
 
@@ -159,3 +159,9 @@ For bootstrap 401 responses, verify the administrator Secret format and the acti
 - [`stalwart.yaml`](https://github.com/antblu/antalos/blob/main/apps/stalwart/stalwart.yaml)
 
 [Official Stalwart Mail documentation](https://stalw.art/docs/).
+
+### Redis proxy and restart migration
+
+The Redis ConfigMap reconciles at wave -2 and the independent proxy Deployment at wave -1. Argo waits for healthy proxies before wave 0 switches the existing `redis-haproxy` Service away from the quorum pod. Keep that Service name and the existing password. Confirm both proxies have different worker nodes and `/healthz` reports a reachable writer before retiring the old embedded proxy.
+
+Redis now runs from a writable configuration on each existing data PVC. Data-side Sentinel also persists topology on that PVC; startup consults peers to follow an elected primary. During first migration, existing data without agreement from two Sentinels causes startup to fail rather than guess a writer. Roll one data member at a time with a healthy elected primary and two communicating voters. Verify rejoining the former primary, then restore all three voters. Configuration changes require pod replacement; do not restart both data members together.

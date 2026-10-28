@@ -4,3 +4,8 @@ proxmox_insecure  = true
 
 proxmox_ssh_username = "terraform"
 proxmox_ssh_password = "<password-to-terraform>"
+
+# Reserve an unused address outside DHCP on the shared control-plane subnet.
+# Set it only after checking address ownership; never reuse a node's address.
+# cluster_api_vip = "REPLACE_WITH_RESERVED_IPV4"
+# controlplane_network_interface = "eth0"

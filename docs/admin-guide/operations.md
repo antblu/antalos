@@ -18,6 +18,8 @@ From the repository root:
 
 Use current owner-managed pods to judge availability. Retained failed Jobs and historical rollout pods may explain an incident without describing the current serving state. A missing metric is not a measured zero.
 
+Before planned node maintenance, run `python3 tools/check-node-failover.py`. Resolve its blockers and follow the [node-failure rollout and remaining dependencies](/infrastructure/availability/#roll-out-the-node-failure-improvements). A passing gate alone does not authorize a shutdown or establish end-to-end HA.
+
 ## Investigate one service
 
 Select real names from the preceding output; the values below are placeholders:

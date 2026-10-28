@@ -54,7 +54,7 @@ The chart explicitly uses Recreate. A version rollout may terminate both applica
 
 ### What prevents a stronger HA claim
 
-Redis roles are reconstructed from ordinal names at startup and Sentinel state is temporary. Promotion followed by restart needs special attention to prevent a returned member assuming the old primary. Sentinel listeners intentionally omit requirepass for the current client contract; data-node authentication is a separate setting. Garage or model-provider failure can make a healthy UI unusable for its main workflow.
+Redis persists role changes and data-side Sentinel topology on each existing PVC. Startup consults Sentinel before rejoining; first migration of an existing dataset requires agreement from two voters. Verify promotion and former-primary rejoin before asserting automatic recovery. Sentinel listeners intentionally omit requirepass for the current client contract; data-node authentication is a separate setting. Garage or model-provider failure can make a healthy UI unusable for its main workflow.
 
 ### What would improve the availability contract
 

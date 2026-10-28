@@ -4,35 +4,96 @@ metadata:
   name: zammad-redis-config
   namespace: zammad
 data:
+  discover-master.sh: |
+    #!/bin/sh
+    votes=""
+    for peer in zammad-redis-data-0.zammad-redis-data.zammad.svc.cluster.local zammad-redis-data-1.zammad-redis-data.zammad.svc.cluster.local zammad-redis-sentinel-2.zammad.svc.cluster.local; do
+      reply=$(REDISCLI_AUTH="$REDIS_PASSWORD" timeout 3 redis-cli --raw -h "$peer" -p 26379 SENTINEL get-master-addr-by-name zammad 2>/dev/null) || continue
+      set -- $reply
+      if [ "$#" -eq 2 ] && [ "$2" = 6379 ]; then
+        votes="$votes
+    $1 $2"
+      fi
+    done
+    # A single stale voter must not resurrect a former primary after failover.
+    master=$(printf '%s\n' "$votes" | sort | uniq -c | awk '$1 >= 2 { print $2, $3; exit }')
+    [ -n "$master" ] || exit 1
+    printf '%s\n' "$master"
   start-redis.sh: |
     #!/bin/sh
     set -eu
-    set -- redis-server \
-      --appendonly yes \
-      --appendfsync everysec \
-      --requirepass "$REDIS_PASSWORD" \
-      --masterauth "$REDIS_PASSWORD" \
-      --protected-mode no
-    if [ "$HOSTNAME" = zammad-redis-data-1 ]; then
-      set -- "$@" --replicaof ${ZAMMAD_REDIS_DATA_0_HOST} 6379
+    umask 077
+    config=/data/redis.conf
+    master=$(/config/discover-master.sh) || master=""
+    if [ ! -s "$config" ]; then
+      # Do not guess a writer while migrating an existing dataset without voters.
+      if [ -z "$master" ] && { [ -d /data/appendonlydir ] || [ -f /data/dump.rdb ] || [ -f /data/appendonly.aof ]; }; then
+        echo 'Existing Redis data requires agreement from two Sentinels before first config migration' >&2
+        exit 1
+      fi
+      cat > "$config" <<REDIS
+    dir /data
+    appendonly yes
+    appendfsync everysec
+    requirepass "$REDIS_PASSWORD"
+    masterauth "$REDIS_PASSWORD"
+    protected-mode no
+    replica-announce-ip $HOSTNAME.zammad-redis-data.zammad.svc.cluster.local
+    REDIS
+      if [ "$HOSTNAME" = zammad-redis-data-1 ]; then
+        printf 'replicaof %s 6379\n' 'zammad-redis-data-0.zammad-redis-data.zammad.svc.cluster.local' >> "$config"
+      fi
     fi
-    exec "$@"
+    # Existing members fail closed without agreement from two voters. Sentinels
+    # start independently, including during a full-cluster recovery.
+    if [ -z "$master" ] && { [ -d /data/appendonlydir ] || [ -f /data/dump.rdb ] || [ -f /data/appendonly.aof ]; }; then
+      echo 'Existing Redis data requires agreement from two Sentinels before restart' >&2
+      exit 1
+    fi
+    # Sentinel can now persist promotion/demotion with CONFIG REWRITE.
+    if [ -n "$master" ]; then
+      set -- $master
+      sed -i '/^replicaof /d; /^slaveof /d' "$config"
+      if [ "$1" != "$HOSTNAME.zammad-redis-data.zammad.svc.cluster.local" ] && [ "$1" != "$(hostname -i)" ]; then
+        printf 'replicaof %s %s\n' "$1" "$2" >> "$config"
+      fi
+    fi
+    exec redis-server "$config"
   start-sentinel.sh: |
     #!/bin/sh
     set -eu
-    cat > /tmp/sentinel.conf <<SENTINEL
+    umask 077
+    case "$HOSTNAME" in
+      zammad-redis-data-0|zammad-redis-data-1)
+        announce="$HOSTNAME.zammad-redis-data.zammad.svc.cluster.local"
+        config=/sentinel/sentinel.conf
+        ;;
+      *)
+        announce=zammad-redis-sentinel-2.zammad.svc.cluster.local
+        config=/tmp/sentinel.conf
+        ;;
+    esac
+    if [ ! -s "$config" ]; then
+      master=$(/config/discover-master.sh) || master="zammad-redis-data-0.zammad-redis-data.zammad.svc.cluster.local 6379"
+      set -- $master
+      myid=$(printf '%s' "$announce" | sha1sum | cut -d ' ' -f 1)
+      cat > "$config" <<SENTINEL
     port 26379
     protected-mode no
     requirepass "$REDIS_PASSWORD"
+    sentinel sentinel-pass "$REDIS_PASSWORD"
+    sentinel myid $myid
     sentinel resolve-hostnames yes
     sentinel announce-hostnames yes
-    sentinel monitor zammad ${ZAMMAD_REDIS_DATA_0_HOST} 6379 2
+    sentinel announce-ip $announce
+    sentinel monitor zammad $1 $2 2
     sentinel auth-pass zammad "$REDIS_PASSWORD"
     sentinel down-after-milliseconds zammad 5000
     sentinel failover-timeout zammad 60000
     sentinel parallel-syncs zammad 1
     SENTINEL
-    exec redis-sentinel /tmp/sentinel.conf
+    fi
+    exec redis-sentinel "$config"
 ---
 apiVersion: v1
 kind: Service
@@ -134,6 +195,8 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+            - name: data
+              mountPath: /sentinel
       volumes:
         - name: config
           configMap:
