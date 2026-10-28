@@ -21,6 +21,16 @@ Keep these variables distinct:
 
 The public release and internal version can differ. Inspect the target image’s `version.php` in a disposable environment before publishing the version change; do not infer the internal value by adding a suffix.
 
+### Nextcloud 35 target
+
+The repository targets `nextcloud:35.0.2-apache`, with internal server version `35.0.2.2` from upstream [`version.php`](https://github.com/nextcloud/server/blob/v35.0.2/version.php). Confirm that value in the actual target image before rollout. This is desired configuration, not evidence of a completed live migration.
+
+The [Nextcloud 35 upgrade notes](https://docs.nextcloud.com/server/stable/admin_manual/release_notes/upgrade_to_35.html) remove PHP 8.2 support and raise the Debian minimum to 13, Ubuntu to 24.04, and SLES 15 to SP7. The [official Apache image recipe](https://github.com/nextcloud/docker/blob/master/35/apache/Dockerfile) uses PHP 8.5 on Debian 13 (Trixie); the container runtime determines these requirements, independently of the Kubernetes host OS. PostgreSQL 18, already selected here, is supported by the [Nextcloud 35 system requirements](https://docs.nextcloud.com/server/stable/admin_manual/installation/system_requirements.html). The MariaDB 10.11 and MySQL 8.4 minimums, and the MySQL 9+ MD5 component instruction, do not apply to this PostgreSQL deployment.
+
+The app pins advance Assistant to 4.1.0, Deck to 1.19.1, External sites to 10.0.0, Group folders to 23.0.1, OpenAI integration to 5.0.0, Talk to 25.0.6, and Whiteboard to 2.1.2, whose releases declare Nextcloud 35 compatibility in the [app-store metadata](https://apps.nextcloud.com/api/v1/platform/35.0.2/apps.json). Whiteboard's backend image advances with its app. The other installed app pins already declare compatible server and PHP ranges; preserve them rather than taking unrelated updates or downgrading Mail based on app-store response ordering.
+
+Follow the maintenance and backup procedure below before publishing these pins. The app installer replaces code on the shared NFS export, so replacing one pod can also change the app files seen by an older replica. Isolate all replicas and pause cron, task workers, and integrations for the whole migration; a normal rolling update does not provide this protection. Do not force-enable incompatible apps. After the single-owner migration, exercise AI tasks, Talk calls, Group folders permissions, and Whiteboard collaboration/recording as well as the core file and login flows.
+
 ## 2. Establish a protected maintenance window
 
 Pause user writes and background processing across the whole service, including integrations that write files. Keep public ingress isolated throughout rollout and migration, because newly created pods regenerate their own configuration. Maintenance mode in one existing pod does not automatically protect every other or replacement pod.
