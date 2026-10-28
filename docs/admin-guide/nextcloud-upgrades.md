@@ -102,10 +102,10 @@ If that version differs from the recorded target, stop and correct the desired c
 
 ## 5. Run the migration once
 
-Set the value discovered above. Do not run the following concurrently on another replica:
+Record the installed internal version from the pre-upgrade service before changing the image (for example, `34.0.5.1` when upgrading to 35.0.2). Use that previous version for the migration process so Nextcloud recognizes the major-version boundary; the generated target configuration alone must not make an unmigrated database appear current. The upgrader writes the target version after success. Do not run the following concurrently on another replica:
 
 ```bash title="Migrate from one selected target pod"
-NEXTCLOUD_INTERNAL_VERSION='REPLACE_WITH_EXACT_INTERNAL_VERSION'
+NEXTCLOUD_PREVIOUS_INTERNAL_VERSION='REPLACE_WITH_PRE_UPGRADE_INTERNAL_VERSION'
 /home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig \
   -n nextcloud exec "$NEXTCLOUD_NEW_POD" -c nextcloud -- \
   sh -ec '
@@ -113,7 +113,7 @@ NEXTCLOUD_INTERNAL_VERSION='REPLACE_WITH_EXACT_INTERNAL_VERSION'
     trap "chmod 0440 /var/www/html/config/config.php /var/www/html/data/.ncdata" EXIT
     su -s /bin/sh www-data -c \
       "NC_version=$1 NC_config_is_read_only= php /var/www/html/occ upgrade --no-interaction -v"
-  ' sh "$NEXTCLOUD_INTERNAL_VERSION"
+  ' sh "$NEXTCLOUD_PREVIOUS_INTERNAL_VERSION"
 ```
 
 The temporary permissions and environment overrides are confined to this process; the trap restores file modes when it exits. Keep the complete migration log privately for diagnosis.
