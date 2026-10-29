@@ -77,3 +77,7 @@ These are operational/design requirements, not changes made to the deployment by
 ## Continue
 
 Read the [deployment guide](/admin-guide/open-webui/) for dependency order, initial credentials, and integration work. The [official documentation](https://docs.openwebui.com/) explains the upstream product; the topology above describes this repository.
+
+## Recovery resource limits
+
+The serving container requests 512Mi and permits up to 3Gi. A worker-loss drill exposed a cgroup OOM at the former 2Gi limit on the surviving replica; evaluate actual general-worker memory headroom as well as scheduling reservations before increasing load. The metrics exporter explicitly selects Open WebUI's HTTP transport with `OTEL_METRICS_OTLP_SPAN_EXPORTER=http` for the configured VictoriaMetrics HTTP endpoint. This prevents the default TLS/gRPC exporter from retrying against that endpoint.
