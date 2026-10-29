@@ -81,3 +81,5 @@ Read the [deployment guide](/admin-guide/open-webui/) for dependency order, init
 ## Recovery resource limits
 
 The serving container requests 512Mi and permits up to 3Gi. A worker-loss drill exposed a cgroup OOM at the former 2Gi limit on the surviving replica; evaluate actual general-worker memory headroom as well as scheduling reservations before increasing load. The metrics exporter explicitly selects Open WebUI's HTTP transport with `OTEL_METRICS_OTLP_SPAN_EXPORTER=http` for the configured VictoriaMetrics HTTP endpoint. This prevents the default TLS/gRPC exporter from retrying against that endpoint.
+
+The two web replicas use zero-surge rolling updates with one unavailable replica, so applying a resource or configuration repair keeps a serving copy while its replacement starts.
