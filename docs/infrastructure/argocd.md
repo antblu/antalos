@@ -31,7 +31,7 @@ This is an interpretation of the checked-in configuration, assuming the declared
 | --- | --- | --- |
 | API server | 2 replicas; hard anti-affinity | New UI/API requests can use the surviving server. |
 | Repo server | 2 replicas; hard anti-affinity | Either can render Git inputs when Git and the plugin are available. |
-| Application controller | 2 Deployment replicas; dynamic round-robin cluster distribution; 5-second heartbeat | A failed controller’s cluster assignment can move to a surviving controller. This upstream feature is alpha and requires a reconciliation drill. |
+| Application controller | 2 Deployment replicas; hard anti-affinity; zero-surge, one-unavailable rollout; dynamic round-robin cluster distribution; 5-second heartbeat | Rollouts fit the two eligible general workers without requiring a third pod. A failed controller’s cluster assignment can move to a surviving controller. This upstream feature is alpha and requires a reconciliation drill. |
 | Redis HA | 3 chart members; quorum toleration | Sentinel/proxy behavior follows the pinned chart; it is distinct from the bespoke app Redis scripts. |
 | Authentication | Native OIDC to Authentik; Dex disabled | Either API server can perform discovery and code exchange without a singleton broker. Authentik, ingress, DNS, and PostgreSQL must remain available. |
 
@@ -51,7 +51,7 @@ An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure.
 
 ### Upgrades and voluntary maintenance
 
-Server/repo-server/proxy overrides use zero surge and one unavailable. Server, repo-server, and application-controller PDBs require one available replica during voluntary eviction. Plugin subPath changes require repo-server replacement. PDBs do not prevent abrupt node failure or override a Deployment rollout strategy.
+Server/repo-server/proxy and application-controller rollouts use zero surge and one unavailable. This lets each two-replica hard anti-affinity group roll across the two general workers without waiting for an impossible third placement; one controller may be unavailable briefly during rollout. Server, repo-server, and application-controller PDBs require one available replica during voluntary eviction. Plugin subPath changes require repo-server replacement. PDBs do not prevent abrupt node failure or override a Deployment rollout strategy.
 
 ### What prevents a stronger HA claim
 

@@ -56,7 +56,7 @@ spec:
                 - name: GITHUB_INSTALLATION_ID
                   value: "${RENOVATE_GITHUB_INSTALLATION_ID}"
                 - name: LOG_LEVEL
-                  value: info
+                  value: debug
               resources:
                 requests:
                   cpu: 100m

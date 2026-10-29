@@ -90,6 +90,11 @@ controller:
   # The pinned chart supports heartbeat-based redistribution (upstream alpha).
   dynamicClusterDistribution: true
   heartbeatTime: 5
+  deploymentStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   pdb:
     enabled: true
     minAvailable: 1
