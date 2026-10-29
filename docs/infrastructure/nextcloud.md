@@ -5,13 +5,13 @@ description: "Backend components, persistence, placement, and failure boundaries
 
 <nav class="guide-switcher" aria-label="Nextcloud guide sections"><a href="/user-guide/nextcloud/">Use</a><a aria-current="page" href="/infrastructure/nextcloud/">Architecture</a><a href="/admin-guide/nextcloud/">Operate</a></nav>
 
-Two Nextcloud web pods each include notify_push. Shared app code comes from the `nextcloud-apps` NFS volume; runtime files are pod-local. A two-instance CNPG cluster stores application metadata and Context Chat data. Garage is the primary file object store. Redis uses two persistent data members, three Sentinel voters, and two HAProxy replicas. Separate deployments run EuroOffice, Whiteboard, and the request/update/indexing roles of Context Chat. Talk has two signaling/Janus/TURN pods and three NATS members.
+Two Nextcloud web pods each include notify_push. Shared app code comes from the `nextcloud-apps` NFS volume; runtime files are pod-local. A two-instance CNPG cluster stores application metadata and Context Chat data. Garage is the primary file object store. Redis uses two persistent data members, three Sentinel voters, and two HAProxy replicas. Separate deployments run EuroOffice, Whiteboard, and the request/update/indexing roles of Context Chat. Talk has one replaceable signaling/Janus/TURN pod and three NATS members.
 
 ## Component boundaries
 
 <figure class="architecture-diagram" aria-label="Nextcloud · component flow">
 <div class="diagram-heading">Nextcloud · component flow</div>
-<ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Clients</span><ul><li>Browser / sync / DAV</li><li>Traefik HTTPS</li></ul></li><li class="diagram-stage"><span class="diagram-label">Collaboration</span><ul><li>2 web + notify_push pods</li><li>Office / Whiteboard / Context Chat</li><li>Talk × 2 / NATS × 3</li></ul></li><li class="diagram-stage"><span class="diagram-label">Shared dependencies</span><ul><li>PostgreSQL · 2 instances</li><li>Redis · 2 data / 3 voters / 2 proxies</li><li>Garage files / NFS app code</li></ul></li></ol>
+<ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Clients</span><ul><li>Browser / sync / DAV</li><li>Traefik HTTPS</li></ul></li><li class="diagram-stage"><span class="diagram-label">Collaboration</span><ul><li>2 web + notify_push pods</li><li>Office / Whiteboard / Context Chat</li><li>Talk × 1 (replacement failover) / NATS × 3</li></ul></li><li class="diagram-stage"><span class="diagram-label">Shared dependencies</span><ul><li>PostgreSQL · 2 instances</li><li>Redis · 2 data / 3 voters / 2 proxies</li><li>Garage files / NFS app code</li></ul></li></ol>
 <figcaption>Arrows show the main flow between responsibility groups. Parallel boxes are related components, not interchangeable replicas; the text below defines their individual failure and recovery behavior.</figcaption>
 </figure>
 
@@ -48,7 +48,7 @@ This is an interpretation of the checked-in configuration, assuming the declared
 | Redis | 2 data + 3 Sentinels + 2 HAProxy replicas | Sentinel intends to elect; HAProxy checks AUTH and ROLE to route to a primary. |
 | Context Chat | Request, update, and indexing: 2 each | Role-specific Services and PDBs preserve process redundancy; all share database/provider dependencies. |
 | Office / Whiteboard | 2 each | Office uses sticky routing; Whiteboard shares Redis and NFS recording state. |
-| Talk | 2 signaling/Janus/TURN pods; 3 NATS nodes | Independent TURN allocations remain pinned to their owning ordinal. |
+| Talk | 1 replaceable signaling/Janus/TURN pod; 3 NATS nodes | The Deployment replaces the backend on the surviving general worker; interrupted calls and TURN allocations require reconnection. |
 | Local model / speech providers | llama-swap and Speaches on `debian-rtx` | Separate VM endpoints; their availability depends on the consuming integration and GPU. |
 | Manually installed ExApps | Outside the current left/RTX playbook workload declarations | Existing transcription or translation registrations require a separate runtime inventory. |
 | Files / code / recording | Garage + NFS; recorder on `debian-arc` | No storage-host failover or external-recorder HA is defined here. |
@@ -69,17 +69,23 @@ An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure.
 
 ### Upgrades and voluntary maintenance
 
-Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy uses maxSurge 1 and maxUnavailable 0. Its `quorum:NoSchedule` toleration makes the RTX worker eligible for a third anti-affined pod during replacement, subject to available node capacity. Major Nextcloud upgrades still require the documented isolated maintenance and single-owner schema migration procedure.
+Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy uses maxSurge 0 and maxUnavailable 1 on the two general workers. RTX is reserved for its existing quorum voters and node infrastructure. Major Nextcloud upgrades still require the documented isolated maintenance and single-owner schema migration procedure.
 
 ### What prevents a stronger HA claim
 
-The Redis startup script hardcodes ordinal 0 as the initial primary and ordinal 1 as its replica; Sentinel config is recreated in /tmp. After a promotion, restarting a member can therefore reintroduce a stale role/topology until corrected. Protected Sentinels also need peer-authentication evidence. These are reasons to describe election intent separately from proven failover/rejoin. Database replication is asynchronous; NFS/Garage and the external recorder remain separate failure domains.
+Redis persists its writable data-role and Sentinel configuration on the data volume, retaining election changes across restarts. A fresh volume still bootstraps from the initial ordinal topology, so volume replacement and simultaneous data loss require a separate recovery procedure. Rejoin and peer-authentication behavior require runtime evidence. Database replication is asynchronous; NFS/Garage and the external recorder remain separate failure domains.
 
 ### What would improve the availability contract
 
-Establish Redis election and safe rejoin behavior, protect shared storage, and exercise file/office/Talk workflows during degraded operation. A warm web replica does not make the whole Nextcloud suite outage-free.
+Exercise Redis election and safe rejoin behavior, protect shared storage, and exercise file/office/Talk workflows during degraded operation. A warm web replica does not make the whole Nextcloud suite outage-free.
 
 These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
+
+### Recoverable Talk process
+
+The coupled AIO signaling/Janus/TURN backend uses a one-replica Recreate Deployment with disposable configuration, independent of the three-member NATS quorum. Sixty-second NotReady/unreachable tolerations permit replacement on the surviving general worker. The stable TURN Service selects application labels, not an ordinal pod name. RTX remains unavailable for this process. Node-loss recovery still interrupts calls, streams and TURN allocations; clients must reconnect. The controller-kind migration is placed after the old StatefulSet's prune wave and causes a planned backend restart. This is replacement failover, not simultaneous cross-Janus media HA.
+
+Normal application pod startup retains existing shared GitOps app directories, even if a desired pin changed. Replacing shared app code requires the explicit maintenance installer override followed by a single-owner migration. This avoids activating an uncompleted app upgrade during node recovery.
 
 ## Configuration ownership
 
@@ -106,9 +112,3 @@ These are operational/design requirements, not changes made to the deployment by
 ## Continue
 
 Read the [deployment guide](/admin-guide/nextcloud/) for dependency order, initial credentials, and integration work. The [official documentation](https://docs.nextcloud.com/server/latest/user_manual/en/) explains the upstream product; the topology above describes this repository.
-
-### Recoverable Talk process
-
-The coupled AIO signaling/Janus/TURN backend uses a one-replica Recreate Deployment with disposable configuration, independent of the three-member NATS quorum. Sixty-second NotReady/unreachable tolerations permit replacement on the surviving general worker. The stable TURN Service selects application labels, not an ordinal pod name. RTX remains unavailable for this process. Node-loss recovery still interrupts calls, streams and TURN allocations; clients must reconnect. The controller-kind migration is placed after the old StatefulSet's prune wave and causes a planned backend restart. This is replacement failover, not simultaneous cross-Janus media HA.
-
-Normal application pod startup retains existing shared GitOps app directories, even if a desired pin changed. Replacing shared app code requires the explicit maintenance installer override followed by a single-owner migration. This avoids activating an uncompleted app upgrade during node recovery.

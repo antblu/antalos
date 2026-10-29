@@ -246,3 +246,9 @@ RTX is reserved for its explicitly assigned voters and existing node infrastruct
 After a general-worker loss, surviving application replicas continue serving where dependencies support it. A second anti-affined replica can remain Pending; that is preferable to overloading the quorum domain and losing election majorities. Recoverable singleton functions need spare CPU, memory and pod slots on the surviving general worker. Resource requests reserve capacity; they do not create it. No VM resizing or new storage capacity is implied by these manifest changes.
 
 The coupled AIO Talk signaling/Janus singleton uses a Recreate Deployment for replacement after node loss; the stable TURN Service follows the replacement pod. Existing calls and allocations still require client reconnection. Increasing replica count alone does not provide supported cross-Janus routing. The failed worker drill must be repeated after publication, including Galera membership and authenticated transactions; these changes are not an all-services HA certification.
+
+### Replacement capacity on general workers
+
+Talk and SuiteCRM messenger need spare requested memory on a surviving general worker. The readiness gate checks their replacement footprint against allocatable memory after accounting for bound pods, init containers, sidecars and pod overhead; reserved RTX capacity is excluded. This is a memory reservation check for those two replacement processes, not a full scheduler or application-capacity simulation.
+
+The October 28 worker test exposed a messenger replacement blocked by memory reservations after Talk moved. Stalwart's serving-pod memory request is 512Mi, with its 4Gi limit retained; the collected seven-day peak working set across its replicas was 157Mi. This releases 512Mi of reserved memory per general worker without adding RTX workloads. Recheck observed peaks and recovery headroom as workloads grow.

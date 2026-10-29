@@ -13,6 +13,28 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ApplicationRecovery(unittest.TestCase):
+    def test_recovery_capacity_excludes_rtx_and_accounts_for_init_peak(self):
+        spec=importlib.util.spec_from_file_location('gate',ROOT/'tools/check-node-failover.py')
+        gate=importlib.util.module_from_spec(spec);spec.loader.exec_module(gate)
+        def resources(memory):
+            return {'resources': {'requests': {'memory': memory}}}
+        nodes=[{'metadata':{'name':name},'spec':{'taints':taints},'status':{'allocatable':{'memory':'1Gi'}}}
+               for name,taints in [('left',[]),('right',[]),('rtx',[{'key':'quorum','effect':'NoSchedule'}])]]
+        pods=[{'metadata':{'namespace':'nextcloud','name':'talk','labels':{'app':'talk'}},
+               'spec':{'nodeName':'left','containers':[resources('256Mi')]},'status':{'phase':'Running'}},
+              {'metadata':{'namespace':'suitecrm','name':'messenger','labels':{'app':'messenger'}},
+               'spec':{'nodeName':'left','containers':[resources('256Mi')]},'status':{'phase':'Running'}},
+              {'metadata':{'namespace':'other','name':'busy'},'spec':{'nodeName':'right','containers':[resources('256Mi')],
+               'initContainers':[resources('768Mi')]},'status':{'phase':'Running'}}]
+        workloads=[{'metadata':{'namespace':ns,'name':name},'spec':{'selector':{'matchLabels':{'app':label}},
+                    'template':{'spec':{'containers':[resources('256Mi')]}}}}
+                   for ns,name,label in [('nextcloud','nextcloud-talk','talk'),('suitecrm','suitecrm-messenger','messenger')]]
+        problems=gate.assess_recovery_capacity(nodes,pods,workloads)
+        self.assertEqual(len(problems),1)
+        self.assertIn('right:',problems[0]);self.assertIn('512Mi',problems[0]);self.assertIn('RTX excluded',problems[0])
+        pods[-1]['spec']['initContainers'][0]=resources('384Mi')
+        self.assertEqual(gate.assess_recovery_capacity(nodes,pods,workloads),[])
+
     def test_http_200_pending_migration_is_not_ready(self):
         spec=importlib.util.spec_from_file_location('gate',ROOT/'tools/check-node-failover.py')
         gate=importlib.util.module_from_spec(spec);spec.loader.exec_module(gate)

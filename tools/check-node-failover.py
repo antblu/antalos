@@ -2,6 +2,8 @@
 """Read-only readiness gate; never treats replica counts as proof of HA."""
 import argparse
 import json
+import re
+from decimal import Decimal
 import subprocess
 import sys
 import urllib.request
@@ -53,6 +55,67 @@ def assess(nodes, pods, workloads):
 
 
 
+def memory_bytes(value):
+    match = re.fullmatch(r'([0-9.]+)([KMGTPE]i|[kKMGTPE]|m)?', str(value))
+    if not match:
+        raise ValueError('Unsupported Kubernetes memory quantity: ' + str(value))
+    number, suffix = match.groups()
+    factors = {'': 1, 'm': Decimal('0.001'), 'k': 1000}
+    for index, unit in enumerate('KMGTPE', 1):
+        factors[unit] = 1000 ** index
+        factors[unit + 'i'] = 1024 ** index
+    return Decimal(number) * factors[suffix or '']
+
+
+def pod_memory_request(spec):
+    def request(container):
+        return memory_bytes(container.get('resources', {}).get('requests', {}).get('memory', '0'))
+    running = sum((request(c) for c in spec.get('containers', [])), Decimal(0))
+    sidecars = Decimal(0)
+    init_peak = Decimal(0)
+    for container in spec.get('initContainers', []):
+        if container.get('restartPolicy') == 'Always':
+            sidecars += request(container)
+            init_peak = max(init_peak, sidecars)
+        else:
+            init_peak = max(init_peak, sidecars + request(container))
+    return max(running + sidecars, init_peak) + memory_bytes(spec.get('overhead', {}).get('memory', '0'))
+
+
+def assess_recovery_capacity(nodes, pods, workloads):
+    # These two disposable singleton Deployments must replace the lost process.
+    replacements = {('nextcloud', 'nextcloud-talk'), ('suitecrm', 'suitecrm-messenger')}
+    general = [n for n in nodes if not any(t.get('effect') in ('NoSchedule', 'NoExecute')
+               for t in n.get('spec', {}).get('taints', []))
+               and 'node-role.kubernetes.io/control-plane' not in n['metadata'].get('labels', {})]
+    if len(general) != 2:
+        return ['Recovery capacity requires two eligible general workers; reserved nodes cannot supply overflow']
+    requests = {n['metadata']['name']: Decimal(0) for n in general}
+    active = [p for p in pods if p.get('status', {}).get('phase') not in ('Succeeded', 'Failed')]
+    for pod in active:
+        host = pod.get('spec', {}).get('nodeName')
+        if host in requests:
+            requests[host] += pod_memory_request(pod['spec'])
+    problems = []
+    for target in general:
+        host = target['metadata']['name']
+        needed = Decimal(0)
+        for workload in workloads:
+            identity = (workload['metadata']['namespace'], workload['metadata']['name'])
+            if identity not in replacements:
+                continue
+            selector = workload['spec']['selector']['matchLabels']
+            members = [p for p in active if p['metadata']['namespace'] == identity[0]
+                       and not p['metadata'].get('deletionTimestamp')
+                       and all(p['metadata'].get('labels', {}).get(k) == v for k, v in selector.items())]
+            if any(p.get('spec', {}).get('nodeName') != host for p in members):
+                needed += pod_memory_request(workload['spec']['template']['spec'])
+        free = memory_bytes(target['status']['allocatable']['memory']) - requests[host]
+        if free < needed:
+            problems.append(f'{host}: replacement singleton recovery needs {needed / 2**20:.0f}Mi; only {free / 2**20:.0f}Mi unreserved (RTX excluded)')
+    return problems
+
+
 def assess_databases(clusters):
     problems = []
     for cluster in clusters:
@@ -85,7 +148,9 @@ def main():
             cmd.append('-A')
         return json.loads(subprocess.check_output(cmd + ['-o', 'json'], timeout=60))['items']
 
-    problems = assess(get('nodes'), get('pods', True), get('deployments,statefulsets', True))
+    nodes, pods, workloads = get('nodes'), get('pods', True), get('deployments,statefulsets', True)
+    problems = assess(nodes, pods, workloads)
+    problems.extend(assess_recovery_capacity(nodes, pods, workloads))
     problems.extend(assess_databases(get('clusters.postgresql.cnpg.io', True)))
     # HTTP 200 from status.php is not enough: pending app migrations return 200.
     for ingress in get('ingresses', True):
