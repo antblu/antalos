@@ -5,7 +5,7 @@ description: "Backend components, persistence, placement, and failure boundaries
 
 <nav class="guide-switcher" aria-label="Headscale and Headplane guide sections"><a href="/user-guide/headscale/">Use</a><a aria-current="page" href="/infrastructure/headscale/">Architecture</a><a href="/admin-guide/headscale/">Operate</a></nav>
 
-One Headscale StatefulSet and one Headplane Deployment share a hostname but use separate local SQLite databases. Each database lives on disposable local storage with Litestream replication to the shared NFS backup PVC. Startup restores the last backup before serving. Headplane calls the internal Headscale API using a mounted API key; browser login uses OIDC.
+One Headscale Deployment and one Headplane Deployment share a hostname but use separate local SQLite databases. Each database lives on disposable local storage with Litestream replication to the shared NFS backup PVC. Startup restores the last backup before serving. Headplane calls the internal Headscale API using a mounted API key; browser login uses OIDC.
 
 ## Component boundaries
 
@@ -29,7 +29,7 @@ This is an interpretation of the checked-in configuration, assuming the declared
 
 | Component | Declared layout | Mechanism |
 | --- | --- | --- |
-| Headscale | 1 StatefulSet pod | No second server is ready to take over control-plane requests. |
+| Headscale | 1 Recreate Deployment pod | No second server is ready to take over control-plane requests. |
 | Headplane | 1 Deployment pod; Recreate | The management interface has its own single-process outage. |
 | Databases | Two separate local SQLite databases | Litestream copies each database into its NFS backup directory. |
 | Backup target | One external NFS service | Replacement pods restore the latest available copy before serving. |
@@ -79,3 +79,7 @@ These are operational/design requirements, not changes made to the deployment by
 ## Continue
 
 Read the [deployment guide](/admin-guide/headscale/) for dependency order, initial credentials, and integration work. The [official documentation](https://headscale.net/stable/) explains the upstream product; the topology above describes this repository.
+
+Headscale uses a single Recreate Deployment restricted to the two general workers. Headscale and Headplane tolerate NotReady/unreachable nodes for 60 seconds before eviction. This permits replacement after a powered-off worker fails without waiting for a StatefulSet ordinal to clear. It does not fence a partitioned writer: confirm the old worker is powered off before takeover when connectivity is uncertain. RTX is excluded.
+
+Before the controller migration, a Sync hook restores the existing Litestream backup into scratch storage using a read-only backup mount. An existing identity requires a successful restore; a missing identity alongside a database backup blocks migration. The Noise identity key and credentials remain unchanged. This provides recovery with an outage, not continuous availability.

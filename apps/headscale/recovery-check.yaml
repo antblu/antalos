@@ -1,0 +1,92 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: headscale-recovery-check
+  namespace: headscale
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 120
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ${TALOS_WORKER_LEFT}
+                      - ${TALOS_WORKER_RIGHT}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1002
+        runAsGroup: 1002
+        fsGroup: 1002
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: check
+          image: docker.io/litestream/litestream:${LITESTREAM_IMAGE_TAG}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              if [ ! -s /backup/noise_private.key ]; then
+                if [ -e /backup/db.sqlite ]; then
+                  echo 'Existing database backup has no identity key; refusing replacement' >&2
+                  exit 1
+                fi
+                echo 'No prior identity or database: initial installation'
+                exit 0
+              fi
+              # Existing identity requires a real restore; never silently create an empty tailnet.
+              litestream restore -config /etc/litestream.yml -o /scratch/db.sqlite /var/lib/headscale/db.sqlite
+              test -s /scratch/db.sqlite
+              echo 'Recovery copy restored successfully; existing identity retained'
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: config
+              mountPath: /etc/litestream.yml
+              subPath: litestream.yml
+              readOnly: true
+            - name: backup
+              mountPath: /backup
+              readOnly: true
+            - name: scratch
+              mountPath: /scratch
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: headscale
+        - name: backup
+          persistentVolumeClaim:
+            claimName: headscale-backup
+            readOnly: true
+        - name: scratch
+          emptyDir:
+            sizeLimit: ${HEADSCALE_LOCAL_STORAGE_SIZE}
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi

@@ -38,6 +38,15 @@ spec:
               registrationTokenKey: registrationToken
 
           lapi:
+            tolerations:
+              - key: node.kubernetes.io/not-ready
+                operator: Exists
+                effect: NoExecute
+                tolerationSeconds: 60
+              - key: node.kubernetes.io/unreachable
+                operator: Exists
+                effect: NoExecute
+                tolerationSeconds: 60
             # This LAPI is authoritative for the Kubernetes log processor,
             # AppSec, and Traefik. CrowdSec LAPIs cannot be chained to the
             # separate OPNsense LAPI at 10.30.0.1:8080.
@@ -156,6 +165,15 @@ spec:
                 enabled: false
 
           agent:
+            tolerations:
+              - key: node.kubernetes.io/not-ready
+                operator: Exists
+                effect: NoExecute
+                tolerationSeconds: 60
+              - key: node.kubernetes.io/unreachable
+                operator: Exists
+                effect: NoExecute
+                tolerationSeconds: 60
             enabled: true
             isDeployment: true
             replicas: 1
@@ -180,6 +198,15 @@ spec:
                 value: crowdsecurity/traefik
 
           appsec:
+            tolerations:
+              - key: node.kubernetes.io/not-ready
+                operator: Exists
+                effect: NoExecute
+                tolerationSeconds: 60
+              - key: node.kubernetes.io/unreachable
+                operator: Exists
+                effect: NoExecute
+                tolerationSeconds: 60
             enabled: true
             replicas: 1
             strategy:

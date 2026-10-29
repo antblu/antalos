@@ -49,16 +49,19 @@ spec:
       scrapeTimeout: 10s
 ---
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: headscale
   namespace: headscale
   labels:
     app.kubernetes.io/name: headscale
     app.kubernetes.io/part-of: antalos
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
-  serviceName: headscale-headless
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: headscale
@@ -72,6 +75,25 @@ spec:
     spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 60
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 60
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ${TALOS_WORKER_LEFT}
+                      - ${TALOS_WORKER_RIGHT}
       securityContext:
         runAsNonRoot: true
         runAsUser: 1002

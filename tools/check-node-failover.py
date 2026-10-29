@@ -83,8 +83,11 @@ def pod_memory_request(spec):
 
 
 def assess_recovery_capacity(nodes, pods, workloads):
-    # These two disposable singleton Deployments must replace the lost process.
-    replacements = {('nextcloud', 'nextcloud-talk'), ('suitecrm', 'suitecrm-messenger')}
+    # Include security and VPN dependencies; replica readiness alone hid their recovery gaps.
+    replacements = {('nextcloud', 'nextcloud-talk'), ('suitecrm', 'suitecrm-messenger'),
+                    ('crowdsec', 'crowdsec-lapi'), ('crowdsec', 'crowdsec-agent'),
+                    ('crowdsec', 'crowdsec-appsec'), ('headscale', 'headscale'),
+                    ('headscale', 'headplane')}
     general = [n for n in nodes if not any(t.get('effect') in ('NoSchedule', 'NoExecute')
                for t in n.get('spec', {}).get('taints', []))
                and 'node-role.kubernetes.io/control-plane' not in n['metadata'].get('labels', {})]

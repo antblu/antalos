@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: headscale
   namespace: headscale
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
 data:
   config.yaml: |
     server_url: https://${HEADSCALE_HOST}

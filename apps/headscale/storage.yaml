@@ -2,6 +2,8 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: headscale-backup
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
 spec:
   capacity:
     storage: ${HEADSCALE_NFS_STORAGE_SIZE}
@@ -28,6 +30,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: headscale-backup
   namespace: headscale
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
 spec:
   accessModes:
     - ReadWriteMany
