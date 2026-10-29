@@ -96,7 +96,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
   OPEN_WEBUI_POSTGRES_IMAGE_TAG: 18.6-standard-trixie
   # renovate: datasource=docker depName=ghcr.io/open-webui/open-webui
-  OPEN_WEBUI_IMAGE_TAG: 0.12.4
+  OPEN_WEBUI_IMAGE_TAG: 0.12.5
   # renovate: datasource=docker depName=stalwartlabs/stalwart
   STALWART_IMAGE_TAG: v0.16.27
   SUITECRM_IMAGE_REPOSITORY: ghcr.io/antblu/suitecrm
