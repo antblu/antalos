@@ -115,7 +115,7 @@ variables:
   # renovate: datasource=docker depName=docker.elastic.co/elasticsearch/elasticsearch
   ELASTICSEARCH_IMAGE_TAG: 9.5.5
   # renovate: datasource=docker depName=redis
-  REDIS_IMAGE_TAG: 8.10.1
+  REDIS_IMAGE_TAG: 8.10.3
   # renovate: datasource=docker depName=haproxy
   HAPROXY_IMAGE_TAG: 3.4.7-alpine
   # renovate: datasource=docker depName=ghcr.io/zammad/zammad
