@@ -565,7 +565,7 @@ variables:
 
   # Odoo Community 19; two serving replicas and replicated PostgreSQL.
   # renovate: datasource=docker depName=odoo
-  ODOO_IMAGE_TAG: "19.0"
+  ODOO_IMAGE_TAG: "20.0"
   ODOO_MEDUSA_FULFILLMENT_URL: https://medusa.antblu.net/hooks/commerce/fulfillment
   ODOO_HOST: odoo.antblu.net
   ODOO_DATABASE_NAME: odoo
