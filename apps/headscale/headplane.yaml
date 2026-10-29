@@ -21,6 +21,8 @@ kind: Deployment
 metadata:
   name: headplane
   namespace: headscale
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     app.kubernetes.io/name: headplane
     app.kubernetes.io/part-of: antalos
