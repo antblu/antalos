@@ -48,7 +48,7 @@ variables:
   # renovate: datasource=helm depName=victoria-metrics-k8s-stack registryUrl=https://victoriametrics.github.io/helm-charts/
   VICTORIAMETRICS_CHART_VERSION: 0.97.0
   # renovate: datasource=helm depName=zammad registryUrl=https://zammad.github.io/zammad-helm
-  ZAMMAD_CHART_VERSION: 18.2.1
+  ZAMMAD_CHART_VERSION: 20.0.2
 
   # renovate: datasource=docker depName=node
   DOCS_NODE_IMAGE_TAG: 26.3.0-alpine3.22
