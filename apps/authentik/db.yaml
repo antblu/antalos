@@ -5,6 +5,12 @@ metadata:
   namespace: authentik
 spec:
   instances: 2
+  postgresql:
+    parameters:
+      # Release locks held by clients lost with a worker, without the OS default hours-long wait.
+      tcp_keepalives_idle: "30"
+      tcp_keepalives_interval: "10"
+      tcp_keepalives_count: "3"
   imageName: ghcr.io/cloudnative-pg/postgresql:${POSTGRES_IMAGE_TAG}
   affinity:
     enablePodAntiAffinity: true
