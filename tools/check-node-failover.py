@@ -95,6 +95,10 @@ def assess_recovery_capacity(nodes, pods, workloads):
     for pod in active:
         host = pod.get('spec', {}).get('nodeName')
         if host in requests:
+            # This declared batch class has no PDB and can yield to default-priority recovery.
+            if (pod['spec'].get('priorityClassName') == 'renovate-batch'
+                    and pod['spec'].get('priority', 0) < 0):
+                continue
             requests[host] += pod_memory_request(pod['spec'])
     problems = []
     for target in general:
@@ -112,7 +116,7 @@ def assess_recovery_capacity(nodes, pods, workloads):
                 needed += pod_memory_request(workload['spec']['template']['spec'])
         free = memory_bytes(target['status']['allocatable']['memory']) - requests[host]
         if free < needed:
-            problems.append(f'{host}: replacement singleton recovery needs {needed / 2**20:.0f}Mi; only {free / 2**20:.0f}Mi unreserved (RTX excluded)')
+            problems.append(f'{host}: replacement singleton recovery needs {needed / 2**20:.0f}Mi; only {free / 2**20:.0f}Mi available including preemptible batch capacity (RTX excluded)')
     return problems
 
 

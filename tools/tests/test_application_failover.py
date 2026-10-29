@@ -42,6 +42,11 @@ class ApplicationRecovery(unittest.TestCase):
         self.assertIn('right:',problems[0]);self.assertIn('512Mi',problems[0]);self.assertIn('RTX excluded',problems[0])
         pods[-1]['spec']['initContainers'][0]=resources('384Mi')
         self.assertEqual(gate.assess_recovery_capacity(nodes,pods,workloads),[])
+        batch={'metadata':{'namespace':'renovate','name':'batch'},'spec':{'nodeName':'right','containers':[resources('512Mi')]},'status':{'phase':'Running'}}
+        pods.append(batch)
+        self.assertTrue(gate.assess_recovery_capacity(nodes,pods,workloads))
+        batch['spec'].update(priorityClassName='renovate-batch',priority=-1000)
+        self.assertEqual(gate.assess_recovery_capacity(nodes,pods,workloads),[])
 
     def test_http_200_pending_migration_is_not_ready(self):
         spec=importlib.util.spec_from_file_location('gate',ROOT/'tools/check-node-failover.py')
