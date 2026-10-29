@@ -35,7 +35,7 @@ variables:
   # renovate: datasource=helm depName=openebs registryUrl=https://openebs.github.io/openebs
   OPENEBS_CHART_VERSION: 4.6.2
   # renovate: datasource=helm depName=rancher registryUrl=https://releases.rancher.com/server-charts/latest
-  RANCHER_CHART_VERSION: 2.15.2
+  RANCHER_CHART_VERSION: 2.15.3
   # renovate: datasource=helm depName=sealed-secrets registryUrl=https://bitnami.github.io/sealed-secrets
   SEALED_SECRETS_CHART_VERSION: 2.22.0
   # renovate: datasource=helm depName=traefik registryUrl=https://helm.traefik.io/traefik
