@@ -86,7 +86,7 @@ spec:
               port: 9200
               schema: http
               initialisation: true
-            minio:
+            rustfs:
               enabled: false
             nginx:
               replicas: 2
