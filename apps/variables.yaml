@@ -106,7 +106,7 @@ variables:
   SUITECRM_PHP_BASE_IMAGE: php:8.5-apache-bookworm@sha256:6b401f1bfa88fc9d2ae5c3ff2558f18d0c17c9801718ded725095ea29131f34b
   SUITECRM_RELEASE_SHA256: ac4693d10ea2d6cd20b3256098781d134599d88878fb24e8dc127038d624f5a8
   # renovate: datasource=docker depName=mariadb
-  SUITECRM_MARIADB_IMAGE_TAG: 11.8.9
+  SUITECRM_MARIADB_IMAGE_TAG: 13.0.2
   # renovate: datasource=docker depName=mariadb
   SUITECRM_GARBD_IMAGE_TAG: 11.8.9-ubi9
   # renovate: datasource=docker depName=ghcr.io/stalwartlabs/cli
@@ -127,7 +127,7 @@ variables:
   # renovate: datasource=docker depName=busybox
   INVOICENINJA_BUSYBOX_IMAGE_TAG: 1.38.0
   # renovate: datasource=docker depName=mariadb
-  INVOICENINJA_MARIADB_IMAGE_TAG: 11.8.9
+  INVOICENINJA_MARIADB_IMAGE_TAG: 13.0.2
   # renovate: datasource=docker depName=mariadb
   INVOICENINJA_GARBD_IMAGE_TAG: 11.8.9-ubi9
   CALDIY_WEB_IMAGE_REPOSITORY: ghcr.io/antblu/cal.diy-oidc
@@ -648,7 +648,7 @@ variables:
   MAUTIC_PHPREDIS_VERSION: 6.3.0
   # Match Invoice Ninja's MariaDB/Galera images.
   # renovate: datasource=docker depName=mariadb
-  MAUTIC_MARIADB_IMAGE_TAG: 11.8.9
+  MAUTIC_MARIADB_IMAGE_TAG: 13.0.2
   # renovate: datasource=docker depName=mariadb
   MAUTIC_GARBD_IMAGE_TAG: 11.8.9-ubi9
   MAUTIC_HOST: mautic.antblu.net
