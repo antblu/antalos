@@ -88,9 +88,20 @@ data:
       timeout client 30s
       timeout server 30s
 
+    resolvers kube-dns
+      parse-resolv-conf
+      hold valid 10s
+      hold nx 1s
+
     frontend redis
       bind :6379
       default_backend redis-primary
+
+    frontend redis-health
+      bind :8404
+      mode http
+      monitor-uri /healthz
+      monitor fail if { nbsrv(redis-primary) lt 1 }
 
     backend redis-primary
       option tcp-check
@@ -98,8 +109,8 @@ data:
       tcp-check expect string +OK
       tcp-check send ROLE\r\n
       tcp-check expect string master
-      server redis-0 ${CALDIY_REDIS_DATA_0_HOST}:6379 check inter 2s
-      server redis-1 ${CALDIY_REDIS_DATA_1_HOST}:6379 check inter 2s
+      server redis-0 ${CALDIY_REDIS_DATA_0_HOST}:6379 check inter 2s resolvers kube-dns init-addr last,libc,none
+      server redis-1 ${CALDIY_REDIS_DATA_1_HOST}:6379 check inter 2s resolvers kube-dns init-addr last,libc,none
 ---
 apiVersion: v1
 kind: Service
@@ -423,6 +434,8 @@ spec:
       app.kubernetes.io/name: cal-diy-redis-haproxy
   template:
     metadata:
+      annotations:
+        antalos.dev/redis-proxy-config: dns-health-v1
       labels:
         app.kubernetes.io/name: cal-diy-redis-haproxy
     spec:
@@ -459,9 +472,12 @@ spec:
           ports:
             - name: redis
               containerPort: 6379
+            - name: health
+              containerPort: 8404
           readinessProbe:
-            tcpSocket:
-              port: redis
+            httpGet:
+              path: /healthz
+              port: health
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:

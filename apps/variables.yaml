@@ -98,7 +98,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/open-webui/open-webui
   OPEN_WEBUI_IMAGE_TAG: 0.12.4
   # renovate: datasource=docker depName=stalwartlabs/stalwart
-  STALWART_IMAGE_TAG: v1.0.1
+  STALWART_IMAGE_TAG: v0.16.27
   SUITECRM_IMAGE_REPOSITORY: ghcr.io/antblu/suitecrm
   SUITECRM_IMAGE_TAG: 8.10.2
   SUITECRM_IMAGE_DIGEST: sha256:13dded398bab3f42c5d6a37e1bd1c13120fb2257f2f069565a717565142c99e8

@@ -203,6 +203,16 @@
         "ghcr.io/antblu/emiliany-docs"
       ],
       "pinDigests": false
+    },
+    {
+      "description": "Stalwart 1.x needs an explicit PostgreSQL storage migration; retain the deployed 0.16 line",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "stalwartlabs/stalwart"
+      ],
+      "allowedVersions": "/^v?0\\.16\\./"
     }
   ],
   "kubernetes": {
