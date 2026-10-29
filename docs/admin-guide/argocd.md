@@ -56,7 +56,7 @@ The native integration follows [Argo CD's existing OIDC provider configuration](
 
 Server/repo-server/proxy overrides use zero surge and one unavailable. Plugin subPath changes require repo-server replacement. Confirm chart-derived auxiliary replica and PDB behavior before promising seamless upgrades.
 
-The API servers retain two replicas with hard hostname anti-affinity and a one-available PDB. Argo CD workloads tolerate the RTX worker's `quorum:NoSchedule` taint, so replacement pods can use that worker when a surviving main worker has reached its pod limit. Native OIDC removes the Dex singleton; Authentik and its database remain dependencies.
+The API servers retain two replicas with hard hostname anti-affinity and a one-available PDB. General Argo components do not tolerate the quorum taint. Only the assigned Redis voters retain that access; two Redis proxies are explicitly restricted to the general workers. Native OIDC removes the Dex singleton; Authentik and its database remain dependencies.
 
 After deployment, confirm placement and spare CPU, memory, and pod slots before a failure drill. Test loss of each main worker separately, including the one hosting the Authentik database primary. Record a new browser login and an Argo API request after endpoint removal and any database promotion. A PDB protects voluntary eviction only. A failed in-progress request may need a retry. Dynamic controller distribution enables takeover after missed heartbeats, using the pinned chart’s upstream alpha feature. Enabling it replaces the application-controller StatefulSet with a Deployment; inspect the rendered diff, preserve independent administrator access, and confirm the old controller is retired. Then verify a harmless Git reconciliation through the surviving controller. The optional Talos API VIP addresses the separate external API endpoint dependency.
 
@@ -83,3 +83,9 @@ For apparent stale health, inspect `argocd.argoproj.io/skip-reconcile`, operatio
 ### Redis proxy restart failures
 
 If an Argo Redis HAProxy restarts with exit 137, inspect Talos OOM-controller logs as well as Kubernetes container termination reasons. A host memory-pressure kill can appear as `Error` rather than `OOMKilled`. The Helm values reserve CPU/memory for HAProxy, cap its memory, and bound it to 1024 connections. Keep general application processes off the small quorum worker and check actual VM memory headroom; increasing pod limits does not increase RAM.
+
+### Controller-kind migration safety
+
+`argocd-self` sets `PruneLast=true` so a controller StatefulSet-to-Deployment migration does not delete the reconciler before its replacement is healthy. Publish this guard in a separate sync before changing controller kind on an existing installation. See [Argo CD prune-last behavior](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#prune-last).
+
+If an earlier migration has already removed every application controller, the UI can remain healthy while reconciliation stops. Restore only the missing application-controller Deployment from the pinned chart rendered with the committed values and the Application's Helm parameters. Review it, confirm its ServiceAccount/RBAC remain present, validate it with server dry-run, and apply that resolved Deployment. Do not apply unrelated chart Secrets or rotate credentials. Verify two ready controllers, dynamic shard assignment, and resumed child-Application reconciliation before attempting a failure drill.

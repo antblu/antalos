@@ -43,10 +43,6 @@ spec:
                         operator: DoesNotExist
                       - key: node-role.kubernetes.io/master
                         operator: DoesNotExist
-          tolerations:
-            - key: quorum
-              operator: Exists
-              effect: NoSchedule
           containers:
             - name: renovate
               image: ghcr.io/renovatebot/renovate:${RENOVATE_IMAGE_TAG}

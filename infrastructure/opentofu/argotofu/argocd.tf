@@ -62,7 +62,14 @@ resource "helm_release" "argocd" {
   namespace        = "argocd"
   create_namespace = true
   version          = yamldecode(file("${path.module}/../../../apps/variables.yaml")).variables.ARGOCD_CHART_VERSION
-  values = [file("${path.module}/argocd-values.yaml")]
+  values = [
+    file("${path.module}/argocd-values.yaml"),
+    # Share proxy placement with the self-managed Application at bootstrap.
+    yamlencode(yamldecode(templatefile(
+      "${path.module}/../../../apps/argocd/app.yaml",
+      yamldecode(file("${path.module}/../../../apps/variables.yaml")).variables
+    )).spec.sources[0].helm.valuesObject)
+  ]
   set = [
     {
       name  = "repoServer.initContainers[0].image"

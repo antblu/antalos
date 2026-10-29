@@ -23,6 +23,17 @@ def assess(nodes, pods, workloads):
             workers.append(name)
     if len(workers) < 3:
         problems.append('Fewer than three worker failure domains; three-voter services need independent placement')
+    quorum_nodes = {n['metadata']['name'] for n in nodes
+                    if any(t.get('key') == 'quorum' for t in n.get('spec', {}).get('taints', []))}
+    general_roles = ('authentik-server-', 'authentik-worker-', 'argocd-server-',
+                     'argocd-repo-server-', 'argocd-application-controller-',
+                     'argocd-redis-ha-haproxy-', 'cnpg-operator-',
+                     'nextcloud-redis-haproxy-', 'renovate-')
+    for pod in pods:
+        if (pod.get('spec', {}).get('nodeName') in quorum_nodes
+                and pod['metadata']['name'].startswith(general_roles)
+                and pod.get('status', {}).get('phase') not in ('Succeeded', 'Failed')):
+            problems.append(f"{pod['metadata']['namespace']}/{pod['metadata']['name']}: general workload on reserved quorum node")
     for obj in workloads:
         desired = obj['spec'].get('replicas', 1)
         ready = obj.get('status', {}).get('readyReplicas', 0)
@@ -40,6 +51,21 @@ def assess(nodes, pods, workloads):
     return problems
 
 
+
+def assess_databases(clusters):
+    problems = []
+    for cluster in clusters:
+        name = cluster['metadata']['namespace'] + '/' + cluster['metadata']['name']
+        status = cluster.get('status', {})
+        desired = cluster['spec'].get('instances', 1)
+        ready = status.get('readyInstances', 0)
+        if ready < desired:
+            problems.append(f'{name}: PostgreSQL has {ready}/{desired} ready instances')
+        if not status.get('currentPrimary') or status.get('targetPrimary') != status.get('currentPrimary'):
+            problems.append(f'{name}: PostgreSQL primary transition is incomplete')
+    return problems
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--kubectl', default='/home/linuxbrew/.linuxbrew/bin/kubectl')
@@ -53,9 +79,10 @@ def main():
         return json.loads(subprocess.check_output(cmd + ['-o', 'json'], timeout=60))['items']
 
     problems = assess(get('nodes'), get('pods', True), get('deployments,statefulsets', True))
+    problems.extend(assess_databases(get('clusters.postgresql.cnpg.io', True)))
     for problem in problems:
         print('BLOCK:', problem)
-    print('This gate checks current nodes, replica readiness and placement only.')
+    print('This gate checks current nodes, controller/database replica readiness and placement.')
     print('Also verify N-1 CPU/memory/pod/disk capacity, data quorum, storage, routing, and authenticated transactions.')
     if problems:
         print('Do not begin another node-loss drill while these blockers remain.')

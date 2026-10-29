@@ -42,7 +42,7 @@ If only the operator is lost, an existing primary and its standby can continue t
 
 | Failure | Expected behavior and remaining dependency |
 | --- | --- |
-| One main worker | Database serving depends on whether the lost worker held the primary and/or operator. If the operator leader and primary are lost together, the surviving operator must acquire leadership and promote the surviving database instance. Replacement operators may use RTX capacity. |
+| One main worker | Database serving depends on whether the lost worker held the primary and/or operator. If the operator leader and primary are lost together, the surviving operator must acquire leadership and promote the surviving database instance. Replacement operators remain on the general workers; the surviving elected operator handles promotion. |
 | RTX worker only | No operator-specific vote is declared. Whole-host API loss is especially significant because cluster observation and Service updates depend on it. |
 | A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
 

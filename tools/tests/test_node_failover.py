@@ -108,7 +108,26 @@ class RedisRejoin(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, f'{app}/{key}: {result.stderr}')
 
 
+class DatabaseReadinessGate(unittest.TestCase):
+    def test_recovered_node_does_not_hide_missing_database_standby(self):
+        cluster = {'metadata': {'namespace': 'test', 'name': 'db'}, 'spec': {'instances': 2},
+                   'status': {'readyInstances': 1, 'currentPrimary': 'db-2', 'targetPrimary': 'db-2'}}
+        self.assertEqual(failover.assess_databases([cluster]), ['test/db: PostgreSQL has 1/2 ready instances'])
+
+    def test_primary_transition_blocks_next_failure(self):
+        cluster = {'metadata': {'namespace': 'test', 'name': 'db'}, 'spec': {'instances': 2},
+                   'status': {'readyInstances': 2, 'currentPrimary': 'db-1', 'targetPrimary': 'db-2'}}
+        self.assertIn('test/db: PostgreSQL primary transition is incomplete', failover.assess_databases([cluster]))
+
+
 class ReadinessGate(unittest.TestCase):
+    def test_ready_identity_pod_on_quorum_worker_blocks_failure_drill(self):
+        node = {'metadata': {'name': 'quorum-worker'}, 'spec': {'taints': [{'key': 'quorum', 'effect': 'NoSchedule'}]},
+                'status': {'conditions': [{'type': 'Ready', 'status': 'True'}]}}
+        pod = {'metadata': {'namespace': 'authentik', 'name': 'authentik-server-example'},
+               'spec': {'nodeName': 'quorum-worker'}, 'status': {'phase': 'Running'}}
+        self.assertIn('authentik/authentik-server-example: general workload on reserved quorum node', failover.assess([node], [pod], []))
+
     def test_detects_cordon_pressure_and_lost_worker(self):
         nodes = [{'metadata': {'name': 'worker-' + str(i)}, 'spec': {'unschedulable': i == 0},
                   'status': {'conditions': [{'type': 'Ready', 'status': 'False' if i == 1 else 'True'},

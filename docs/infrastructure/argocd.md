@@ -37,13 +37,13 @@ This is an interpretation of the checked-in configuration, assuming the declared
 
 ### How a failure is handled
 
-API and manifest-rendering requests can retry on the surviving replicas. Redis failover depends on the chart’s HA configuration. Dynamic cluster distribution enables heartbeat-based reassignment of a failed controller’s cluster. This changes the controller from a StatefulSet to a Deployment; the chart migration must be reviewed before reconciliation. Native OIDC removes Dex from the login path. All Argo CD chart roles tolerate the RTX worker's quorum taint, providing another eligible worker when a main worker is full. Authentication still depends on Authentik and PostgreSQL promotion; failed in-progress requests may require a retry.
+API and manifest-rendering requests can retry on the surviving replicas. Redis failover depends on the chart’s HA configuration. Dynamic cluster distribution enables heartbeat-based reassignment of a failed controller’s cluster. This changes the controller from a StatefulSet to a Deployment; the chart migration must be reviewed before reconciliation. Native OIDC removes Dex from the login path. General Argo roles remain on the general workers; only the assigned Redis voters retain quorum-taint access. The Redis proxies use two replicas restricted to the general workers. Authentication still depends on Authentik and PostgreSQL promotion; failed in-progress requests may require a retry.
 
 ### Failure scenarios
 
 | Failure | Expected behavior and remaining dependency |
 | --- | --- |
-| One main worker | Surviving API/rendering replicas and direct OIDC can serve requests; replacement stateless pods can use RTX capacity. Authentik primary loss requires database promotion, and an affected controller shard must be reassigned after missed heartbeats. Already-running applications normally do not stop just because Argo cannot reconcile them. |
+| One main worker | Surviving API/rendering replicas and direct OIDC can serve requests; replacement replicas may remain Pending until the failed general worker returns; RTX is not overflow capacity. Authentik primary loss requires database promotion, and an affected controller shard must be reassigned after missed heartbeats. Already-running applications normally do not stop just because Argo cannot reconcile them. |
 | RTX worker only | A Redis HA member may use the tainted worker because of its toleration. The whole RTX host also carries the legacy external Kubernetes API endpoint. Configure the optional Talos API VIP to remove that external-client dependency; in-cluster API discovery has a separate path. |
 | A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
 

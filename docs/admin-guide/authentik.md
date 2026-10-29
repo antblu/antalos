@@ -53,8 +53,7 @@ existing provider at worker startup. It preserves existing redirect URIs and
 client credentials. Reconcile this change and verify the new callback before
 switching Argo CD from Dex to native OIDC; see the [migration sequence](/admin-guide/argocd/#migrate-an-existing-dex-integration).
 Server and worker PDBs each retain one available pod during voluntary eviction.
-Both roles can use the RTX worker through the quorum toleration; required
-hostname anti-affinity still separates replicas.
+Both roles remain on the two general workers; they do not tolerate the quorum taint. Required hostname anti-affinity preserves separation. Check surviving-worker headroom rather than spilling identity processes onto RTX.
 
 Every application gets `<slug>-users` and `<slug>-admins`. Authentik inherits
 membership **from child to ancestor**: the admins group has users as a parent.

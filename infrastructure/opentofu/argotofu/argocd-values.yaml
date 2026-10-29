@@ -1,10 +1,5 @@
 global:
-  # Keep control-plane workloads eligible for the third worker after a main
-  # worker loss, even when the remaining main worker has reached its pod limit.
-  tolerations:
-    - key: quorum
-      operator: Exists
-      effect: NoSchedule
+  # General Argo roles stay on the two general workers.
   affinity:
     podAntiAffinity: hard
 
@@ -158,6 +153,7 @@ redis-ha:
   enabled: true
   replicas: 3
   haproxy:
+    replicas: 2
     resources:
       requests:
         cpu: 25m

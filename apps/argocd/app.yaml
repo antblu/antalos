@@ -11,6 +11,26 @@ spec:
       targetRevision: ${ARGOCD_CHART_VERSION}
       helm:
         releaseName: argocd
+        valuesObject:
+          redis-ha:
+            haproxy:
+              affinity: |
+                nodeAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                      - matchExpressions:
+                          - key: kubernetes.io/hostname
+                            operator: In
+                            values:
+                              - ${TALOS_WORKER_LEFT}
+                              - ${TALOS_WORKER_RIGHT}
+                podAntiAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    - topologyKey: kubernetes.io/hostname
+                      labelSelector:
+                        matchLabels:
+                          app: redis-ha-haproxy
+                          release: argocd
         valueFiles:
           - $values/infrastructure/opentofu/argotofu/argocd-values.yaml
         parameters:
@@ -58,4 +78,6 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
+      # Keep the reconciler alive until its replacement is healthy.
+      - PruneLast=true
       - ServerSideApply=true
