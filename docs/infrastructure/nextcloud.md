@@ -73,7 +73,7 @@ Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy uses
 
 ### What prevents a stronger HA claim
 
-Redis persists its writable data-role and Sentinel configuration on the data volume, retaining election changes across restarts. A fresh volume still bootstraps from the initial ordinal topology, so volume replacement and simultaneous data loss require a separate recovery procedure. Rejoin and peer-authentication behavior require runtime evidence. Database replication is asynchronous; NFS/Garage and the external recorder remain separate failure domains.
+Redis persists its writable data-role and Sentinel configuration on the data volume, retaining election changes across restarts. Redis startup requires two Sentinels to agree on the current primary and announces replicas through stable DNS, preventing a returning former primary from blindly retaining its writer role. Volume replacement and simultaneous data loss still require a separate recovery procedure. Rejoin and peer-authentication behavior require runtime evidence. Database replication is asynchronous; NFS/Garage and the external recorder remain separate failure domains.
 
 ### What would improve the availability contract
 

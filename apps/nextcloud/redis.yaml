@@ -22,6 +22,36 @@ data:
         echo 'replicaof nextcloud-redis-data-0.nextcloud-redis-data.nextcloud.svc.cluster.local 6379' >> /data/redis.conf
       fi
     fi
+    # A returning former primary must follow the current Sentinel quorum.
+    export REDISCLI_AUTH="$REDIS_PASSWORD"
+    self="$HOSTNAME.nextcloud-redis-data.nextcloud.svc.cluster.local"
+    while :; do
+      votes=""
+      for sentinel in nextcloud-redis-data-0.nextcloud-redis-data.nextcloud.svc.cluster.local nextcloud-redis-data-1.nextcloud-redis-data.nextcloud.svc.cluster.local nextcloud-redis-sentinel-2.nextcloud.svc.cluster.local; do
+        answer=$(timeout 3 redis-cli --raw -h "$sentinel" -p 26379 SENTINEL get-master-addr-by-name nextcloud 2>/dev/null) || continue
+        target=$(printf '%s\n' "$answer" | sed -n '1p')
+        port=$(printf '%s\n' "$answer" | sed -n '2p')
+        [ "$port" = 6379 ] || continue
+        for candidate in nextcloud-redis-data-0.nextcloud-redis-data.nextcloud.svc.cluster.local nextcloud-redis-data-1.nextcloud-redis-data.nextcloud.svc.cluster.local; do
+          if [ "$target" = "$candidate" ] || getent ahostsv4 "$candidate" | awk -v address="$target" '$1==address {found=1} END {exit !found}'; then
+            votes="$votes
+    $candidate"
+            break
+          fi
+        done
+      done
+      master=$(printf '%s\n' "$votes" | sed '/^$/d' | sort | uniq -c | awk '$1>=2 {print $2; exit}')
+      [ -n "$master" ] && break
+      echo 'Waiting for two Sentinels to agree before Redis rejoin' >&2
+      sleep 2
+    done
+    umask 077
+    sed '/^[[:space:]]*replicaof[[:space:]]/d; /^[[:space:]]*replica-announce-ip[[:space:]]/d' /data/redis.conf > /data/redis.conf.rejoin
+    printf 'replica-announce-ip %s\n' "$self" >> /data/redis.conf.rejoin
+    if [ "$master" != "$self" ]; then
+      printf 'replicaof %s 6379\n' "$master" >> /data/redis.conf.rejoin
+    fi
+    mv /data/redis.conf.rejoin /data/redis.conf
     exec redis-server /data/redis.conf
   start-sentinel.sh: |
     #!/bin/sh
@@ -125,6 +155,8 @@ spec:
       app.kubernetes.io/name: nextcloud-redis-data
   template:
     metadata:
+      annotations:
+        antalos.dev/redis-rejoin: sentinel-quorum-v1
       labels:
         app.kubernetes.io/name: nextcloud-redis-data
         nextcloud.antblu.net/sentinel: "true"

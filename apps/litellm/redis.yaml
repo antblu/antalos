@@ -8,16 +8,19 @@ metadata:
 data:
   discover-master.sh: |
     #!/bin/sh
-    # Prefer a live Sentinel's current topology; stdout contains only host and port.
+    # Require two voters; a single stale Sentinel cannot resurrect a writer.
+    votes=""
     for sentinel in ${LITELLM_REDIS_DATA_0_HOST} ${LITELLM_REDIS_DATA_1_HOST} ${LITELLM_REDIS_SENTINEL_2_HOST}; do
       reply=$(REDISCLI_AUTH="$REDIS_PASSWORD" timeout 3 redis-cli --raw -h "$sentinel" -p 26379 SENTINEL get-master-addr-by-name litellm 2>/dev/null) || continue
       set -- $reply
       if [ "$#" -eq 2 ] && [ "$2" = 6379 ]; then
-        printf '%s %s\n' "$1" "$2"
-        exit 0
+        votes="$votes
+    $1 $2"
       fi
     done
-    exit 1
+    master=$(printf '%s\n' "$votes" | sort | uniq -c | awk '$1 >= 2 { print $2, $3; exit }')
+    [ -n "$master" ] || exit 1
+    printf '%s\n' "$master"
   start-redis.sh: |
     #!/bin/sh
     set -eu
@@ -40,9 +43,12 @@ data:
         printf 'replicaof %s 6379\n' '${LITELLM_REDIS_DATA_0_HOST}' >> "$config"
       fi
     fi
-    # A restarted former primary must rejoin the elected primary. When all voters
-    # are down, keep the role Sentinel persisted with CONFIG REWRITE.
+    # A restarted former primary must rejoin the quorum-selected primary.
     master=$(/config/discover-master.sh) || master=""
+    if [ -z "$master" ] && { [ -d /data/redis/appendonlydir ] || [ -f /data/redis/dump.rdb ] || [ -f /data/redis/appendonly.aof ]; }; then
+      echo 'Existing Redis data requires agreement from two Sentinels before rejoin' >&2
+      exit 1
+    fi
     if [ -n "$master" ]; then
       set -- $master
       sed -i '/^replicaof /d; /^slaveof /d' "$config"
@@ -68,6 +74,7 @@ data:
     sentinel resolve-hostnames yes
     sentinel announce-hostnames yes
     sentinel announce-ip $POD_DNS
+    sentinel myid $(printf '%s' "$POD_DNS" | sha1sum | cut -d ' ' -f 1)
     sentinel announce-port 26379
     sentinel monitor litellm $1 $2 2
     sentinel auth-pass litellm "$REDIS_PASSWORD"
@@ -114,6 +121,8 @@ spec:
       app.kubernetes.io/name: litellm-redis-data
   template:
     metadata:
+      annotations:
+        antalos.dev/redis-rejoin: sentinel-quorum-v1
       labels:
         app.kubernetes.io/name: litellm-redis-data
         litellm.antblu.net/sentinel: 'true'
