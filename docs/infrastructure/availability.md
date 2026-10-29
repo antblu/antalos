@@ -252,3 +252,7 @@ The coupled AIO Talk signaling/Janus singleton uses a Recreate Deployment for re
 Talk and SuiteCRM messenger need spare requested memory on a surviving general worker. The readiness gate checks their replacement footprint against allocatable memory after accounting for bound pods, init containers, sidecars and pod overhead; reserved RTX capacity is excluded. This is a memory reservation check for those two replacement processes, not a full scheduler or application-capacity simulation.
 
 The October 28 worker test exposed a messenger replacement blocked by memory reservations after Talk moved. Stalwart's serving-pod memory request is 512Mi, with its 4Gi limit retained; the collected seven-day peak working set across its replicas was 157Mi. This releases 512Mi of reserved memory per general worker without adding RTX workloads. Recheck observed peaks and recovery headroom as workloads grow.
+
+Renovate jobs use the negative `renovate-batch` PriorityClass with `preemptionPolicy: Never`. Application pods at the default priority may preempt this batch workload when recovery needs its requested memory. Batch execution can retry or wait for restored capacity; it cannot preempt serving workloads. Existing running Jobs retain their original priority until replaced.
+
+SuiteCRM messenger uses sixty-second NotReady/unreachable tolerations, matching Talk's replacement timeout, so a lost worker does not impose the default five-minute eviction wait before restarting this consumer.

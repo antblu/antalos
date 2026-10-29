@@ -1,0 +1,10 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: renovate-batch
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+value: -1000
+globalDefault: false
+preemptionPolicy: Never
+description: Dependency-update jobs yield capacity to application recovery.

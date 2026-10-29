@@ -25,6 +25,7 @@ spec:
           labels:
             app.kubernetes.io/name: renovate
         spec:
+          priorityClassName: renovate-batch
           restartPolicy: Never
           automountServiceAccountToken: false
           securityContext:

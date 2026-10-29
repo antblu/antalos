@@ -13,6 +13,14 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ApplicationRecovery(unittest.TestCase):
+    def test_renovate_yields_capacity_to_application_recovery(self):
+        priority=yaml.safe_load((ROOT/'apps/renovate/priority-class.yaml').read_text())
+        cron=yaml.safe_load((ROOT/'apps/renovate/cronjob.yaml').read_text())
+        self.assertLess(priority['value'],0)
+        self.assertFalse(priority['globalDefault'])
+        self.assertEqual(priority['preemptionPolicy'],'Never')
+        self.assertEqual(cron['spec']['jobTemplate']['spec']['template']['spec']['priorityClassName'],priority['metadata']['name'])
+
     def test_recovery_capacity_excludes_rtx_and_accounts_for_init_peak(self):
         spec=importlib.util.spec_from_file_location('gate',ROOT/'tools/check-node-failover.py')
         gate=importlib.util.module_from_spec(spec);spec.loader.exec_module(gate)
