@@ -54,7 +54,7 @@ The native integration follows [Argo CD's existing OIDC provider configuration](
 
 **Partially HA overall: replicated API/rendering and Redis HA design; reconciliation and SSO are not proven by those counts.**
 
-Server/repo-server/proxy overrides use zero surge and one unavailable. Plugin subPath changes require repo-server replacement. Confirm chart-derived auxiliary replica and PDB behavior before promising seamless upgrades.
+Server/repo-server/proxy overrides use zero surge and one unavailable. The pinned chart does not render the controller Deployment's strategy override, so controller hostname anti-affinity is a scheduling preference: a replacement can start while both workers host controllers. Check final controller placement after upgrades. Plugin subPath changes require repo-server replacement. Confirm chart-derived auxiliary replica and PDB behavior before promising seamless upgrades.
 
 The API servers retain two replicas with hard hostname anti-affinity and a one-available PDB. General Argo components do not tolerate the quorum taint. Only the assigned Redis voters retain that access; two Redis proxies are explicitly restricted to the general workers. Native OIDC removes the Dex singleton; Authentik and its database remain dependencies.
 

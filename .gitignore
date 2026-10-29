@@ -32,3 +32,4 @@ vault.yml
 # Debian Left media runtime credentials and application configuration
 infrastructure/ansible/leftansible/media/autopulse/config.yaml
 infrastructure/ansible/leftansible/media/explo/.env
+tools
