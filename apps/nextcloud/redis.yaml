@@ -155,13 +155,12 @@ spec:
       app.kubernetes.io/name: nextcloud-redis-data
   template:
     metadata:
-      annotations:
-        antalos.dev/redis-rejoin: sentinel-quorum-v1
       labels:
         app.kubernetes.io/name: nextcloud-redis-data
         nextcloud.antblu.net/sentinel: "true"
       annotations:
         config.antblu.net/revision: "${NEXTCLOUD_REDIS_HAPROXY_CONFIG_REVISION}"
+        antalos.dev/redis-rejoin: sentinel-quorum-v1
     spec:
       affinity:
         nodeAffinity:

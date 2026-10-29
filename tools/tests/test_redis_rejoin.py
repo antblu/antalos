@@ -42,6 +42,8 @@ esac
 
     def test_nextcloud_former_writer_rejoins_quorum_primary(self):
         config = next(d for d in yaml.safe_load_all((ROOT / 'apps/nextcloud/redis.yaml').read_text()) if d and d['kind'] == 'ConfigMap')
+        data = next(d for d in yaml.safe_load_all((ROOT / 'apps/nextcloud/redis.yaml').read_text()) if d and d['kind'] == 'StatefulSet')
+        self.assertEqual(data['spec']['template']['metadata']['annotations']['antalos.dev/redis-rejoin'], 'sentinel-quorum-v1')
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)
             (path / 'redis.conf').write_text('appendonly yes\nreplica-announce-ip obsolete\n')
