@@ -100,6 +100,16 @@ NEXTCLOUD_NEW_POD='REPLACE_WITH_ONE_TARGET_IMAGE_POD'
 
 If that version differs from the recorded target, stop and correct the desired configuration before migrating.
 
+### Apply app pins only inside maintenance
+
+The startup installer now retains an existing app directory during ordinary restarts. After isolating traffic, pausing background work, and taking the recovery point, run the installer once in a maintenance container that mounts the runtime ConfigMap at `/source` and the shared app PVC at `/apps`:
+
+```sh
+NEXTCLOUD_ALLOW_APP_UPDATES=1 sh /source/install-apps.sh /apps
+```
+
+Do not add that override to ordinary pod startup or run installers concurrently. Finish the single-owner app migration before restoring traffic. Retain pre-migration app packages alongside the database backup if the shared directory already contains newer code.
+
 ## 5. Run the migration once
 
 Record the installed internal version from the pre-upgrade service before changing the image (for example, `34.0.5.1` when upgrading to 35.0.2). Use that previous version for the migration process so Nextcloud recognizes the major-version boundary; the generated target configuration alone must not make an unmigrated database appear current. The upgrader writes the target version after success. Do not run the following concurrently on another replica:

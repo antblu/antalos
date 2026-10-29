@@ -173,3 +173,7 @@ SMTP authentication still failed with Stalwart's OIDC backend error.
 No email was sent and no payment was attempted. Browser interaction,
 invoice lifecycle, client portal transactions, failover, and restore remain outside
 this diagnostic snapshot.
+
+## Arbitrator address refresh and health
+
+The RTX arbitrator re-resolves both data-member names. If their addresses change, it reconnects only after both data nodes report connected, Synced Primary components with matching state UUIDs and at least two members. This health query uses the existing application account through a Secret reference and performs no writes. It does not force-bootstrap a component, change voting weights, or restart merely because a member disappears. Readiness requires the latest logged view to be Primary, not just a running PID. Confirm three members before maintenance, then check surviving SQL writes and two-member Primary membership during a single data-worker loss.

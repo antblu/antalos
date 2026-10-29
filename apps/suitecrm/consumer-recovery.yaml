@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: suitecrm-consumer-recovery
+  namespace: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+data:
+  supervise.sh: |
+    #!/bin/sh
+    set -eu
+    child=""
+    stopping=0
+    stop() {
+      stopping=1
+      [ -z "$child" ] || kill -TERM "$child" 2>/dev/null || true
+    }
+    trap stop TERM INT
+    while [ "$stopping" = 0 ]; do
+      "$@" &
+      child=$!
+      printf '%s\n' "$child" > /tmp/consumer.pid
+      status=0
+      wait "$child" || status=$?
+      if [ "$stopping" = 1 ]; then
+        wait "$child" 2>/dev/null || true
+        rm -f /tmp/consumer.pid
+        exit 0
+      fi
+      child=""
+      rm -f /tmp/consumer.pid
+      echo "Consumer exited ($status); retrying in 5 seconds" >&2
+      sleep 5 &
+      child=$!
+      wait "$child" || true
+      child=""
+    done
+    exit 0

@@ -122,3 +122,9 @@ These are operational/design requirements, not changes made to the deployment by
 ## Continue
 
 Read the [deployment guide](/admin-guide/suitecrm/) for dependency order, initial credentials, and integration work. The [official documentation](https://docs.suitecrm.com/user/) explains the upstream product; the topology above describes this repository.
+
+### Arbitrator recovery after pod replacement
+
+The existing RTX arbitrator supervises its process and re-resolves both data-member hostnames. If both members resolve to changed addresses and both data members report a connected, synchronized Primary component with matching state UUIDs, it restarts the arbitrator to discard stale seed IPs. It does not recycle the tie-breaker merely because a data member disappears, force-bootstrap a component, or change quorum weights. Readiness requires the latest logged membership view to be Primary; a running process alone is insufficient. Confirm three communicating members before a failure drill and verify two-member Primary membership and SQL writes after losing one data worker.
+
+Background consumers retry an exited process after five seconds under a signal-forwarding supervisor. The wrapper waits for its child during termination and does not intentionally run competing consumer copies. This removes the long crash-backoff following a transient database outage; application queue delivery and idempotency semantics are unchanged.

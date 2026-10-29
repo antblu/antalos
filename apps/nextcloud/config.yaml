@@ -93,6 +93,12 @@ data:
         printf 'Keeping %s %s (pinned GitOps version)\n' "$app_id" "$app_version"
         return
       fi
+      # Only a coordinated maintenance operation may replace shared app code.
+      # A normal pod restart must not activate an unapplied app migration.
+      if [ -d "$apps_dir/$app_id" ] && [ "${NEXTCLOUD_ALLOW_APP_UPDATES:-0}" != 1 ]; then
+        printf 'Retaining installed %s; pinned update requires maintenance\n' "$app_id"
+        return
+      fi
       printf 'Installing %s %s\n' "$app_id" "$app_version"
       curl --fail --location --silent --show-error \
         --retry 5 --retry-all-errors \

@@ -4,6 +4,7 @@ import argparse
 import json
 import subprocess
 import sys
+import urllib.request
 
 
 def assess(nodes, pods, workloads):
@@ -66,6 +67,12 @@ def assess_databases(clusters):
     return problems
 
 
+def assess_nextcloud(status):
+    if not status.get('installed') or status.get('maintenance') or status.get('needsDbUpgrade'):
+        return ['Nextcloud application is unavailable or requires maintenance/upgrade despite pod readiness']
+    return []
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--kubectl', default='/home/linuxbrew/.linuxbrew/bin/kubectl')
@@ -80,6 +87,16 @@ def main():
 
     problems = assess(get('nodes'), get('pods', True), get('deployments,statefulsets', True))
     problems.extend(assess_databases(get('clusters.postgresql.cnpg.io', True)))
+    # HTTP 200 from status.php is not enough: pending app migrations return 200.
+    for ingress in get('ingresses', True):
+        if ingress['metadata']['namespace'] == 'nextcloud' and ingress['metadata']['name'] == 'nextcloud':
+            host = ingress['spec']['rules'][0]['host']
+            try:
+                with urllib.request.urlopen('https://' + host + '/status.php', timeout=10) as response:
+                    problems.extend(assess_nextcloud(json.load(response)))
+            except Exception as error:
+                problems.append('Nextcloud application status probe failed: ' + type(error).__name__)
+
     for problem in problems:
         print('BLOCK:', problem)
     print('This gate checks current nodes, controller/database replica readiness and placement.')

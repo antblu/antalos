@@ -106,3 +106,9 @@ These are operational/design requirements, not changes made to the deployment by
 ## Continue
 
 Read the [deployment guide](/admin-guide/nextcloud/) for dependency order, initial credentials, and integration work. The [official documentation](https://docs.nextcloud.com/server/latest/user_manual/en/) explains the upstream product; the topology above describes this repository.
+
+### Recoverable Talk process
+
+The coupled AIO signaling/Janus/TURN backend uses a one-replica Recreate Deployment with disposable configuration, independent of the three-member NATS quorum. Sixty-second NotReady/unreachable tolerations permit replacement on the surviving general worker. The stable TURN Service selects application labels, not an ordinal pod name. RTX remains unavailable for this process. Node-loss recovery still interrupts calls, streams and TURN allocations; clients must reconnect. The controller-kind migration is placed after the old StatefulSet's prune wave and causes a planned backend restart. This is replacement failover, not simultaneous cross-Janus media HA.
+
+Normal application pod startup retains existing shared GitOps app directories, even if a desired pin changed. Replacing shared app code requires the explicit maintenance installer override followed by a single-owner migration. This avoids activating an uncompleted app upgrade during node recovery.

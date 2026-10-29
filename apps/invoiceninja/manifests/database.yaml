@@ -136,7 +136,7 @@ metadata:
     app.kubernetes.io/name: invoiceninja-garbd
     app.kubernetes.io/part-of: invoiceninja
   annotations:
-    argocd.argoproj.io/sync-wave: "-4"
+    argocd.argoproj.io/sync-wave: '-4'
 spec:
   replicas: 1
   strategy:
@@ -156,9 +156,9 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: ${TALOS_WORKER_RTX}
       tolerations:
-        - key: quorum
-          operator: Exists
-          effect: NoSchedule
+      - key: quorum
+        operator: Exists
+        effect: NoSchedule
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
@@ -167,49 +167,65 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: garbd
-          image: mariadb:${INVOICENINJA_GARBD_IMAGE_TAG}
-          imagePullPolicy: IfNotPresent
-          workingDir: /tmp
-          command:
-            - garbd
-          args:
-            - --address
-            - gcomm://invoiceninja-db-0.invoiceninja-db-internal.invoiceninja.svc.cluster.local:4567,invoiceninja-db-1.invoiceninja-db-internal.invoiceninja.svc.cluster.local:4567
-            - --group
-            - mariadb-operator
-            - --name
-            - invoiceninja-garbd
-            - --options
-            - gmcast.listen_addr=tcp://0.0.0.0:4567
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-          readinessProbe:
-            exec:
-              command:
-                - sh
-                - -ec
-                - kill -0 1
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            exec:
-              command:
-                - sh
-                - -ec
-                - kill -0 1
-            initialDelaySeconds: 15
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            limits:
-              cpu: 250m
-              memory: 128Mi
+      - name: garbd
+        image: mariadb:${INVOICENINJA_GARBD_IMAGE_TAG}
+        imagePullPolicy: IfNotPresent
+        workingDir: /tmp
+        command:
+        - /bin/sh
+        - /scripts/start.sh
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - kill -0 "$(cat /tmp/garbd.pid)" && awk '/view\(/ { primary=($0 ~ /view_id\(PRIM,/)
+              } END { exit !primary }' /tmp/garbd.log
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - kill -0 "$(cat /tmp/garbd.pid)"
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+        env:
+        - name: SEEDS
+          value: invoiceninja-db-0.invoiceninja-db-internal.invoiceninja.svc.cluster.local
+            invoiceninja-db-1.invoiceninja-db-internal.invoiceninja.svc.cluster.local
+        - name: ADDRESS
+          value: gcomm://invoiceninja-db-0.invoiceninja-db-internal.invoiceninja.svc.cluster.local:4567,invoiceninja-db-1.invoiceninja-db-internal.invoiceninja.svc.cluster.local:4567
+        - name: ARBITRATOR_NAME
+          value: invoiceninja-garbd
+        - name: HEALTH_USER
+          value: ninja
+        - name: MYSQL_PWD
+          valueFrom:
+            secretKeyRef:
+              name: invoiceninja-app
+              key: DB_PASSWORD
+        volumeMounts:
+        - name: startup
+          mountPath: /scripts
+          readOnly: true
+      volumes:
+      - name: startup
+        configMap:
+          name: invoiceninja-garbd-startup
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

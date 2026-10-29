@@ -498,7 +498,7 @@ metadata:
     app.kubernetes.io/name: suitecrm-messenger
     app.kubernetes.io/part-of: suitecrm
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: '1'
 spec:
   replicas: 1
   strategy:
@@ -517,18 +517,18 @@ spec:
     spec:
       automountServiceAccountToken: false
       imagePullSecrets:
-        - name: suitecrm-registry
+      - name: suitecrm-registry
       terminationGracePeriodSeconds: 60
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - ${TALOS_WORKER_LEFT}
-                      - ${TALOS_WORKER_RIGHT}
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ${TALOS_WORKER_LEFT}
+                - ${TALOS_WORKER_RIGHT}
       securityContext:
         runAsNonRoot: true
         runAsUser: 82
@@ -536,86 +536,96 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: messenger
-          image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}@${SUITECRM_IMAGE_DIGEST}
-          imagePullPolicy: IfNotPresent
-          command:
-            - php
-            - bin/console
-            - messenger:consume
-            - internal-async
-            - --time-limit=3600
-            - --memory-limit=256M
-          envFrom:
-            - configMapRef:
-                name: suitecrm-env
-          env:
-            - name: AWS_S3_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: suitecrm-s3
-                  key: access-key-id
-            - name: AWS_S3_ACCESS_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: suitecrm-s3
-                  key: secret-access-key
-            - name: SAML_IDP_X509CERT
-              valueFrom:
-                secretKeyRef:
-                  name: suitecrm-saml
-                  key: idp-cert
-            - name: SAML_SP_PRIVATE_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: suitecrm-saml
-                  key: sp-private-key
-            - name: SAML_SP_CERT
-              valueFrom:
-                secretKeyRef:
-                  name: suitecrm-saml
-                  key: sp-cert
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-          readinessProbe:
-            exec:
-              command:
-                - sh
-                - -ec
-                - kill -0 1
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            exec:
-              command:
-                - sh
-                - -ec
-                - kill -0 1
-            initialDelaySeconds: 15
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: 50m
-              memory: 256Mi
-            limits:
-              cpu: "1"
-              memory: 512Mi
-          volumeMounts:
-            - name: data
-              mountPath: /var/www/html
-              subPath: suitecrm8
-            - name: cache
-              mountPath: /var/www/html/cache
-      volumes:
+      - name: messenger
+        image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}@${SUITECRM_IMAGE_DIGEST}
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - /recovery/supervise.sh
+        envFrom:
+        - configMapRef:
+            name: suitecrm-env
+        env:
+        - name: AWS_S3_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: suitecrm-s3
+              key: access-key-id
+        - name: AWS_S3_ACCESS_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: suitecrm-s3
+              key: secret-access-key
+        - name: SAML_IDP_X509CERT
+          valueFrom:
+            secretKeyRef:
+              name: suitecrm-saml
+              key: idp-cert
+        - name: SAML_SP_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: suitecrm-saml
+              key: sp-private-key
+        - name: SAML_SP_CERT
+          valueFrom:
+            secretKeyRef:
+              name: suitecrm-saml
+              key: sp-cert
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - test -r /tmp/consumer.pid && kill -0 "$(cat /tmp/consumer.pid)"
+          periodSeconds: 10
+          timeoutSeconds: 5
+          initialDelaySeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - kill -0 1
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            cpu: '1'
+            memory: 512Mi
+        volumeMounts:
         - name: data
-          persistentVolumeClaim:
-            claimName: suitecrm-data
+          mountPath: /var/www/html
+          subPath: suitecrm8
         - name: cache
-          emptyDir:
-            medium: ""
+          mountPath: /var/www/html/cache
+        - name: consumer-recovery
+          mountPath: /recovery
+          readOnly: true
+        args:
+        - php
+        - bin/console
+        - messenger:consume
+        - internal-async
+        - --time-limit=3600
+        - --memory-limit=256M
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: suitecrm-data
+      - name: cache
+        emptyDir:
+          medium: ''
+      - name: consumer-recovery
+        configMap:
+          name: suitecrm-consumer-recovery
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

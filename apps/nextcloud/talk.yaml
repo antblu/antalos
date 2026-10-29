@@ -1,4 +1,4 @@
-# Nextcloud Talk HPB with clustered signaling and per-replica TURN allocation.
+# Recoverable coupled Talk backend, with an independent three-member NATS quorum.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -155,10 +155,8 @@ data:
   start.sh: |
     #!/bin/sh
     set -eu
-    case "$POD_NAME" in
-      nextcloud-talk-0) export TALK_PORT=${NEXTCLOUD_TALK_TURN_0_PORT} ;;
-      *) echo "No TURN port assigned to $POD_NAME" >&2; exit 1 ;;
-    esac
+    # One active signaling/Janus/TURN process; stable Service, disposable pod name.
+    export TALK_PORT=${NEXTCLOUD_TALK_TURN_0_PORT}
     exec /start.sh /bin/bash /scripts/cluster.sh
   cluster.sh: |
     #!/bin/bash
@@ -225,16 +223,17 @@ spec:
     protocol: TCP
 ---
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: nextcloud-talk
   namespace: nextcloud
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
-  serviceName: nextcloud-talk-headless
-  # The AIO image couples one signaling server to one local Janus instance.
-  # Multiple replicas require dedicated signaling proxies for cross-Janus media.
+  # Recover one stateless coupled process; do not create competing Janus nodes.
   replicas: 1
-  podManagementPolicy: Parallel
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: nextcloud-talk
@@ -245,6 +244,15 @@ spec:
       annotations:
         config.antblu.net/revision: "${NEXTCLOUD_TALK_CONFIG_REVISION}"
     spec:
+      tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 60
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 60
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -254,12 +262,19 @@ spec:
             topologyKey: kubernetes.io/hostname
       terminationGracePeriodSeconds: 60
       securityContext:
+        seccompProfile:
+          type: RuntimeDefault
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
       containers:
       - name: talk
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
         image: ghcr.io/nextcloud-releases/aio-talk:${NEXTCLOUD_TALK_IMAGE_TAG}
         command:
         - /bin/sh
@@ -391,7 +406,7 @@ spec:
   type: LoadBalancer
   externalTrafficPolicy: Cluster
   selector:
-    statefulset.kubernetes.io/pod-name: nextcloud-talk-0
+    app.kubernetes.io/name: nextcloud-talk
   ports:
   - name: turn-tcp
     port: ${NEXTCLOUD_TALK_TURN_0_PORT}

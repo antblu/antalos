@@ -291,6 +291,7 @@ spec:
       - name: mautic
         image: ${MAUTIC_IMAGE_REPOSITORY}:${MAUTIC_IMAGE_TAG}
         args:
+        - /usr/local/bin/antalos-mautic
         - worker
         envFrom:
         - configMapRef:
@@ -319,6 +320,9 @@ spec:
           subPath: logs
         - name: tmp
           mountPath: /tmp
+        - name: consumer-recovery
+          mountPath: /recovery
+          readOnly: true
         resources:
           requests:
             cpu: 100m
@@ -333,6 +337,17 @@ spec:
             - -ec
             - kill -0 1
           periodSeconds: 20
+        command:
+        - /bin/sh
+        - /recovery/supervise.sh
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - test -r /tmp/consumer.pid && kill -0 "$(cat /tmp/consumer.pid)"
+          periodSeconds: 5
+          timeoutSeconds: 2
       volumes:
       - name: data
         persistentVolumeClaim:
@@ -343,6 +358,9 @@ spec:
       - name: tmp
         emptyDir:
           sizeLimit: 128Mi
+      - name: consumer-recovery
+        configMap:
+          name: mautic-consumer-recovery
       initContainers:
       - name: prepare-local-volumes
         image: ${MAUTIC_IMAGE_REPOSITORY}:${MAUTIC_IMAGE_TAG}

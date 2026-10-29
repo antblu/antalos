@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: suitecrm-garbd-startup
+  namespace: suitecrm
+  annotations:
+    argocd.argoproj.io/sync-wave: '-5'
+data:
+  start.sh: |
+    #!/bin/sh
+    set -eu
+    resolve_seeds() {
+      result=""
+      for seed in $SEEDS; do
+        addresses=$(timeout 3 getent ahostsv4 "$seed" 2>/dev/null | awk '{print $1}')
+        [ -n "$addresses" ] || return 1
+        result="$result
+    $addresses"
+      done
+      printf '%s\n' "$result" | sed '/^$/d' | sort -u
+    }
+    data_members_healthy() {
+      expected_uuid=""
+      for seed in $SEEDS; do
+        state=$(timeout 4 mariadb --connect-timeout=2 --host="$seed" --user="$HEALTH_USER" \
+          --batch --skip-column-names --execute="SHOW GLOBAL STATUS WHERE Variable_name IN ('wsrep_cluster_status','wsrep_ready','wsrep_connected','wsrep_local_state_comment','wsrep_cluster_size','wsrep_cluster_state_uuid')") || return 1
+        printf '%s\n' "$state" | awk '
+          $1=="wsrep_cluster_status" && $2=="Primary" {primary=1}
+          $1=="wsrep_ready" && $2=="ON" {ready=1}
+          $1=="wsrep_connected" && $2=="ON" {connected=1}
+          $1=="wsrep_local_state_comment" && $2=="Synced" {synced=1}
+          $1=="wsrep_cluster_size" && $2>=2 {members=1}
+          END {exit !(primary && ready && connected && synced && members)}' || return 1
+        uuid=$(printf '%s\n' "$state" | awk '$1=="wsrep_cluster_state_uuid" {print $2}')
+        [ -n "$uuid" ] || return 1
+        if [ -n "$expected_uuid" ] && [ "$uuid" != "$expected_uuid" ]; then return 1; fi
+        expected_uuid="$uuid"
+      done
+    }
+    initial=$(resolve_seeds) || initial=""
+    : > /tmp/garbd.log
+    garbd --address "$ADDRESS" --group mariadb-operator --name "$ARBITRATOR_NAME"   --options gmcast.listen_addr=tcp://0.0.0.0:4567 --log /tmp/garbd.log &
+    child=$!
+    printf '%s\n' "$child" > /tmp/garbd.pid
+    tail -F /tmp/garbd.log &
+    logger=$!
+    cleanup() { kill -TERM "$child" "$logger" 2>/dev/null || true; wait "$child" 2>/dev/null || true; }
+    trap 'cleanup; exit 0' TERM INT
+    while kill -0 "$child" 2>/dev/null; do
+      sleep 10
+      current=$(resolve_seeds) || current=""
+      if [ -n "$current" ] && [ "$current" != "$initial" ] && data_members_healthy; then
+        # Never recycle the tie-breaker while a data member is absent.
+        echo 'Galera seed addresses changed; reconnecting arbitrator' >&2
+        cleanup
+        exit 1
+      fi
+    done
+    cleanup
+    exit 1

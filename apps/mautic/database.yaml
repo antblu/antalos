@@ -172,16 +172,8 @@ spec:
         imagePullPolicy: IfNotPresent
         workingDir: /tmp
         command:
-        - garbd
-        args:
-        - --address
-        - gcomm://mautic-db-0.mautic-db-internal.mautic.svc.cluster.local:4567,mautic-db-1.mautic-db-internal.mautic.svc.cluster.local:4567
-        - --group
-        - mariadb-operator
-        - --name
-        - mautic-garbd
-        - --options
-        - gmcast.listen_addr=tcp://0.0.0.0:4567
+        - /bin/sh
+        - /scripts/start.sh
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -192,7 +184,8 @@ spec:
             command:
             - sh
             - -ec
-            - kill -0 1
+            - kill -0 "$(cat /tmp/garbd.pid)" && awk '/view\(/ { primary=($0 ~ /view_id\(PRIM,/)
+              } END { exit !primary }' /tmp/garbd.log
           initialDelaySeconds: 5
           periodSeconds: 10
         livenessProbe:
@@ -200,7 +193,7 @@ spec:
             command:
             - sh
             - -ec
-            - kill -0 1
+            - kill -0 "$(cat /tmp/garbd.pid)"
           initialDelaySeconds: 15
           periodSeconds: 20
         resources:
@@ -210,6 +203,28 @@ spec:
           limits:
             cpu: 250m
             memory: 128Mi
+        env:
+        - name: SEEDS
+          value: mautic-db-0.mautic-db-internal.mautic.svc.cluster.local mautic-db-1.mautic-db-internal.mautic.svc.cluster.local
+        - name: ADDRESS
+          value: gcomm://mautic-db-0.mautic-db-internal.mautic.svc.cluster.local:4567,mautic-db-1.mautic-db-internal.mautic.svc.cluster.local:4567
+        - name: ARBITRATOR_NAME
+          value: mautic-garbd
+        - name: HEALTH_USER
+          value: mautic
+        - name: MYSQL_PWD
+          valueFrom:
+            secretKeyRef:
+              name: mautic-app
+              key: MAUTIC_DB_PASSWORD
+        volumeMounts:
+        - name: startup
+          mountPath: /scripts
+          readOnly: true
+      volumes:
+      - name: startup
+        configMap:
+          name: mautic-garbd-startup
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
