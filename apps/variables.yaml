@@ -597,7 +597,7 @@ variables:
 
   # Medusa backend and Admin only; storefront is deployed separately.
   # renovate: datasource=npm depName=@medusajs/medusa depType=coordinated
-  MEDUSA_VERSION: 2.22.1
+  MEDUSA_VERSION: 2.22.2
   # renovate: datasource=docker depName=node
   MEDUSA_NODE_IMAGE_TAG: 26-bookworm-slim
   MEDUSA_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-medusa
