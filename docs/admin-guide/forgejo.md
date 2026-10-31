@@ -14,4 +14,17 @@ description: Deploy and recover Forgejo with its database, Redis quorum, NFS rep
 
 Public registration is disabled. The PostSync Job bootstraps the `forgejo-admin` account once with `forgejo admin user create` after the application has completed migrations, using the `forgejo-admin` Secret for its password and email. Forgejo reserves the literal username `admin`. Keep that Secret protected. Rotate or remove the bootstrap password after a separate administrator identity is established.
 
+## OIDC login recovery
+
+The `forgejo-oidc-bootstrap` PostSync Job creates or updates the `antID` authentication source in the shared database. Its credentials come from the `forgejo-oidc` Secret; its client ID and discovery URL come from `apps/variables.yaml`. In Authentik, register the strict authorization callback `https://git.antblu.net/user/oauth2/antID/callback`. The source name is part of this URL. See the [Authentik integration guide](https://integrations.goauthentik.io/development/forgejo/).
+
+After creating or changing the authentication source through the bootstrap Job or CLI, roll both Forgejo replicas to reload their in-process provider configuration:
+
+```sh
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n forgejo rollout restart deployment/forgejo
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n forgejo rollout status deployment/forgejo
+```
+
+If one replica reports `no provider for antID exists` while another starts login, compare logs from both replicas before changing credentials. A callback retried after an error can also produce `invalid_grant`; begin a fresh login from the login page after recovery instead of reusing the callback URL. Verify login in a browser after the rollout; readiness and an authorization redirect alone do not prove a successful token exchange.
+
 The service uses two application pods on separate workers. The issue indexer uses the shared database so replicas do not contend for a Bleve index lock on NFS. During a rolling update, one may be unavailable while the other serves requests. Before replacing a pod from a partitioned worker, confirm that the old process is stopped or fenced. Backup and restore PostgreSQL, the NFS tree, the Garage prefix, and the application keys as one recovery set. See the [architecture guide](/infrastructure/forgejo/) and [Forgejo administration documentation](https://forgejo.org/docs/latest/admin/).

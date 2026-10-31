@@ -121,6 +121,39 @@ class DatabaseReadinessGate(unittest.TestCase):
 
 
 class ReadinessGate(unittest.TestCase):
+    def test_each_recoverable_singleton_reserves_replacement_capacity(self):
+        identities = [('uptime-kuma', 'uptime-kuma'), ('rustdesk', 'rustdesk-hbbs'),
+                      ('headscale', 'headscale'), ('headscale', 'headplane'),
+                      ('crowdsec', 'crowdsec-lapi'), ('nextcloud', 'nextcloud-talk'),
+                      ('nextcloud', 'nextcloud-context-chat-indexing'),
+                      ('node-red', 'node-red'), ('vaultwarden', 'vaultwarden'),
+                      ('urbackup', 'urbackup'), ('zammad', 'zammad-websocket')]
+        for namespace, name in identities:
+            with self.subTest(service=name):
+                nodes = [{'metadata': {'name': host}, 'spec': {},
+                          'status': {'allocatable': {'memory': '512Mi', 'cpu': '500m', 'pods': '1'}}}
+                         for host in ('left', 'right')]
+                template = {'containers': [{'resources': {'requests': {'memory': '1Gi', 'cpu': '1'}}}]}
+                workload = {'metadata': {'namespace': namespace, 'name': name},
+                            'spec': {'selector': {'matchLabels': {'app': name}}, 'template': {'spec': template}}}
+                pods = [{'metadata': {'namespace': namespace, 'labels': {'app': name}},
+                         'spec': dict(template, nodeName='left'), 'status': {'phase': 'Running'}},
+                        {'metadata': {'namespace': 'other'}, 'spec': {'nodeName': 'right', 'containers': []},
+                         'status': {'phase': 'Running'}}]
+                problems = failover.assess_recovery_capacity(nodes, pods, [workload])
+                self.assertTrue(any(p.startswith('right:') and '1024Mi' in p for p in problems))
+                self.assertTrue(any(p.startswith('right:') and 'CPU' in p for p in problems))
+                self.assertTrue(any(p.startswith('right:') and 'pod slots' in p for p in problems))
+
+    def test_cpu_reservation_includes_native_sidecars_init_peak_and_overhead(self):
+        spec = {'containers': [{'resources': {'requests': {'cpu': '250m'}}}],
+                'initContainers': [
+                    {'restartPolicy': 'Always', 'resources': {'requests': {'cpu': '100m'}}},
+                    {'resources': {'requests': {'cpu': '1'}}}],
+                'overhead': {'cpu': '50m'}}
+        self.assertEqual(failover.pod_resource_request(spec, 'cpu', failover.cpu_cores),
+                         failover.cpu_cores('1150m'))
+
     def test_ready_identity_pod_on_quorum_worker_blocks_failure_drill(self):
         node = {'metadata': {'name': 'quorum-worker'}, 'spec': {'taints': [{'key': 'quorum', 'effect': 'NoSchedule'}]},
                 'status': {'conditions': [{'type': 'Ready', 'status': 'True'}]}}

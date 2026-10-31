@@ -67,9 +67,17 @@ def memory_bytes(value):
     return Decimal(number) * factors[suffix or '']
 
 
-def pod_memory_request(spec):
+def cpu_cores(value):
+    value = str(value)
+    for suffix, factor in (('n', Decimal('1e-9')), ('u', Decimal('1e-6')), ('m', Decimal('1e-3'))):
+        if value.endswith(suffix):
+            return Decimal(value[:-1]) * factor
+    return Decimal(value)
+
+
+def pod_resource_request(spec, resource, quantity):
     def request(container):
-        return memory_bytes(container.get('resources', {}).get('requests', {}).get('memory', '0'))
+        return quantity(container.get('resources', {}).get('requests', {}).get(resource, '0'))
     running = sum((request(c) for c in spec.get('containers', [])), Decimal(0))
     sidecars = Decimal(0)
     init_peak = Decimal(0)
@@ -79,7 +87,11 @@ def pod_memory_request(spec):
             init_peak = max(init_peak, sidecars)
         else:
             init_peak = max(init_peak, sidecars + request(container))
-    return max(running + sidecars, init_peak) + memory_bytes(spec.get('overhead', {}).get('memory', '0'))
+    return max(running + sidecars, init_peak) + quantity(spec.get('overhead', {}).get(resource, '0'))
+
+
+def pod_memory_request(spec):
+    return pod_resource_request(spec, 'memory', memory_bytes)
 
 
 def assess_recovery_capacity(nodes, pods, workloads):
@@ -87,13 +99,22 @@ def assess_recovery_capacity(nodes, pods, workloads):
     replacements = {('nextcloud', 'nextcloud-talk'), ('suitecrm', 'suitecrm-messenger'),
                     ('crowdsec', 'crowdsec-lapi'), ('crowdsec', 'crowdsec-agent'),
                     ('crowdsec', 'crowdsec-appsec'), ('headscale', 'headscale'),
-                    ('headscale', 'headplane')}
+                    ('headscale', 'headplane'), ('uptime-kuma', 'uptime-kuma'),
+                    ('rustdesk', 'rustdesk-hbbs'), ('node-red', 'node-red'),
+                    ('vaultwarden', 'vaultwarden'), ('urbackup', 'urbackup'),
+                    ('nextcloud', 'nextcloud-context-chat-indexing'),
+                    ('nextcloud', 'nextcloud-context-chat-requestproc'),
+                    ('nextcloud', 'nextcloud-context-chat-updatesproc'),
+                    ('zammad', 'zammad-memcached'), ('zammad', 'zammad-scheduler'),
+                    ('zammad', 'zammad-websocket')}
     general = [n for n in nodes if not any(t.get('effect') in ('NoSchedule', 'NoExecute')
                for t in n.get('spec', {}).get('taints', []))
                and 'node-role.kubernetes.io/control-plane' not in n['metadata'].get('labels', {})]
     if len(general) != 2:
         return ['Recovery capacity requires two eligible general workers; reserved nodes cannot supply overflow']
     requests = {n['metadata']['name']: Decimal(0) for n in general}
+    cpu_requests = dict.fromkeys(requests, Decimal(0))
+    pod_counts = dict.fromkeys(requests, 0)
     active = [p for p in pods if p.get('status', {}).get('phase') not in ('Succeeded', 'Failed')]
     for pod in active:
         host = pod.get('spec', {}).get('nodeName')
@@ -103,10 +124,14 @@ def assess_recovery_capacity(nodes, pods, workloads):
                     and pod['spec'].get('priority', 0) < 0):
                 continue
             requests[host] += pod_memory_request(pod['spec'])
+            cpu_requests[host] += pod_resource_request(pod['spec'], 'cpu', cpu_cores)
+            pod_counts[host] += 1
     problems = []
     for target in general:
         host = target['metadata']['name']
         needed = Decimal(0)
+        needed_cpu = Decimal(0)
+        needed_pods = 0
         for workload in workloads:
             identity = (workload['metadata']['namespace'], workload['metadata']['name'])
             if identity not in replacements:
@@ -117,9 +142,20 @@ def assess_recovery_capacity(nodes, pods, workloads):
                        and all(p['metadata'].get('labels', {}).get(k) == v for k, v in selector.items())]
             if any(p.get('spec', {}).get('nodeName') != host for p in members):
                 needed += pod_memory_request(workload['spec']['template']['spec'])
+                needed_cpu += pod_resource_request(workload['spec']['template']['spec'], 'cpu', cpu_cores)
+                needed_pods += 1
         free = memory_bytes(target['status']['allocatable']['memory']) - requests[host]
         if free < needed:
             problems.append(f'{host}: replacement singleton recovery needs {needed / 2**20:.0f}Mi; only {free / 2**20:.0f}Mi available including preemptible batch capacity (RTX excluded)')
+        allocatable = target['status']['allocatable']
+        if 'cpu' in allocatable:
+            free_cpu = cpu_cores(allocatable['cpu']) - cpu_requests[host]
+            if free_cpu < needed_cpu:
+                problems.append(f'{host}: replacement singleton recovery needs {needed_cpu} CPU; only {free_cpu} available (RTX excluded)')
+        if 'pods' in allocatable:
+            free_pods = int(allocatable['pods']) - pod_counts[host]
+            if free_pods < needed_pods:
+                problems.append(f'{host}: replacement singleton recovery needs {needed_pods} pod slots; only {free_pods} available (RTX excluded)')
     return problems
 
 
@@ -172,7 +208,8 @@ def main():
     for problem in problems:
         print('BLOCK:', problem)
     print('This gate checks current nodes, controller/database replica readiness and placement.')
-    print('Also verify N-1 CPU/memory/pod/disk capacity, data quorum, storage, routing, and authenticated transactions.')
+    print('Recovery CPU/memory/pod checks cover the listed singleton workloads, not every controller, job or scheduling constraint.')
+    print('Also verify N-1 runtime/disk capacity, data quorum, storage, fencing, routing, and authenticated transactions.')
     if problems:
         print('Do not begin another node-loss drill while these blockers remain.')
     return bool(problems)
