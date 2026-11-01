@@ -465,7 +465,7 @@ variables:
   # renovate: datasource=helm depName=vaultwarden registryUrl=https://guerzon.github.io/vaultwarden
   VAULTWARDEN_CHART_VERSION: 0.46.3
   # renovate: datasource=docker depName=vaultwarden/server
-  VAULTWARDEN_IMAGE_TAG: 1.37.4-alpine
+  VAULTWARDEN_IMAGE_TAG: 1.37.5-alpine
   # renovate: datasource=docker depName=nginx
   VAULTWARDEN_GATEWAY_NGINX_IMAGE_TAG: 1.31.8-alpine
   VAULTWARDEN_HOST: vault.antblu.net
