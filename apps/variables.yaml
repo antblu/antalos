@@ -210,7 +210,7 @@ variables:
   # renovate: datasource=nextcloud depName=context_chat registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_CONTEXT_CHAT_VERSION: 5.5.0
   # renovate: datasource=nextcloud depName=contacts registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_CONTACTS_VERSION: 8.9.3
+  NEXTCLOUD_CONTACTS_VERSION: 8.9.4
   # renovate: datasource=nextcloud depName=deck registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_DECK_VERSION: 1.19.1
   # renovate: datasource=nextcloud depName=eurooffice registryUrl=https://apps.nextcloud.com/api/v1/apps.json
@@ -224,7 +224,7 @@ variables:
   # renovate: datasource=nextcloud depName=integration_openai registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_INTEGRATION_OPENAI_VERSION: 5.0.0
   # renovate: datasource=nextcloud depName=mail registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_MAIL_VERSION: 5.12.6
+  NEXTCLOUD_MAIL_VERSION: 5.13.1
   # renovate: datasource=nextcloud depName=notes registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_NOTES_VERSION: 6.1.0
   # renovate: datasource=nextcloud depName=notify_push registryUrl=https://apps.nextcloud.com/api/v1/apps.json
@@ -236,7 +236,7 @@ variables:
   # renovate: datasource=nextcloud depName=tasks registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_TASKS_VERSION: 0.18.1
   # renovate: datasource=nextcloud depName=user_oidc registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_USER_OIDC_VERSION: 8.11.0
+  NEXTCLOUD_USER_OIDC_VERSION: 8.12.0
   # renovate: datasource=nextcloud depName=whiteboard registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_WHITEBOARD_VERSION: 2.1.2
 
