@@ -79,7 +79,7 @@ variables:
   # renovate: datasource=docker depName=node
   EMILIANY_NODE_IMAGE_TAG: 26.13.0-bookworm-slim
   # renovate: datasource=npm depName=npm
-  EMILIANY_NPM_VERSION: 12.2.1
+  EMILIANY_NPM_VERSION: 12.2.2
   EMILIANY_COMMERCE_DEMO_MODE: 'false'
   EMILIANY_CATALOG_DEMO_MODE: 'true'
   EMILIANY_GOOGLE_CUSTOMER_LOGIN_ENABLED: 'true'
