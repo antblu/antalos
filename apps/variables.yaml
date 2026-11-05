@@ -41,7 +41,7 @@ variables:
   # renovate: datasource=helm depName=traefik registryUrl=https://helm.traefik.io/traefik
   TRAEFIK_CHART_VERSION: 42.3.0
   # renovate: datasource=helm depName=crowdsec registryUrl=https://crowdsecurity.github.io/helm-charts
-  CROWDSEC_CHART_VERSION: 0.24.2
+  CROWDSEC_CHART_VERSION: 0.24.3
   # renovate: datasource=github-tags depName=maxlerebourg/crowdsec-bouncer-traefik-plugin
   CROWDSEC_BOUNCER_PLUGIN_VERSION: v1.8.1
   CROWDSEC_TRUSTED_HEADSCALE_CLIENT_IP: 100.64.0.8/32
