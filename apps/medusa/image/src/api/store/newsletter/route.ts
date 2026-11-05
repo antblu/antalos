@@ -15,7 +15,7 @@ export async function POST(req: MedusaRequest<Record<string, unknown>>, res: Med
     const last = (await service(req.scope).listDecisions({ identity_id: link.id, kind: ["marketing", "legal"] }, { take: 1, order: { revision: "DESC" } }))[0]
     // Short dedupe window absorbs double-clicks/retries without silently ignoring a later re-subscription.
     if (last?.payload.consent === true && Date.now() - new Date(last.created_at).getTime() < 60000) return link.id
-    await record(req.scope, link.id, "marketing", { consent: true, at: new Date().toISOString(), source: "website_newsletter", locale: req.body.locale === "es" ? "es" : "en" })
+    await record(req.scope, link.id, "marketing", { consent: true, at: new Date().toISOString(), source: "website_newsletter", locale: typeof req.body.locale === "string" && req.body.locale.startsWith("es") ? "es" : "en" })
     return link.id
   })
   // Consent is durable. Wake the worker immediately without keeping the form

@@ -73,5 +73,5 @@ function validateLegal(data: Record<string, unknown>, versions: { terms: string;
   if (data.terms_accepted !== true || data.terms_version !== versions.terms || data.privacy_policy_version !== versions.privacy) throw new MedusaError(MedusaError.Types.INVALID_DATA, "Accept the current Terms and Privacy Policy")
 }
 function legalPayload(data: Record<string, unknown>, versions: { terms: string; privacy: string }, provider: string, source: string) {
-  return { terms_accepted: true, at: new Date().toISOString(), terms_version: versions.terms, privacy_policy_version: versions.privacy, source, auth_provider: provider, locale: data.locale === "es" ? "es" : "en" }
+  return { terms_accepted: true, at: new Date().toISOString(), terms_version: versions.terms, privacy_policy_version: versions.privacy, source, auth_provider: provider, locale: typeof data.locale === "string" && data.locale.startsWith("es") ? "es" : "en" }
 }
