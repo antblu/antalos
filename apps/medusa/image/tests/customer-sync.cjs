@@ -166,3 +166,15 @@ test('newsletter welcome respects suppression and superseding withdrawal', async
   await record(f.container, link.id, 'marketing', { consent: false, source: 'account_settings' })
   await drain(f.container); assert.equal(sends, 0)
 })
+
+test('pending initial acceptance repairs account welcome enqueue even without marketing consent', async t => {
+  const previous = process.env.ACCOUNT_WELCOME_ENABLED; process.env.ACCOUNT_WELCOME_ENABLED = 'true'; t.after(() => { if (previous === undefined) delete process.env.ACCOUNT_WELCOME_ENABLED; else process.env.ACCOUNT_WELCOME_ENABLED = previous })
+  const f = fixture(); mockMautic(t)
+  const queue = app('./src/lib/lifecycle/queue')
+  const calls = []
+  t.mock.method(queue, 'enqueueAccountWelcome', async (...args) => { calls.push(args) })
+  const link = await identity(f.container, 'person@example.com', 'cus_1')
+  await record(f.container, link.id, 'legal', { initial_consent: true, consent: false, source: 'account_registration', locale: 'es' })
+  await drain(f.container)
+  assert.equal(calls.length, 1); assert.equal(calls[0][1], 'cus_1'); assert.equal(calls[0][2].locale, 'es')
+})

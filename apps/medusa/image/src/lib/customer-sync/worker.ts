@@ -8,6 +8,7 @@ import { partners, upsertPartner, upsertAddresses, type CustomerAddress } from "
 import { service, locked, identity, record } from "./store"
 import { backoff, marketingState } from "./policy"
 import { RemoteError } from "./transport"
+import { enqueueAccountWelcome } from "../lifecycle/queue"
 
 type Customer = { id: string; email: string; first_name?: string | null; last_name?: string | null; phone?: string | null; addresses?: CustomerAddress[] }
 export async function enqueueCustomer(c: MedusaContainer, id: string, event = "customer.updated") {
@@ -71,6 +72,12 @@ export async function drain(c: MedusaContainer, identityId?: string) {
       try {
         {
           let link = await s.retrieveIdentity(task.identity_id)
+          // Legal acceptance is durable before the welcome enqueue. Repair a
+          // failed enqueue without making account creation depend on mail.
+          if (process.env.ACCOUNT_WELCOME_ENABLED === "true" && task.kind === "legal" && task.payload.initial_consent === true &&
+              ["account_registration", "google_oauth_registration"].includes(String(task.payload.source)) && link.customer_id) {
+            await enqueueAccountWelcome(c, link.customer_id, { email: link.email, locale: task.payload.locale === "es" ? "es" : "en" })
+          }
           const latest = (await s.listDecisions({ identity_id: link.id, kind: ["marketing", "legal"] }, { take: 10000, order: { revision: "DESC" } })).find(d => typeof d.payload.consent === "boolean")
           // An older retry must never replay a superseded opt-in.
           let decision = latest?.payload
