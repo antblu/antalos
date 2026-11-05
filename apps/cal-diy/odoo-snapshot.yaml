@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cal-diy-odoo-snapshot
+  namespace: cal-diy
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+spec:
+  suspend: ${CALDIY_ODOO_RECONCILE_SUSPENDED}
+  schedule: '${CALDIY_ODOO_RECONCILE_SCHEDULE}'
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: cal-diy-odoo-snapshot
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: snapshot
+              image: docker.io/library/odoo:${ODOO_IMAGE_TAG}
+              command:
+                - python3
+                - /integration/snapshot.py
+              env:
+                - name: CAL_DIY_OWNER_IDS
+                  value: ${CALDIY_ODOO_OWNER_IDS}
+                - name: ODOO_WEBHOOK_URL
+                  value: https://${ODOO_HOST}/cal-diy/webhook
+                - name: CAL_DIY_SNAPSHOT_DSN
+                  valueFrom:
+                    secretKeyRef:
+                      name: cal-diy-odoo-snapshot
+                      key: database-uri
+                - name: CAL_DIY_WEBHOOK_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: cal-diy-odoo-snapshot
+                      key: webhook-secret
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 250m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: integration
+                  mountPath: /integration
+                  readOnly: true
+          volumes:
+            - name: integration
+              configMap:
+                name: cal-diy-odoo-snapshot

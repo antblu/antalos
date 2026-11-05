@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cal-diy-odoo-snapshot
+  namespace: cal-diy
+data:
+  snapshot.py: |
+    """Enqueue an MVCC snapshot of owned booking UIDs; Odoo reads details via API."""
+    import hashlib
+    import hmac
+    import json
+    import os
+    import tempfile
+    from contextlib import closing
+    from datetime import datetime, timezone
+    from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+    import psycopg2
+
+
+    class RejectRedirects(HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            return None
+
+
+    def capture(connection, owners, destination):
+        # Materialize before network delivery so a slow receiver cannot hold back VACUUM.
+        connection.set_session(isolation_level='REPEATABLE READ', readonly=True)
+        count = 0
+        with connection:
+            with connection.cursor(name='booking_snapshot') as cursor:
+                cursor.execute('SELECT uid FROM "Booking" WHERE "userId" = ANY(%s) ORDER BY id', (owners,))
+                for (uid,) in cursor:
+                    destination.write(json.dumps(uid) + '\n')
+                    count += 1
+        destination.seek(0)
+        return count
+
+
+    def deliver(source, url, secret, opener=None):
+        opener = opener or build_opener(RejectRedirects())
+        created = datetime.now(timezone.utc).isoformat()
+        count = 0
+        for line in source:
+            body = json.dumps({'triggerEvent': 'BOOKING_RECONCILE', 'createdAt': created,
+                               'payload': {'uid': json.loads(line)}}, separators=(',', ':')).encode()
+            signature = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+            request = Request(url, data=body, headers={'Content-Type': 'application/json',
+                                                      'X-Cal-Signature-256': signature})
+            with opener.open(request, timeout=30) as response:
+                if response.status != 202:
+                    raise RuntimeError('Snapshot delivery was not durably accepted')
+            count += 1
+        return count
+
+
+    def main():
+        owners = [int(value) for value in os.environ['CAL_DIY_OWNER_IDS'].split(',')]
+        if not owners or any(owner <= 0 for owner in owners):
+            raise ValueError('Owner IDs must be positive integers')
+        with tempfile.TemporaryFile(mode='w+t') as snapshot:
+            with closing(psycopg2.connect(os.environ['CAL_DIY_SNAPSHOT_DSN'], connect_timeout=10,
+                                         options='-c statement_timeout=120000')) as connection:
+                expected = capture(connection, owners, snapshot)
+            delivered = deliver(snapshot, os.environ['ODOO_WEBHOOK_URL'], os.environ['CAL_DIY_WEBHOOK_SECRET'])
+        if delivered != expected:
+            raise RuntimeError('Snapshot delivery count mismatch')
+        print('Complete booking UID snapshot: captured=%s accepted=%s' % (expected, delivered), flush=True)
+
+
+    if __name__ == '__main__':
+        main()

@@ -392,6 +392,8 @@ data:
         def cron_reconcile(self):
             if not _enabled():
                 return
+            if os.environ.get('CAL_DIY_RECONCILIATION_MODE') == 'snapshot':
+                return
             # Bound each invocation while retaining progress across invocations.
             # Repeated full scans recover records displaced by concurrent updates
             # during offset pagination, provided the visible dataset settles.
@@ -664,6 +666,7 @@ data:
     TRIGGERS = frozenset({
         'BOOKING_CREATED', 'BOOKING_RESCHEDULED', 'BOOKING_CANCELLED',
         'BOOKING_REQUESTED', 'BOOKING_REJECTED',
+        'BOOKING_RECONCILE',
     })
     _HEX_SIGNATURE = re.compile(r'^[0-9a-f]{64}$')
 

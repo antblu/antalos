@@ -82,6 +82,48 @@ Calendar providers, payments, and conferencing need their own credentials and
 user authorization.
 Cal Video is intentionally disabled without `DAILY_API_KEY`.
 
+The API deployment also needs the existing `calendso-encryption-key` from
+`cal-diy-app` as `CALENDSO_ENCRYPTION_KEY`. A passing `/health` probe does not
+exercise this setting: authenticated owner API requests can fail without it.
+The pinned API image also logs authorization headers. A mounted Node preload
+hook redacts the header in its shared request/exception header formatter. Check
+that hook against the compiled formatter path when changing the API image;
+startup fails if the expected formatter is missing. Treat earlier API logs as
+sensitive and rotate credentials exposed before this hook was installed.
+
+## Optional Odoo reconciliation
+
+`apps/cal-diy/integration/snapshot.py` captures the configured owners' booking
+UIDs in one read-only, repeatable-read PostgreSQL transaction, ordered by the
+unique booking ID. It materializes the list before delivering signed
+`BOOKING_RECONCILE` requests to Odoo. The Odoo inbox acknowledges durable
+acceptance with HTTP 202; the worker independently fetches each booking through
+the configured owner API keys. UID capture does not confer access to booking
+details and a successful snapshot Job does not prove inbox processing succeeded.
+
+This avoids offset pagination for booking discovery. Each run covers bookings
+visible at the snapshot's start, including cancellations retained in Cal.diy.
+Later bookings are covered by native webhooks and subsequent snapshots. The
+scope is `Booking.userId` in `CALDIY_ODOO_OWNER_IDS`; provision all relevant
+hosts and extend this design deliberately before supporting other team scopes.
+Hard-deleted bookings cannot be recovered by this mechanism. The legacy API
+offset scan remains available when Odoo's reconciliation mode is not `snapshot`.
+
+The CronJob starts suspended. Its schedule, owner IDs, and suspension setting
+belong in `apps/variables.yaml`. The `cal-diy-odoo-snapshot` SealedSecret supplies
+`database-uri` and `webhook-secret`. The database login should have only CONNECT,
+schema USAGE, and column SELECT on `Booking.id`, `Booking.uid`, and
+`Booking.userId`, with `default_transaction_read_only=on`. The worker also
+explicitly starts a read-only transaction. Preserve the login and grants when
+recovering Cal.diy; a database-only dump does not preserve PostgreSQL roles.
+
+Regenerate its ConfigMap after source changes with
+`python3 apps/cal-diy/integration/render.py`. Enable the schedule only after
+Odoo's addon, organizer mappings, owner API keys, and signed receiver pass
+acceptance. Monitor failed Jobs and Odoo's pending/retrying inbox separately.
+Overlapping runs are forbidden; failed runs retry from a new complete snapshot.
+Repeated delivery is safe because booking processing is idempotent.
+
 ## Acceptance checks
 
 1. Verify published source, Argo sync completion, migrations, both CNPG instances,

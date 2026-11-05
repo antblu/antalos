@@ -219,6 +219,8 @@ spec:
           env:
             - name: CAL_DIY_SYNC_ENABLED
               value: ${ODOO_CAL_DIY_SYNC_ENABLED}
+            - name: CAL_DIY_RECONCILIATION_MODE
+              value: ${ODOO_CAL_DIY_RECONCILIATION_MODE}
             - name: CAL_DIY_BASE_URL
               value: https://${CALDIY_HOST}
             - name: CAL_DIY_API_KEY

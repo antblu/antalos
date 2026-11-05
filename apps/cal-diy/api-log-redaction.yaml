@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cal-diy-api-log-redaction
+  namespace: cal-diy
+  annotations:
+    argocd.argoproj.io/sync-wave: '-2'
+data:
+  redact.cjs: |
+    // The pinned API image logs bearer tokens in both request and exception logs.
+    const headers = require('/calcom/apps/api/v2/dist/apps/api/v2/src/lib/filterReqHeaders.js');
+    const original = headers.filterReqHeaders;
+    if (typeof original !== 'function') throw new Error('API header redaction hook is incompatible');
+    headers.filterReqHeaders = (...args) => {
+      const result = original(...args);
+      if (result.Authorization) result.Authorization = '[redacted]';
+      return result;
+    };

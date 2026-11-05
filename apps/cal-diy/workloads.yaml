@@ -220,6 +220,13 @@ spec:
                 secretKeyRef:
                   name: cal-diy-api
                   key: jwt-secret
+            - name: NODE_OPTIONS
+              value: --require=/api-log-redaction/redact.cjs
+            - name: CALENDSO_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cal-diy-app
+                  key: calendso-encryption-key
             - name: CALCOM_SERVICE_ACCOUNT_ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:
@@ -235,6 +242,10 @@ spec:
                 secretKeyRef:
                   name: cal-diy-api
                   key: stripe-webhook-secret
+          volumeMounts:
+            - name: api-log-redaction
+              mountPath: /api-log-redaction
+              readOnly: true
           ports:
             - name: http
               containerPort: 80
@@ -274,6 +285,10 @@ spec:
                 - ALL
             seccompProfile:
               type: RuntimeDefault
+      volumes:
+        - name: api-log-redaction
+          configMap:
+            name: cal-diy-api-log-redaction
       terminationGracePeriodSeconds: 60
 ---
 apiVersion: v1

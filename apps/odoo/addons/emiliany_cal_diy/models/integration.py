@@ -211,6 +211,8 @@ class CalDelivery(models.Model):
     def cron_reconcile(self):
         if not _enabled():
             return
+        if os.environ.get('CAL_DIY_RECONCILIATION_MODE') == 'snapshot':
+            return
         # Bound each invocation while retaining progress across invocations.
         # Repeated full scans recover records displaced by concurrent updates
         # during offset pagination, provided the visible dataset settles.

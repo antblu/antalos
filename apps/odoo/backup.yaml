@@ -6,6 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '2'
 spec:
+  suspend: false
   schedule: ${ODOO_BACKUP_SCHEDULE}
   timeZone: Etc/UTC
   concurrencyPolicy: Forbid
