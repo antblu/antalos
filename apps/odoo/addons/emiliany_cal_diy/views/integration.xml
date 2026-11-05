@@ -1,0 +1,63 @@
+<odoo>
+  <record id="cal_settings_view" model="ir.ui.view">
+    <field name="name">res.config.settings.cal.diy</field>
+    <field name="model">res.config.settings</field>
+    <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//form" position="inside">
+        <app string="Cal.diy" name="emiliany_cal_diy" groups="base.group_system">
+          <block title="Booking synchronization">
+            <setting string="Default organizer" help="Organizer for appointments synchronized from Cal.diy.">
+              <field name="cal_diy_organizer_id"/>
+            </setting>
+          </block>
+        </app>
+      </xpath>
+    </field>
+  </record>
+  <record id="cal_event_type_list" model="ir.ui.view">
+    <field name="name">emiliany.cal.event.type.list</field>
+    <field name="model">emiliany.cal.event.type</field>
+    <field name="arch" type="xml">
+      <list><field name="event_type_id"/><field name="organizer_id"/><field name="create_opportunity"/></list>
+    </field>
+  </record>
+  <record id="cal_event_type_action" model="ir.actions.act_window">
+    <field name="name">Event type mappings</field><field name="res_model">emiliany.cal.event.type</field><field name="view_mode">list,form</field>
+  </record>
+  <record id="cal_reconciliation_list" model="ir.ui.view">
+    <field name="name">emiliany.cal.reconciliation.list</field>
+    <field name="model">emiliany.cal.reconciliation</field>
+    <field name="arch" type="xml">
+      <list create="false" delete="false"><field name="instance"/><field name="next_offset"/><field name="completed_at"/></list>
+    </field>
+  </record>
+  <record id="cal_reconciliation_action" model="ir.actions.act_window">
+    <field name="name">Reconciliation progress</field><field name="res_model">emiliany.cal.reconciliation</field><field name="view_mode">list</field>
+  </record>
+  <record id="cal_booking_list" model="ir.ui.view">
+    <field name="name">emiliany.cal.booking.list</field>
+    <field name="model">emiliany.cal.booking</field>
+    <field name="arch" type="xml">
+      <list><field name="uid"/><field name="status"/><field name="partner_id"/><field name="opportunity_id"/><field name="event_id"/><field name="synced_at"/><field name="error"/></list>
+    </field>
+  </record>
+  <record id="cal_delivery_list" model="ir.ui.view">
+    <field name="name">emiliany.cal.delivery.list</field>
+    <field name="model">emiliany.cal.delivery</field>
+    <field name="arch" type="xml">
+      <list><field name="uid"/><field name="state"/><field name="attempts"/><field name="next_attempt"/><field name="error"/><button name="action_retry" string="Retry" type="object"/></list>
+    </field>
+  </record>
+  <record id="cal_booking_action" model="ir.actions.act_window">
+    <field name="name">Cal.diy Bookings</field><field name="res_model">emiliany.cal.booking</field><field name="view_mode">list,form</field>
+  </record>
+  <record id="cal_delivery_action" model="ir.actions.act_window">
+    <field name="name">Cal.diy Deliveries</field><field name="res_model">emiliany.cal.delivery</field><field name="view_mode">list,form</field>
+  </record>
+  <menuitem id="cal_root" name="Cal.diy" parent="base.menu_administration" groups="base.group_system" sequence="90"/>
+  <menuitem id="cal_event_types_menu" name="Event types" parent="cal_root" action="cal_event_type_action"/>
+  <menuitem id="cal_reconciliation_menu" name="Reconciliation" parent="cal_root" action="cal_reconciliation_action"/>
+  <menuitem id="cal_bookings_menu" name="Bookings" parent="cal_root" action="cal_booking_action"/>
+  <menuitem id="cal_deliveries_menu" name="Deliveries" parent="cal_root" action="cal_delivery_action"/>
+</odoo>

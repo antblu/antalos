@@ -1,0 +1,18 @@
+<odoo noupdate="1">
+  <record id="cron_cal_process" model="ir.cron">
+    <field name="name">Cal.diy: process deliveries</field>
+    <field name="model_id" ref="model_emiliany_cal_delivery"/>
+    <field name="state">code</field>
+    <field name="code">model.cron_process()</field>
+    <field name="interval_number">1</field>
+    <field name="interval_type">minutes</field>
+  </record>
+  <record id="cron_cal_reconcile" model="ir.cron">
+    <field name="name">Cal.diy: reconcile bookings</field>
+    <field name="model_id" ref="model_emiliany_cal_delivery"/>
+    <field name="state">code</field>
+    <field name="code">model.cron_reconcile()</field>
+    <field name="interval_number">5</field>
+    <field name="interval_type">minutes</field>
+  </record>
+</odoo>
