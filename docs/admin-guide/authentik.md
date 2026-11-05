@@ -35,6 +35,27 @@ Wait for required controllers, database initialization, and migration Jobs befor
 
 On a new database, complete the upstream initial setup flow at `/if/flow/initial-setup/` and establish an administrator. Create one application/provider pair per relying application, bind the permitted users or groups, and copy the provider metadata into that app’s settings. Use the [SSO integration guide](/admin-guide/single-sign-on/) for the exact distinction between OIDC, SAML, and forward-auth. Provider objects are post-deployment configuration; the Kubernetes manifests alone do not create them.
 
+## Profile pictures from Nextcloud
+
+The worker startup hook sets the Authentik system avatar mode to
+`https://<NEXTCLOUD_HOST>/index.php/avatar/%(username)s/512,initials`, using
+`NEXTCLOUD_HOST` from `apps/variables.yaml`. Nextcloud supplies the image;
+Authentik falls back to generated initials when the image is unavailable.
+Change profile pictures in Nextcloud. This links the image URL rather than
+copying pictures into Authentik's media volume.
+
+This requires each Authentik username to match its Nextcloud user ID. Do not
+change an existing Nextcloud OIDC subject or UID mapping to force a match:
+that can create a different account. Deployments using generated user IDs
+need an explicit per-user avatar URL mapping instead of this username template.
+The endpoint must be reachable without a login challenge from Authentik and
+the user's browser. Browser caching can delay visible picture changes.
+
+The startup hook owns the **System → Settings → Avatars** setting; UI changes
+are overwritten on the next worker start. Other system settings are preserved.
+See [Authentik's avatar settings](https://docs.goauthentik.io/sys-mgmt/settings/#avatars)
+and [Nextcloud's public avatar endpoint](https://github.com/nextcloud/server/blob/v35.0.2/core/Controller/AvatarController.php).
+
 ## Application authorization
 
 `apps/authentik/access-control/reconcile.py` manages the group layer using the

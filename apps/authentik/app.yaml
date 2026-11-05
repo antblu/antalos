@@ -37,6 +37,8 @@ spec:
                 configMap:
                   name: authentik-cal-diy-blueprint
             env:
+              - name: NEXTCLOUD_AVATAR_URL
+                value: "https://${NEXTCLOUD_HOST}/index.php/avatar/%(username)s/512"
               - name: ARGOCD_AUTH_HOST
                 value: ${ARGOCD_HOST}
               - name: VAULTWARDEN_AUTH_HOST
@@ -133,6 +135,13 @@ spec:
                     - shell
                     - -c
                     - |
+                      import os
+                      from authentik.tenants.utils import get_current_tenant
+
+                      tenant = get_current_tenant()
+                      tenant.avatars = os.environ['NEXTCLOUD_AVATAR_URL'] + ',initials'
+                      tenant.save(update_fields=['avatars'])
+
                       exec(compile(open('/access-control/reconcile.py').read(), '/access-control/reconcile.py', 'exec'))
 
                       from authentik.outposts.models import Outpost, OutpostType
