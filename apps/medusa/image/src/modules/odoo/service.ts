@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto"
 type Options = {
   enabled?: boolean
   contactsEnabled?: boolean
+  ordersEnabled?: boolean
   url?: string
   dbName?: string
   username?: string
@@ -40,17 +41,19 @@ export default class OdooModuleService {
   private templateFields?: Record<string, unknown>
   readonly enabled: boolean
   readonly contactsEnabled: boolean
+  readonly ordersEnabled: boolean
 
   constructor(_container: Record<string, unknown>, private options: Options) {
     this.contactsEnabled = options.contactsEnabled === true
+    this.ordersEnabled = options.ordersEnabled === true
     this.enabled = options.enabled === true
-    if ((this.enabled || this.contactsEnabled) && (!options.url || !options.dbName || !options.username || !options.apiKey)) {
+    if ((this.enabled || this.contactsEnabled || this.ordersEnabled) && (!options.url || !options.dbName || !options.username || !options.apiKey)) {
       throw new Error("Odoo sync requires ODOO_URL, ODOO_DB_NAME, ODOO_USERNAME and ODOO_API_KEY")
     }
   }
 
   private async rpc<T>(service: string, method: string, args: unknown[]): Promise<T> {
-    if (!this.enabled && !this.contactsEnabled) throw new Error("Odoo product sync is disabled")
+    if (!this.enabled && !this.contactsEnabled && !this.ordersEnabled) throw new Error("Odoo integration is disabled")
     const id = randomUUID()
     let response: Response
     try {

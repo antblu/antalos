@@ -1,0 +1,20 @@
+<odoo>
+  <data noupdate="1">
+    <record id="invoice_email" model="mail.template">
+      <field name="name">Medusa: paid customer invoice</field>
+      <field name="model_id" ref="account.model_account_move"/>
+      <field name="subject">{{ object.company_id.name }} — invoice {{ object.name }}</field>
+      <field name="email_from">{{ object.company_id.email_formatted }}</field>
+      <field name="body_html" type="html">
+        <div>
+          <p>Hello <t t-out="object.partner_id.name"/>,</p>
+          <p>Your invoice <strong t-out="object.name"/> from <t t-out="object.company_id.name"/> is attached as a PDF.</p>
+          <p>Total: <strong t-out="format_amount(object.amount_total, object.currency_id)"/>.</p>
+          <p t-if="object.currency_id.is_zero(object.amount_residual)">Your payment has been recorded. No additional payment is requested.</p>
+          <p>Thank you for your order.</p>
+        </div>
+      </field>
+      <field name="auto_delete" eval="False"/>
+    </record>
+  </data>
+</odoo>

@@ -579,6 +579,7 @@ data:
         'odoo', 'shell', '--config=/run/odoo/odoo.conf', '--no-http',
     ], input=Path('/config/configure-jit.py').read_text(), text=True, check=True)
   install-commerce.py: |
+    import ast
     import json
     import os
     from pathlib import Path
@@ -601,9 +602,11 @@ data:
     connection.autocommit = True
     with connection.cursor() as cursor:
         cursor.execute('SELECT pg_advisory_lock(19650621)')
-        cursor.execute("SELECT state FROM ir_module_module WHERE name = 'medusa_bridge'")
-        if cursor.fetchone() == ('installed',):
-            print('medusa_bridge is already installed', flush=True)
+        target_version = ast.literal_eval(Path('/mnt/extra-addons/medusa_bridge/__manifest__.py').read_text())['version']
+        cursor.execute("SELECT state, latest_version FROM ir_module_module WHERE name = 'medusa_bridge'")
+        installed = cursor.fetchone()
+        if installed == ('installed', target_version):
+            print('medusa_bridge is already at the configured addon version', flush=True)
             connection.close()
             raise SystemExit(0)
 
@@ -643,12 +646,12 @@ data:
 
     # On failure, leave serving stopped for deliberate repair and retry.
     subprocess.run([
-        'odoo', '--config=/run/odoo/odoo.conf', '--init=medusa_bridge',
+        'odoo', '--config=/run/odoo/odoo.conf', ('--update=medusa_bridge' if installed and installed[0] == 'installed' else '--init=medusa_bridge'),
         '--without-demo=true', '--stop-after-init', '--no-http',
     ], check=True)
     with connection.cursor() as cursor:
-        cursor.execute("SELECT state FROM ir_module_module WHERE name = 'medusa_bridge'")
-        if cursor.fetchone() != ('installed',):
+        cursor.execute("SELECT state, latest_version FROM ir_module_module WHERE name = 'medusa_bridge'")
+        if cursor.fetchone() != ('installed', target_version):
             raise RuntimeError('medusa_bridge installation did not complete')
     connection.close()
     # Argo applies the addon-equipped serving template in the next wave.

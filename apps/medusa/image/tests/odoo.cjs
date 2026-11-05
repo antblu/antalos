@@ -60,3 +60,17 @@ test("catalog reads use stable ID pagination, variant prices and base Odoo field
   await service.listProducts(5, 50)
   assert.equal(logins, 1)
 })
+
+// Order delivery must not depend on enabling catalog import or customer sync.
+test("order-only Odoo configuration authenticates independently and requires credentials", async (t) => {
+  assert.throws(() => new OdooService({}, { ordersEnabled: true }), /ODOO_API_KEY/)
+  let calls = 0
+  t.mock.method(globalThis, "fetch", async (_url, request) => {
+    const { id, params } = JSON.parse(request.body)
+    calls++
+    return new Response(JSON.stringify({ id, result: params.service === "common" ? 42 : 7 }))
+  })
+  const service = new OdooService({}, { ...options, enabled: false, contactsEnabled: false, ordersEnabled: true })
+  assert.equal(await service.execute("sale.order", "medusa_sync", ["event", "purchase", {}]), 7)
+  assert.equal(calls, 2)
+})

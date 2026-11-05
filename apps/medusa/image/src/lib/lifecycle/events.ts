@@ -1,4 +1,5 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
+import { getOrderDetailWorkflow } from "@medusajs/medusa/core-flows"
 import { enqueue } from "./queue"
 import type { Kind, MailData, Order } from "./templates"
 type Fulfillment = { metadata?: Record<string, unknown>; id: string; shipped_at?: string; delivered_at?: string; canceled_at?: string; provider_id?: string; labels?: { tracking_number: string; tracking_url?: string }[]; items?: { line_item_id?: string; quantity: number }[] }
@@ -19,8 +20,8 @@ export async function handle(c: MedusaContainer, name: string, event: { id?: str
     if (!orderId) throw new Error("Fulfillment order linkage unavailable")
   }
   if (!orderId) throw new Error("Lifecycle order missing")
-  const result = await query.graph({ entity: "order", fields: ["id", "display_id", "email", "customer_id", "created_at", "currency_code", "status", "payment_status", "fulfillment_status", "total", "subtotal", "discount_total", "tax_total", "shipping_total", "shipping_tax_total", "shipping_address.*", "billing_address.*", "customer.first_name", "items.*", "fulfillments.*", "fulfillments.items.*", "fulfillments.labels.*"], filters: { id: orderId } })
-  const order = result.data[0] as unknown as Order & { fulfillments?: Fulfillment[] }
+  const { result: detail } = await getOrderDetailWorkflow(c).run({ input: { order_id: orderId, fields: ["id", "display_id", "email", "customer_id", "created_at", "currency_code", "status", "payment_status", "fulfillment_status", "total", "subtotal", "discount_total", "tax_total", "shipping_total", "shipping_tax_total", "shipping_address.*", "billing_address.*", "customer.first_name", "items.*", "fulfillments.*", "fulfillments.items.*", "fulfillments.labels.*"] } })
+  const order = detail as unknown as Order & { fulfillments?: Fulfillment[] }
   if (!order) throw new Error("Lifecycle order unavailable")
   const payload: MailData = { order }
   const queue = async (kind: Kind, entity: string, data: MailData = payload, email = true) => {

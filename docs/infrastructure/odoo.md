@@ -20,7 +20,7 @@ This design supports continued service through loss of one eligible worker while
 All resources belong to `apps/odoo/`; shared inputs belong to `apps/variables.yaml`, and credentials are namespace-bound SealedSecrets. This page describes source design. It does not establish live replication health, successful session or attachment failover, completed backups, or a measured recovery time.
 
 
-The versioned `odoo-commerce-v2` Job installs the optional `medusa_bridge` addon
+The versioned `odoo-commerce-v3` Job installs or upgrades the optional `medusa_bridge` addon
 and its Product, Sales and Inventory dependencies at Sync wave 2. It takes the
 same advisory lock as other schema installers, scales serving to zero and waits
 for the old pods to terminate. Wave 3 restores the addon-equipped serving tier.

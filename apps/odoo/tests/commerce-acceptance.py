@@ -7,6 +7,7 @@ assert all(env['ir.module.module'].search([('name', '=', name)]).state == 'insta
 assert not env.ref('medusa_bridge.cron_medusa_delivery').active
 with env.cr.savepoint():
     company = env.company
+    env['ir.config_parameter'].sudo().set_param('medusa_bridge.invoice_enabled.' + str(company.id), 'false')
     currency = company.currency_id
     env['product.pricelist'].search([('currency_id', '=', currency.id)]).write({'active': False})
     env['product.pricelist'].create({'name': 'Bridge acceptance', 'currency_id': currency.id})

@@ -98,8 +98,8 @@ The scale API may omit `spec.replicas` when its value is zero. The bootstrap lau
 `apps/odoo/addons/medusa_bridge/` supplies a separate optional addon; render its
 ConfigMap with `python3 apps/odoo/addons/render-commerce-configmap.py`. The init
 container copies its files into the existing addon directory. Mounting the code
-does not install its database models. The versioned `odoo-commerce-v2` Sync-wave-2 Job installs `medusa_bridge`
-and its Product, Sales and Inventory dependencies. It takes the existing advisory
+does not install its database models. The versioned `odoo-commerce-v3` Sync-wave-2 Job installs or upgrades `medusa_bridge`
+and its Product, Sales, Inventory and Accounting dependencies. It compares the installed addon version with the mounted manifest before deciding whether to initialize or upgrade. It takes the existing advisory
 lock, stops serving pods and waits for their termination before changing the
 schema. Wave 3 restores the two addon-equipped replicas. Failure leaves serving
 stopped for deliberate repair; do not run concurrent schema installations.
@@ -116,6 +116,58 @@ required Sales/Inventory rights to the integration account; it does not use sudo
 for order operations. Posted invoices or completed pickings prevent automatic
 cancellation. Confirmed-refund receipts are audit records, not posted accounting
 credit notes or new payment-provider refunds.
+
+### Optional paid-invoice email automation
+
+Addon version `19.0.1.1.0` adds paid customer invoices. It is disabled by default.
+Do not enable it merely because the addon is installed. In addition to unique
+SKU, shipping service, tax and currency/pricelist mappings, configure these Odoo
+system parameters for the intended company. Replace `<company-id>` with its ID:
+
+| Parameter | Required value |
+| --- | --- |
+| `medusa_bridge.invoice_enabled.<company-id>` | Exact string `true`, only after acceptance |
+| `medusa_bridge.invoice_journal_id.<company-id>` | Sales journal ID belonging to that company |
+| `medusa_bridge.payment_journal_id.<company-id>` | Bank/cash clearing journal ID belonging to that company, with exactly one manual inbound method |
+| `medusa_bridge.invoice_email_from.<company-id>` | Valid, authorized sender address |
+
+Configure an Odoo outgoing mail server that permits the chosen sender, a company
+reply address, and the native mail queue scheduled action. Credentials must stay
+in Odoo's protected settings or an appropriate sealed bootstrap input. A working
+Medusa SMTP configuration does not configure Odoo's outgoing mail server.
+
+A captured, unrefunded purchase creates exactly one complete invoice. Ordered-
+quantity invoicing is required for immediate invoicing of undelivered products.
+Partial invoices, mismatched totals/taxes, prior invoicing, invalid journals,
+foreign-company mappings and incompatible journal currencies abort the entire
+RPC transaction. Existing partially/fully refunded purchases require accounting
+review instead of generating a new paid invoice automatically.
+
+The bridge posts the invoice, records the already-captured external payment with
+Odoo's **manual** inbound method, reconciles its receivable, generates its PDF and
+queues one email to the captured order's customer email. It does not charge a
+payment provider again and does not establish bank settlement. The dedicated
+invoice template requests no additional payment when the residual is zero.
+The restricted bridge user receives no general accounting role: a private helper
+uses narrowly scoped elevation only for the already-validated bridge sale.
+
+The order lock, stored invoice/payment/mail references and event receipts prevent
+both same-event and different-event purchase replays from issuing another invoice
+or email. SMTP is invoked by the mail queue after the database transaction, never
+inside `medusa_sync`. Inspect the linked `mail.mail` state and actual delivery;
+queuing is not inbox delivery. Reconcile ambiguous SMTP outcomes before retrying.
+Retained invoice mail records provide operational evidence and require a deliberate
+retention policy. Financial refunds remain audit receipts: this bridge does not
+post accounting credit notes or reconcile refunded processor payments automatically.
+
+Before rollout, back up and run both `apps/odoo/tests/commerce-acceptance.py` and
+`apps/odoo/tests/invoice-acceptance.py` through `odoo shell` on an isolated database.
+The invoice suite needs an accounting chart, unique currency pricelist and the
+company parameters above; it rolls back its records and never sends email.
+Upgrade Odoo through the versioned job during an approved maintenance window,
+publish the matching Medusa image, then validate mappings and email delivery
+before enabling the company gate and Medusa's order-export flag. The new source
+and version pins alone are not a deployment or activation.
 
 The optional fulfillment cron starts inactive. It requires an explicit Medusa
 fulfillment mapping on each picking, actual tracking information, an HTTPS

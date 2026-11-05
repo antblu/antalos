@@ -74,6 +74,7 @@ module.exports = defineConfig({
       options: {
         enabled: process.env.ODOO_SYNC_ENABLED === "true",
         contactsEnabled: process.env.CUSTOMER_SYNC_ENABLED === "true",
+        ordersEnabled: process.env.ODOO_ORDER_SYNC_ENABLED === "true",
         url: process.env.ODOO_URL,
         dbName: process.env.ODOO_DB_NAME,
         username: process.env.ODOO_USERNAME,

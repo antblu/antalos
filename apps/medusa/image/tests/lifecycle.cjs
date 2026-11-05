@@ -18,6 +18,7 @@ let emails=0, odooExports=0, fail='none', tasks=[], lastPayload
 const oldLoad=Module._load
 class DeliveryError extends Error{constructor(retryable){super();this.retryable=retryable}}
 Module._load=function(r,...args){
+ if(r==='@medusajs/medusa/core-flows')return {getOrderDetailWorkflow:container=>({run:async({input})=>{assert.ok(input.fields.includes('items.*'));assert.equal(input.order_id,order.id);return {result:order}}})}
  if(r==='./mail')return {DeliveryError,sendMail:async()=>{emails++;if(fail==='retry')throw new DeliveryError(true);if(fail==='unknown')throw new DeliveryError(false);return 'message-id'}}
  if(r==='./odoo')return {exportOrder:async()=>{odooExports++;if(fail==='odoo')throw Error('offline');return 55}}
  return oldLoad.call(this,r,...args)

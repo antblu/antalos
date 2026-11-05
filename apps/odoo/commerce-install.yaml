@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: odoo-commerce-v2
+  name: odoo-commerce-v3
   namespace: odoo
   annotations:
     argocd.argoproj.io/sync-wave: '2'

@@ -239,3 +239,20 @@ as `timestamp + "." + body`, send `X-Commerce-Timestamp` (Unix seconds) and
 ends. Requests expire after five minutes. The handler validates the order link,
 uses Medusa workflows, and suppresses repeated lifecycle notifications. No
 inventory ownership or carrier tracking state is inferred from this endpoint.
+
+## Order export and invoice acceptance
+
+The lifecycle handler uses Medusa's order-detail workflow for calculated payment
+status and totals. A raw order graph query does not supply the calculated payment
+status and must not be used to gate paid-order delivery.
+
+`ODOO_ORDER_SYNC_ENABLED` independently authorizes the Odoo RPC transport; order
+export does not require catalog import or customer synchronization to be enabled.
+Credentials are required when any one of those integrations is enabled. Keep
+catalog import disabled if Odoo is not the intended catalog authority.
+
+The ERP outbox's sent state means Odoo committed the order, and, when its optional
+company invoice gate is enabled, the paid invoice and email queue record. It does
+not certify SMTP or inbox delivery. See the [Odoo invoice configuration](/admin-guide/odoo/#optional-paid-invoice-email-automation). Check the linked invoice and
+mail record separately from Medusa readiness and outbox delivery. Service-specific
+acceptance results belong in the consuming storefront's documentation.

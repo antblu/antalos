@@ -602,7 +602,7 @@ variables:
   MEDUSA_NODE_IMAGE_TAG: 26-bookworm-slim
   MEDUSA_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-medusa
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-medusa
-  MEDUSA_IMAGE_TAG: 2.22.1-6
+  MEDUSA_IMAGE_TAG: 2.22.2-1
   # Activate only after sealing credentials and configuring signed webhooks.
   MEDUSA_STRIPE_ENABLED: 'true'
   MEDUSA_PAYPAL_ENABLED: 'true'

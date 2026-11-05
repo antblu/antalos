@@ -52,6 +52,8 @@ class SaleOrder(models.Model):
             if sale.invoice_ids.filtered(lambda invoice: invoice.state == 'posted') or sale.picking_ids.filtered(lambda picking: picking.state == 'done'):
                 raise ValidationError('Posted invoice or completed shipment requires cancellation review')
             sale.action_cancel()
+        if kind == 'purchase':
+            sale._medusa_issue_invoice(order)
         events.create({'key': key, 'kind': kind, 'order_id': sale.id, 'payload': payload})
         sale.write({'medusa_snapshot': payload})
         return sale.id
@@ -82,7 +84,7 @@ class SaleOrder(models.Model):
             country = self.env['res.country'].search([('code', '=', a.get('country_code', '').upper())], limit=1)
             if not country:
                 raise ValidationError('Address country mapping missing')
-            child = self.env['res.partner'].create({'parent_id': partner.id, 'type': role, 'name': ' '.join(filter(None, [a.get('first_name'), a.get('last_name')])) or partner.name, 'street': a.get('address_1'), 'street2': a.get('address_2'), 'city': a.get('city'), 'zip': a.get('postal_code'), 'country_id': country.id})
+            child = self.env['res.partner'].create({'parent_id': partner.id, 'type': role, 'email': email, 'name': ' '.join(filter(None, [a.get('first_name'), a.get('last_name')])) or partner.name, 'street': a.get('address_1'), 'street2': a.get('address_2'), 'city': a.get('city'), 'zip': a.get('postal_code'), 'country_id': country.id})
             values['partner_invoice_id' if role == 'invoice' else 'partner_shipping_id'] = child.id
         for item in order.get('items', []):
             sku = item.get('variant_sku')
