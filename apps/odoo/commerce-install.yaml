@@ -146,10 +146,14 @@ spec:
                 path: medusa_bridge/__manifest__.py
               - key: data__cron.xml
                 path: medusa_bridge/data/cron.xml
+              - key: data__invoice-email.xml
+                path: medusa_bridge/data/invoice-email.xml
               - key: models____init__.py
                 path: medusa_bridge/models/__init__.py
               - key: models__fulfillment.py
                 path: medusa_bridge/models/fulfillment.py
+              - key: models__invoice.py
+                path: medusa_bridge/models/invoice.py
               - key: models__sale_order.py
                 path: medusa_bridge/models/sale_order.py
               - key: security__groups.xml

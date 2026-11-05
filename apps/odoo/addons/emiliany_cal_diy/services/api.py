@@ -14,6 +14,10 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 class CalApiError(Exception):
     """A deliberately sanitized error suitable for administrator diagnostics."""
 
+    def __init__(self, message, *, status_code=None):
+        super().__init__(message)
+        self.status_code = status_code
+
 
 class _RejectRedirects(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -57,7 +61,7 @@ class CalApi:
                 return result
             except HTTPError as exc:
                 if exc.code != 429 and not 500 <= exc.code <= 599:
-                    raise CalApiError('Cal.diy API rejected the request (HTTP %s)' % exc.code) from None
+                    raise CalApiError('Cal.diy API rejected the request (HTTP %s)' % exc.code, status_code=exc.code) from None
                 if exc.code == 429:
                     try:
                         retry_after = max(0, min(60, int(exc.headers.get('Retry-After', ''))))

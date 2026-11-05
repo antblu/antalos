@@ -18,7 +18,7 @@ class FakeClient:
     def get_booking(self, uid):
         return current[uid]
     def get_bookings_page(self, **kwargs):
-        return {'data': list(current.values())}
+        return {'data': list(current.values()), 'pagination': {'totalItems': len(current)}}
 
 with patch.object(integration, '_client', return_value=FakeClient()):
     queue = env['emiliany.cal.delivery']
@@ -71,5 +71,11 @@ with patch.object(integration, '_client', return_value=FakeClient()):
     multi_record = env['emiliany.cal.booking'].search([('uid', '=', 'multi')])
     assert len(multi_record.event_id.partner_ids) == 2 and multi_record.opportunity_id
     assert env['res.partner'].search_count([('email', '=ilike', 'new@example.test')]) == 1
+    exact = env['res.partner'].create({'name': 'Exact', 'email': 'jane_1@example.test'})
+    env['res.partner'].create({'name': 'Similar', 'email': 'janex1@example.test'})
+    current['underscore'] = dict(booking, uid='underscore', attendees=[{'email': 'jane_1@example.test'}])
+    queue.receive('underscore', 'underscore')
+    queue.cron_process()
+    assert env['emiliany.cal.booking'].search([('uid', '=', 'underscore')]).partner_id == exact
 print('CAL_ODOO_ACCEPTANCE_OK')
 env.cr.rollback()

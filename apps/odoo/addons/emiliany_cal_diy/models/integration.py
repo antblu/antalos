@@ -18,8 +18,39 @@ def _enabled():
     return os.environ.get('CAL_DIY_SYNC_ENABLED', '').lower() == 'true'
 
 
-def _client():
-    return CalApi(os.environ.get('CAL_DIY_BASE_URL', ''), os.environ.get('CAL_DIY_API_KEY', ''), timeout=10, retries=2)
+def _client(key=None):
+    return CalApi(os.environ.get('CAL_DIY_BASE_URL', ''), key or os.environ.get('CAL_DIY_API_KEY', ''), timeout=10, retries=2)
+
+
+def _account_keys():
+    # Each key is stored only in the Kubernetes Secret, not in Odoo records.
+    keys = [key.strip() for key in os.environ.get('CAL_DIY_API_KEYS', '').splitlines() if key.strip()]
+    if not keys:
+        return [None]
+    if len(keys) > 50 or len(set(keys)) != len(keys):
+        raise ValueError('Invalid Cal.diy API account configuration')
+    return keys
+
+
+def _account_identifier(key):
+    # A one-way identifier separates each account's scan checkpoint.
+    return hashlib.sha256(key.encode()).hexdigest() if key else 'default'
+
+
+def _account_client(key):
+    return _client(key) if key else _client()
+
+
+def _fetch_booking(uid, keys):
+    last_error = None
+    for key in keys:
+        try:
+            return _account_client(key).get_booking(uid)
+        except CalApiError as exc:
+            if exc.status_code not in (401, 403, 404):
+                raise
+            last_error = exc
+    raise last_error or CalApiError('No Cal.diy account can access the booking')
 
 
 def _instance():
@@ -72,9 +103,23 @@ class CalReconciliation(models.Model):
     _description = 'Cal.diy reconciliation scan progress'
 
     instance = fields.Char(required=True, index=True)
+    account = fields.Char(required=True, default='default', index=True)
     next_offset = fields.Integer(default=0, required=True)
+    expected_total = fields.Integer(default=-1, required=True)
+    seen_count = fields.Integer(default=0, required=True)
+    inconsistent = fields.Boolean(default=False)
     completed_at = fields.Datetime(readonly=True)
-    _instance_unique = models.Constraint('UNIQUE(instance)', 'Only one reconciliation scan per instance is allowed.')
+    last_error = fields.Char(readonly=True)
+    _scope_unique = models.Constraint('UNIQUE(instance, account)', 'Only one reconciliation scan per account is allowed.')
+
+
+class CalReconciliationSeen(models.Model):
+    _name = 'emiliany.cal.reconciliation.seen'
+    _description = 'Cal.diy UIDs observed during a reconciliation scan'
+
+    reconciliation_id = fields.Many2one('emiliany.cal.reconciliation', required=True, ondelete='cascade', index=True)
+    uid = fields.Char(required=True)
+    _scan_uid_unique = models.Constraint('UNIQUE(reconciliation_id, uid)', 'A UID can only occur once in a scan.')
 
 
 class CalDelivery(models.Model):
@@ -149,15 +194,15 @@ class CalDelivery(models.Model):
 
     def _sync(self):
         self.ensure_one()
-        client = _client()
-        booking = client.get_booking(self.uid)
+        keys = _account_keys()
+        booking = _fetch_booking(self.uid, keys)
         visited = set()
         while isinstance(booking, dict) and booking.get('rescheduledToUid'):
             uid = booking['uid']
             if uid in visited or len(visited) >= 20:
                 raise UserError('Invalid booking lineage')
             visited.add(uid)
-            booking = client.get_booking(booking['rescheduledToUid'])
+            booking = _fetch_booking(booking['rescheduledToUid'], keys)
         if not isinstance(booking, dict):
             raise UserError('Unsupported booking response')
         self.env['emiliany.cal.booking']._apply_booking(booking, visited)
@@ -173,30 +218,67 @@ class CalDelivery(models.Model):
         if not self.env.cr.fetchone()[0]:
             return
         try:
-            client = _client()
+            keys = _account_keys()
         except ValueError:
             _logger.warning('Cal.diy reconciliation configuration is invalid')
             return
         state_model = self.env['emiliany.cal.reconciliation']
-        state = state_model.search([('instance', '=', _instance())], limit=1)
-        if not state:
-            state = state_model.create({'instance': _instance()})
-        for _page in range(3):
+        for key in keys:
+            account = _account_identifier(key)
             try:
-                result = client.get_bookings_page(skip=state.next_offset, take=100)
-            except (CalApiError, ValueError):
-                _logger.warning('Cal.diy reconciliation failed; next scheduled run will retry')
-                return
-            for item in result['data']:
-                if not isinstance(item, dict) or not isinstance(item.get('uid'), str):
-                    continue
-                import json
-                digest = hashlib.sha256(json.dumps(item, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
-                self.receive('reconcile:' + digest, item['uid'])
-            if len(result['data']) < 100:
-                state.write({'next_offset': 0, 'completed_at': fields.Datetime.now()})
-                return
-            state.next_offset += 100
+                client = _account_client(key)
+            except ValueError:
+                _logger.warning('Cal.diy reconciliation configuration is invalid')
+                continue
+            state = state_model.search([('instance', '=', _instance()), ('account', '=', account)], limit=1)
+            if not state:
+                state = state_model.create({'instance': _instance(), 'account': account})
+            for _page in range(3):
+                try:
+                    result = client.get_bookings_page(skip=state.next_offset, take=100)
+                except (CalApiError, ValueError):
+                    _logger.warning('Cal.diy reconciliation failed; next scheduled run will retry')
+                    state.last_error = 'Cal.diy API request failed; scan will retry.'
+                    break
+                pagination = result.get('pagination')
+                total = pagination.get('totalItems') if isinstance(pagination, dict) else None
+                if isinstance(total, bool) or not isinstance(total, int) or total < 0:
+                    state.last_error = 'Cal.diy returned invalid pagination metadata.'
+                    break
+                if state.expected_total < 0:
+                    state.expected_total = total
+                elif total != state.expected_total:
+                    state.inconsistent = True
+                added = 0
+                for item in result['data']:
+                    if not isinstance(item, dict) or not isinstance(item.get('uid'), str) or not item['uid']:
+                        state.inconsistent = True
+                        continue
+                    uid = item['uid']
+                    self.env.cr.execute("""
+                        INSERT INTO emiliany_cal_reconciliation_seen
+                            (reconciliation_id, uid, create_uid, write_uid, create_date, write_date)
+                        VALUES (%s, %s, %s, %s, now() AT TIME ZONE 'UTC', now() AT TIME ZONE 'UTC')
+                        ON CONFLICT (reconciliation_id, uid) DO NOTHING RETURNING id
+                    """, [state.id, uid, self.env.uid, self.env.uid])
+                    if self.env.cr.fetchone():
+                        added += 1
+                    else:
+                        state.inconsistent = True
+                    import json
+                    digest = hashlib.sha256(json.dumps(item, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+                    self.receive('reconcile:' + digest, uid)
+                state.seen_count += added
+                if len(result['data']) < 100:
+                    complete = not state.inconsistent and state.seen_count == total == state.expected_total
+                    values = {'next_offset': 0, 'expected_total': -1, 'seen_count': 0, 'inconsistent': False,
+                              'last_error': False if complete else 'Booking pages changed or contained duplicates; scan will retry.'}
+                    if complete:
+                        values['completed_at'] = fields.Datetime.now()
+                    state.write(values)
+                    self.env.cr.execute('DELETE FROM emiliany_cal_reconciliation_seen WHERE reconciliation_id = %s', [state.id])
+                    break
+                state.next_offset += 100
 
 
 

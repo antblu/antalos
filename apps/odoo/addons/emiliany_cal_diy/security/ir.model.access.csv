@@ -4,3 +4,4 @@ access_cal_alias_admin,cal alias admin,model_emiliany_cal_alias,base.group_syste
 access_cal_delivery_admin,cal delivery admin,model_emiliany_cal_delivery,base.group_system,1,1,1,1
 access_cal_event_type_admin,cal event type admin,model_emiliany_cal_event_type,base.group_system,1,1,1,1
 access_cal_reconciliation_admin,cal reconciliation admin,model_emiliany_cal_reconciliation,base.group_system,1,1,1,1
+access_cal_seen_admin,cal reconciliation seen admin,model_emiliany_cal_reconciliation_seen,base.group_system,1,1,1,1

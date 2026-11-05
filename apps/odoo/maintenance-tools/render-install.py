@@ -7,9 +7,12 @@ from pathlib import Path
 import yaml
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--job-name', default='odoo-cal-diy-v1', help='New versioned Kubernetes Job name')
 parser.add_argument('--backup-id', required=True)
 parser.add_argument('--maintenance-start', required=True, help='ISO 8601 UTC time when all serving pods were stopped')
 args = parser.parse_args()
+if not re.fullmatch(r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?', args.job_name):
+    parser.error('invalid Job name')
 if not re.fullmatch(r'\d{8}T\d{6}Z', args.backup_id):
     parser.error('invalid backup ID')
 try:
@@ -32,6 +35,6 @@ def replace(match):
     return value
 
 template = re.sub(r'\$\{([A-Z0-9_]+)\}', replace, template)
-template = template.replace('__BACKUP_ID__', json.dumps(args.backup_id)).replace('__MAINTENANCE_START__', json.dumps(args.maintenance_start))
+template = template.replace('__JOB_NAME__', json.dumps(args.job_name)).replace('__BACKUP_ID__', json.dumps(args.backup_id)).replace('__MAINTENANCE_START__', json.dumps(args.maintenance_start))
 list(yaml.safe_load_all(template))
 print(template, end='')

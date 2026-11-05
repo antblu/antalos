@@ -29,7 +29,7 @@
     <field name="name">emiliany.cal.reconciliation.list</field>
     <field name="model">emiliany.cal.reconciliation</field>
     <field name="arch" type="xml">
-      <list create="false" delete="false"><field name="instance"/><field name="next_offset"/><field name="completed_at"/></list>
+      <list create="false" delete="false"><field name="instance"/><field name="account"/><field name="next_offset"/><field name="seen_count"/><field name="completed_at"/><field name="last_error"/></list>
     </field>
   </record>
   <record id="cal_reconciliation_action" model="ir.actions.act_window">

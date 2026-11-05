@@ -36,9 +36,12 @@ def check_maintenance(application, scale, pods):
     if automated is not None and automated.get('enabled') is not False:
         raise RuntimeError('Suspend Argo CD automated sync before installing')
     operation = (application.get('status', {}).get('operationState') or {}).get('phase')
-    if operation in ('Running', 'Terminating'):
+    if application.get('operation') or operation in ('Running', 'Terminating'):
         raise RuntimeError('An Argo CD operation is still running')
-    if scale.get('spec', {}).get('replicas') != 0 or pods.get('items'):
+    # The Scale API omits spec.replicas when it is zero (omitempty).
+    if (not isinstance(scale.get('spec'), dict) or not isinstance(scale.get('status'), dict)
+            or scale['spec'].get('replicas', 0) != 0 or scale['status'].get('replicas') != 0
+            or not isinstance(pods.get('items'), list) or pods['items']):
         raise RuntimeError('Stop the Odoo deployment and wait for every serving pod to terminate')
 
 

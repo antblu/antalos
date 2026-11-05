@@ -21,12 +21,13 @@ class MaintenanceTests(unittest.TestCase):
                          'layout': 'ha-postgresql-sessions-s3-attachments-v1',
                          'completed_at': (self.now - timedelta(minutes=5)).isoformat()}
         self.app = {'spec': {'syncPolicy': {}}, 'status': {}}
-        self.scale = {'spec': {'replicas': 0}}
+        self.scale = {'spec': {'replicas': 0}, 'status': {'replicas': 0}}
         self.pods = {'items': []}
 
     def test_valid_backup_and_paused_cluster(self):
         maintenance.check_backup_manifest(self.manifest, 'odoo', self.start, self.now)
         maintenance.check_maintenance(self.app, self.scale, self.pods)
+        maintenance.check_maintenance(self.app, {'spec': {}, 'status': {'replicas': 0}}, self.pods)
 
     def test_backup_before_maintenance_rejected(self):
         self.manifest['completed_at'] = (self.start - timedelta(seconds=1)).isoformat()
@@ -45,6 +46,14 @@ class MaintenanceTests(unittest.TestCase):
             maintenance.check_maintenance({'spec': {'syncPolicy': {'automated': {}}}}, self.scale, self.pods)
         with self.assertRaises(RuntimeError):
             maintenance.check_maintenance(self.app, {'spec': {'replicas': 1}}, self.pods)
+        with self.assertRaises(RuntimeError):
+            maintenance.check_maintenance(self.app, {'spec': {}, 'status': {'replicas': 1}}, self.pods)
+        with self.assertRaises(RuntimeError):
+            maintenance.check_maintenance(self.app, {}, self.pods)
+        with self.assertRaises(RuntimeError):
+            maintenance.check_maintenance(self.app, self.scale, {})
+        with self.assertRaises(RuntimeError):
+            maintenance.check_maintenance({'operation': {'sync': {}}}, self.scale, self.pods)
         with self.assertRaises(RuntimeError):
             maintenance.check_maintenance(self.app, self.scale, {'items': [{}]})
         with self.assertRaises(RuntimeError):

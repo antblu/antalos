@@ -569,7 +569,7 @@ variables:
   ODOO_MEDUSA_FULFILLMENT_URL: https://medusa.antblu.net/hooks/commerce/fulfillment
   ODOO_HOST: odoo.antblu.net
   ODOO_CAL_DIY_SYNC_ENABLED: "false"
-  ODOO_CAL_DIY_ADDON_REVISION: "1"
+  ODOO_CAL_DIY_ADDON_REVISION: "2"
   ODOO_DATABASE_NAME: odoo
   ODOO_DATABASE_USERNAME: odoo
   ODOO_DATABASE_STORAGE_SIZE: 10Gi
