@@ -11,6 +11,13 @@ Review the [architecture](/infrastructure/odoo/), [shared deployment workflow](/
 
 `apps/odoo/app.yaml` selects `main` and `yaml-envsubst`. The root app-of-apps discovers it after publication. Until uncommitted source is published, rendered resource submission is a temporary bootstrap and does not establish Argo CD reconciliation. Do not apply unresolved placeholders or point an automated Application at a missing source path.
 
+The Application uses `ApplyOutOfSyncOnly=true` together with the completed-Job
+template ignore rules. This avoids reapplying unchanged completed migration
+Jobs, whose server-generated pod labels and immutable templates can otherwise
+block an ordinary sync. A missing or changed migration Job still needs the
+documented maintenance procedure; this option does not make schema changes
+safe while serving.
+
 Two Odoo serving replicas and two CNPG PostgreSQL instances are separated across the left/right workers. Shared sessions live in PostgreSQL through `SESSION_DB_URI=odoo`, which uses Odoo's configured database connection and required TLS. Both session and application data therefore follow the same CNPG primary Service and replication policy. The serving pods have no persistent-volume dependency.
 
 The one-time `odoo-bootstrap-ha-v1` Job runs at Sync wave 0 after credentials, the database, configuration, and legacy PVC. It holds an advisory lock while preparing the database, installs missing storage modules, and copies legacy local attachment contents into PostgreSQL in one transaction. S3-backed attachments are left in S3. Original local files and the PVC remain intact; `Prune=false` preserves the recovery PVC. Missing source files abort migration instead of creating empty attachment records. Serving init containers wait for the `antalos.odoo.ha_ready` marker before starting HTTP.

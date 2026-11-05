@@ -109,8 +109,10 @@ hosts and extend this design deliberately before supporting other team scopes.
 Hard-deleted bookings cannot be recovered by this mechanism. The legacy API
 offset scan remains available when Odoo's reconciliation mode is not `snapshot`.
 
-The CronJob starts suspended. Its schedule, owner IDs, and suspension setting
-belong in `apps/variables.yaml`. The `cal-diy-odoo-snapshot` SealedSecret supplies
+The CronJob starts suspended. Its schedule and owner IDs belong in
+`apps/variables.yaml`; its native boolean `spec.suspend` lives in the CronJob
+manifest, because the renderer preserves substituted values as strings.
+The `cal-diy-odoo-snapshot` SealedSecret supplies
 `database-uri` and `webhook-secret`. The database login should have only CONNECT,
 schema USAGE, and column SELECT on `Booking.id`, `Booking.uid`, and
 `Booking.userId`, with `default_transaction_read_only=on`. The worker also
