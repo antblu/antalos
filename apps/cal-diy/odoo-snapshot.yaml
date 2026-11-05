@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '2'
 spec:
-  suspend: true
+  suspend: false
   schedule: '${CALDIY_ODOO_RECONCILE_SCHEDULE}'
   timeZone: Etc/UTC
   concurrencyPolicy: Forbid

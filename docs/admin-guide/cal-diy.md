@@ -109,7 +109,7 @@ hosts and extend this design deliberately before supporting other team scopes.
 Hard-deleted bookings cannot be recovered by this mechanism. The legacy API
 offset scan remains available when Odoo's reconciliation mode is not `snapshot`.
 
-The CronJob starts suspended. Its schedule and owner IDs belong in
+The active CronJob runs every 15 minutes. Its schedule and owner IDs belong in
 `apps/variables.yaml`; its native boolean `spec.suspend` lives in the CronJob
 manifest, because the renderer preserves substituted values as strings.
 The `cal-diy-odoo-snapshot` SealedSecret supplies
@@ -119,12 +119,22 @@ schema USAGE, and column SELECT on `Booking.id`, `Booking.uid`, and
 explicitly starts a read-only transaction. Preserve the login and grants when
 recovering Cal.diy; a database-only dump does not preserve PostgreSQL roles.
 
+For a new target, suspend the CronJob before configuring the integration.
 Regenerate its ConfigMap after source changes with
 `python3 apps/cal-diy/integration/render.py`. Enable the schedule only after
 Odoo's addon, organizer mappings, owner API keys, and signed receiver pass
 acceptance. Monitor failed Jobs and Odoo's pending/retrying inbox separately.
 Overlapping runs are forbidden; failed runs retry from a new complete snapshot.
 Repeated delivery is safe because booking processing is idempotent.
+
+Production checks on 5 November 2026 verified both configured owner identities
+and owner-scoped booking lists, native signed webhook delivery, duplicate
+delivery, rescheduling into the same Odoo Calendar event, and cancellation.
+A controlled booking created with its integration webhook temporarily inactive
+was recovered by the snapshot Job and linked to an existing contact and CRM
+opportunity. Both subscriptions were active afterward; test appointments were
+cancelled and the test opportunity archived. Email, video-room creation, and
+external calendar-provider delivery were not established by these checks.
 
 ## Acceptance checks
 
