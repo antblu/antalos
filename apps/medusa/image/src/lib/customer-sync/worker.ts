@@ -66,12 +66,14 @@ export async function drain(c: MedusaContainer, identityId?: string) {
     const s = service(c), mautic = new Mautic(), odoo = c.resolve<OdooModuleService>(ODOO_MODULE)
     const logger = c.resolve<Logger>("logger")
     const tasks = await s.listDecisions({ delivered: false, available_at: { $lte: new Date() }, ...(identityId ? { identity_id: identityId } : {}) }, { take: 100, order: { created_at: "ASC", revision: "ASC" } })
+    if (identityId) tasks.sort((a, b) => Number(b.payload.source === "website_newsletter") - Number(a.payload.source === "website_newsletter"))
     const summary = { delivered: 0, failed: 0, created: 0, updated: 0 }
     for (const task of tasks) {
       if (task.kind === "legal" && !task.payload.initial_consent) { await s.updateDecisions({ id: task.id, delivered: true }); continue }
       try {
         {
           let link = await s.retrieveIdentity(task.identity_id)
+          const newsletterTask = task.kind === "marketing" && task.payload.source === "website_newsletter"
           // Legal acceptance is durable before the welcome enqueue. Repair a
           // failed enqueue without making account creation depend on mail.
           if (process.env.ACCOUNT_WELCOME_ENABLED === "true" && task.kind === "legal" && task.payload.initial_consent === true &&
@@ -89,18 +91,22 @@ export async function drain(c: MedusaContainer, identityId?: string) {
           let fields: Record<string, unknown> = { email: link.email }
           if (customer) {
             fields = { ...fields, firstname: customer.first_name || "", lastname: customer.last_name || "", phone: customer.phone || "", medusa_customer_id: customer.id, customer_type: "customer", customer_source: "medusa", tags: ["source:medusa", "customer"] }
-            const address = customer.addresses?.find(a => a.is_default_billing) || customer.addresses?.[0]
-            const partnerData: Record<string, unknown> = { name: [customer.first_name, customer.last_name].filter(Boolean).join(" ") || link.email, email: link.email, phone: customer.phone || false, x_medusa_customer_id: customer.id, ...(address ? { street: address.address_1 || false, street2: address.address_2 || false, city: address.city || false, zip: address.postal_code || false } : {}) }
-            if (address?.country_code) {
-              const country = mauticCountry(address.country_code)
-              if (country) fields.country = country
-              const countries = await odoo.execute<{ id: number }[]>("res.country", "search_read", [[["code", "=", address.country_code.toUpperCase()]]], { fields: ["id"], limit: 1 })
-              if (countries[0]) partnerData.country_id = countries[0].id
+            // A footer subscription must reach Mautic even when a customer's
+            // separate Odoo contact export is unavailable or protected.
+            if (!newsletterTask) {
+              const address = customer.addresses?.find(a => a.is_default_billing) || customer.addresses?.[0]
+              const partnerData: Record<string, unknown> = { name: [customer.first_name, customer.last_name].filter(Boolean).join(" ") || link.email, email: link.email, phone: customer.phone || false, x_medusa_customer_id: customer.id, ...(address ? { street: address.address_1 || false, street2: address.address_2 || false, city: address.city || false, zip: address.postal_code || false } : {}) }
+              if (address?.country_code) {
+                const country = mauticCountry(address.country_code)
+                if (country) fields.country = country
+                const countries = await odoo.execute<{ id: number }[]>("res.country", "search_read", [[["code", "=", address.country_code.toUpperCase()]]], { fields: ["id"], limit: 1 })
+                if (countries[0]) partnerData.country_id = countries[0].id
+              }
+              // Odoo and Mautic deliveries retry together; deterministic upserts make replay safe.
+              const partnerId = await upsertPartner(odoo, partnerData, link.odoo_id)
+              link = await s.updateIdentities({ id: link.id, odoo_id: partnerId })
+              await upsertAddresses(odoo, partnerId, customer.addresses || [])
             }
-            // Odoo and Mautic deliveries retry together; deterministic upserts make replay safe.
-            const partnerId = await upsertPartner(odoo, partnerData, link.odoo_id)
-            link = await s.updateIdentities({ id: link.id, odoo_id: partnerId })
-            await upsertAddresses(odoo, partnerId, customer.addresses || [])
           } else if (decision?.source !== "account_closure" && task.payload.partner && typeof task.payload.partner === "object") {
             const p = task.payload.partner as Record<string, unknown>
             fields = { ...fields, firstname: p.name, phone: p.phone || "", preferred_language: p.lang || "", customer_source: "odoo", customer_type: "contact", tags: ["source:odoo"] }
@@ -138,7 +144,7 @@ export async function drain(c: MedusaContainer, identityId?: string) {
             fields.marketing_consent_source = decision.source
             if (decision.locale) fields.preferred_language = decision.locale
           }
-          if (customer) {
+          if (customer && !newsletterTask) {
             const query = c.resolve("query")
             const { data: orders } = await query.graph({ entity: "order", fields: ["id", "created_at", "status", "total", "currency_code", "items.product_title", "items.product_id"], filters: { customer_id: customer.id } })
             const completed = orders.filter(o => o.status !== "canceled")
@@ -162,7 +168,7 @@ export async function drain(c: MedusaContainer, identityId?: string) {
           if (link.customer_id) await mautic.membership("emiliany-medusa-customers", contact.id, decision?.source !== "account_closure")
           if (link.odoo_id) {
             await mautic.membership("emiliany-odoo-customers", contact.id, true)
-            await odoo.execute("res.partner", "write", [[link.odoo_id], { x_marketing_consent: state.subscribed }])
+            if (!newsletterTask) await odoo.execute("res.partner", "write", [[link.odoo_id], { x_marketing_consent: state.subscribed }])
           }
           if (process.env.NEWSLETTER_WELCOME_ENABLED === "true" && state.subscribed &&
               task.id === latest?.id && decision?.source === "website_newsletter" && !welcomed && link.newsletter_welcome_state !== "sent") {

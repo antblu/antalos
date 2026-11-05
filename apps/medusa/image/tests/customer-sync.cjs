@@ -178,3 +178,18 @@ test('pending initial acceptance repairs account welcome enqueue even without ma
   await drain(f.container)
   assert.equal(calls.length, 1); assert.equal(calls[0][1], 'cus_1'); assert.equal(calls[0][2].locale, 'es')
 })
+
+test('an existing customer receives a newsletter welcome while Odoo contact export is blocked', async t => {
+  const previous = process.env.NEWSLETTER_WELCOME_ENABLED; process.env.NEWSLETTER_WELCOME_ENABLED = 'true'; t.after(() => { if (previous === undefined) delete process.env.NEWSLETTER_WELCOME_ENABLED; else process.env.NEWSLETTER_WELCOME_ENABLED = previous })
+  const f = fixture(); mockMautic(t)
+  let odooCalls = 0; f.odoo.execute = async () => { odooCalls++; throw Error('protected Odoo contact') }
+  const link = await identity(f.container, 'person@example.com', 'cus_1', 17)
+  await record(f.container, link.id, 'profile', { event: 'customer.updated' })
+  await record(f.container, link.id, 'marketing', { consent: true, source: 'website_newsletter', locale: 'es' })
+  let sends = 0
+  t.mock.method(Mautic.prototype, 'welcome', async (_id, locale, beforeSend) => { assert.equal(locale, 'es'); assert.equal(odooCalls, 0); await beforeSend(); sends++ })
+  const result = await drain(f.container, link.id)
+  assert.equal(result.failed, 1); assert.equal(result.delivered, 1); assert.equal(sends, 1)
+  assert.equal(link.newsletter_welcome_state, 'sent')
+  assert.equal(f.decisions[0].delivered, false); assert.equal(f.decisions[1].delivered, true)
+})
