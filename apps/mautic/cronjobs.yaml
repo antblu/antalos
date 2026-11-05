@@ -47,6 +47,9 @@ spec:
                 name: mautic-env
             - secretRef:
                 name: mautic-app
+            - secretRef:
+                name: mautic-smtp
+                optional: true
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -187,6 +190,9 @@ spec:
                 name: mautic-env
             - secretRef:
                 name: mautic-app
+            - secretRef:
+                name: mautic-smtp
+                optional: true
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -327,6 +333,9 @@ spec:
                 name: mautic-env
             - secretRef:
                 name: mautic-app
+            - secretRef:
+                name: mautic-smtp
+                optional: true
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:

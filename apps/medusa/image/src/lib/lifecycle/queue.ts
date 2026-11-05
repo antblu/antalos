@@ -5,6 +5,7 @@ import type LifecycleService from "../../modules/lifecycle/service"
 import { render, type Kind, type MailData } from "./templates"
 import { sendMail, DeliveryError } from "./mail"
 import { exportOrder } from "./odoo"
+import { renderAccountWelcome, type AccountWelcome } from "../account/welcome"
 const service = (c: MedusaContainer) => c.resolve<LifecycleService>(LIFECYCLE)
 export async function enqueue(c: MedusaContainer, channel: "email" | "odoo", kind: Kind, entity: string, payload: MailData) {
   const key = `${channel}:${kind}:${entity}`
@@ -13,14 +14,22 @@ export async function enqueue(c: MedusaContainer, channel: "email" | "odoo", kin
     await service(c).createLifecycleEvents({ key, channel, kind, order_id: payload.order.id, payload: JSON.parse(JSON.stringify(payload)), available_at: new Date() })
   }, { timeout: 10, expire: 30 })
 }
-export async function drain(c: MedusaContainer) {
+export async function enqueueAccountWelcome(c: MedusaContainer, customerId: string, payload: AccountWelcome) {
+  const key = `email:account_welcome:${customerId}`
+  await c.resolve<ILockingModule>(Modules.LOCKING).execute(`lifecycle:${key}`, async () => {
+    if ((await service(c).listLifecycleEvents({ key }))[0]) return
+    await service(c).createLifecycleEvents({ key, channel: "email", kind: "account_welcome", order_id: null, payload: { ...payload }, available_at: new Date() })
+  }, { timeout: 10, expire: 30 })
+  return key
+}
+export async function drain(c: MedusaContainer, key?: string) {
   const s = service(c), logger = c.resolve<Logger>("logger")
-  const tasks = await s.listLifecycleEvents({ status: ["pending", "retrying", "sending"], available_at: { $lte: new Date() } }, { take: 50, order: { created_at: "ASC" } })
+  const tasks = await s.listLifecycleEvents({ status: ["pending", "retrying", "sending"], available_at: { $lte: new Date() }, ...(key ? { key } : {}) }, { take: 50, order: { created_at: "ASC" } })
   for (const task of tasks) {
     await c.resolve<ILockingModule>(Modules.LOCKING).execute(`lifecycle:${task.key}`, async () => {
       const current = await s.retrieveLifecycleEvent(task.id)
       if (["sent", "review"].includes(current.status) || new Date(current.available_at).getTime() > Date.now()) return
-      if (current.channel === "email" && process.env.TRANSACTIONAL_EMAIL_ENABLED !== "true") return
+      if (current.channel === "email" && (current.kind === "account_welcome" ? process.env.ACCOUNT_WELCOME_ENABLED !== "true" : process.env.TRANSACTIONAL_EMAIL_ENABLED !== "true")) return
       if (current.channel === "odoo" && process.env.ODOO_ORDER_SYNC_ENABLED !== "true") return
       if (current.status === "sending" && current.channel === "email") {
         await s.updateLifecycleEvents({ id: current.id, status: "review", failure: "interrupted_smtp_delivery" }); return
@@ -33,7 +42,10 @@ export async function drain(c: MedusaContainer) {
       try {
         const payload = current.payload as unknown as MailData
         let providerId: string
-        if (current.channel === "email") providerId = await sendMail(current.key, payload.order.email, render(current.kind as Kind, payload))
+        if (current.kind === "account_welcome") {
+          const account = current.payload as unknown as AccountWelcome
+          providerId = await sendMail(current.key, account.email, renderAccountWelcome(account))
+        } else if (current.channel === "email") providerId = await sendMail(current.key, payload.order.email, render(current.kind as Kind, payload))
         else providerId = String(await exportOrder(c, current.key, current.kind as Kind, payload))
         delivered = true
         await s.updateLifecycleEvents({ id: current.id, status: "sent", sent_at: new Date(), provider_id: providerId, failure: null })

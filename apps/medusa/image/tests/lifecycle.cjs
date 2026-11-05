@@ -23,7 +23,7 @@ Module._load=function(r,...args){
  if(r==='./odoo')return {exportOrder:async()=>{odooExports++;if(fail==='odoo')throw Error('offline');return 55}}
  return oldLoad.call(this,r,...args)
 }
-const {enqueue,drain}=require('../src/lib/lifecycle/queue.ts')
+const {enqueue,enqueueAccountWelcome,drain}=require('../src/lib/lifecycle/queue.ts')
 const {handle}=require('../src/lib/lifecycle/events.ts')
 const locks=new Map()
 const service={listLifecycleEvents:async f=>tasks.filter(t=>(!f.key||t.key===f.key)&&(!f.status||f.status.includes(t.status))),createLifecycleEvents:async t=>{if(tasks.some(x=>x.key===t.key))throw Error('unique');tasks.push({...t,id:String(tasks.length),status:'pending',attempts:0})},retrieveLifecycleEvent:async id=>tasks.find(t=>t.id===id),updateLifecycleEvents:async t=>Object.assign(tasks.find(x=>x.id===t.id),t)}
@@ -32,6 +32,11 @@ let payment={provider_id:'pp_stripe_stripe',data:{confirmed_refunds:{r1:{id:'re_
 const c={resolve:n=>({lifecycle:service,logger:{info(){},warn(){}},locking:{execute:async(key,fn)=>{const prev=locks.get(key)||Promise.resolve();const next=prev.then(fn);locks.set(key,next.catch(()=>{}));return next}},query:{graph:async({entity})=>({data:[entity==='order'?order:entity==='payment'?payment:fulfillment]})}}[n])}
 const due=()=>tasks.forEach(t=>t.available_at=new Date(0))
 ;(async()=>{
+ process.env.ACCOUNT_WELCOME_ENABLED='true';process.env.TRANSACTIONAL_EMAIL_ENABLED='false'
+ await Promise.all(Array.from({length:10},()=>enqueueAccountWelcome(c,'cus_welcome',{email:'test@example.com',locale:'es',first_name:'Ana <script>'})))
+ assert.equal(tasks.length,1);assert.equal(tasks[0].order_id,null);await drain(c);await drain(c);assert.equal(emails,1);assert.equal(tasks[0].status,'sent')
+ const {renderAccountWelcome}=require('../src/lib/account/welcome.ts');const welcome=renderAccountWelcome({email:'test@example.com',locale:'es',first_name:'Ana <script>'});assert.ok(welcome.html.includes('Ana &lt;script&gt;'));assert.ok(welcome.html.includes('/es/account'));assert.ok(welcome.html.includes('emiliany-logo.png'));assert.ok(!welcome.html.includes('unsubscribe'))
+ tasks=[];emails=0;process.env.TRANSACTIONAL_EMAIL_ENABLED='true'
  await Promise.all(Array.from({length:10},()=>enqueue(c,'email','purchase',order.id,{order})))
  assert.equal(tasks.length,1);await drain(c);await drain(c);assert.equal(emails,1);assert.equal(tasks[0].status,'sent')
  tasks=[];emails=0;fail='retry';await enqueue(c,'email','purchase',order.id,{order});await drain(c);assert.equal(tasks[0].status,'retrying');fail='none';due();await drain(c);assert.equal(tasks[0].status,'sent');assert.equal(emails,2)

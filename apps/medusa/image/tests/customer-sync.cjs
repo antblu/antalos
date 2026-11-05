@@ -73,7 +73,7 @@ test('Mautic provisioning appends fields explicitly and preserves existing alias
   })
   await new Mautic().provision()
   assert.equal(created.includes('medusa_customer_id'), false)
-  assert.equal(created.length, 14)
+  assert.equal(created.length, 15)
 })
 test('email normalization rejects invalid addresses', () => { assert.equal(normalizeEmail(' Person@Example.com '), 'person@example.com'); for (const value of ['', 'a', 'x @a.com', null]) assert.throws(() => normalizeEmail(value)) })
 test('current terms/privacy must both exist in historical acceptance', () => { assert.equal(legalCurrent([]), false); const history = [{ payload: { terms_version: 'terms-v1', privacy_policy_version: 'privacy-v1' } }]; assert.equal(legalCurrent(history), true); process.env.CUSTOMER_TERMS_VERSION = 'terms-v2'; assert.equal(legalCurrent(history), false); process.env.CUSTOMER_TERMS_VERSION = 'terms-v1' })
@@ -127,4 +127,42 @@ test('account closure delivers suppression after customer removal and does not r
   assert.ok(m.saves.every(fields => fields.marketing_consent === 0 && !fields.firstname && !fields.medusa_customer_id));
   assert.equal(m.dncAdds, 1);
   assert.ok(calls.every(c => c.model === 'res.partner' && c.method === 'write' && c.args[1].x_marketing_consent === false));
+})
+
+test('newsletter welcome sends immediately for the selected identity, in its locale, once', async t => {
+  const previous = process.env.NEWSLETTER_WELCOME_ENABLED; process.env.NEWSLETTER_WELCOME_ENABLED = 'true'; t.after(() => { if (previous === undefined) delete process.env.NEWSLETTER_WELCOME_ENABLED; else process.env.NEWSLETTER_WELCOME_ENABLED = previous })
+  const f = fixture(); mockMautic(t)
+  const other = await identity(f.container, 'other@example.com')
+  await record(f.container, other.id, 'marketing', { consent: true, source: 'website_newsletter' })
+  const link = await identity(f.container, 'welcome@example.com')
+  await record(f.container, link.id, 'marketing', { consent: true, source: 'website_newsletter', locale: 'es' })
+  let sends = 0
+  t.mock.method(Mautic.prototype, 'welcome', async (id, locale, beforeSend) => { assert.equal(locale, 'es'); await beforeSend(); assert.equal(link.newsletter_welcome_state, 'sending'); sends++ })
+  await drain(f.container, link.id)
+  assert.equal(sends, 1); assert.equal(link.newsletter_welcome_state, 'sent'); assert.equal(f.decisions[0].delivered, false)
+  await record(f.container, link.id, 'marketing', { consent: true, source: 'website_newsletter', locale: 'es' })
+  await drain(f.container, link.id); assert.equal(sends, 1)
+})
+test('ambiguous Mautic welcome delivery requires review instead of sending a duplicate', async t => {
+  const previous = process.env.NEWSLETTER_WELCOME_ENABLED; process.env.NEWSLETTER_WELCOME_ENABLED = 'true'; t.after(() => { if (previous === undefined) delete process.env.NEWSLETTER_WELCOME_ENABLED; else process.env.NEWSLETTER_WELCOME_ENABLED = previous })
+  const f = fixture(); mockMautic(t)
+  const link = await identity(f.container, 'welcome@example.com')
+  await record(f.container, link.id, 'marketing', { consent: true, source: 'website_newsletter' })
+  let sends = 0
+  t.mock.method(Mautic.prototype, 'welcome', async (_id, _locale, beforeSend) => { await beforeSend(); sends++; throw new Error('connection lost after submission') })
+  assert.equal((await drain(f.container)).failed, 1)
+  assert.equal(link.newsletter_welcome_state, 'review')
+  f.decisions[0].available_at = new Date(0)
+  await drain(f.container); assert.equal(sends, 1)
+})
+test('newsletter welcome respects suppression and superseding withdrawal', async t => {
+  const previous = process.env.NEWSLETTER_WELCOME_ENABLED; process.env.NEWSLETTER_WELCOME_ENABLED = 'true'; t.after(() => { if (previous === undefined) delete process.env.NEWSLETTER_WELCOME_ENABLED; else process.env.NEWSLETTER_WELCOME_ENABLED = previous })
+  const f = fixture(); mockMautic(t, { id: 42, doNotContact: [{ channel: 'email', reason: 2 }] })
+  let sends = 0; t.mock.method(Mautic.prototype, 'welcome', async () => { sends++ })
+  const link = await identity(f.container, 'welcome@example.com')
+  await record(f.container, link.id, 'marketing', { consent: true, source: 'website_newsletter' })
+  await drain(f.container); assert.equal(sends, 0)
+  await record(f.container, link.id, 'marketing', { consent: true, source: 'website_newsletter' })
+  await record(f.container, link.id, 'marketing', { consent: false, source: 'account_settings' })
+  await drain(f.container); assert.equal(sends, 0)
 })

@@ -37,12 +37,22 @@ export class Mautic {
     const segment = await this.segment(alias)
     await this.request(`segments/${segment}/contact/${id}/${add ? "add" : "remove"}`, "POST", {})
   }
+  async welcome(contactId: number, locale: unknown, beforeSend: () => Promise<void>) {
+    const name = `Emiliany Newsletter Welcome ${locale === "es" ? "ES" : "EN"}`
+    const result = await this.request<{ emails: Record<string, { id: number; name: string; isPublished: boolean; sendToDnc?: boolean }> }>(`emails?${new URLSearchParams({ search: name, limit: "100" })}`)
+    const matches = Object.values(result.emails || {}).filter(email => email.name === name)
+    if (matches.length !== 1 || !matches[0].isPublished || matches[0].sendToDnc) throw new Error("Newsletter welcome email is not safely configured")
+    await beforeSend()
+    const sent = await this.request<{ success?: boolean }>(`emails/${matches[0].id}/contact/${contactId}/send`, "POST", {})
+    if (sent.success !== true) throw new Error("Newsletter welcome email was not accepted")
+  }
   async provision() {
     const definitions: Record<string, string> = {
       medusa_customer_id: "text", odoo_partner_id: "number", customer_source: "text", customer_type: "text",
       preferred_language: "text", marketing_consent: "boolean", marketing_consent_date: "datetime",
       marketing_consent_source: "text", newsletter_subscriber: "boolean", last_order_date: "datetime",
       order_count: "number", lifetime_value: "text", last_product: "text", last_category: "text", last_commerce_event: "text",
+      newsletter_welcome_sent_at: "datetime",
     }
     const fields = await this.request<{ fields: Record<string, { alias: string }> }>("fields/contact?limit=1000")
     const aliases = new Set(Object.values(fields.fields || {}).map(f => f.alias))

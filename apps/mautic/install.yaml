@@ -40,6 +40,9 @@ spec:
         - secretRef:
             name: mautic-app
         - secretRef:
+            name: mautic-smtp
+            optional: true
+        - secretRef:
             name: mautic-admin
         securityContext:
           allowPrivilegeEscalation: false

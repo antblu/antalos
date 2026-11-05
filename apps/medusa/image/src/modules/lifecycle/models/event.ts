@@ -4,7 +4,7 @@ export const LifecycleEvent = model.define("lifecycle_event", {
   key: model.text(),
   channel: model.enum(["email", "odoo"]),
   kind: model.text(),
-  order_id: model.text(),
+  order_id: model.text().nullable(),
   payload: model.json(),
   status: model.enum(["pending", "sending", "sent", "retrying", "review"]).default("pending"),
   attempts: model.number().default(0),

@@ -602,7 +602,7 @@ variables:
   MEDUSA_NODE_IMAGE_TAG: 26-bookworm-slim
   MEDUSA_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-medusa
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-medusa
-  MEDUSA_IMAGE_TAG: 2.22.2-1
+  MEDUSA_IMAGE_TAG: 2.22.3-welcome-1
   # Activate only after sealing credentials and configuring signed webhooks.
   MEDUSA_STRIPE_ENABLED: 'true'
   MEDUSA_PAYPAL_ENABLED: 'true'
@@ -625,6 +625,8 @@ variables:
   # Enable after provisioning the medusa-odoo SealedSecret and publishing the image.
   MEDUSA_ODOO_SYNC_ENABLED: 'false'
   MEDUSA_CUSTOMER_SYNC_ENABLED: 'true'
+  MEDUSA_NEWSLETTER_WELCOME_ENABLED: 'true'
+  MEDUSA_ACCOUNT_WELCOME_ENABLED: 'true'
   MEDUSA_CUSTOMER_TERMS_VERSION: draft-2026-10-23
   MEDUSA_CUSTOMER_PRIVACY_VERSION: draft-2026-10-23
   MEDUSA_DATABASE_HOST: medusa-db-rw.medusa.svc.cluster.local

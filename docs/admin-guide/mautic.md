@@ -51,10 +51,18 @@ only in a protected operator terminal; do not copy it into logs or documentation
 Repeat installs do not reset existing account passwords. Credentials and the
 application secret are sealed with the repository's Sealed Secrets controller.
 
-Outbound mail starts disabled with `null://null`. Remove `MAUTIC_MAILER_DSN` from the ConfigMap and seal a real SMTP DSN under the
-same key in `mautic-app`, then roll web and worker pods before enabling campaigns;
-the initial null transport accepts and discards mail. Do not enqueue production
-mail before completing that setup. SMTP credentials are not provisioned here.
+Outbound mail defaults to `null://null`. The optional service-owned
+`mautic-smtp` Secret overrides `MAUTIC_MAILER_DSN` after the ConfigMap and
+`mautic-app` inputs in web, worker, install and scheduled-command containers.
+Keep its credential in a SealedSecret under `apps/mautic/`; never put an
+authenticated DSN in the ConfigMap or shared variables. A missing SMTP Secret
+leaves the null transport active, which accepts and discards mail.
+
+Publish the sealed configuration and roll the consuming pods before enabling
+production sends. Existing pods retain their previous environment. Verify the
+effective transport in both web and worker processes, sender authorization, a
+send to an explicitly authorized recipient and queue consumption. An email API
+success or an empty queue alone does not establish SMTP or inbox delivery.
 
 ## SAML with Authentik
 

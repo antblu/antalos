@@ -59,12 +59,12 @@ export async function reconcile(c: MedusaContainer) {
   logger.info(JSON.stringify({ event: "customer_sync.reconciled", ...summary }))
   return summary
 }
-export async function drain(c: MedusaContainer) {
+export async function drain(c: MedusaContainer, identityId?: string) {
   if (process.env.CUSTOMER_SYNC_ENABLED !== "true") return { delivered: 0, failed: 0 }
   return locked(c, "delivery", async () => {
     const s = service(c), mautic = new Mautic(), odoo = c.resolve<OdooModuleService>(ODOO_MODULE)
     const logger = c.resolve<Logger>("logger")
-    const tasks = await s.listDecisions({ delivered: false, available_at: { $lte: new Date() } }, { take: 100, order: { created_at: "ASC", revision: "ASC" } })
+    const tasks = await s.listDecisions({ delivered: false, available_at: { $lte: new Date() }, ...(identityId ? { identity_id: identityId } : {}) }, { take: 100, order: { created_at: "ASC", revision: "ASC" } })
     const summary = { delivered: 0, failed: 0, created: 0, updated: 0 }
     for (const task of tasks) {
       if (task.kind === "legal" && !task.payload.initial_consent) { await s.updateDecisions({ id: task.id, delivered: true }); continue }
@@ -110,6 +110,7 @@ export async function drain(c: MedusaContainer) {
           }
           if (link.odoo_id) fields.odoo_partner_id = link.odoo_id
           let contact = await mautic.resolve(link.email, link.customer_id, link.odoo_id, link.mautic_id)
+          const welcomed = contact?.fields?.all?.newsletter_welcome_sent_at
           const dnc = contact?.doNotContact?.filter(d => d.channel === "email") || []
           if (dnc.some(d => d.dateAdded && new Date(d.dateAdded).getTime() > new Date(String(decision?.at || 0)).getTime())) explicit = false
           const state = marketingState(decision, dnc, explicit)
@@ -155,6 +156,30 @@ export async function drain(c: MedusaContainer) {
           if (link.odoo_id) {
             await mautic.membership("emiliany-odoo-customers", contact.id, true)
             await odoo.execute("res.partner", "write", [[link.odoo_id], { x_marketing_consent: state.subscribed }])
+          }
+          if (process.env.NEWSLETTER_WELCOME_ENABLED === "true" && state.subscribed &&
+              task.id === latest?.id && decision?.source === "website_newsletter" && !welcomed && link.newsletter_welcome_state !== "sent") {
+            // Re-read consent and suppression immediately before sending. A later
+            // withdrawal must win over a task already being processed.
+            const current = (await s.listDecisions({ identity_id: link.id, kind: ["marketing", "legal"] }, { take: 10000, order: { revision: "DESC" } })).find(d => typeof d.payload.consent === "boolean")
+            const fresh = await mautic.resolve(link.email, link.customer_id, link.odoo_id, contact.id)
+            if (["sending", "review"].includes(link.newsletter_welcome_state || "")) {
+              await s.updateIdentities({ id: link.id, newsletter_welcome_state: "review" })
+              logger.warn(JSON.stringify({ event: "newsletter.welcome_requires_review", identity_id: link.id }))
+            } else if (current?.id === latest?.id && !fresh?.doNotContact?.some(d => d.channel === "email") && !fresh?.fields?.all?.newsletter_welcome_sent_at) {
+              let submitted = false
+              try {
+                await mautic.welcome(contact.id, decision.locale, async () => {
+                  await s.updateIdentities({ id: link.id, newsletter_welcome_state: "sending" })
+                  submitted = true
+                })
+                await s.updateIdentities({ id: link.id, newsletter_welcome_state: "sent" })
+              } catch (error) {
+                if (submitted) await s.updateIdentities({ id: link.id, newsletter_welcome_state: error instanceof RemoteError && error.status >= 400 && error.status < 500 ? "pending" : "review" })
+                throw error
+              }
+              await mautic.save(contact, { newsletter_welcome_sent_at: new Date().toISOString().slice(0, 19).replace("T", " ") })
+            }
           }
           await s.updateDecisions({ id: task.id, delivered: true, failure: null })
           logger.info(JSON.stringify({ event: "customer_sync.delivered", decision_id: task.id, identity_id: link.id, contact_id: contact.id }))

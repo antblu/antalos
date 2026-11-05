@@ -5,4 +5,5 @@ export const Identity = model.define("sync_identity", {
   customer_id: model.text().unique().nullable(),
   odoo_id: model.number().unique().nullable(),
   mautic_id: model.number().unique().nullable(),
+  newsletter_welcome_state: model.text().nullable(),
 })
