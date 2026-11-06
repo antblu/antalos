@@ -1,20 +1,29 @@
 import type OdooModuleService from "../../modules/odoo/service"
 export type Partner = { id: number; name: string; email: string; phone?: string | false; lang?: string | false; country_id?: [number, string] | false; x_medusa_customer_id?: string | false; x_marketing_consent?: boolean }
+export async function loginLinked(odoo: OdooModuleService, id: number) {
+  // The API user may see an empty user_ids field even when this domain matches.
+  const count = await odoo.execute<number>("res.partner", "search_count", [[["id", "=", id], ["user_ids", "!=", false]]])
+  return count > 0
+}
 export async function upsertPartner(odoo: OdooModuleService, data: Record<string, unknown>, linked?: number | null) {
   const customerId = String(data.x_medusa_customer_id)
-  const matches = await odoo.execute<Partner[]>("res.partner", "search_read", [["|", ["x_medusa_customer_id", "=", customerId], ["email", "=ilike", data.email]]], { fields: ["id", "email", "x_medusa_customer_id"], limit: 3 })
+  const matches = await odoo.execute<Partner[]>("res.partner", "search_read", [[["type", "not in", ["invoice", "delivery"]], "|", ["x_medusa_customer_id", "=", customerId], ["email_normalized", "=", data.email]]], { fields: ["id", "email", "x_medusa_customer_id"], limit: 3 })
   if (matches.length > 1) throw new Error("Ambiguous Odoo partner requires review")
   const partner = matches[0]
   if (partner?.x_medusa_customer_id && partner.x_medusa_customer_id !== customerId) throw new Error("Odoo customer linkage conflict")
   if (linked && partner && linked !== partner.id) throw new Error("Odoo partner linkage conflict")
   const id = linked || partner?.id
-  if (id) { await odoo.execute("res.partner", "write", [[id], data]); return id }
+  if (id) {
+    if (await loginLinked(odoo, id)) return null
+    await odoo.execute("res.partner", "write", [[id], data])
+    return id
+  }
   return odoo.execute<number>("res.partner", "create", [data])
 }
 export async function partners(odoo: OdooModuleService, after = 0) {
   // Login-linked partners remain visible to identity matching, but are not
   // customer imports and cannot be updated by the integration's record rules.
-  return odoo.execute<Partner[]>("res.partner", "search_read", [[["id", ">", after], ["email", "!=", false], ["active", "=", true], ["user_ids", "=", false]]], {
+  return odoo.execute<Partner[]>("res.partner", "search_read", [[["id", ">", after], ["type", "not in", ["invoice", "delivery"]], ["email", "!=", false], ["active", "=", true], ["user_ids", "=", false]]], {
     fields: ["id", "name", "email", "phone", "lang", "country_id", "x_medusa_customer_id"], limit: 100, order: "id asc",
   })
 }

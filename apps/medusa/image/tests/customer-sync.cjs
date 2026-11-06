@@ -23,6 +23,7 @@ test('Odoo imports exclude login-linked contacts without hiding identity matches
   let domain
   const odoo = { execute: async (model, method, args) => { assert.equal(model, 'res.partner'); assert.equal(method, 'search_read'); domain = args[0]; return [] } }
   await partners(odoo, 7)
+  assert.ok(domain.some(condition => JSON.stringify(condition) === JSON.stringify(['type', 'not in', ['invoice', 'delivery']])))
   assert.ok(domain.some(condition => JSON.stringify(condition) === JSON.stringify(['user_ids', '=', false])))
   assert.ok(domain.some(condition => JSON.stringify(condition) === JSON.stringify(['id', '>', 7])))
 })
@@ -89,7 +90,7 @@ test('fresh opt-in may clear unsubscribe but cannot clear a bounce', async t => 
 test('superseded opt-in retry never reverses a later opt-out', async t => { const f = fixture(), m = mockMautic(t); const link = await identity(f.container, 'person@example.com', 'cus_1'); await record(f.container, link.id, 'marketing', { consent: true, source: 'account_settings' }); await record(f.container, link.id, 'marketing', { consent: false, source: 'account_settings' }); await drain(f.container); assert.ok(m.saves.every(s => s.marketing_consent === 0)); assert.equal(m.dncRemovals, 0) })
 test('reacceptance appends history and does not change marketing preference', async () => { const f = fixture(); const link = await identity(f.container, 'person@example.com', 'cus_1'); await record(f.container, link.id, 'marketing', { consent: true }); await record(f.container, link.id, 'legal', { terms_version: 'terms-v1', privacy_policy_version: 'privacy-v1', at: new Date().toISOString() }); assert.equal((await status(f.container, 'cus_1')).marketing_consent, true); assert.equal(f.decisions.length, 2); assert.ok(f.decisions[1].revision > f.decisions[0].revision) })
 test('outage preserves choice and schedules bounded retry without discarding audit history', async t => { const f = fixture(); t.mock.method(Mautic.prototype, 'resolve', async () => { throw new Error('outage') }); const link = await identity(f.container, 'person@example.com', 'cus_1'); await record(f.container, link.id, 'marketing', { consent: true, source: 'account_settings' }); const result = await drain(f.container); assert.equal(result.failed, 1); assert.equal(f.decisions[0].delivered, false); assert.equal(f.decisions[0].payload.consent, true); assert.ok(f.decisions[0].available_at > new Date()); assert.equal(backoff(100), 86400000) })
-test('Odoo API matching is stable and refuses ambiguous partners', async () => { let writes = 0; const odoo = { execute: async (_model, method) => method === 'search_read' ? [{ id: 12, x_medusa_customer_id: 'cus_1' }] : ++writes }; assert.equal(await upsertPartner(odoo, { email: 'person@example.com', x_medusa_customer_id: 'cus_1' }), 12); assert.equal(writes, 1); odoo.execute = async () => [{ id: 1 }, { id: 2 }]; await assert.rejects(upsertPartner(odoo, { email: 'a@b.com' }), /Ambiguous/) })
+test('Odoo API matching is stable and refuses ambiguous partners', async () => { let writes = 0; const odoo = { execute: async (_model, method) => method === 'search_read' ? [{ id: 12, x_medusa_customer_id: 'cus_1' }] : method === 'search_count' ? 0 : ++writes }; assert.equal(await upsertPartner(odoo, { email: 'person@example.com', x_medusa_customer_id: 'cus_1' }), 12); assert.equal(writes, 1); odoo.execute = async () => [{ id: 1 }, { id: 2 }]; await assert.rejects(upsertPartner(odoo, { email: 'a@b.com' }), /Ambiguous/) })
 test('Mautic transport hides credentials and honors HTTP rate limit metadata', async t => { process.env.MAUTIC_URL = 'https://mautic.invalid'; process.env.MAUTIC_API_USERNAME = 'test'; process.env.MAUTIC_API_PASSWORD = 'private'; t.mock.method(globalThis, 'fetch', async () => new Response('private upstream error', { status: 429, headers: { 'retry-after': '120' } })); await assert.rejects(new Mautic().request('contacts'), error => error.status === 429 && error.retryAfter === 120000 && !error.message.includes('private')) })
 
 test('newsletter-only consent creates Mautic contact without commerce/Odoo account', async t => {
@@ -121,11 +122,15 @@ test('account closure delivers suppression after customer removal and does not r
   await record(f.container, link.id, 'marketing', { consent: false, at: new Date().toISOString(), source: 'account_closure' });
   f.customers.length = 0;
   const calls = [];
-  f.odoo.execute = async (model, method, args) => { calls.push({ model, method, args }); return true };
+  f.odoo.execute = async (model, method, args) => {
+    if (method === 'search_count') return 0
+    calls.push({ model, method, args }); return true
+  };
   const result = await drain(f.container);
   assert.equal(result.failed, 0); assert.equal(result.delivered, 2);
   assert.ok(m.saves.every(fields => fields.marketing_consent === 0 && !fields.firstname && !fields.medusa_customer_id));
   assert.equal(m.dncAdds, 1);
+  assert.equal(calls.length, 2);
   assert.ok(calls.every(c => c.model === 'res.partner' && c.method === 'write' && c.args[1].x_marketing_consent === false));
 })
 
@@ -192,4 +197,30 @@ test('an existing customer receives a newsletter welcome while Odoo contact expo
   assert.equal(result.failed, 1); assert.equal(result.delivered, 1); assert.equal(sends, 1)
   assert.equal(link.newsletter_welcome_state, 'sent')
   assert.equal(f.decisions[0].delivered, false); assert.equal(f.decisions[1].delivered, true)
+})
+
+test('a protected Odoo login still receives Medusa profile and withdrawal in Mautic', async t => {
+  for (const linked of [undefined, 17]) {
+    const f = fixture()
+    let saved, suppressed = false
+    t.mock.method(Mautic.prototype, 'resolve', async () => undefined)
+    t.mock.method(Mautic.prototype, 'save', async (_, fields) => { saved = fields; return { id: 42 } })
+    t.mock.method(Mautic.prototype, 'membership', async () => {})
+    t.mock.method(Mautic.prototype, 'request', async path => { suppressed = path.endsWith('/dnc/email/add') })
+    f.odoo.execute = async (model, method, args) => {
+      assert.equal(model, 'res.partner')
+      if (method === 'search_read') return [{ id: 17, email: 'person@example.com' }]
+      assert.equal(method, 'search_count')
+      assert.deepEqual(args, [[['id', '=', 17], ['user_ids', '!=', false]]])
+      return 1
+    }
+    const link = await identity(f.container, 'person@example.com', 'cus_1', linked)
+    await record(f.container, link.id, 'marketing', { consent: false, source: 'account_settings' })
+    const result = await drain(f.container)
+    assert.equal(result.delivered, 1)
+    assert.equal(link.odoo_id ?? null, linked ?? null)
+    assert.equal(saved.marketing_consent, 0)
+    assert.equal(suppressed, true)
+    t.mock.restoreAll()
+  }
 })

@@ -15,7 +15,7 @@ function fixture() {
     createDecisions: async x => { const row = { id: 'd' + ++clock, created_at: new Date(Date.now() + clock), delivered: false, attempts: 0, ...x }; decisions.push(row); return row },
     updateDecisions: async x => Object.assign(decisions.find(r => r.id === x.id), x),
   }
-  const odoo = { contactsEnabled: true, execute: async (model, method) => method === 'search_read' ? [] : method === 'create' ? 10 : true }
+  const odoo = { contactsEnabled: true, execute: async (model, method) => method === 'search_read' ? [] : method === 'create' ? 10 : method === 'search_count' ? 0 : true }
   const container = { resolve: name => ({ customer_sync: service, customer: { retrieveCustomer: async id => customers.find(c => c.id === id), listCustomers: async (f = {}, o = {}) => list(customers, f, o) }, locking: { execute: async (_key, fn) => fn() }, logger: { info() {}, warn() {} }, odoo, query: { graph: async () => ({ data: [] }) } })[name] }
   return { container, identities, decisions, customers, service, odoo }
 }

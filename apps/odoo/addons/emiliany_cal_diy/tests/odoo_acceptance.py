@@ -11,6 +11,8 @@ booking = {'uid': 'first', 'status': 'accepted', 'title': 'Consultation',
            'start': '2026-11-01T01:30:00-06:00', 'end': '2026-11-01T01:30:00-07:00',
            'attendees': [{'email': 'CUSTOMER@example.test', 'name': 'Customer'}], 'eventType': {'id': 1}}
 partner = env['res.partner'].create({'name': 'Existing', 'email': 'customer@example.test'})
+env['res.partner'].create({'name': 'Checkout shipping address', 'parent_id': partner.id,
+                           'type': 'delivery', 'email': partner.email})
 lead = env['crm.lead'].create({'name': 'Existing opportunity', 'partner_id': partner.id, 'type': 'opportunity'})
 current = {'first': booking}
 
@@ -61,7 +63,7 @@ with patch.object(integration, '_client', return_value=FakeClient()):
     queue.cron_reconcile()
     queue.cron_process()
     assert env['emiliany.cal.booking'].search_count([]) == 1
-    assert env['res.partner'].search_count([('email', '=ilike', 'customer@example.test')]) == 1
+    assert env['res.partner'].search_count([('email_normalized', '=', 'customer@example.test'), ('type', '=', 'contact')]) == 1
     env['emiliany.cal.event.type'].create({'event_type_id': 2, 'organizer_id': env.ref('base.user_admin').id, 'create_opportunity': True})
     multi = dict(booking, uid='multi', eventType={'id': 2}, attendees=[
         {'email': 'NEW@example.test'}, {'email': 'new@example.test'}, {'email': 'other@example.test', 'name': 'Other'}])

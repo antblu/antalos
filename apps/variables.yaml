@@ -570,7 +570,7 @@ variables:
   ODOO_HOST: odoo.antblu.net
   ODOO_CAL_DIY_SYNC_ENABLED: "true"
   ODOO_CAL_DIY_RECONCILIATION_MODE: snapshot
-  ODOO_CAL_DIY_ADDON_REVISION: "3"
+  ODOO_CAL_DIY_ADDON_REVISION: "4"
   CALDIY_ODOO_RECONCILE_SCHEDULE: "*/15 * * * *"
   CALDIY_ODOO_OWNER_IDS: "1,2"
   ODOO_DATABASE_NAME: odoo
@@ -607,7 +607,7 @@ variables:
   MEDUSA_NODE_IMAGE_TAG: 26-bookworm-slim
   MEDUSA_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-medusa
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-medusa
-  MEDUSA_IMAGE_TAG: 2.22.3-welcome-4
+  MEDUSA_IMAGE_TAG: 2.22.4-customer-sync-1
   # Activate only after sealing credentials and configuring signed webhooks.
   MEDUSA_STRIPE_ENABLED: 'true'
   MEDUSA_PAYPAL_ENABLED: 'true'

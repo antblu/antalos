@@ -4,7 +4,7 @@ import type OdooModuleService from "../../modules/odoo/service"
 import { ODOO_MODULE } from "../../modules/odoo"
 import { Mautic } from "./mautic"
 import { mauticCountry } from "./mautic-country"
-import { partners, upsertPartner, upsertAddresses, type CustomerAddress } from "./odoo"
+import { loginLinked, partners, upsertPartner, upsertAddresses, type CustomerAddress } from "./odoo"
 import { service, locked, identity, record } from "./store"
 import { backoff, marketingState } from "./policy"
 import { RemoteError } from "./transport"
@@ -85,6 +85,7 @@ export async function drain(c: MedusaContainer, identityId?: string) {
           let decision = latest?.payload
           let explicit = !!latest && !latest.delivered && decision?.source !== "mautic_unsubscribe"
           let customer: Customer | undefined
+          let protectedPartner = false
           if (link.customer_id && decision?.source !== "account_closure") {
             customer = await c.resolve<ICustomerModuleService>(Modules.CUSTOMER).retrieveCustomer(link.customer_id, { relations: ["addresses"] }) as Customer
           }
@@ -104,8 +105,11 @@ export async function drain(c: MedusaContainer, identityId?: string) {
               }
               // Odoo and Mautic deliveries retry together; deterministic upserts make replay safe.
               const partnerId = await upsertPartner(odoo, partnerData, link.odoo_id)
-              link = await s.updateIdentities({ id: link.id, odoo_id: partnerId })
-              await upsertAddresses(odoo, partnerId, customer.addresses || [])
+              protectedPartner = partnerId === null
+              if (partnerId !== null) {
+                link = await s.updateIdentities({ id: link.id, odoo_id: partnerId })
+                await upsertAddresses(odoo, partnerId, customer.addresses || [])
+              }
             }
           } else if (decision?.source !== "account_closure" && task.payload.partner && typeof task.payload.partner === "object") {
             const p = task.payload.partner as Record<string, unknown>
@@ -168,7 +172,10 @@ export async function drain(c: MedusaContainer, identityId?: string) {
           if (link.customer_id) await mautic.membership("emiliany-medusa-customers", contact.id, decision?.source !== "account_closure")
           if (link.odoo_id) {
             await mautic.membership("emiliany-odoo-customers", contact.id, true)
-            if (!newsletterTask) await odoo.execute("res.partner", "write", [[link.odoo_id], { x_marketing_consent: state.subscribed }])
+            if (!newsletterTask) {
+              if (!customer) protectedPartner = await loginLinked(odoo, link.odoo_id)
+              if (!protectedPartner) await odoo.execute("res.partner", "write", [[link.odoo_id], { x_marketing_consent: state.subscribed }])
+            }
           }
           if (process.env.NEWSLETTER_WELCOME_ENABLED === "true" && state.subscribed &&
               task.id === latest?.id && decision?.source === "website_newsletter" && !welcomed && link.newsletter_welcome_state !== "sent") {

@@ -319,7 +319,9 @@ class CalBookingSync(models.Model):
             email = attendee['email'].strip().lower()
             if not email or '@' not in email or len(email) > 254:
                 raise UserError('Invalid attendee email')
-            matches = self.env['res.partner'].with_context(active_test=False).search([('email_normalized', '=', email)], limit=2)
+            matches = self.env['res.partner'].with_context(active_test=False).search([
+                ('email_normalized', '=', email), ('type', 'not in', ['invoice', 'delivery']),
+            ], limit=2)
             if len(matches) > 1:
                 raise UserError('Ambiguous customer email')
             if matches and not matches.active:

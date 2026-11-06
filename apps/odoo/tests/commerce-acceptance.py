@@ -12,19 +12,26 @@ with env.cr.savepoint():
     env['product.pricelist'].search([('currency_id', '=', currency.id)]).write({'active': False})
     env['product.pricelist'].create({'name': 'Bridge acceptance', 'currency_id': currency.id})
     product = env['product.product'].create({'name': 'Bridge acceptance', 'default_code': 'BRIDGE-ACCEPTANCE', 'type': 'consu', 'taxes_id': [Command.clear()]})
+    shipping = env['product.product'].create({'name': 'Example shipping', 'default_code': 'BRIDGE-EXAMPLE-SHIPPING',
+                                             'type': 'service', 'taxes_id': [Command.clear()]})
+    env['ir.config_parameter'].sudo().set_param('medusa_bridge.shipping_sku', shipping.default_code)
+    # A booking contact and a similar address must resolve to exactly one customer.
+    partner = env['res.partner'].create({'name': 'Booking attendee', 'email': 'bridge_customer@invalid.local'})
+    env['res.partner'].create({'name': 'Different attendee', 'email': 'bridgeXcustomer@invalid.local'})
     user = env['res.users'].with_context(no_reset_password=True).create({
         'name': 'Bridge acceptance', 'login': 'bridge-acceptance@invalid.local',
         'group_ids': [Command.set([env.ref(x).id for x in ('base.group_user', 'base.group_partner_manager', 'sales_team.group_sale_salesman', 'stock.group_stock_user', 'medusa_bridge.group_medusa_bridge')])],
         'company_id': company.id, 'company_ids': [Command.set(company.ids)],
     })
     api = env['sale.order'].with_user(user)
-    order = {'id': 'order_bridge_acceptance', 'display_id': 1, 'email': 'bridge-customer@invalid.local',
-             'payment_status': 'captured', 'currency_code': currency.name.lower(), 'total': 10, 'tax_total': 0,
+    order = {'id': 'order_bridge_acceptance', 'display_id': 1, 'email': partner.email,
+             'payment_status': 'captured', 'currency_code': currency.name.lower(), 'total': 15, 'tax_total': 0, 'shipping_total': 5,
              'items': [{'variant_sku': product.default_code, 'quantity': 1, 'total': 10, 'tax_total': 0}]}
     payload = {'order': order}
     sale_id = api.medusa_sync('acceptance:purchase', 'purchase', payload)
     sale = api.browse(sale_id)
-    assert sale.state == 'sale' and sale.amount_total == 10
+    assert sale.state == 'sale' and sale.amount_total == 15 and sale.partner_id.id == partner.id
+    assert shipping.id in sale.order_line.product_id.ids
     assert api.medusa_sync('acceptance:purchase', 'purchase', payload) == sale_id
     assert env['medusa.bridge.event'].search_count([('key', '=', 'acceptance:purchase')]) == 1
     for suffix, changes in [('sku', {'items': [{'variant_sku': 'MISSING', 'quantity': 1, 'total': 10}]}), ('totals', {'total': 11})]:

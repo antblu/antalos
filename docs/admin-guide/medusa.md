@@ -129,7 +129,10 @@ service outages leave decisions queued; account creation and checkout do not
 synchronously call those services. Reconciliation repairs missed events and
 observes external contact/unsubscribe changes every fifteen minutes. Stable IDs
 and normalized email are used for matching; ambiguous records require review.
-Do not equate contact existence or customer segments with marketing consent.
+The worker excludes invoice and shipping address rows from customer matching.
+For an Odoo login-linked partner, it skips protected writes and continues
+delivering the customer preference to Mautic. Ambiguous matches stay queued
+for review. Marketing enrollment requires an explicit consent decision.
 
 ### Customer settings API
 

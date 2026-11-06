@@ -62,7 +62,7 @@ class SaleOrder(models.Model):
     def _medusa_create_order(self, order):
         email = order.get('email', '').strip().lower()
         customer_id = order.get('customer_id')
-        domain = [('email', '=ilike', email), ('parent_id', '=', False)]
+        domain = [('email_normalized', '=', email), ('parent_id', '=', False)]
         partners = self.env['res.partner'].search(domain, limit=2)
         if len(partners) > 1 or not email:
             raise ValidationError('Customer mapping requires review')
