@@ -88,6 +88,17 @@
   ],
   "packageRules": [
     {
+      "description": "Wait for documentation packages to clear pnpm's one-day release-age gate before generating lockfiles",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchFileNames": [
+        "site/package.json"
+      ],
+      "minimumReleaseAge": "1 day",
+      "internalChecksFilter": "strict"
+    },
+    {
       "description": "Review Nextcloud app-store releases together instead of opening one PR per add-on",
       "matchDatasources": [
         "nextcloud"

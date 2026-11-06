@@ -1,6 +1,9 @@
 allowBuilds:
   esbuild: true
 
+# Keep Renovate's site/package.json minimumReleaseAge aligned with this gate.
+minimumReleaseAge: 1440
+
 # Exact versions already selected in the lockfile; retain the default age gate
 # for all other releases, including future upgrades of these packages.
 minimumReleaseAgeExclude:
