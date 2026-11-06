@@ -34,7 +34,7 @@ media_lscr_io_linuxserver_lidarr_image: lscr.io/linuxserver/lidarr:latest
 # renovate-image: depName=redis
 media_redis_image: redis:8-alpine
 # renovate-image: depName=postgres
-media_postgres_image: postgres:15-alpine
+media_postgres_image: postgres:18-alpine
 # renovate-image: depName=ghcr.io/neptunehub/audiomuse-ai
 media_ghcr_io_neptunehub_audiomuse_ai_image: ghcr.io/neptunehub/audiomuse-ai:latest
 # renovate-image: depName=foxxmd/multi-scrobbler
