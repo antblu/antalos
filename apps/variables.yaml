@@ -495,7 +495,7 @@ variables:
 
   # LiteLLM: two proxy and CNPG instances; Redis has a third Sentinel on RTX.
   # renovate: datasource=docker depName=ghcr.io/berriai/litellm
-  LITELLM_IMAGE_TAG: v1.108.0
+  LITELLM_IMAGE_TAG: v1.108.1
   LITELLM_HOST: litellm.antblu.net
   LITELLM_DATABASE_HOST: litellm-db-rw.litellm.svc.cluster.local
   LITELLM_DATABASE_STORAGE_SIZE: 10Gi
