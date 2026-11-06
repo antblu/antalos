@@ -178,8 +178,12 @@ and version pins alone are not a deployment or activation.
 
 The optional fulfillment cron starts inactive. It requires an explicit Medusa
 fulfillment mapping on each picking, actual tracking information, an HTTPS
-`MEDUSA_FULFILLMENT_URL`, and a shared `FULFILLMENT_WEBHOOK_SECRET`. Add that key
-through service-owned SealedSecrets, not a public ConfigMap. Delivery is recorded
+`MEDUSA_FULFILLMENT_URL`, and a shared `FULFILLMENT_WEBHOOK_SECRET`. Seal the same random value separately for the
+Medusa and Odoo namespaces in their respective `fulfillment-secret.yaml` files.
+When replacing the key, coordinate both rollouts and increment the
+`antalos.net/fulfillment-secret-revision` pod template annotations so the
+processes reload their environment. Pending callbacks can retry after both
+sides load the new key. Delivery is recorded
 only from explicit delivery evidence. Check queued failures separately from Odoo
 readiness. Inventory quantities are not synchronized by this addon.
 

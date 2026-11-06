@@ -21,6 +21,7 @@ spec:
         app.kubernetes.io/name: odoo
       annotations:
         antalos.net/storage-revision: ha-1
+        antalos.net/fulfillment-secret-revision: '1'
         antalos.net/cal-diy-addon-revision: "${ODOO_CAL_DIY_ADDON_REVISION}"
         antalos.net/jit-addon-revision: "${ODOO_JIT_ADDON_REVISION}"
     spec:
