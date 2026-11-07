@@ -22,6 +22,10 @@ spec:
                 readOnly: true
               - name: media
                 mountPath: /data
+              - name: drupal-blueprint
+                mountPath: /blueprints/drupal.yaml
+                subPath: drupal.yaml
+                readOnly: true
               - name: cal-diy-blueprint
                 mountPath: /blueprints/cal-diy.yaml
                 subPath: cal-diy.yaml
@@ -33,6 +37,9 @@ spec:
               - name: media
                 persistentVolumeClaim:
                   claimName: authentik-media
+              - name: drupal-blueprint
+                configMap:
+                  name: authentik-drupal-blueprint
               - name: cal-diy-blueprint
                 configMap:
                   name: authentik-cal-diy-blueprint
@@ -72,6 +79,13 @@ spec:
               # Increment when authentik-email changes so pods reload secret-backed env.
               - name: EMAIL_SECRET_REVISION
                 value: "${AUTHENTIK_EMAIL_SECRET_REVISION}"
+              - name: DRUPAL_OIDC_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: authentik-drupal-oidc
+                    key: client-secret
+              - name: DRUPAL_OIDC_REVISION
+                value: "${AUTHENTIK_DRUPAL_OIDC_REVISION}"
               - name: CALDIY_OIDC_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:

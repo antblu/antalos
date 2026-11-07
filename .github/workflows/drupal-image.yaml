@@ -1,0 +1,85 @@
+name: Build Drupal image
+
+on:
+  pull_request:
+    paths:
+      - apps/drupal/image/**
+      - apps/variables.yaml
+      - .github/workflows/drupal-image.yaml
+      - .github/workflows/select-runner.yaml
+      - .github/workflows/runner-probe.yaml
+  push:
+    branches:
+      - main
+    paths:
+      - apps/drupal/image/**
+      - apps/variables.yaml
+      - .github/workflows/drupal-image.yaml
+      - .github/workflows/select-runner.yaml
+      - .github/workflows/runner-probe.yaml
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: Prefer self-hosted automatically, or choose a runner explicitly
+        type: choice
+        default: auto
+        options:
+          - auto
+          - ubuntu-latest
+          - self-hosted
+
+concurrency:
+  group: drupal-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  select-runner:
+    uses: ./.github/workflows/select-runner.yaml
+    permissions:
+      actions: write
+    with:
+      runner: ${{ inputs.runner || 'auto' }}
+  build:
+    needs: select-runner
+    timeout-minutes: 45
+    runs-on: ${{ fromJSON(needs.select-runner.outputs.runner) }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Read shared build settings
+        id: versions
+        shell: bash
+        run: |
+          base="$(sed -n 's/^  DRUPAL_BASE_IMAGE_TAG: //p' apps/variables.yaml)"
+          oidc="$(sed -n 's/^  DRUPAL_OPENID_CONNECT_VERSION: //p' apps/variables.yaml)"
+          repository="$(sed -n 's/^  DRUPAL_IMAGE_REPOSITORY: //p' apps/variables.yaml)"
+          tag="$(sed -n 's/^  DRUPAL_IMAGE_TAG: //p' apps/variables.yaml)"
+          test -n "$base" && test -n "$oidc" && test -n "$repository" && test -n "$tag"
+          {
+            echo "base=$base"
+            echo "oidc=$oidc"
+            echo "image=$repository:$tag"
+          } >> "$GITHUB_OUTPUT"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and publish Drupal
+        uses: docker/build-push-action@v7
+        with:
+          context: apps/drupal/image
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.versions.outputs.image }}
+          build-args: |
+            DRUPAL_BASE_IMAGE_TAG=${{ steps.versions.outputs.base }}
+            DRUPAL_OPENID_CONNECT_VERSION=${{ steps.versions.outputs.oidc }}
+          cache-from: type=gha,scope=drupal
+          cache-to: type=gha,mode=max,scope=drupal

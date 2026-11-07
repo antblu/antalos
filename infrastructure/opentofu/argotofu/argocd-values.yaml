@@ -56,6 +56,8 @@ extraObjects:
                 substitution_expression="$substitution_expression"' | (select(.kind == "Service") | .spec.ports[] | .port | select(tag == "!!str")) |= to_number'
                 substitution_expression="$substitution_expression"' | (select(.kind == "Deployment" or .kind == "StatefulSet" or .kind == "DaemonSet" or .kind == "ReplicaSet") | .spec.template.spec | (.containers[], .initContainers[]) | .ports[] | .containerPort | select(tag == "!!str")) |= to_number'
 
+                substitution_expression="$substitution_expression"' | (select(.kind == "Deployment" or .kind == "StatefulSet" or .kind == "DaemonSet" or .kind == "ReplicaSet" or .kind == "Job") | .spec.template.spec.securityContext | (.runAsUser, .runAsGroup, .fsGroup) | select(tag == "!!str")) |= to_number'
+
                 # Only replace placeholders declared in variables.yaml. Broad
                 # envsubst also erases Argo's reserved $values reference and
                 # runtime variables such as $REDIS_PASSWORD.

@@ -19,7 +19,7 @@ metadata:
   name: drupal
   namespace: drupal
   annotations:
-    argocd.argoproj.io/sync-wave: '1'
+    argocd.argoproj.io/sync-wave: '2'
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: 'true'
 spec:

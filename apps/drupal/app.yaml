@@ -28,3 +28,9 @@ spec:
     namespace: drupal
     jsonPointers:
     - /spec/template
+  - group: batch
+    kind: Job
+    name: drupal-configure-v1
+    namespace: drupal
+    jsonPointers:
+    - /spec/template

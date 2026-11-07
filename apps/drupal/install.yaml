@@ -11,6 +11,8 @@ spec:
   template:
     spec:
       automountServiceAccountToken: false
+      imagePullSecrets:
+      - name: drupal-registry
       securityContext:
         runAsUser: ${DRUPAL_UID}
         runAsGroup: ${DRUPAL_GID}
@@ -21,7 +23,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       initContainers:
       - name: prepare-sites
-        image: docker.io/library/drupal:${DRUPAL_IMAGE_TAG}
+        image: ${DRUPAL_IMAGE_REPOSITORY}:${DRUPAL_IMAGE_TAG}
         command:
         - /bin/sh
         - -ec
@@ -46,7 +48,7 @@ spec:
             - ALL
       containers:
       - name: install
-        image: docker.io/library/drupal:${DRUPAL_IMAGE_TAG}
+        image: ${DRUPAL_IMAGE_REPOSITORY}:${DRUPAL_IMAGE_TAG}
         command:
         - php
         - /run/drupal/install.php
@@ -72,6 +74,15 @@ spec:
             secretKeyRef:
               name: drupal-app
               key: admin-password
+        - name: DRUPAL_OIDC_CLIENT_ID
+          value: ${DRUPAL_OIDC_CLIENT_ID}
+        - name: DRUPAL_AUTHENTIK_URL
+          value: https://${AUTHENTIK_HOST}
+        - name: DRUPAL_OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: drupal-oidc
+              key: client-secret
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -97,7 +108,8 @@ spec:
         persistentVolumeClaim:
           claimName: drupal-data
       - name: sites
-        emptyDir: {}
+        emptyDir:
+          sizeLimit: 64Mi
       - name: config
         configMap:
           name: drupal-config

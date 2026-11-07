@@ -1,0 +1,7 @@
+name: Antalos Blog
+type: module
+description: Authentik login presentation and application group authorization.
+package: Antalos
+core_version_requirement: ^11
+dependencies:
+  - openid_connect:openid_connect

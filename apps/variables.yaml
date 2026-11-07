@@ -6,7 +6,7 @@ variables:
   # renovate: datasource=docker depName=registry.k8s.io/kubectl
   AUTHORIZATION_KUBECTL_IMAGE_TAG: v1.37.2
   # Bump when changing the yaml-envsubst plugin; its subPath mount needs new pods.
-  ARGOCD_PLUGIN_CONFIG_REVISION: "2"
+  ARGOCD_PLUGIN_CONFIG_REVISION: "3"
   # renovate: datasource=docker depName=mikefarah/yq
   ARGOCD_YQ_IMAGE_TAG: 4.54.2
   # renovate: datasource=docker depName=quay.io/argoproj/argocd
@@ -672,7 +672,12 @@ variables:
 
   # Drupal: replicated web tier; one CNPG primary and one standby.
   # renovate: datasource=docker depName=docker.io/library/drupal
-  DRUPAL_IMAGE_TAG: 11.3.20-php8.4-apache-bookworm
+  DRUPAL_BASE_IMAGE_TAG: 11.4.11-php8.4-apache-bookworm
+  DRUPAL_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-drupal
+  # renovate: datasource=docker depName=ghcr.io/antblu/antalos-drupal
+  DRUPAL_IMAGE_TAG: 11.4.11-oidc1
+  # renovate: datasource=packagist depName=drupal/openid_connect
+  DRUPAL_OPENID_CONNECT_VERSION: 1.6
   # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
   DRUPAL_POSTGRES_IMAGE_TAG: 18.6-standard-trixie
   DRUPAL_HOST: blog.antblu.net
@@ -685,3 +690,5 @@ variables:
   DRUPAL_DATA_STORAGE_SIZE: 10Gi
   DRUPAL_DATABASE_STORAGE_SIZE: 5Gi
   DRUPAL_TRUSTED_PROXY_CIDR: 10.244.0.0/16
+  DRUPAL_OIDC_CLIENT_ID: antalos-drupal
+  AUTHENTIK_DRUPAL_OIDC_REVISION: "1"

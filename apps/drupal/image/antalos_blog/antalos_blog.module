@@ -1,0 +1,51 @@
+<?php
+
+/**
+ * @file
+ * Authentik authorization for the blog's single OIDC client.
+ */
+
+use Drupal\user\UserInterface;
+
+/**
+ * Implements hook_openid_connect_client_info_alter().
+ */
+function antalos_blog_openid_connect_client_info_alter(array &$clients) {
+  $clients['generic']['label'] = t('antID');
+}
+
+/**
+ * Implements hook_openid_connect_pre_authorize().
+ */
+function antalos_blog_openid_connect_pre_authorize($account, array $context) {
+  if ($context['plugin_id'] !== 'generic') {
+    return FALSE;
+  }
+  // Keep the local recovery administrator separate from federated identities.
+  if ($account && (int) $account->id() === 1) {
+    return FALSE;
+  }
+  $userinfo = $context['userinfo'];
+  $groups = $userinfo['groups'] ?? [];
+  return ($userinfo['email_verified'] ?? FALSE) === TRUE
+    && is_array($groups)
+    && (bool) array_intersect($groups, ['drupal-users', 'drupal-admins', 'antalos-users', 'antalos-admins']);
+}
+
+/**
+ * Implements hook_openid_connect_userinfo_save().
+ */
+function antalos_blog_openid_connect_userinfo_save(UserInterface $account, array $context) {
+  if ($context['plugin_id'] !== 'generic' || (int) $account->id() === 1) {
+    return;
+  }
+  // This integration owns only this role on federated accounts. Revoke it on
+  // the next login when Authentik no longer supplies administrator membership.
+  $groups = $context['userinfo']['groups'] ?? [];
+  if (is_array($groups) && array_intersect($groups, ['drupal-admins', 'antalos-admins'])) {
+    $account->addRole('administrator');
+  }
+  else {
+    $account->removeRole('administrator');
+  }
+}

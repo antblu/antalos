@@ -4,7 +4,7 @@ metadata:
   name: drupal
   namespace: drupal
   annotations:
-    argocd.argoproj.io/sync-wave: '0'
+    argocd.argoproj.io/sync-wave: '1'
 spec:
   replicas: 2
   strategy:
@@ -13,13 +13,16 @@ spec:
       maxSurge: 0
       maxUnavailable: 1
   selector:
-    matchLabels: &id001
+    matchLabels:
       app.kubernetes.io/name: drupal
   template:
     metadata:
-      labels: *id001
+      labels:
+        app.kubernetes.io/name: drupal
     spec:
       automountServiceAccountToken: false
+      imagePullSecrets:
+      - name: drupal-registry
       securityContext:
         runAsUser: ${DRUPAL_UID}
         runAsGroup: ${DRUPAL_GID}
@@ -30,7 +33,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       initContainers:
       - name: prepare-sites
-        image: docker.io/library/drupal:${DRUPAL_IMAGE_TAG}
+        image: ${DRUPAL_IMAGE_REPOSITORY}:${DRUPAL_IMAGE_TAG}
         command:
         - /bin/sh
         - -ec
@@ -55,7 +58,7 @@ spec:
             - ALL
       containers:
       - name: drupal
-        image: docker.io/library/drupal:${DRUPAL_IMAGE_TAG}
+        image: ${DRUPAL_IMAGE_REPOSITORY}:${DRUPAL_IMAGE_TAG}
         command:
         - /bin/sh
         - -ec
@@ -91,6 +94,15 @@ spec:
           value: /tmp/apache/apache.pid
         - name: APACHE_LOG_DIR
           value: /var/log/apache2
+        - name: DRUPAL_OIDC_CLIENT_ID
+          value: ${DRUPAL_OIDC_CLIENT_ID}
+        - name: DRUPAL_AUTHENTIK_URL
+          value: https://${AUTHENTIK_HOST}
+        - name: DRUPAL_OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: drupal-oidc
+              key: client-secret
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -146,7 +158,8 @@ spec:
         persistentVolumeClaim:
           claimName: drupal-data
       - name: sites
-        emptyDir: {}
+        emptyDir:
+          sizeLimit: 64Mi
       - name: config
         configMap:
           name: drupal-config

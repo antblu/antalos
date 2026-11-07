@@ -1,0 +1,15 @@
+kind: SealedSecret
+apiVersion: bitnami.com/v1alpha1
+metadata:
+  name: drupal-registry
+  namespace: drupal
+  annotations:
+    argocd.argoproj.io/sync-wave: '-5'
+spec:
+  template:
+    metadata:
+      name: drupal-registry
+      namespace: drupal
+    type: kubernetes.io/dockerconfigjson
+  encryptedData:
+    .dockerconfigjson: AgCENz68+ZeVGlTc1aLgwsHVvrja0dQRDNNbQwhErUC5VXpBmAcLQpZ2lpJJk9Hjsv78JDWWFsvdVAfA7C6qeUK1nCm9+L0Q2RApg1EZYt9zWLwtr+DMTW6t87251cJR0sVMF3OE92XgGuSipLSF0rUpf85IzJofAfmMa9lLtd3jYd0AUwysQa8ynOt6mwoDoIm7Cb8uP7YOlQFFvLEA1QcKHN2Y2RXjoJNMKBM5mbY1j4Fkzva/AenfRWus+AeFLX62W604a6XMadYGEHTbyOOd4VtUV0XohJrXRuDFaZ5hqplE3nW9+W6ebZTS/pKxHTNGgA79MzTzcnuYoRo/gwLTq/Xh92mfOK3cDoCmEdJHNZ2LSRgnUaRi1eNzuRpm9eT17gVsTSBO6tmuQ4nUwhHOge40egIoun7MxakyOEhXGjd3JYvxDRppN9w2MjWa7k1rEA3KJ/bkkR8ezJQW+2ZLMcDGoIhV7C3cFDzME0QkPdYucMFgG278kzoIE3frfpS+WO7L6ElH8Am9njBVckMNjveIBSI65OG5/GLA2doHsJ4X0DA0OaZMpo8NPQbiLE1oG5B3GFPK0tUEGk/234exp7IQRC1zZghHNBkflpim66zcqoVQzanBR91G06pmTVrMMhavAAKuC+AN1COAqXruhROX0pV6liC/JgmVNZn2WCuC25cSAOpKNE9gfWUOQFD51/AdoYh3r+NsUkkY6x6u2dI87qGCcEffMtOElAQUFLSD9EdiFGCU7lhaK1b/JFMMnKxh3StTtDc8XVlRNMaFmbsE+aPYM50+Xz9MK8zvvjx8KAUg/nD/Z82hnSE8svzlBrKCacfUCrNcfDMQabdbv8BJ

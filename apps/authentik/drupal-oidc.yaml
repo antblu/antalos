@@ -1,0 +1,121 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-drupal-blueprint
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+data:
+  drupal.yaml: |
+    version: 1
+    metadata:
+      name: antalos - Drupal OIDC
+    entries:
+      - model: authentik_core.group
+        id: drupal-users
+        identifiers:
+          name: drupal-users
+      - model: authentik_core.group
+        id: drupal-admins
+        identifiers:
+          name: drupal-admins
+        attrs:
+          parents:
+            - !KeyOf drupal-users
+      - model: authentik_providers_oauth2.scopemapping
+        id: drupal-profile
+        identifiers:
+          name: "antalos drupal: effective profile"
+        attrs:
+          scope_name: profile
+          expression: |
+            groups = list(request.user.all_groups().values_list("name", flat=True))
+            return {
+                "name": request.user.name,
+                "preferred_username": request.user.username,
+                "groups": groups,
+            }
+      - model: authentik_providers_oauth2.oauth2provider
+        state: present
+        id: drupal-provider
+        identifiers:
+          name: Provider for Drupal
+        attrs:
+          authentication_flow: !Find
+            - authentik_flows.flow
+            - - slug
+              - normal-authentication-flow
+          authorization_flow: !Find
+            - authentik_flows.flow
+            - - slug
+              - default-provider-authorization-implicit-consent
+          invalidation_flow: !Find
+            - authentik_flows.flow
+            - - slug
+              - default-provider-invalidation-flow
+          client_type: confidential
+          client_id: ${DRUPAL_OIDC_CLIENT_ID}
+          client_secret: !Env DRUPAL_OIDC_CLIENT_SECRET
+          grant_types:
+            - authorization_code
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          property_mappings:
+            - !Find
+              - authentik_providers_oauth2.scopemapping
+              - - scope_name
+                - openid
+            - !Find
+              - authentik_providers_oauth2.scopemapping
+              - - scope_name
+                - email
+            - !KeyOf drupal-profile
+          redirect_uris:
+            - matching_mode: strict
+              redirect_uri_type: authorization
+              url: https://${DRUPAL_HOST}/openid-connect/generic
+          signing_key: !Find
+            - authentik_crypto.certificatekeypair
+            - - name
+              - authentik Self-signed Certificate
+          sub_mode: hashed_user_id
+      - model: authentik_core.application
+        state: present
+        id: drupal-application
+        identifiers:
+          slug: drupal
+        attrs:
+          name: Drupal Blog
+          provider: !KeyOf drupal-provider
+          meta_description: Blog sign-in
+          meta_launch_url: https://${DRUPAL_HOST}/user/login
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !KeyOf drupal-application
+          group: !KeyOf drupal-users
+          order: 100
+        attrs:
+          enabled: true
+      # Preserve access through the existing global umbrella groups even before
+      # the startup authorization reconciler discovers the new Application.
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !KeyOf drupal-application
+          group: !Find
+            - authentik_core.group
+            - - name
+              - antalos-users
+          order: 101
+        attrs:
+          enabled: true
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !KeyOf drupal-application
+          group: !Find
+            - authentik_core.group
+            - - name
+              - antalos-admins
+          order: 102
+        attrs:
+          enabled: true

@@ -26,6 +26,13 @@ data:
     $settings['config_sync_directory'] = '/data/config';
     $settings['update_free_access'] = FALSE;
     $settings['file_scan_ignore_directories'] = ['node_modules', 'bower_components'];
+
+    // Keep OIDC credentials out of Drupal configuration exports.
+    $config['openid_connect.settings.generic']['settings']['client_id'] = getenv('DRUPAL_OIDC_CLIENT_ID');
+    $config['openid_connect.settings.generic']['settings']['client_secret'] = getenv('DRUPAL_OIDC_CLIENT_SECRET');
+    $config['openid_connect.settings.generic']['settings']['authorization_endpoint'] = getenv('DRUPAL_AUTHENTIK_URL') . '/application/o/authorize/';
+    $config['openid_connect.settings.generic']['settings']['token_endpoint'] = getenv('DRUPAL_AUTHENTIK_URL') . '/application/o/token/';
+    $config['openid_connect.settings.generic']['settings']['userinfo_endpoint'] = getenv('DRUPAL_AUTHENTIK_URL') . '/application/o/userinfo/';
   install.php: |
     <?php
     chdir('/opt/drupal/web');
