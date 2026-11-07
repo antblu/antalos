@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: drupal-configure-v1
+  name: drupal-configure-v2
   namespace: drupal
   annotations:
     argocd.argoproj.io/sync-wave: '0'
@@ -19,9 +19,26 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
-        fsGroup: ${DRUPAL_GID}
-        fsGroupChangePolicy: OnRootMismatch
       initContainers:
+      - name: prepare-sites-volume
+        image: ${DRUPAL_IMAGE_REPOSITORY}:${DRUPAL_IMAGE_TAG}
+        command:
+        - /bin/sh
+        - -ec
+        - chown ${DRUPAL_UID}:${DRUPAL_GID} /sites
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+        volumeMounts:
+        - name: sites
+          mountPath: /sites
       - name: prepare-sites
         image: ${DRUPAL_IMAGE_REPOSITORY}:${DRUPAL_IMAGE_TAG}
         command:

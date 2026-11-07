@@ -24,13 +24,13 @@ spec:
   ignoreDifferences:
   - group: batch
     kind: Job
-    name: drupal-install-v1
+    name: drupal-install-v2
     namespace: drupal
     jsonPointers:
     - /spec/template
   - group: batch
     kind: Job
-    name: drupal-configure-v1
+    name: drupal-configure-v2
     namespace: drupal
     jsonPointers:
     - /spec/template

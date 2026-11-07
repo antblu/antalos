@@ -9,7 +9,7 @@ The source in `apps/drupal/` defines two Drupal web replicas, one PostgreSQL pri
 
 Install CloudNativePG, OpenEBS local storage, the NFS CSI driver, Sealed Secrets, Traefik, and cert-manager first. Both main workers need capacity for PostgreSQL. DNS must route `DRUPAL_HOST` to ingress. The service owns its `letsencrypt-prod` Certificate.
 
-Set the `DRUPAL_*` inputs in `apps/variables.yaml`: image pins, hostname, site name, administrator email, NFS server/export, UID/GID, and volume capacities. The NFS export must already exist and allow UID:GID `DRUPAL_UID:DRUPAL_GID` to create directories. No startup script changes export ownership. The pod sets `fsGroup` to the configured GID so local sites volumes are writable, with `OnRootMismatch`; the NFS CSI driver can adjust volume group permissions when the export root does not match. Prepare export ownership and group permissions before reconciliation to avoid a recursive ownership pass. PostgreSQL uses independent `openebs-local` volumes; do not put its data directory on the shared Drupal export. The NFS capacity is a Kubernetes binding value, not a server-side quota.
+Set the `DRUPAL_*` inputs in `apps/variables.yaml`: image pins, hostname, site name, administrator email, NFS server/export, UID/GID, and volume capacities. The NFS export must already exist and allow UID:GID `DRUPAL_UID:DRUPAL_GID` to create directories. No startup script changes export ownership. Do not set pod `fsGroup` for this export: the NFS CSI driver can attempt a recursive ownership pass and fail on root-squashed private directories. A dedicated initializer with only the `CHOWN` capability sets ownership of the pod's emptyDir sites volume. It mounts no NFS data and has no API token. All NFS access and Drupal processes use the configured UID/GID. PostgreSQL uses independent `openebs-local` volumes; do not put its data directory on the shared Drupal export. The NFS capacity is a Kubernetes binding value, not a server-side quota.
 
 `registry.yaml` seals the existing cluster GHCR pull credential separately for this namespace; each Drupal pod references `drupal-registry`. Rotate it with the shared registry credential. The image workflow uses the same existing publishing credential through the repository Actions secret `DRUPAL_GHCR_TOKEN`, falling back to `GITHUB_TOKEN` when package permissions allow. Rotate that Actions secret alongside the namespace pull credential.
 
@@ -17,7 +17,7 @@ Set the `DRUPAL_*` inputs in `apps/variables.yaml`: image pins, hostname, site n
 
 ## Bootstrap and verify
 
-Argo CD orders namespace/storage/configuration and sealed credentials before the CNPG cluster, then runs `drupal-install-v1` and `drupal-configure-v1` as ordinary Sync Jobs before the web Deployment and ingress. The configure Job enables Authentik sign-in and seeds the welcome article. PostgreSQL bootstrap enables `pg_trgm`, required by Drupal. The installer creates a Standard-profile site without opening a public installation wizard. Completed Job templates are ignored because Kubernetes makes them immutable.
+Argo CD orders namespace/storage/configuration and sealed credentials before the CNPG cluster, then runs `drupal-install-v2` and `drupal-configure-v2` as ordinary Sync Jobs before the web Deployment and ingress. The configure Job enables Authentik sign-in and seeds the welcome article. PostgreSQL bootstrap enables `pg_trgm`, required by Drupal. The installer creates a Standard-profile site without opening a public installation wizard. Completed Job templates are ignored because Kubernetes makes them immutable.
 
 The initial administrator is `admin`. Retrieve its password through an authorized Secret viewer from `drupal-app`, key `admin-password`, in namespace `drupal`. Do not paste credentials into logs, Git, or documentation. Change the password and administrator email after first login. The sealed initial password does not reset an existing Drupal account.
 
@@ -26,7 +26,7 @@ After publication, inspect each evidence layer separately:
 ```bash
 /home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n argocd get application drupal
 /home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n drupal get clusters.postgresql.cnpg.io,pods,jobs,pvc,ingress,certificate
-/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n drupal logs job/drupal-install-v1
+/home/linuxbrew/.linuxbrew/bin/kubectl --kubeconfig kubeconfig -n drupal logs job/drupal-install-v2
 ```
 
 Confirm the database has two ready instances on different workers, installation completed, both web replicas are ready, and the Certificate is ready. Then verify trusted HTTPS at the configured hostname, administrator login, content creation, an uploaded file, and consistent retrieval through both replicas. DNS resolution alone does not prove external routing or TLS.
@@ -67,7 +67,7 @@ Automatic linking to an existing email address is disabled. Local Drupal registr
 
 After deployment, verify an allowed user's redirect, callback, account creation, logout and subsequent login; a forbidden user's denial; and administrator role grant/removal. An actual Authentik browser/token exchange is required to establish working SSO. The source alone does not establish that result.
 
-`drupal-configure-v1` is a retained, ordinary Sync Job. To reapply settings after a reviewed change, introduce a new Job name and matching `ignoreDifferences` entry rather than modifying a completed immutable Job. Configuration is reapplied by that Job; the welcome article is seeded only once. Image changes alone do not rerun completed Jobs.
+`drupal-configure-v2` is a retained, ordinary Sync Job. To reapply settings after a reviewed change, introduce a new Job name and matching `ignoreDifferences` entry rather than modifying a completed immutable Job. Configuration is reapplied by that Job; the welcome article is seeded only once. Image changes alone do not rerun completed Jobs.
 
 ## First article
 
