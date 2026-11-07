@@ -86,3 +86,30 @@ Its shared renderer explicitly restores integer `runAsUser`, `runAsGroup` and
 renderer revision before reconciling Drupal. Validate with the actual plugin
 output; plain text substitution followed by YAML parsing does not reproduce
 this type behavior.
+
+## Recorded deployment acceptance — 2026-11-06
+
+This is separately collected live evidence from the deployed example, not a
+continuing health guarantee. Argo CD reported Drupal, Authentik and its own
+management application Synced/Healthy. Both Drupal web pods and the two CNPG
+instances were ready on separate main workers. PostgreSQL reported the standby
+as `streaming` with `sync_state=quorum`. No worker-loss or database-promotion
+drill was performed.
+
+Trusted HTTPS returned 200 for the home page, login form and `/welcome`.
+Both web replicas independently served the welcome article. A temporary public
+file was written as UID:GID `1011:1011`, read from the other web replica, and
+retrieved over HTTPS; the acceptance file was then removed.
+
+The OIDC authorization-code callback, server-side token exchange, first
+federated account provisioning and administrator access succeeded. Drupal
+logout then removed administrator access for that browser session. This used
+a short-lived preauthenticated Authentik acceptance session, which was removed
+afterward; interactive password entry and MFA were not exercised. Isolated
+checks also covered denied groups, unverified email, administrator role
+addition/removal, UID 1 protection, repeated setup and preservation of article
+edits.
+
+The image publication workflow completed successfully, and its Composer audit
+reported no advisories at build time. These checks do not establish backup or
+restore readiness; the backup limitation above remains.
