@@ -27,6 +27,10 @@ data:
     $settings['update_free_access'] = FALSE;
     $settings['file_scan_ignore_directories'] = ['node_modules', 'bower_components'];
 
+    // Override the module's inherited prompt=login default so an existing
+    // Authentik session can complete SSO without a second authentication flow.
+    $config['openid_connect.settings.generic']['settings']['prompt'] = ['login' => FALSE];
+
     // Keep OIDC credentials out of Drupal configuration exports.
     $config['openid_connect.settings.generic']['settings']['client_id'] = getenv('DRUPAL_OIDC_CLIENT_ID');
     $config['openid_connect.settings.generic']['settings']['client_secret'] = getenv('DRUPAL_OIDC_CLIENT_SECRET');

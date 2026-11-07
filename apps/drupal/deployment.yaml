@@ -17,6 +17,8 @@ spec:
       app.kubernetes.io/name: drupal
   template:
     metadata:
+      annotations:
+        antalos.net/config-revision: "2"
       labels:
         app.kubernetes.io/name: drupal
     spec:
