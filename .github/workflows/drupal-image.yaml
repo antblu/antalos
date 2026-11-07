@@ -71,7 +71,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.DRUPAL_GHCR_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Build and publish Drupal
         uses: docker/build-push-action@v7
         with:
