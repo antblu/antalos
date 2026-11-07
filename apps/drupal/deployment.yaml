@@ -1,0 +1,159 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drupal
+  namespace: drupal
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels: &id001
+      app.kubernetes.io/name: drupal
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: ${DRUPAL_UID}
+        runAsGroup: ${DRUPAL_GID}
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+        fsGroup: ${DRUPAL_GID}
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+      - name: prepare-sites
+        image: docker.io/library/drupal:${DRUPAL_IMAGE_TAG}
+        command:
+        - /bin/sh
+        - -ec
+        - |
+          umask 0027
+          mkdir -p /data/files /data/private /data/config /sites/default
+          cp -R /opt/drupal/web/sites/. /sites/
+          cp /run/drupal/settings.php /sites/default/settings.php
+          ln -sfn /data/files /sites/default/files
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: sites
+          mountPath: /sites
+        - name: config
+          mountPath: /run/drupal
+          readOnly: true
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      containers:
+      - name: drupal
+        image: docker.io/library/drupal:${DRUPAL_IMAGE_TAG}
+        command:
+        - /bin/sh
+        - -ec
+        - |
+          mkdir -p /tmp/apache
+          exec apache2 -DFOREGROUND
+        env:
+        - name: DRUPAL_HOST
+          value: ${DRUPAL_HOST}
+        - name: DRUPAL_SITE_NAME
+          value: ${DRUPAL_SITE_NAME}
+        - name: DRUPAL_ADMIN_EMAIL
+          value: ${DRUPAL_ADMIN_EMAIL}
+        - name: DRUPAL_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: drupal-db
+              key: password
+        - name: DRUPAL_HASH_SALT
+          valueFrom:
+            secretKeyRef:
+              name: drupal-app
+              key: hash-salt
+        - name: APACHE_RUN_USER
+          value: '#${DRUPAL_UID}'
+        - name: APACHE_RUN_GROUP
+          value: '#${DRUPAL_GID}'
+        - name: APACHE_RUN_DIR
+          value: /tmp/apache
+        - name: APACHE_LOCK_DIR
+          value: /tmp/apache
+        - name: APACHE_PID_FILE
+          value: /tmp/apache/apache.pid
+        - name: APACHE_LOG_DIR
+          value: /var/log/apache2
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - name: http
+          containerPort: 8080
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: sites
+          mountPath: /opt/drupal/web/sites
+          readOnly: true
+        - name: config
+          mountPath: /run/drupal
+          readOnly: true
+        - name: config
+          mountPath: /etc/apache2/ports.conf
+          subPath: ports.conf
+          readOnly: true
+        - name: config
+          mountPath: /usr/local/etc/php/conf.d/zz-drupal.ini
+          subPath: php.ini
+          readOnly: true
+        startupProbe:
+          tcpSocket:
+            port: http
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /user/login
+            port: http
+            httpHeaders:
+            - name: Host
+              value: ${DRUPAL_HOST}
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: http
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: '2'
+            memory: 512Mi
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: drupal-data
+      - name: sites
+        emptyDir: {}
+      - name: config
+        configMap:
+          name: drupal-config
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: drupal
+            topologyKey: kubernetes.io/hostname

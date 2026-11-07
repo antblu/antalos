@@ -36,6 +36,7 @@ No service should be described as unconditionally end-to-end HA solely because i
 
 | Service | Availability conclusion | Mechanism and limits |
 | --- | --- | --- |
+| [Drupal](/admin-guide/drupal/#availability-and-recovery) | Partially HA: two web pods and a CNPG primary/standby pair. | Shared NFS remains a dependency; database promotion can interrupt requests. Backups and failover acceptance require separate work. |
 | [Mautic](/infrastructure/mautic/) | Partially HA: two web/worker pods, two Galera members plus garbd, two Redis data pods and three Sentinels. | Shared NFS, API/operator dependencies, scheduled jobs and schema upgrades retain interruption paths; failover requires separate testing. |
 | [Authentik](/infrastructure/authentik/#availability-and-failure-behavior) | Partially HA: replicated identity processing and database; external shared media and maintenance limits remain. | 2; required anti-affinity; see the linked component table for the data, routing, and recovery path. |
 | [BentoPDF](/infrastructure/bentopdf/#availability-and-failure-behavior) | HA static serving tier; access depends on the shared identity and ingress services. | 2 stateless pods on separate nodes; see the linked component table for the data, routing, and recovery path. |

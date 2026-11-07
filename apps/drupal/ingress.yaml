@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: drupal
+  namespace: drupal
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  selector:
+    app.kubernetes.io/name: drupal
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: drupal
+  namespace: drupal
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - ${DRUPAL_HOST}
+    secretName: drupal-tls
+  rules:
+  - host: ${DRUPAL_HOST}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: drupal
+            port:
+              name: http

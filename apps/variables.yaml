@@ -669,3 +669,19 @@ variables:
   MAUTIC_REDIS_DATA_0_HOST: mautic-redis-data-0.mautic-redis-data.mautic.svc.cluster.local
   MAUTIC_REDIS_DATA_1_HOST: mautic-redis-data-1.mautic-redis-data.mautic.svc.cluster.local
   MAUTIC_REDIS_SENTINEL_2_HOST: mautic-redis-sentinel-2.mautic.svc.cluster.local
+
+  # Drupal: replicated web tier; one CNPG primary and one standby.
+  # renovate: datasource=docker depName=docker.io/library/drupal
+  DRUPAL_IMAGE_TAG: 11.3.20-php8.4-apache-bookworm
+  # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
+  DRUPAL_POSTGRES_IMAGE_TAG: 18.6-standard-trixie
+  DRUPAL_HOST: blog.antblu.net
+  DRUPAL_SITE_NAME: Antblu's Blog
+  DRUPAL_ADMIN_EMAIL: admin@antblu.net
+  DRUPAL_NFS_SERVER: 10.30.0.5
+  DRUPAL_NFS_SHARE: /mnt/nvme/drupal
+  DRUPAL_UID: 1011
+  DRUPAL_GID: 1011
+  DRUPAL_DATA_STORAGE_SIZE: 10Gi
+  DRUPAL_DATABASE_STORAGE_SIZE: 5Gi
+  DRUPAL_TRUSTED_PROXY_CIDR: 10.244.0.0/16

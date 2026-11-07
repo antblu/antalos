@@ -96,6 +96,7 @@ export default defineConfig({
             },
             ...serviceNavigation('admin-guide'),
             { label: 'Invoice Ninja', link: '/admin-guide/invoiceninja/' },
+            { label: 'Drupal', link: '/admin-guide/drupal/' },
             {
               label: 'Integration runbooks',
               collapsed: true,

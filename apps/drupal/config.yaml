@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: drupal-config
+  namespace: drupal
+  annotations:
+    argocd.argoproj.io/sync-wave: '-5'
+data:
+  settings.php: |
+    <?php
+    $databases['default']['default'] = [
+      'database' => 'drupal', 'username' => 'drupal',
+      'password' => getenv('DRUPAL_DB_PASSWORD'),
+      'host' => 'drupal-db-rw.drupal.svc.cluster.local', 'port' => '5432',
+      'driver' => 'pgsql', 'prefix' => '',
+      'namespace' => 'Drupal\pgsql\Driver\Database\pgsql',
+      'autoload' => 'core/modules/pgsql/src/Driver/Database/pgsql/',
+    ];
+    $settings['hash_salt'] = getenv('DRUPAL_HASH_SALT');
+    $settings['trusted_host_patterns'] = ['^' . preg_quote(getenv('DRUPAL_HOST'), '/') . '$'];
+    $settings['reverse_proxy'] = TRUE;
+    $settings['reverse_proxy_addresses'] = ['${DRUPAL_TRUSTED_PROXY_CIDR}'];
+    $settings['reverse_proxy_trusted_headers'] = \Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_FOR | \Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_PROTO | \Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_PORT;
+    $settings['file_public_path'] = 'sites/default/files';
+    $settings['file_private_path'] = '/data/private';
+    $settings['config_sync_directory'] = '/data/config';
+    $settings['update_free_access'] = FALSE;
+    $settings['file_scan_ignore_directories'] = ['node_modules', 'bower_components'];
+  install.php: |
+    <?php
+    chdir('/opt/drupal/web');
+    $class_loader = require_once '/opt/drupal/vendor/autoload.php';
+    $_SERVER['HTTP_HOST'] = getenv('DRUPAL_HOST');
+    $_SERVER['SERVER_NAME'] = getenv('DRUPAL_HOST');
+    $_SERVER['SERVER_PORT'] = '443';
+    $_SERVER['HTTPS'] = 'on';
+    $_SERVER['REQUEST_URI'] = '/';
+    $_SERVER['SCRIPT_NAME'] = '/index.php';
+    $pdo = new PDO('pgsql:host=drupal-db-rw.drupal.svc.cluster.local;dbname=drupal', 'drupal', getenv('DRUPAL_DB_PASSWORD'));
+    if ($pdo->query("SELECT to_regclass('public.key_value')")->fetchColumn()) {
+      $q = $pdo->query("SELECT value FROM key_value WHERE collection='state' AND name='install_task'");
+      $task = $q->fetchColumn();
+      if (is_resource($task)) { $task = stream_get_contents($task); }
+      if ($task === serialize('done')) { echo "Drupal is already installed; preserving data.\n"; exit(0); }
+      throw new RuntimeException('Partial installation detected. Inspect database before retrying.');
+    }
+    require_once 'core/includes/install.core.inc';
+    install_drupal($class_loader, [
+      'interactive' => FALSE,
+      'parameters' => ['profile' => 'standard', 'langcode' => 'en'],
+      'forms' => ['install_configure_form' => [
+        'site_name' => getenv('DRUPAL_SITE_NAME'),
+        'site_mail' => getenv('DRUPAL_ADMIN_EMAIL'),
+        'account' => ['name' => 'admin', 'mail' => getenv('DRUPAL_ADMIN_EMAIL'),
+          'pass' => ['pass1' => getenv('DRUPAL_ADMIN_PASSWORD'), 'pass2' => getenv('DRUPAL_ADMIN_PASSWORD')]],
+        'enable_update_status_module' => TRUE,
+        'enable_update_status_emails' => NULL,
+      ]],
+    ]);
+    echo "Drupal installation completed.\n";
+  ports.conf: |
+    Listen 8080
+  php.ini: |
+    memory_limit=256M
+    upload_max_filesize=64M
+    post_max_size=64M
+    expose_php=Off
+    session.cookie_secure=1
+    session.cookie_httponly=1
