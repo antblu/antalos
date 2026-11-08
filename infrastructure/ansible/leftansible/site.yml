@@ -204,18 +204,23 @@
         group: root
         mode: "0640"
 
-    - name: Allow Explo to read its protected configuration
-      ansible.builtin.file:
-        path: "{{ left_media_compose_root }}/explo/.env"
-        state: file
-        owner: root
-        group: "1008"
-        mode: "0640"
+    - name: Inspect optional protected media configuration
+      ansible.builtin.stat:
+        path: "{{ left_media_compose_root }}/{{ item }}"
+      loop:
+        - explo/.env
+        - autopulse/config.yaml
+      register: left_protected_media_files
 
-    - name: Allow autopulse to read its protected configuration
+    - name: Allow media applications to read existing protected configuration
       ansible.builtin.file:
-        path: "{{ left_media_compose_root }}/autopulse/config.yaml"
+        path: "{{ left_media_compose_root }}/{{ item.item }}"
         state: file
         owner: root
         group: "1008"
         mode: "0640"
+      loop: "{{ left_protected_media_files.results }}"
+      when: item.stat.exists
+
+    - name: Manage Seerr integration settings
+      ansible.builtin.import_tasks: tasks/seerr.yml

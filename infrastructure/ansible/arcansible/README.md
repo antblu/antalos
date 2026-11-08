@@ -18,12 +18,12 @@ The Compose source of truth is `compose/compose.yaml`. Its project name is
 when changing services so Compose adopts them rather than trying to create
 new containers with conflicting names. It runs these services:
 
-- Immich Machine Learning `v3.1.0` with the OpenVINO image and Arc device `0`.
+- Immich Machine Learning with the OpenVINO image and Arc device `0`.
 - Nextcloud Talk Recording, pinned by its amd64 digest, with automatic Intel
   VA-API `h264_vaapi` encoding.
-- Jellyfin `12.0.20260908-012347` with QSV enabled on
+- Jellyfin with QSV enabled on
   `/dev/dri/renderD128`.
-- Docling Serve `1.30.0` on Intel's dated PyTorch XPU `2.13.0` image for Intel
+- Docling Serve on Intel's dated PyTorch XPU image for Intel
   GPU inference.
 - Trailarr for trailer management beside the media library.
 - Tdarr with an internal node and the Arc render device for media encoding.
@@ -31,6 +31,9 @@ new containers with conflicting names. It runs these services:
   the Arc GPU, with its application running as UID:GID `1008:1008`.
 - LazyLibrarian for author discovery and separate ebook/audiobook downloads
   through Debian Left's existing qBittorrent endpoint.
+
+Current source versions are in `variables.yaml`; these describe the next
+playbook run and do not establish which versions are running on the guest.
 
 Docling publishes CPU, CUDA, and AMD deployment paths, but no Intel container.
 `compose/Dockerfile.docling-xpu` therefore layers pinned Docling Serve and

@@ -4,6 +4,33 @@ left_compose_root: /opt/compose/caddy
 left_media_compose_root: /opt/compose/media
 left_media_path: /mnt/warm/jellyfin
 left_media_export: 10.30.0.5:/mnt/warm/jellyfin
+left_radarr_allowed_hosts:
+  - radarr
+  - radarr.antblu.net
+  - 10.30.0.27
+
+# Applied to existing Seerr state; credentials are discovered only on the guest.
+left_seerr_connections:
+  application_url: https://seerr.antblu.net
+  jellyfin:
+    hostname: 10.30.0.28
+    port: 8096
+    use_ssl: false
+    external_url: https://jelly.antblu.net
+  radarr:
+    hostname: radarr
+    port: 7878
+    use_ssl: false
+    external_url: https://radarr.antblu.net
+    quality_profile: Any
+    root_folder: /media/movies
+  sonarr:
+    hostname: sonarr
+    port: 8989
+    use_ssl: false
+    external_url: https://sonarr.antblu.net
+    quality_profile: Any
+    root_folder: /media/tv
 
 left_host_packages:
   - ca-certificates

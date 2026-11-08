@@ -88,6 +88,23 @@
   ],
   "packageRules": [
     {
+      "description": "AudioMuse persistent data needs explicit PostgreSQL and Redis major migrations",
+      "matchFileNames": [
+        "infrastructure/ansible/leftansible/variables.yaml"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "postgres",
+        "redis"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
+    },
+    {
       "description": "Wait for documentation packages to clear pnpm's one-day release-age gate before generating lockfiles",
       "matchManagers": [
         "npm"

@@ -4,6 +4,9 @@
 mount of `10.30.0.5:/mnt/warm/jellyfin` at `/mnt/warm/jellyfin`. It copies two
 independent Compose projects: Caddy to `/opt/compose/caddy` and the media stack
 to `/opt/compose/media`. The playbook does not start either Compose project.
+When Seerr already exists,
+it validates and applies its declared connections, briefly restarting only Seerr
+if its settings change.
 
 The NFS export is for media files only. Application databases, configuration,
 models, and scratch files use local Docker volumes on Debian Left. The export
@@ -22,7 +25,8 @@ ytdlp2STRM, and Cliparr. The ytdlp2STRM image is built locally so UID `1008`
 can write its application log and configuration. An existing
 `antalos-media_ytdlp2strm-config` volume from before that change needs its
 files owned by `1008:1008`. The media project binds web ports to the Debian Left
-LAN address. Caddy remains a separate project and has no routes added here.
+LAN address. Caddy remains a separate project; its `Caddyfile` declares the
+media HTTPS routes, including `seerr.antblu.net` to Left port 5055.
 
 ## Configure
 
@@ -73,15 +77,16 @@ capacity review before starting every service at once.
 
 For Cliparr's browser editor, serve it over HTTPS through a configured reverse
 proxy or use localhost; browsers require a secure context for WebCodecs.
-No public routes or DNS records are declared here.
+The Caddyfile declares proxy routes; DNS records are managed separately.
 
 ## Provision
 
 From the repository root, enter `infrastructure/ansible/leftansible` and run
 `ansible-playbook site.yml` after confirming that the NFS export is available.
 The playbook performs package upgrades and mounts the share, so schedule it as
-normal host maintenance. It does not start the services. Once the required
-secrets and application files are in place, start the media project on the VM
+normal host maintenance. It does not start the stacks. Existing Seerr settings
+may be updated with a targeted restart. Once the required secrets and application
+files are in place, start the media project on the VM
 with `docker compose --project-directory /opt/compose/media up -d`.
 
 A host restart must mount NFS before media containers use the bind path. The
@@ -89,6 +94,75 @@ Compose media bind mounts forbid Docker from creating a missing host directory.
 Check the mounted source before starting the stack; a bare local mountpoint is
 not media storage. Back up the local Docker volumes and the protected `.env` /
 application configuration files separately from the NFS media export.
+
+## Seerr configuration and recovery
+
+Compose owns Seerr's image, timezone, port 5055, init process, health check,
+and persistent `antalos-media_seerr-config` volume mounted at `/app/config`.
+The official image runs as `node` (UID:GID `1000:1000`); keep that identity for
+its local configuration, independent of the NFS media identity `1008:1008`.
+Seerr does not need a media bind mount or LinuxServer `PUID`/`PGID` variables.
+See the upstream [Docker guide](https://docs.seerr.dev/getting-started/docker/).
+
+`vars/main.yml` declares the Jellyfin, Radarr, and Sonarr connections under
+`left_seerr_connections`, including public URLs, quality profile names, and root
+folders. The playbook renders these nonsecret inputs to
+`/opt/compose/media/seerr-connections.json` and runs `configure-seerr.py` when
+Seerr exists. The configurator reads Arr API keys from their existing local
+Docker config volumes and reuses Seerr's Jellyfin credential or, on first setup,
+`JELLYFIN_API_KEY` from the protected media `.env`. It validates Jellyfin's
+identity and both Arr profile/root-folder selections from Seerr's own network
+before changing anything. It does not reset credentials or modify those servers.
+
+Radarr's Compose environment explicitly allows its `radarr` service hostname,
+public hostname, and Left LAN address through `left_radarr_allowed_hosts`.
+This overrides a guest-local Allowed Hosts setting that might otherwise accept
+only the public proxy hostname and reject Seerr's internal requests with HTTP
+400. After rendering a changed Compose definition, recreate only Radarr with
+`docker compose --project-directory /opt/compose/media up -d --no-deps radarr`
+before applying Seerr connections. The copy-only phase does not recreate it.
+
+For a fresh installation, fill the protected media environment, start Seerr,
+Sonarr, and Radarr, and ensure their root folders exist. Then run the focused
+playbook, which avoids host package upgrades and NFS maintenance:
+
+```bash
+cd infrastructure/ansible/leftansible
+ansible-playbook seerr.yml
+```
+
+If settings differ, the configurator stops only Seerr, merges the declared
+connections, saves a protected `settings.pre-ansible.json` backup beside its
+settings, and restarts it. Unchanged settings require no restart. It preserves
+session keys, existing users and requests, library selections, unrelated settings,
+and additional servers. The declared non-4K default server is managed for each
+Arr application; ambiguous existing defaults fail rather than replace servers.
+Select a different quality profile in `vars/main.yml` if `Any` is unsuitable.
+
+Complete the Jellyfin administrator login and library selection in Seerr's UI;
+Ansible supplies the backend connections but does not invent a user account or
+mark onboarding complete. Test a representative authorized request through
+acquisition and Jellyfin discovery after applying the configuration.
+
+The repository deliberately does not contain Seerr's generated `settings.json`,
+session keys, Jellyfin login, Arr API keys, users, or request database. Preserve
+the entire config volume, including the original settings and SQLite database,
+using the upstream [backup procedure](https://docs.seerr.dev/using-seerr/backups/).
+Stop Seerr for a consistent file-copy backup. Restore that volume and its
+`1000:1000` ownership before starting the same Compose project; an empty new
+volume returns to onboarding. A successful public health endpoint proves HTTP
+readiness, not completion of onboarding or downloader integration.
+
+## Stateful dependency updates
+
+AudioMuse's existing PostgreSQL volume uses major 15 and its Redis volume uses
+major 7. Keep those image lines until a separately planned migration is complete;
+Renovate major updates are disabled for these two dependencies in this project.
+PostgreSQL major upgrades require a supported dump/restore or `pg_upgrade`
+procedure and a tested backup. Changing the image tag alone cannot migrate the
+existing data directory. PostgreSQL 18 also changes the official image's default
+data layout; consult its [image documentation](https://hub.docker.com/_/postgres)
+before changing the volume target.
 
 ## Workload image versions
 

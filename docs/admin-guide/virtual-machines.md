@@ -37,7 +37,8 @@ cd infrastructure/ansible/rtxansible
 ansible-playbook site.yml --ask-vault-pass
 ```
 
-Arc uses the same command from `arcansible/`. Left runs `ansible-playbook site.yml` from `leftansible/`, mounts the shared media export, and copies the Caddy and media Compose projects without starting them.
+Arc uses the same command from `arcansible/`. Left runs `ansible-playbook site.yml` from `leftansible/`, mounts the shared media export, and copies the Caddy and media Compose projects without starting the stacks. It also applies declared connections to an existing
+Seerr container, restarting only Seerr when its settings change.
 
 Read the playbook before a maintenance run. These playbooks can install packages, change kernels, restart containers, run their own checks, and in some cases reboot. Arc also reads the Kubernetes Talk Secret and writes Nextcloud recording configuration. A run is more than copying a Compose file.
 
@@ -54,6 +55,42 @@ Read the playbook before a maintenance run. These playbooks can install packages
 | LazyLibrarian | Open `http://10.30.0.28:5299/home`, configure authorized search providers, follow authors, and select ebook/audiobook Wanted status; qBittorrent downloads and Storyteller watch rules are declared by Arc Ansible |
 
 Successful container startup does not finish an application integration. Use a small representative request through the actual consumer after deployment.
+
+### Seerr on Debian Left
+
+The Left media Compose project declares Seerr on port 5055 and persists its
+settings and request database in `antalos-media_seerr-config` at `/app/config`.
+Caddy declares its HTTPS route. The official container uses UID:GID `1000:1000`
+for this local volume; the shared media UID `1008` does not apply to Seerr.
+The Compose health check follows the upstream
+[Docker guide](https://docs.seerr.dev/getting-started/docker/).
+
+Left's `vars/main.yml` declares Seerr's Jellyfin endpoint, application URL,
+Radarr at `radarr:7878`, Sonarr at `sonarr:8989`, quality profile names, and root
+folders. Ansible writes these inputs and merges them into the existing Seerr
+settings. It reads Arr API keys from their guest-local configuration volumes
+and uses the existing Seerr Jellyfin credential or `JELLYFIN_API_KEY` in the
+protected media environment. All three backend connections and Arr profile/root
+selections must validate before settings change. Only Seerr is restarted when
+needed; unrelated settings and application state are preserved.
+
+Run `ansible-playbook seerr.yml` from `infrastructure/ansible/leftansible` for
+focused configuration of an existing running Seerr. First installations need
+Seerr, Sonarr, and Radarr started with their protected inputs before this step.
+Finish the Jellyfin administrator login and library selection in Seerr; the
+configurator does not create a user or mark onboarding complete. The Left
+project README covers bootstrap, declared defaults, and the protected settings
+backup. HTTP readiness alone does not prove a complete request workflow.
+
+Keep generated settings, credentials, and the request database out of Git.
+Back up and restore the entire Seerr config volume, preserving its ownership
+and original session keys; follow the upstream
+[backup guide](https://docs.seerr.dev/using-seerr/backups/).
+
+AudioMuse's PostgreSQL 15 and Redis 7 image lines preserve the existing data
+format. Renovate does not propose their major upgrades in the Left project.
+Plan a migration and restore test before changing these major versions; a
+PostgreSQL image-tag change does not upgrade an existing database directory.
 
 ## Inspect without changing the VM
 

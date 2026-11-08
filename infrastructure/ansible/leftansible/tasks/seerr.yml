@@ -1,0 +1,46 @@
+- name: Copy the Seerr connection configurator
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/scripts/configure-seerr.py"
+    dest: "{{ left_media_compose_root }}/configure-seerr.py"
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Write the declared Seerr connections without credentials
+  ansible.builtin.template:
+    src: "{{ playbook_dir }}/templates/seerr-connections.json.j2"
+    dest: "{{ left_media_compose_root }}/seerr-connections.json"
+    owner: root
+    group: root
+    mode: "0640"
+
+- name: Inspect the existing Seerr container
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/docker
+      - container
+      - inspect
+      - seerr
+  register: left_seerr_container
+  changed_when: false
+  failed_when: false
+  no_log: true
+
+- name: Configure the existing Seerr connections and preserve its identity
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/python3
+      - "{{ left_media_compose_root }}/configure-seerr.py"
+      - "{{ left_media_compose_root }}/seerr-connections.json"
+      - --apply
+  register: left_seerr_configuration
+  changed_when: "'updated' in left_seerr_configuration.stdout"
+  when: left_seerr_container.rc == 0
+  no_log: true
+
+- name: Explain the first-installation Seerr prerequisite
+  ansible.builtin.debug:
+    msg: >-
+      Seerr connection inputs are written. Start only Seerr with the protected
+      media environment, then run seerr.yml to apply its connections.
+  when: left_seerr_container.rc != 0

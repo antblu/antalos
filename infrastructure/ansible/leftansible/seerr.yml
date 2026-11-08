@@ -1,0 +1,10 @@
+---
+- name: Configure existing Seerr connections without host maintenance
+  hosts: debian_left
+  become: true
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Manage Seerr integration settings
+      ansible.builtin.import_tasks: tasks/seerr.yml

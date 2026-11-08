@@ -53,6 +53,23 @@ the user's browser. Browser caching can delay visible picture changes.
 
 The startup hook owns the **System → Settings → Avatars** setting; UI changes
 are overwritten on the next worker start. Other system settings are preserved.
+
+If Authentik shows initials while the Nextcloud photo URL works, inspect its
+avatar availability cache. In Authentik 2026.8, a timeout, connection error, or
+HTTP error during the image HEAD request marks the entire image hostname
+unavailable for eight hours, overriding previously successful per-user lookups.
+Restore connectivity first and confirm the endpoint returns an image for both
+HEAD and GET from Authentik. Then reset only the affected hostname flag through
+`ak shell`, using the configured Nextcloud hostname:
+
+```python
+from django.core.cache import cache
+cache.set("goauthentik.io/lib/avatars/<NEXTCLOUD_HOST>/available", True, timeout=1)
+```
+
+This cache key is an upstream implementation detail; review it on Authentik
+upgrades. Do not clear the entire application cache to repair an avatar lookup.
+
 See [Authentik's avatar settings](https://docs.goauthentik.io/sys-mgmt/settings/#avatars)
 and [Nextcloud's public avatar endpoint](https://github.com/nextcloud/server/blob/v35.0.2/core/Controller/AvatarController.php).
 
