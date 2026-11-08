@@ -35,8 +35,20 @@
       - --apply
   register: left_seerr_configuration
   changed_when: "'updated' in left_seerr_configuration.stdout"
+  failed_when: false
   when: left_seerr_container.rc == 0
   no_log: true
+
+- name: Report a credential-safe Seerr configuration failure
+  ansible.builtin.fail:
+    msg: >-
+      {{ (left_seerr_configuration.stderr_lines
+          | select('match', '^SEERR_ERROR: ')
+          | list | first)
+          | default('Seerr configurator failed before returning a safe diagnostic') }}
+  when:
+    - left_seerr_container.rc == 0
+    - left_seerr_configuration.rc != 0
 
 - name: Explain the first-installation Seerr prerequisite
   ansible.builtin.debug:

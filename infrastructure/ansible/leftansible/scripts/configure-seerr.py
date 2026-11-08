@@ -12,6 +12,17 @@ import tempfile
 import xml.etree.ElementTree as ET
 
 
+class ConfigurationError(ValueError):
+    """An actionable message that is safe to display without credentials."""
+
+
+class BackendError(ConfigurationError):
+    def __init__(self, backend, status=None):
+        self.status = status
+        detail = f"HTTP {status}" if status is not None else "network or API response failure"
+        super().__init__(f"{backend}: {detail}; verify its endpoint and protected API key")
+
+
 def docker(*args, **kwargs):
     return subprocess.check_output(["docker", *args], text=True, **kwargs)
 
@@ -23,7 +34,7 @@ def inspect(name):
 def config_path(container, destination):
     mounts = [m for m in container["Mounts"] if m["Destination"] == destination]
     if len(mounts) != 1:
-        raise ValueError("Expected one persistent configuration mount")
+        raise ConfigurationError("Expected one persistent configuration mount")
     return Path(mounts[0]["Source"])
 
 
@@ -39,17 +50,28 @@ process.stdin.on('end', async () => {
     const response = await fetch(p.url, {
       headers: { [p.header]: p.key }, signal: AbortSignal.timeout(10000)
     });
-    if (!response.ok) throw new Error('HTTP ' + response.status);
+    if (!response.ok) {
+      process.stdout.write(JSON.stringify({configurationError: true, status: response.status}));
+      return;
+    }
     process.stdout.write(JSON.stringify(await response.json()));
-  } catch (_) { process.stderr.write('Backend API request failed\\n'); process.exit(1); }
+  } catch (_) { process.stdout.write(JSON.stringify({configurationError: true})); }
 });
 """
-    return json.loads(docker(
-        "exec", "-i", "seerr", "node", "-e", code,
-        input=json.dumps({"url": url, "key": key,
-                         "header": "X-Emby-Token" if jellyfin else "X-Api-Key"}),
-        stderr=subprocess.DEVNULL,
-    ))
+    backend = "Jellyfin" if jellyfin else "Arr backend"
+    try:
+        result = json.loads(docker(
+            "exec", "-i", "seerr", "node", "-e", code,
+            input=json.dumps({"url": url,
+                             "key": f'MediaBrowser Token="{key}"' if jellyfin else key,
+                             "header": "Authorization" if jellyfin else "X-Api-Key"}),
+            stderr=subprocess.DEVNULL,
+        ))
+    except (ValueError, subprocess.SubprocessError):
+        raise BackendError(backend) from None
+    if isinstance(result, dict) and result.get("configurationError"):
+        raise BackendError(backend, result.get("status"))
+    return result
 
 
 def endpoint(connection):
@@ -67,12 +89,21 @@ def env_value(path, name):
 
 def prepare(desired, settings, env_path):
     jf = desired["jellyfin"]
-    key = settings["jellyfin"].get("apiKey") or env_value(env_path, "JELLYFIN_API_KEY")
+    saved_key = settings["jellyfin"].get("apiKey")
+    environment_key = env_value(env_path, "JELLYFIN_API_KEY") if env_path.exists() else ""
+    key = saved_key or environment_key
     if not key:
-        raise ValueError("Set JELLYFIN_API_KEY in the protected media .env")
-    info = fetch(endpoint(jf) + "/System/Info", key, jellyfin=True)
+        raise ConfigurationError("Set JELLYFIN_API_KEY in the protected media .env")
+    try:
+        info = fetch(endpoint(jf) + "/System/Info", key, jellyfin=True)
+    except BackendError as error:
+        if error.status not in (401, 403) or not environment_key or environment_key == key:
+            raise
+        # A corrected protected input can repair a revoked saved credential.
+        key = environment_key
+        info = fetch(endpoint(jf) + "/System/Info", key, jellyfin=True)
     if not info.get("Id"):
-        raise ValueError("Jellyfin did not return its server identity")
+        raise ConfigurationError("Jellyfin did not return its server identity")
     result = {"jellyfin": {"ip": jf["hostname"], "port": jf["port"],
                            "useSsl": jf["use_ssl"], "urlBase": "",
                            "externalHostname": jf["external_url"],
@@ -83,12 +114,15 @@ def prepare(desired, settings, env_path):
         root = config_path(inspect(service), "/config")
         api_key = ET.parse(root / "config.xml").getroot().findtext("ApiKey")
         if not api_key:
-            raise ValueError(f"{service} has no existing API key")
-        profiles = fetch(endpoint(conn) + "/api/v3/qualityprofile", api_key)
-        folders = fetch(endpoint(conn) + "/api/v3/rootfolder", api_key)
+            raise ConfigurationError(f"{service} has no existing API key")
+        try:
+            profiles = fetch(endpoint(conn) + "/api/v3/qualityprofile", api_key)
+            folders = fetch(endpoint(conn) + "/api/v3/rootfolder", api_key)
+        except BackendError as error:
+            raise BackendError(service, error.status) from None
         matches = [p for p in profiles if p["name"] == conn["quality_profile"]]
         if len(matches) != 1 or not any(p["path"] == conn["root_folder"] for p in folders):
-            raise ValueError(f"{service}: declared profile or root folder is unavailable")
+            raise ConfigurationError(f"{service}: declared profile or root folder is unavailable")
         result[service] = {
             "hostname": conn["hostname"], "port": conn["port"],
             "useSsl": conn["use_ssl"], "baseUrl": "", "apiKey": api_key,
@@ -108,7 +142,7 @@ def merge(settings, desired, connections):
         candidates = [s for s in entries if not s.get("is4k", False) and
                       (s.get("hostname") == desired[service]["hostname"] or s.get("isDefault"))]
         if len(candidates) > 1:
-            raise ValueError(f"{service}: ambiguous existing default connections")
+            raise ConfigurationError(f"{service}: ambiguous existing default connections")
         if candidates:
             target = candidates[0]
         else:
@@ -156,7 +190,7 @@ def main():
     desired = json.loads(args.connections.read_text())
     container = inspect("seerr")
     if not container["State"]["Running"]:
-        raise ValueError("Start Seerr before configuring its connections")
+        raise ConfigurationError("Start Seerr before configuring its connections")
     path = config_path(container, "/app/config") / "settings.json"
     settings = json.loads(path.read_text())
     connections = prepare(desired, settings, args.connections.parent / ".env")
@@ -180,6 +214,8 @@ def main():
 if __name__ == "__main__":
     try:
         main()
+    except ConfigurationError as error:
+        raise SystemExit(f"SEERR_ERROR: {error}")
     except (ValueError, KeyError, OSError, ET.ParseError, subprocess.SubprocessError):
         # Backend responses and credential-bearing settings must never reach logs.
-        raise SystemExit("Seerr configuration failed; verify backend access, credentials, profiles and roots")
+        raise SystemExit("SEERR_ERROR: Verify container state, protected configuration files and settings format")

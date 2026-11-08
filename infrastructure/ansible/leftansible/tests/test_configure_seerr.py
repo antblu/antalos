@@ -82,6 +82,54 @@ class SeerrConfigurationTests(unittest.TestCase):
                 docker.assert_not_called()
             self.assertEqual(json.loads((path / "settings.json").read_text()), self.settings)
 
+    def test_http_failure_reports_status_without_credentials(self):
+        with patch.object(MODULE, "docker", return_value=json.dumps(
+                {"configurationError": True, "status": 401})):
+            with self.assertRaises(MODULE.BackendError) as error:
+                MODULE.fetch("http://jellyfin:8096/System/Info", "secret-token", jellyfin=True)
+        self.assertIn("Jellyfin: HTTP 401", str(error.exception))
+        self.assertNotIn("secret-token", str(error.exception))
+
+    def test_jellyfin_uses_mediabrowser_authorization(self):
+        with patch.object(MODULE, "docker", return_value='{"Id":"server"}') as docker:
+            MODULE.fetch("http://jellyfin:8096/System/Info", "private-key", jellyfin=True)
+        payload = json.loads(docker.call_args.kwargs["input"])
+        self.assertEqual(payload["header"], "Authorization")
+        self.assertEqual(payload["key"], 'MediaBrowser Token="private-key"')
+        self.assertNotIn("private-key", str(docker.call_args.args))
+
+    def test_arr_keeps_its_api_key_header(self):
+        with patch.object(MODULE, "docker", return_value='[]') as docker:
+            MODULE.fetch("http://sonarr:8989/api/v3/rootfolder", "private-key")
+        payload = json.loads(docker.call_args.kwargs["input"])
+        self.assertEqual(payload["header"], "X-Api-Key")
+        self.assertEqual(payload["key"], "private-key")
+
+    def test_revoked_saved_jellyfin_key_tries_corrected_protected_input(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            env = path / ".env"
+            env.write_text("JELLYFIN_API_KEY=replacement\n")
+            desired = {"jellyfin": {"hostname": "jellyfin", "port": 8096,
+                                    "use_ssl": False, "external_url": "https://jellyfin"}}
+            for service in ("radarr", "sonarr"):
+                desired[service] = {"hostname": service, "port": 7878,
+                                    "use_ssl": False, "external_url": "https://arr",
+                                    "quality_profile": "Any", "root_folder": "/media"}
+            (path / "config.xml").write_text("<Config><ApiKey>arr-private</ApiKey></Config>")
+            replies = [MODULE.BackendError("Jellyfin", 401),
+                       {"Id": "server", "ServerName": "Jellyfin"},
+                       [{"id": 1, "name": "Any"}], [{"path": "/media"}],
+                       [{"id": 1, "name": "Any"}], [{"path": "/media"}]]
+            self.settings["jellyfin"]["apiKey"] = "revoked"
+            with patch.object(MODULE, "fetch", side_effect=replies) as fetch, \
+                    patch.object(MODULE, "inspect"), \
+                    patch.object(MODULE, "config_path", return_value=path):
+                result = MODULE.prepare(desired, self.settings, env)
+            self.assertEqual(result["jellyfin"]["apiKey"], "replacement")
+            self.assertEqual(fetch.call_args_list[0].args[1], "revoked")
+            self.assertEqual(fetch.call_args_list[1].args[1], "replacement")
+
 
 if __name__ == "__main__":
     unittest.main()

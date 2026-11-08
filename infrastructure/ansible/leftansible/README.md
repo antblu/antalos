@@ -113,6 +113,13 @@ Docker config volumes and reuses Seerr's Jellyfin credential or, on first setup,
 `JELLYFIN_API_KEY` from the protected media `.env`. It validates Jellyfin's
 identity and both Arr profile/root-folder selections from Seerr's own network
 before changing anything. It does not reset credentials or modify those servers.
+Jellyfin validation uses `Authorization: MediaBrowser Token="…"`; Arr validation
+uses `X-Api-Key`. A rejected legacy Jellyfin token header does not establish
+that the credential itself is invalid.
+If Jellyfin rejects Seerr's saved credential with HTTP 401 or 403, the
+configurator tries the protected environment key before failing. A successful
+replacement is saved only after all three backend checks pass. Failures report
+the backend and HTTP status without displaying keys or backend response bodies.
 
 Radarr's Compose environment explicitly allows its `radarr` service hostname,
 public hostname, and Left LAN address through `left_radarr_allowed_hosts`.
