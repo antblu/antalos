@@ -445,7 +445,7 @@ variables:
   # backends require dedicated signaling proxies rather than AIO replicas.
   NEXTCLOUD_TALK_CONFIG_REVISION: "4"
   # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/aio-talk depType=floating
-  NEXTCLOUD_TALK_IMAGE_TAG: latest@sha256:907ee720df0dd346c738bad2525945c4c408b2af0d21975a4c6cfb199edeed22
+  NEXTCLOUD_TALK_IMAGE_TAG: latest@sha256:658c961f0956b35f2771bb22e4e2d8619ae5aa6b63c8e35b657e3e16997e41ef
   # renovate: datasource=docker depName=nats
   NEXTCLOUD_TALK_NATS_IMAGE_TAG: 2.15.2-alpine
   NEXTCLOUD_TALK_HOST: talk.antblu.net
