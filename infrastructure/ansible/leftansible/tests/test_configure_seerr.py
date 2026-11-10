@@ -2,6 +2,7 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import sqlite3
 import unittest
 from unittest.mock import patch
 
@@ -74,6 +75,7 @@ class SeerrConfigurationTests(unittest.TestCase):
             container = {"State": {"Running": True}, "Mounts": [
                 {"Destination": "/app/config", "Source": directory}]}
             with patch.object(MODULE, "inspect", return_value=container), \
+                    patch.object(MODULE, "has_owner", return_value=True), \
                     patch.object(MODULE, "prepare", side_effect=ValueError("backend down")), \
                     patch.object(MODULE, "docker") as docker, \
                     patch("sys.argv", ["configure-seerr", str(path / "connections.json"), "--apply"]):
@@ -81,6 +83,24 @@ class SeerrConfigurationTests(unittest.TestCase):
                     MODULE.main()
                 docker.assert_not_called()
             self.assertEqual(json.loads((path / "settings.json").read_text()), self.settings)
+
+    def test_no_owner_keeps_the_first_login_available(self):
+        result = MODULE.merge(self.settings, self.desired, self.connections, owner_exists=False)
+        self.assertEqual(result["main"]["mediaServerType"], 4)
+        self.assertEqual(result["jellyfin"]["ip"], "")
+        self.assertFalse(result["public"]["initialized"])
+        self.assertEqual(result["jellyfin"]["apiKey"], "private")
+        self.assertTrue(result["radarr"][0]["isDefault"])
+
+    def test_owner_detection_reads_existing_database(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "db").mkdir()
+            with sqlite3.connect(root / "db/db.sqlite3") as db:
+                db.execute('CREATE TABLE "user" (id INTEGER)')
+                self.assertFalse(MODULE.has_owner(root / "settings.json"))
+                db.execute('INSERT INTO "user" VALUES (1)')
+            self.assertTrue(MODULE.has_owner(root / "settings.json"))
 
     def test_http_failure_reports_status_without_credentials(self):
         with patch.object(MODULE, "docker", return_value=json.dumps(
@@ -111,7 +131,8 @@ class SeerrConfigurationTests(unittest.TestCase):
             env = path / ".env"
             env.write_text("JELLYFIN_API_KEY=replacement\n")
             desired = {"jellyfin": {"hostname": "jellyfin", "port": 8096,
-                                    "use_ssl": False, "external_url": "https://jellyfin"}}
+                                    "use_ssl": False, "external_url": "https://jellyfin",
+                                    "library_names": ["Movies", "TV"]}}
             for service in ("radarr", "sonarr"):
                 desired[service] = {"hostname": service, "port": 7878,
                                     "use_ssl": False, "external_url": "https://arr",
@@ -119,6 +140,10 @@ class SeerrConfigurationTests(unittest.TestCase):
             (path / "config.xml").write_text("<Config><ApiKey>arr-private</ApiKey></Config>")
             replies = [MODULE.BackendError("Jellyfin", 401),
                        {"Id": "server", "ServerName": "Jellyfin"},
+                       {"Items": [
+                           {"Id": "movies", "Name": "Movies", "Type": "CollectionFolder", "CollectionType": "movies"},
+                           {"Id": "tv", "Name": "TV", "Type": "CollectionFolder", "CollectionType": "tvshows"},
+                           {"Id": "music", "Name": "Music", "Type": "CollectionFolder", "CollectionType": "music"}]},
                        [{"id": 1, "name": "Any"}], [{"path": "/media"}],
                        [{"id": 1, "name": "Any"}], [{"path": "/media"}]]
             self.settings["jellyfin"]["apiKey"] = "revoked"
@@ -127,6 +152,8 @@ class SeerrConfigurationTests(unittest.TestCase):
                     patch.object(MODULE, "config_path", return_value=path):
                 result = MODULE.prepare(desired, self.settings, env)
             self.assertEqual(result["jellyfin"]["apiKey"], "replacement")
+            self.assertEqual([lib["name"] for lib in result["jellyfin"]["libraries"]], ["Movies", "TV"])
+            self.assertTrue(all(lib["enabled"] for lib in result["jellyfin"]["libraries"]))
             self.assertEqual(fetch.call_args_list[0].args[1], "revoked")
             self.assertEqual(fetch.call_args_list[1].args[1], "replacement")
 

@@ -105,8 +105,8 @@ Seerr does not need a media bind mount or LinuxServer `PUID`/`PGID` variables.
 See the upstream [Docker guide](https://docs.seerr.dev/getting-started/docker/).
 
 `vars/main.yml` declares the Jellyfin, Radarr, and Sonarr connections under
-`left_seerr_connections`, including public URLs, quality profile names, and root
-folders. The playbook renders these nonsecret inputs to
+`left_seerr_connections`, including public URLs, quality profile names, root
+folders, and Jellyfin library names (`Movies` and `TV` by default). The playbook renders these nonsecret inputs to
 `/opt/compose/media/seerr-connections.json` and runs `configure-seerr.py` when
 Seerr exists. The configurator reads Arr API keys from their existing local
 Docker config volumes and reuses Seerr's Jellyfin credential or, on first setup,
@@ -141,14 +141,20 @@ ansible-playbook seerr.yml
 If settings differ, the configurator stops only Seerr, merges the declared
 connections, saves a protected `settings.pre-ansible.json` backup beside its
 settings, and restarts it. Unchanged settings require no restart. It preserves
-session keys, existing users and requests, library selections, unrelated settings,
+session keys, existing users and requests, unrelated settings,
 and additional servers. The declared non-4K default server is managed for each
 Arr application; ambiguous existing defaults fail rather than replace servers.
 Select a different quality profile in `vars/main.yml` if `Any` is unsuitable.
 
-Complete the Jellyfin administrator login and library selection in Seerr's UI;
-Ansible supplies the backend connections but does not invent a user account or
-mark onboarding complete. Test a representative authorized request through
+On an empty SQLite installation, the configurator leaves the media server type
+unselected and the active Jellyfin hostname blank so the setup wizard can create
+its owner. Declared connection inputs remain in `seerr-connections.json`, and
+Arr connections and selected libraries are prepared. Choose Jellyfin in setup,
+enter the declared hostname and port, and sign in with a Jellyfin administrator.
+An API key alone cannot create that owner account. Seerr requires owner ID 1
+for its library-sync route; selecting a server type before owner login skips the
+required wizard step and causes synchronization to fail. Existing owners retain
+the managed Jellyfin hostname. The playbook does not mark onboarding complete. Test a representative authorized request through
 acquisition and Jellyfin discovery after applying the configuration.
 
 The repository deliberately does not contain Seerr's generated `settings.json`,

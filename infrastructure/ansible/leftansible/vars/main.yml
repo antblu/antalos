@@ -17,6 +17,9 @@ left_seerr_connections:
     port: 8096
     use_ssl: false
     external_url: https://jelly.antblu.net
+    library_names:
+      - Movies
+      - TV
   radarr:
     hostname: radarr
     port: 7878

@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import sqlite3
 import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
@@ -109,6 +110,19 @@ def prepare(desired, settings, env_path):
                            "externalHostname": jf["external_url"],
                            "name": info["ServerName"], "serverId": info["Id"],
                            "apiKey": key}}
+    if "library_names" in jf:
+        folders = fetch(endpoint(jf) + "/Library/MediaFolders", key, jellyfin=True)
+        supported = [f for f in folders.get("Items", [])
+                     if f.get("Type") == "CollectionFolder"
+                     and f.get("CollectionType") in ("movies", "tvshows")]
+        if set(jf["library_names"]) - {f["Name"] for f in supported}:
+            raise ConfigurationError("Jellyfin: a declared movie or TV library is unavailable")
+        existing = {lib["id"]: lib for lib in settings["jellyfin"].get("libraries", [])}
+        result["jellyfin"]["libraries"] = [
+            {**existing.get(f["Id"], {}), "id": f["Id"], "name": f["Name"],
+             "type": "movie" if f["CollectionType"] == "movies" else "show",
+             "enabled": f["Name"] in jf["library_names"]}
+            for f in supported]
     for service in ("radarr", "sonarr"):
         conn = desired[service]
         root = config_path(inspect(service), "/config")
@@ -132,11 +146,15 @@ def prepare(desired, settings, env_path):
     return result
 
 
-def merge(settings, desired, connections):
+def merge(settings, desired, connections, owner_exists=True):
     result = copy.deepcopy(settings)
     result["main"]["applicationUrl"] = desired["application_url"]
-    result["main"]["mediaServerType"] = 2  # Seerr MediaServerType.JELLYFIN
+    # Seerr skips owner sign-in when a server type is selected. Its login route
+    # also refuses a submitted hostname when ip is already populated.
+    result["main"]["mediaServerType"] = 2 if owner_exists else 4
     result["jellyfin"].update(connections["jellyfin"])
+    if not owner_exists:
+        result["jellyfin"]["ip"] = ""
     for service in ("radarr", "sonarr"):
         entries = result.setdefault(service, [])
         candidates = [s for s in entries if not s.get("is4k", False) and
@@ -157,9 +175,21 @@ def merge(settings, desired, connections):
                               enableSeasonFolders=True, monitorNewItems="all")
             entries.append(target)
         target.update(connections[service], isDefault=True)
-    # Preserve libraries, public.initialized, users/DB, session keys, jobs,
+    # Preserve public.initialized, users/DB, session keys, jobs,
     # notifications, extra servers and all other fields outside this contract.
     return result
+
+
+def has_owner(settings_path):
+    database = settings_path.parent / "db" / "db.sqlite3"
+    if not database.exists():
+        raise ConfigurationError("Expected Seerr SQLite database; owner state could not be verified")
+    with sqlite3.connect(database.as_uri() + "?mode=ro", uri=True) as connection:
+        owner = connection.execute('SELECT count(*) FROM "user" WHERE id = 1').fetchone()[0]
+        total = connection.execute('SELECT count(*) FROM "user"').fetchone()[0]
+    if total and not owner:
+        raise ConfigurationError("Seerr has users but its owner is missing; restore the owner before configuring")
+    return bool(owner)
 
 
 def apply(path, value):
@@ -193,8 +223,11 @@ def main():
         raise ConfigurationError("Start Seerr before configuring its connections")
     path = config_path(container, "/app/config") / "settings.json"
     settings = json.loads(path.read_text())
+    owner_exists = has_owner(path)
     connections = prepare(desired, settings, args.connections.parent / ".env")
-    updated = merge(settings, desired, connections)
+    updated = merge(settings, desired, connections, owner_exists)
+    if not owner_exists:
+        print("owner login required; choose Jellyfin in setup and sign in with a Jellyfin administrator")
     if updated == settings:
         print("unchanged")
         return
@@ -205,7 +238,7 @@ def main():
     try:
         # Reread after shutdown to retain any settings saved during validation.
         current = json.loads(path.read_text())
-        apply(path, merge(current, desired, connections))
+        apply(path, merge(current, desired, connections, has_owner(path)))
     finally:
         docker("start", "seerr")
     print("updated")
@@ -216,6 +249,6 @@ if __name__ == "__main__":
         main()
     except ConfigurationError as error:
         raise SystemExit(f"SEERR_ERROR: {error}")
-    except (ValueError, KeyError, OSError, ET.ParseError, subprocess.SubprocessError):
+    except (ValueError, KeyError, OSError, ET.ParseError, sqlite3.Error, subprocess.SubprocessError):
         # Backend responses and credential-bearing settings must never reach logs.
         raise SystemExit("SEERR_ERROR: Verify container state, protected configuration files and settings format")

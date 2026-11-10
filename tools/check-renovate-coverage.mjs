@@ -34,7 +34,7 @@ for (const file of versionFiles) {
     const match = /^\s*([A-Za-z][A-Za-z0-9_]*):\s*(.+)$/.exec(line);
     if (!match) continue;
     const [, key, value] = match;
-    const isPin = /(?:_VERSION|_IMAGE_TAG|_BASE_IMAGE|_version|_image)$/.test(key) || /^ODOO_OCA_.*_REVISION$/.test(key) || key === 'SUITECRM_IMAGE_DIGEST';
+    const isPin = /(?:_VERSION|_IMAGE_TAG|_BASE_IMAGE|_version|_image)$/.test(key) || /^ODOO_OCA_.*_REVISION$/.test(key);
     if (!isPin || contracts.has(key)) continue;
     if (!deps.some((dep) => dep.replaceString.includes(`${key}:`))) errors.push(`${file}: ${key} is not extracted by Renovate`);
   }
@@ -76,10 +76,11 @@ assert.equal(authentik?.currentValue, /^  AUTHENTIK_CHART_VERSION: (.+)$/m.exec(
 assert(authentik?.registryUrls?.some((url) => url.startsWith('https://charts.goauthentik.io')));
 for (const dep of extracted.filter((dep) => dep.datasource === 'git-refs')) {
   assert.equal(dep.currentValue, '19.0');
-  assert.match(dep.currentDigest, /^[a-f0-9]{40}$/);
+  assert.equal(dep.currentDigest, undefined);
 }
 const suitecrm = extracted.find((dep) => dep.depName === 'ghcr.io/antblu/suitecrm');
-assert.match(suitecrm?.currentDigest ?? '', /^sha256:[a-f0-9]{64}$/);
+assert(suitecrm?.currentValue);
+assert.equal(suitecrm.currentDigest, undefined);
 // Revision suffixes are builds, not Docker flavor constraints.
 for (const [pkg, oldTag, newTag] of [
   ['ghcr.io/antblu/antalos-medusa', '2.22.0-5', '2.22.0-6'],

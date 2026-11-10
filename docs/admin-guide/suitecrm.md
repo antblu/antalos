@@ -94,15 +94,14 @@ SuiteCRM's [official upgrade guide](https://docs.suitecrm.com/8.x/admin/upgradin
 
 3. Download the official `SuiteCRM-<version>.zip`, calculate its SHA-256 digest, and compare the download with a trusted upstream checksum when one is published. Do not copy a checksum from an untrusted mirror.
 
-4. Build `apps/suitecrm/image/` with the target version, `SUITECRM_PHP_BASE_IMAGE`, and verified release checksum. Publish the immutable image and record its registry digest. Do not change `apps/variables.yaml` or let Argo CD deploy the target yet.
+4. Build `apps/suitecrm/image/` with the target version, `SUITECRM_PHP_BASE_IMAGE`, and verified release checksum. Publish the release-tagged image and record its resolved registry digest as upgrade evidence. Do not change `apps/variables.yaml` or let Argo CD deploy the target yet.
 
 The four SuiteCRM release variables have different roles:
 
 | Variable | Purpose |
 | --- | --- |
 | `SUITECRM_IMAGE_TAG` | SuiteCRM target version and image tag |
-| `SUITECRM_IMAGE_DIGEST` | Immutable digest of the published custom image |
-| `SUITECRM_PHP_BASE_IMAGE` | Pinned PHP/Apache base image, including its digest |
+| `SUITECRM_PHP_BASE_IMAGE` | PHP/Apache base image tag |
 | `SUITECRM_RELEASE_SHA256` | SHA-256 of the official SuiteCRM release ZIP used by the image build and upgrade |
 
 ### 6.2. Establish a maintenance window
@@ -169,7 +168,7 @@ Both commands must finish successfully before continuing. The version marker tel
 
 ### 6.5. Publish the target and reconcile
 
-Update `SUITECRM_IMAGE_TAG`, `SUITECRM_IMAGE_DIGEST`, `SUITECRM_PHP_BASE_IMAGE` when changed, and `SUITECRM_RELEASE_SHA256` in `apps/variables.yaml`. Publish the reviewed Git change to the revision tracked by Argo CD.
+Update `SUITECRM_IMAGE_TAG`, `SUITECRM_PHP_BASE_IMAGE` when changed, and `SUITECRM_RELEASE_SHA256` in `apps/variables.yaml`. Publish the reviewed Git change to the revision tracked by Argo CD.
 
 Allow Argo CD to run `suitecrm-bootstrap` and roll the target image. The bootstrap hook reinstalls the repository-owned SAML extension, sets up messenger transports, and clears a pod-local cache. Restore the declared two web replicas, messenger replica, scheduler schedule, and normal ingress only after the hook and rollout succeed. Remove every temporary maintenance or reconciliation pause.
 
@@ -204,3 +203,5 @@ If navigation logs users out and `logs/prod/prod.log` reports `Failed to decode 
 - [`suitecrm.yaml`](https://github.com/antblu/antalos/blob/main/apps/suitecrm/suitecrm.yaml)
 
 [Official SuiteCRM documentation](https://docs.suitecrm.com/user/).
+
+The deployment uses the custom image release tag without a registry digest pin. Keep published release tags immutable in the registry and record resolved digests during upgrades for recovery evidence. The release-archive SHA-256 remains required for build-time verification.

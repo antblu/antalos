@@ -26,64 +26,6 @@
       ],
       "datasourceTemplate": "docker",
       "depTypeTemplate": "image"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^apps[/]variables[.]yaml$/"
-      ],
-      "matchStrings": [
-        "  ODOO_OCA_STORAGE_REVISION: (?<currentDigest>[a-f0-9]{40})"
-      ],
-      "datasourceTemplate": "git-refs",
-      "depNameTemplate": "https://github.com/OCA/storage.git",
-      "currentValueTemplate": "19.0",
-      "versioningTemplate": "git",
-      "depTypeTemplate": "coordinated",
-      "autoReplaceStringTemplate": "  ODOO_OCA_STORAGE_REVISION: {{{newDigest}}}"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^apps[/]variables[.]yaml$/"
-      ],
-      "matchStrings": [
-        "  ODOO_OCA_SERVER_TOOLS_REVISION: (?<currentDigest>[a-f0-9]{40})"
-      ],
-      "datasourceTemplate": "git-refs",
-      "depNameTemplate": "https://github.com/OCA/server-tools.git",
-      "currentValueTemplate": "19.0",
-      "versioningTemplate": "git",
-      "depTypeTemplate": "coordinated",
-      "autoReplaceStringTemplate": "  ODOO_OCA_SERVER_TOOLS_REVISION: {{{newDigest}}}"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^apps[/]variables[.]yaml$/"
-      ],
-      "matchStrings": [
-        "  ODOO_OCA_SERVER_AUTH_REVISION: (?<currentDigest>[a-f0-9]{40})"
-      ],
-      "datasourceTemplate": "git-refs",
-      "depNameTemplate": "https://github.com/OCA/server-auth.git",
-      "currentValueTemplate": "19.0",
-      "versioningTemplate": "git",
-      "depTypeTemplate": "coordinated",
-      "autoReplaceStringTemplate": "  ODOO_OCA_SERVER_AUTH_REVISION: {{{newDigest}}}"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^apps[/]variables[.]yaml$/"
-      ],
-      "matchStrings": [
-        "  SUITECRM_IMAGE_TAG: (?<currentValue>[^\\s]+)\\r?\\n  SUITECRM_IMAGE_DIGEST: (?<currentDigest>sha256:[a-f0-9]+)"
-      ],
-      "datasourceTemplate": "docker",
-      "depNameTemplate": "ghcr.io/antblu/suitecrm",
-      "depTypeTemplate": "coordinated",
-      "autoReplaceStringTemplate": "  SUITECRM_IMAGE_TAG: {{{newValue}}}\n  SUITECRM_IMAGE_DIGEST: {{{newDigest}}}"
     }
   ],
   "packageRules": [
@@ -161,7 +103,7 @@
         "image",
         "floating"
       ],
-      "pinDigests": true
+      "pinDigests": false
     },
     {
       "description": "Follow Zammad and Jellyfin release-line tags instead of opening PRs for each image rebuild",
@@ -241,6 +183,19 @@
         "stalwartlabs/stalwart"
       ],
       "allowedVersions": "/^v?0\\.16\\./"
+    },
+    {
+      "description": "Follow Odoo OCA release branches without pinning their commit hashes",
+      "matchDatasources": [
+        "git-refs"
+      ],
+      "matchPackageNames": [
+        "https://github.com/OCA/storage.git",
+        "https://github.com/OCA/server-tools.git",
+        "https://github.com/OCA/server-auth.git"
+      ],
+      "pinDigests": false,
+      "allowedVersions": "/^19\\.0$/"
     }
   ],
   "kubernetes": {
@@ -252,5 +207,6 @@
     "managerFilePatterns": [
       "/^apps[/].*[/]app[.]yaml$/"
     ]
-  }
+  },
+  "pinDigests": false
 }

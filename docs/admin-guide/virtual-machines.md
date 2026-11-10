@@ -77,8 +77,12 @@ needed; unrelated settings and application state are preserved.
 Run `ansible-playbook seerr.yml` from `infrastructure/ansible/leftansible` for
 focused configuration of an existing running Seerr. First installations need
 Seerr, Sonarr, and Radarr started with their protected inputs before this step.
-Finish the Jellyfin administrator login and library selection in Seerr; the
-configurator does not create a user or mark onboarding complete. The Left
+For an empty SQLite installation, the configurator keeps the initial server
+selection and owner-login steps available while preparing Arr connections and
+the declared Movies/TV libraries. Choose Jellyfin and sign in with a Jellyfin
+administrator using the declared VM endpoint. An API key does not create Seerr's
+owner, which its library-sync route requires. The configurator does not create
+a user or mark onboarding complete. The Left
 project README covers bootstrap, declared defaults, and the protected settings
 backup. HTTP readiness alone does not prove a complete request workflow.
 

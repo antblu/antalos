@@ -63,7 +63,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: bootstrap
-          image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}@${SUITECRM_IMAGE_DIGEST}
+          image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -280,7 +280,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: suitecrm
-          image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}@${SUITECRM_IMAGE_DIGEST}
+          image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
@@ -428,7 +428,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: scheduler
-              image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}@${SUITECRM_IMAGE_DIGEST}
+              image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}
               imagePullPolicy: IfNotPresent
               command:
                 - php
@@ -546,7 +546,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: messenger
-        image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}@${SUITECRM_IMAGE_DIGEST}
+        image: ${SUITECRM_IMAGE_REPOSITORY}:${SUITECRM_IMAGE_TAG}
         imagePullPolicy: IfNotPresent
         command:
         - /bin/sh

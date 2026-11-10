@@ -56,3 +56,13 @@
       Seerr connection inputs are written. Start only Seerr with the protected
       media environment, then run seerr.yml to apply its connections.
   when: left_seerr_container.rc != 0
+
+- name: Explain the required Seerr owner login
+  ansible.builtin.debug:
+    msg: >-
+      Open Seerr setup, choose Jellyfin, and sign in with your Jellyfin
+      administrator. Use the hostname and port declared in left_seerr_connections.
+      The owner account must exist before Seerr can sync libraries.
+  when:
+    - left_seerr_container.rc == 0
+    - "'owner login required' in left_seerr_configuration.stdout"
