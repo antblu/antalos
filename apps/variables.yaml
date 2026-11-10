@@ -8,7 +8,7 @@ variables:
   # Bump when changing the yaml-envsubst plugin; its subPath mount needs new pods.
   ARGOCD_PLUGIN_CONFIG_REVISION: "3"
   # renovate: datasource=docker depName=mikefarah/yq
-  ARGOCD_YQ_IMAGE_TAG: 4.54.2
+  ARGOCD_YQ_IMAGE_TAG: 4.54.3
   # renovate: datasource=docker depName=quay.io/argoproj/argocd
   ARGOCD_CMP_IMAGE_TAG: v3.6.1
   # renovate: datasource=helm depName=argo-cd registryUrl=https://argoproj.github.io/argo-helm
