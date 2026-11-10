@@ -585,7 +585,7 @@ variables:
   ODOO_BACKUP_SCHEDULE: "0 9 * * *"
   # renovate: datasource=docker depName=python
   ODOO_ADDON_INSTALLER_IMAGE_TAG: 3.15-slim-bookworm
-  ODOO_OCA_STORAGE_REVISION: 0c8cec3decc39828fc678c0b831078e6fcaad276
+  ODOO_OCA_STORAGE_REVISION: d1da5a4a485c106806eea7cdf609d7321084ebac
   # renovate: datasource=pypi depName=s3fs
   ODOO_S3FS_VERSION: 2026.9.0
   # renovate: datasource=pypi depName=python-slugify
