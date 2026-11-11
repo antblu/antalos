@@ -675,7 +675,7 @@ variables:
 
   # Drupal: replicated web tier; one CNPG primary and one standby.
   # renovate: datasource=docker depName=docker.io/library/drupal
-  DRUPAL_BASE_IMAGE_TAG: 11.4.11-php8.4-apache-bookworm
+  DRUPAL_BASE_IMAGE_TAG: 11.4.12-php8.4-apache-bookworm
   DRUPAL_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-drupal
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-drupal
   DRUPAL_IMAGE_TAG: 11.4.11-oidc1
