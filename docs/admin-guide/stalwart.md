@@ -138,6 +138,26 @@ After changing any part of this path, test all five public ports and inspect Sta
 
 Relay authentication, DNS, outbound TCP access, recipient rejection, and local mailbox access can fail independently. Record the actual destination, port, and response rather than treating every delay as an ingress problem.
 
+If an authenticated relay intermittently fails at TCP connect, test its
+resolved addresses from each mail replica and from another network. Keep the
+relay configured by hostname so DNS can follow endpoint changes. For a relay
+that normally connects promptly, create a dedicated connection strategy under
+**Settings → MTA → Outbound → Connection Strategies** and set its TCP connect
+timeout to 10 seconds. Under **Settings → MTA → Outbound → Strategy**, select
+that strategy for the same outbound traffic that uses the relay, preserving
+the default for other routes. Stalwart stores these settings in its
+configuration database. Confirm subsequent queue attempts use the shorter
+timeout and that the relay accepts the message. This limits the time spent on
+each failed connection while the network path is repaired.
+
+On OPNsense, a hostname alias can contain a different set of relay addresses
+than the resolver returns to Stalwart. If the firewall log shows that mismatch
+dropping SMTP submission, allow TCP 587 from the mail workers' observed egress
+addresses on their source VLAN, ahead of the deny rule. This permits those
+worker addresses to reach any destination on that port. Keep the relay hostname
+and TLS verification configured in Stalwart. Check the firewall sources when
+mail workers are replaced or moved, and verify STARTTLS from each replica.
+
 ## Troubleshooting
 
 The HTTP listener behind Traefik must keep `Http.useXForwarded` enabled, as declared in the bootstrap configuration, so visitor traffic is attributed to the forwarded client address. Port 8080 is internal; expose the web interface through the trusted ingress. Without forwarded client IPs, scanner requests can cause Stalwart to ban the Traefik pod addresses and return HTTP 502 for every visitor while readiness remains healthy. Check Stalwart's `security.ip-blocked` events against the current Traefik pod addresses, correct the HTTP setting, and remove only the corresponding proxy `BlockedIp` records. Verify the public account and administration pages afterward; do not clear unrelated client bans.
