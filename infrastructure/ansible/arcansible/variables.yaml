@@ -1,6 +1,6 @@
 # VM workload versions; consumed by site.yml and Compose environment templates.
 # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
-immich_machine_learning_version: v3.3.6-openvino
+immich_machine_learning_version: v3.4.0-openvino
 # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/aio-talk-recording depType=floating
 nextcloud_talk_recording_version: latest
 # renovate: datasource=docker depName=jellyfin/jellyfin
