@@ -10,6 +10,11 @@ spec:
     chart: traefik
     targetRevision: ${TRAEFIK_CHART_VERSION} # Use the latest stable chart version
     helm:
+      parameters:
+        - name: ports.publichttps.port
+          value: "${TRAEFIK_PUBLIC_HTTPS_PORT}"
+        - name: ports.publichttps.exposedPort
+          value: "${TRAEFIK_PUBLIC_HTTPS_PORT}"
       valuesObject:
         deployment:
           replicas: 2
@@ -62,10 +67,8 @@ spec:
           websecure:
             asDefault: true
           publichttps:
-            port: ${TRAEFIK_PUBLIC_HTTPS_PORT}
             expose:
               default: true
-            exposedPort: ${TRAEFIK_PUBLIC_HTTPS_PORT}
             protocol: TCP
             http:
               tls:
