@@ -256,6 +256,7 @@ variables:
   LDAP_HOST: ldap.antblu.net
   RANCHER_HOST: rancher.antblu.net
   TRAEFIK_HOST: traefik.antblu.net
+  TRAEFIK_PUBLIC_HTTPS_PORT: 9443
   GRAFANA_HOST: grafana.antblu.net
   VICTORIALOGS_HOST: logs.antblu.net
   GRAFANA_DATABASE_HOST: grafana-db-rw.monitoring.svc.cluster.local

@@ -137,7 +137,8 @@ variable "traefik_tcp_ports" {
   type        = list(number)
   description = "Traefik TCP entrypoint ports forwarded by HAProxy"
   default = [
-    443,   # HTTPS
+    443,  # LAN and VPN HTTPS
+    9443, # HTTPS forwarded from the Azure edge
     # 636, # LDAPS for Jellyfin
   ]
 }

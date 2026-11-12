@@ -266,6 +266,7 @@ metadata:
 spec:
   entryPoints:
     - websecure
+    - publichttps
   routes:
     - kind: Rule
       match: >-

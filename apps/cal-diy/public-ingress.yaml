@@ -1,0 +1,20 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cal-diy-public-profiles
+  namespace: cal-diy
+spec:
+  entryPoints:
+    - publichttps
+  routes:
+    - kind: Rule
+      match: >-
+        Host(`${CALDIY_HOST}`) && (Method(`GET`) || Method(`HEAD`)) &&
+        (Path(`/anthony-bluemel`) || Path(`/estefania-cc`) ||
+        PathPrefix(`/anthony-bluemel/`) || PathPrefix(`/estefania-cc/`) ||
+        PathPrefix(`/_next/static/`))
+      services:
+        - name: cal-diy-web
+          port: http
+  tls:
+    secretName: cal-diy-tls

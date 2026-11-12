@@ -39,3 +39,37 @@ spec:
             name: medusa-http
             port:
               name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: medusa-payment-webhooks
+  namespace: medusa
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+    traefik.ingress.kubernetes.io/router.entrypoints: publichttps
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - ${MEDUSA_HOST}
+      secretName: medusa-tls
+  rules:
+    - host: ${MEDUSA_HOST}
+      http:
+        paths:
+          - path: /hooks/payment/stripe_stripe
+            pathType: Exact
+            backend:
+              service:
+                name: medusa-http
+                port:
+                  name: http
+          - path: /hooks/payment/paypal_paypal
+            pathType: Exact
+            backend:
+              service:
+                name: medusa-http
+                port:
+                  name: http

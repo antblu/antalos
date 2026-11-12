@@ -112,6 +112,8 @@ kind: Ingress
 metadata:
   name: docs
   namespace: docs
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure,publichttps
   labels:
     app.kubernetes.io/name: docs
 spec:

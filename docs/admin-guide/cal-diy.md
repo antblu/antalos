@@ -10,6 +10,11 @@ deployment uses `ghcr.io/antblu/cal-diy-api:oidc-64c8693b971c`. The web image
 is maintained in the Cal.diy fork.
 SMTP is not configured in the current manifests.
 
+The Cal.diy web and API ingress uses the private HTTPS listener. The WAN
+listener serves GET and HEAD requests for the two explicitly listed profile
+pages, their subpaths, and Next.js static assets. Booking API requests and
+sign-in use the private listener.
+
 ## Deployment and capacity
 
 Argo CD reconciles `main`; local changes must be published through the repository

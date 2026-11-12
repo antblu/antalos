@@ -9,11 +9,13 @@ Traffic passes through several independently configured layers. A service's host
 
 <figure class="architecture-diagram" aria-label="Public HTTPS request path">
 <div class="diagram-heading">HTTPS through the Azure edge</div>
-<ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Public entry</span><ul><li>DNS → Azure public address</li><li>Azure NSG + guest firewall</li><li>HAProxy passes TCP</li></ul></li><li class="diagram-stage"><span class="diagram-label">Private transport</span><ul><li>Headscale / Tailscale</li><li>Home HAProxy pair</li><li>Forward to MetalLB address</li></ul></li><li class="diagram-stage"><span class="diagram-label">Kubernetes</span><ul><li>Traefik terminates HTTPS</li><li>Optional Authentik middleware</li><li>Service → application pod</li></ul></li></ol>
+<ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Public entry</span><ul><li>DNS → Azure public address</li><li>Azure NSG + guest firewall</li><li>HAProxy accepts TCP 443</li></ul></li><li class="diagram-stage"><span class="diagram-label">Private transport</span><ul><li>Headscale / Tailscale</li><li>Home HAProxy pair on TCP 9443</li><li>Forward to MetalLB on TCP 9443</li></ul></li><li class="diagram-stage"><span class="diagram-label">Kubernetes</span><ul><li>Traefik terminates HTTPS on publichttps</li><li>Explicitly attached host and path routes</li><li>Service → application pod</li></ul></li></ol>
 <figcaption>This is the configured edge path, not a live DNS report. Other direct or private routes must be documented by their own entrypoint.</figcaption>
 </figure>
 
 Azure's backend addresses come from `infrastructure/azure/variables.yaml` and currently identify the home proxies by their Tailscale addresses. The home pair also has an external-network Keepalived VIP declared in the HAProxy OpenTofu project. Azure's two-backend configuration and the home VIP are separate routing mechanisms.
+
+LAN and VPN clients use private DNS and TCP 443 to reach Traefik's `websecure` entrypoint. This includes the private application routes and the public sites' LAN/VPN routes. Public DNS can point to Azure's TCP 443 listener, where only routes explicitly attached to `publichttps` are reachable. The Azure-to-home connection uses TCP 9443 over the tailnet. Close any direct WAN paths to the private ingress, including router forwards and publicly routed IPv6.
 
 ## Know the addresses by role
 
@@ -32,7 +34,7 @@ These are values for this environment. Match the settings at each boundary when 
 
 | Traffic | Final listener | What must be configured |
 | --- | --- | --- |
-| HTTPS on 443 | Traefik, then the selected web service | DNS, forwarding, ingress route, certificate, and optional authentication |
+| HTTPS on 443 | Traefik `websecure` from LAN/VPN or `publichttps` via Azure and TCP 9443 | DNS, forwarding, an ingress route on the matching entrypoint, certificate, and optional authentication |
 | SMTP on 25 | Stalwart | Edge forwarding, mail Service, active SMTP listener, and mail-domain DNS |
 | Submission on 465 or 587 | Stalwart | Listener encryption/authentication settings and a working mail-client account |
 | IMAPS on 993 | Stalwart | TLS listener and mailbox credentials |

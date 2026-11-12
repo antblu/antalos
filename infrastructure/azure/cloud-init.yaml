@@ -131,8 +131,8 @@ write_files:
       backend home_443
         balance roundrobin
         option tcp-check
-        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:443 check
-        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:443 check
+        server ${HAPROXY_BACKEND_LEFT_NAME} ${HAPROXY_BACKEND_LEFT_ADDRESS}:${HAPROXY_PUBLIC_HTTPS_BACKEND_PORT} check
+        server ${HAPROXY_BACKEND_RIGHT_NAME} ${HAPROXY_BACKEND_RIGHT_ADDRESS}:${HAPROXY_PUBLIC_HTTPS_BACKEND_PORT} check
       
       frontend incoming_25
         bind :25

@@ -188,6 +188,8 @@ metadata:
   namespace: headscale
   labels:
     app.kubernetes.io/name: headplane
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure,publichttps
 spec:
   ingressClassName: traefik
   tls:
@@ -213,6 +215,7 @@ metadata:
   labels:
     app.kubernetes.io/name: headplane
   annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure,publichttps
     traefik.ingress.kubernetes.io/router.middlewares: headscale-headplane-add-admin@kubernetescrd
 spec:
   ingressClassName: traefik

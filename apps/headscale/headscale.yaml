@@ -249,6 +249,7 @@ metadata:
   labels:
     app.kubernetes.io/name: headscale
   annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure,publichttps
     traefik.ingress.kubernetes.io/router.middlewares: headscale-headplane-cors@kubernetescrd
 spec:
   ingressClassName: traefik

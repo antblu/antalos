@@ -35,6 +35,7 @@ spec:
             readOnly: true
         additionalArguments:
           - --entrypoints.websecure.http.middlewares=traefik-crowdsec-bouncer@kubernetescrd
+          - --entrypoints.publichttps.http.middlewares=traefik-crowdsec-bouncer@kubernetescrd
         experimental:
           plugins:
             crowdsec-bouncer:
@@ -47,15 +48,28 @@ spec:
           enabled: true
           minAvailable: 1
         service:
-          type: LoadBalancer
+          spec:
+            type: LoadBalancer
           annotations:
             # Pinned IP address
             metallb.io/loadBalancerIPs: ${INGRESS_LOAD_BALANCER_IP}
             metallb.io/allow-shared-ip: antblu-net
         ports:
           web:
+            asDefault: true
             expose:
               default: false
+          websecure:
+            asDefault: true
+          publichttps:
+            port: ${TRAEFIK_PUBLIC_HTTPS_PORT}
+            expose:
+              default: true
+            exposedPort: ${TRAEFIK_PUBLIC_HTTPS_PORT}
+            protocol: TCP
+            http:
+              tls:
+                enabled: true
           ldaps:
             port: 636
             expose:

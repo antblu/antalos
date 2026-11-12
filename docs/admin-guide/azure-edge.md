@@ -66,15 +66,26 @@ Cloud-init is a provisioning mechanism. Editing the template does not update a r
 | --- | --- | --- | --- |
 | 22 | Allowed for administration | No service forwarding | Separate administration path |
 | 25 | Allowed | SMTP forwarding | Stalwart forwarding |
-| 443 | Allowed | HTTPS forwarding | Traefik forwarding |
+| 443 | Allowed | Public HTTPS forwarding to home TCP 9443 | Private HTTPS forwarding to Traefik |
 | 465 | Allowed | Mail submission forwarding | Stalwart forwarding |
 | 587 | Allowed | No listener declared | Stalwart forwarding |
 | 993 | Allowed | IMAPS forwarding | Stalwart forwarding |
 | 4190 | Allowed | No listener declared | Stalwart forwarding |
+| 9443 | Internal backend port | Connects to the home HAProxy peers | Public HTTPS forwarding to Traefik |
 
 The UDP allowlist includes the configured Tailscale port. Azure NSG, public DNS, router rules, and home network policy are separate configuration. Permitting a port does not create its proxy frontend, backend, Kubernetes Service, or application listener.
 
 For 587 or 4190 through Azure, the missing proxy listeners are a source prerequisite in addition to the other layers. This guide documents that gap; it does not change the edge deployment or assert those ports currently work.
+
+## Cut over public HTTPS
+
+1. Publish the Traefik and application manifests through Argo CD. Wait for both Traefik replicas to serve the new entrypoint and confirm the existing LAN/VPN HTTPS routes still work on TCP 443.
+2. Update both running home HAProxy guests to forward TCP 9443 to the MetalLB address on TCP 9443. The home OpenTofu template includes this port for future provisioning. Permit the home proxy-to-Traefik connection through the home firewall and grant the Azure edge access to TCP 9443 on both home proxies in the tailnet policy.
+3. Once both home backends serve the new listener, update the running Azure HAProxy configuration to forward incoming TCP 443 to TCP 9443 on both home peers. The Azure guest and NSG still accept public HTTPS on TCP 443.
+4. Remove the Azure edge's access to private HTTPS on TCP 443, including via any subnet routes. Check that there are no direct WAN forwards to the private HTTPS listener or private application backends.
+5. From outside the LAN and tailnet, exercise each public hostname. Confirm that a private hostname presented to the public edge returns no application route, even when public DNS is bypassed. For an app with exact public webhook routes, exercise an authorized delivery and confirm that its root and sibling paths have no public route. Repeat representative private requests from LAN and VPN clients.
+
+Existing guests require an explicit configuration update and reload.
 
 ## Complete deployment
 

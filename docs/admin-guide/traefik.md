@@ -41,6 +41,12 @@ The dashboard uses Authentik forward-auth. Create a proxy provider for the dashb
 
 3. Keep auth callbacks and non-browser protocol paths free from recursive interactive login challenges.
 
+### Publish HTTPS routes
+
+The `publichttps` entrypoint requires explicit opt-in. For a Kubernetes Ingress that serves a whole public hostname, set `traefik.ingress.kubernetes.io/router.entrypoints` to `websecure,publichttps` so the host also works through private DNS. For an application with a public webhook and private UI, create a separate Ingress on `publichttps` with `Exact` webhook paths. Keep the application's main Ingress on `websecure`. The entrypoint uses the existing TLS Secrets and CrowdSec middleware.
+
+Follow the [Azure HTTPS cutover](/admin-guide/azure-edge/#cut-over-public-https) when enabling this path on existing proxies.
+
 ## Availability before maintenance
 
 **HA ingress process tier for one serving-node loss; upstream routing and established connections remain separate.**
