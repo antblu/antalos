@@ -1,0 +1,71 @@
+/* Native, coordinated Claro dark mode. Keep core structure and focus behavior. */
+:root { color-scheme: light; }
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --color-white: #2d343a;
+    --color-gray: #e0e3e5;
+    --color-gray-900: #d2d9df;
+    --color-gray-800: #c5cdd4;
+    --color-gray-700: #b5c0c9;
+    --color-gray-600: #a7b3bd;
+    --color-gray-500: #a7b3bd;
+    --color-gray-400: #71808c;
+    --color-gray-300: #596771;
+    --color-gray-200: #46535e;
+    --color-gray-100: #3c4852;
+    --color-gray-050: #333e47;
+    --color-gray-025: #293239;
+    --color-blue-600: #a3caff;
+    --color-blue-650: #c2dcff;
+    --color-blue-700: #d6e7ff;
+    --color-blue-050: #354a60;
+    --color-blue-020: #304151;
+    --color-focus: #9ad7bf;
+    --color-divider: #46535e;
+    --color-bg: #252b30;
+    --color-text: #e0e3e5;
+    --color-text-light: #b2bbc2;
+    --color-red-500: #ffaaa4;
+    --color-red-050: #49383b;
+    --color-red-020: #403337;
+  }
+  html, body, .dialog-off-canvas-main-canvas { background-color: #252b30; color: #e0e3e5; }
+  .content-header { background: #2d343a; border-bottom: 1px solid #46535e; }
+  .system-themes-list { background: transparent; }
+  .system-themes-list .theme-info { color: #e0e3e5; }
+  .system-themes-list .screenshot { background: #333e47; border-color: #46535e; }
+  [data-drupal-admin-styles] {
+    color-scheme: dark;
+    --admin-toolbar-color-white: #2d343a;
+    --admin-toolbar-color-gray-020: #293239;
+    --admin-toolbar-color-gray-050: #333e47;
+    --admin-toolbar-color-gray-070: #394650;
+    --admin-toolbar-color-gray-100: #40505d;
+    --admin-toolbar-color-gray-200: #46535e;
+    --admin-toolbar-color-gray-300: #596771;
+    --admin-toolbar-color-gray-400: #71808c;
+    --admin-toolbar-color-gray-500: #a7b3bd;
+    --admin-toolbar-color-gray-600: #b2bbc2;
+    --admin-toolbar-color-gray-700: #bdc7ce;
+    --admin-toolbar-color-gray-800: #cbd3da;
+    --admin-toolbar-color-gray-900: #d5dce1;
+    --admin-toolbar-color-gray-950: #e0e3e5;
+    --admin-toolbar-color-gray-990: #edf0f2;
+    --admin-toolbar-color-blue-600: #a3caff;
+    --admin-toolbar-color-blue-650: #c2dcff;
+    --admin-toolbar-color-blue-700: #d6e7ff;
+    --admin-toolbar-color-expanded: #333e47;
+    --admin-toolbar-color-focus: #9ad7bf;
+  }
+  .admin-toolbar, .admin-toolbar__content, .toolbar-dropdown__menu { background-color: #2d343a; }
+  .admin-toolbar__logo { background: transparent; }
+  .button--primary { background: #a3caff; color: #203040; border-color: #a3caff; }
+  .button--primary:hover, .button--primary:focus { background: #c2dcff; color: #203040; }
+}
+@media (forced-colors: active) {
+  html, body, .dialog-off-canvas-main-canvas, .content-header,
+  .admin-toolbar, .admin-toolbar__content, .toolbar-dropdown__menu {
+    background: Canvas; color: CanvasText;
+  }
+}

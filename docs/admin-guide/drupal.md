@@ -135,3 +135,30 @@ edits.
 The image publication workflow completed successfully, and its Composer audit
 reported no advisories at build time. These checks do not establish backup or
 restore readiness; the backup limitation above remains.
+
+## Journal deployment acceptance — 2026-11-12
+
+Separately collected live evidence: the Drupal image workflow completed successfully,
+both new web replicas became ready, and `drupal-theme-v1` completed. Argo CD reported
+Drupal Synced/Healthy. Public HTTPS returned 200 for the journal home, `/welcome`,
+the compiled React bundle, and the article discovery endpoint. Discovery returned
+the existing article and returned an empty result for an unmatched title search.
+PHP syntax checks passed for the activation script and discovery controller.
+The rollout temporarily waited for a worker's DiskPressure scheduling restriction;
+it cleared without storage deletion or placement-rule overrides. Browser-rendered
+appearance, interactive React controls, and authenticated editing were not exercised
+in this deployment acceptance.
+
+### Administration dark appearance
+
+The blog module attaches `css/admin-palette.css` only when Claro is the active
+rendering theme. It follows the operating system's dark preference and coordinates
+Claro content, form, and Navigation sidebar colors using slate surfaces, muted
+borders, and readable blue links. The public journal uses a matching softer slate
+palette with its existing theme toggle. Forced-colors mode retains system colors.
+A browser extension that recolors pages can still override native styling; the
+screenshot's mixed light sidebar/dark content does not establish which browser
+setting caused it. These source changes passed PHP syntax, whitespace, and sampled
+text-contrast checks; authenticated browser appearance has not yet been verified.
+Publishing the updated image and rebuilding Drupal caches is required to activate
+the newly attached module library.

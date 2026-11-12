@@ -60,3 +60,22 @@ function antalos_blog_openid_connect_userinfo_save(UserInterface $account, array
     $account->removeRole('administrator');
   }
 }
+
+/**
+ * Implements hook_library_info_build().
+ */
+function antalos_blog_library_info_build() {
+  return ['admin_palette' => [
+    'css' => ['theme' => ['css/admin-palette.css' => ['weight' => 100]]],
+  ]];
+}
+
+/**
+ * Implements hook_page_attachments().
+ */
+function antalos_blog_page_attachments(array &$attachments) {
+  $attachments['#cache']['contexts'][] = 'theme';
+  if (\Drupal::theme()->getActiveTheme()->getName() === 'claro') {
+    $attachments['#attached']['library'][] = 'antalos_blog/admin_palette';
+  }
+}

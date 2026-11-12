@@ -8,9 +8,9 @@
   --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-journal-theme="light"]) { color-scheme: dark; --paper: #191e1b; --surface: #212823; --ink: #eeeee3; --muted: #b0b8ac; --line: #3c473f; --accent: #ffa382; --tint: #3b2d26; --soft: #2b342d; --shadow: 0 24px 90px #0005; }
+  :root:not([data-journal-theme="light"]) { color-scheme: dark; --paper: #252b30; --surface: #2d343a; --ink: #e0e3e5; --muted: #b2bbc2; --line: #465058; --accent: #eab69d; --tint: #403a37; --soft: #364048; --shadow: 0 24px 90px #0005; }
 }
-:root[data-journal-theme="dark"] { color-scheme: dark; --paper: #191e1b; --surface: #212823; --ink: #eeeee3; --muted: #b0b8ac; --line: #3c473f; --accent: #ffa382; --tint: #3b2d26; --soft: #2b342d; --shadow: 0 24px 90px #0005; }
+:root[data-journal-theme="dark"] { color-scheme: dark; --paper: #252b30; --surface: #2d343a; --ink: #e0e3e5; --muted: #b2bbc2; --line: #465058; --accent: #eab69d; --tint: #403a37; --soft: #364048; --shadow: 0 24px 90px #0005; }
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
 body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.65 var(--sans); -webkit-font-smoothing: antialiased; }
@@ -50,7 +50,7 @@ svg { display: block; }
 .journal-intro h1 { font: 400 clamp(3rem, 6.5vw, 5.5rem)/1.04 var(--serif); letter-spacing: -.055em; margin: 0; }
 .journal-intro h1 em { font-weight: 400; color: var(--accent); }
 .journal-intro__row > p { max-width: 290px; color: var(--muted); font-size: 14px; line-height: 1.85; margin: 0 0 5px; }
-.journal-rule { display: flex; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--ink); padding-top: 13px; font: 10px/1.5 ui-monospace, monospace; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.journal-rule { display: flex; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--line); padding-top: 13px; font: 10px/1.5 ui-monospace, monospace; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
 .journal-discovery { padding-top: 46px; }
 .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 24px; }
 .section-heading h2 { margin: 0; font: 400 29px/1.2 var(--serif); letter-spacing: -.035em; }
