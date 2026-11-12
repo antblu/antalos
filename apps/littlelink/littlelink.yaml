@@ -98,6 +98,10 @@ spec:
             capabilities:
               drop:
                 - ALL
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 10
           startupProbe:
             httpGet:
               path: /healthcheck

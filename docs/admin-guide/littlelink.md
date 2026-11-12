@@ -13,6 +13,6 @@ LittleLink-Server publishes a public profile page with links configured through 
 
 ## Availability
 
-The ClusterIP Service routes to two stateless replicas on separate general workers. A rolling update replaces one replica at a time, and the disruption budget requires one available replica for voluntary evictions. After Kubernetes removes a failed endpoint, new requests can reach the surviving worker through Traefik. A replacement waits for another eligible worker. Public access depends on DNS, the shared edge, Traefik, and valid TLS.
+The ClusterIP Service routes to two stateless replicas on separate general workers. A rolling update replaces one replica at a time, and the disruption budget requires one available replica for voluntary evictions. During graceful termination, a ten-second pre-stop delay keeps the process running while Traefik updates its endpoints. After Kubernetes removes a failed endpoint, new requests can reach the surviving worker through Traefik. A replacement waits for another eligible worker. Public access depends on DNS, the shared edge, Traefik, and valid TLS.
 
 Git holds the configuration needed to reconstruct the workload. The service has no database or persistent volume. Profile images and outbound destinations are fetched by visitors and depend on their own hosts.
