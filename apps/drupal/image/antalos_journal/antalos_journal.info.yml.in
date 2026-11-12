@@ -1,0 +1,14 @@
+name: Antalos Journal
+type: theme
+description: An editorial blog theme with progressively enhanced React reading tools.
+core_version_requirement: ^11
+base theme: false
+libraries:
+  - antalos_journal/global
+regions:
+  header: Header
+  primary_menu: Navigation
+  highlighted: Status messages
+  help: Help
+  content: Content
+  footer: Footer

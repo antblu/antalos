@@ -1,0 +1,40 @@
+<section class="journal-intro" aria-labelledby="journal-heading">
+  <div class="eyebrow"><span class="accent-dot"></span> A journal of things built & lessons learned</div>
+  <div class="journal-intro__row">
+    <h1 id="journal-heading">Stay curious.<br>Build <em>something.</em></h1>
+    <p>Notes from the homelab.<br>Self-hosting, Linux, and the small discoveries that make it all worthwhile.</p>
+  </div>
+  <div class="journal-rule"><span>Ideas, experiments & field notes</span><span>One post at a time ↙</span></div>
+</section>
+
+<section id="articles" class="journal-discovery" aria-label="Explore articles">
+  <div data-journal-explorer></div>
+  <div data-journal-fallback>
+    <div class="section-heading"><h2>From the journal</h2><span>{{ total }} {{ 'articles'|t }}</span></div>
+    <form class="explorer-controls" method="get" action="{{ path('antalos_blog.journal') }}">
+      <label class="search-field"><span>{{ 'Search article titles'|t }}</span><input type="search" name="q" value="{{ filters.q }}" placeholder="Find your next read…" maxlength="120"></label>
+      {% if filters.tag %}<input type="hidden" name="tag" value="{{ filters.tag }}">{% endif %}
+      <label>{{ 'Sort'|t }}<select name="sort"><option value="latest" {{ filters.sort == 'latest' ? 'selected' : '' }}>{{ 'Newest first'|t }}</option><option value="oldest" {{ filters.sort == 'oldest' ? 'selected' : '' }}>{{ 'Oldest first'|t }}</option></select></label>
+      <button class="button" type="submit">{{ 'Search'|t }}</button>
+      {% if filters.q or filters.tag %}<a href="{{ path('antalos_blog.journal') }}">{{ 'Clear filters'|t }}</a>{% endif %}
+    </form>
+    <div class="article-grid">
+      {% for story in articles %}
+        <article class="story-card {{ loop.first and not filters.q and not filters.tag and not filters.page and filters.sort == 'latest' ? 'story-card--featured' : '' }}">
+          <a class="story-art art-{{ story.id % 4 }}" href="{{ story.url }}" tabindex="-1" aria-hidden="true">
+            {% if story.image %}<img src="{{ story.image.url }}" alt="" loading="{{ loop.first ? 'eager' : 'lazy' }}" decoding="async">{% else %}<span class="art-orbit"></span><span class="art-glyph">{{ ['{ }', '> _', '[ / ]', '*'][story.id % 4] }}</span><span class="art-caption">FIELD NOTES / {{ '%02d'|format(story.id) }}</span>{% endif %}
+          </a>
+          <div class="story-card__body">
+            <div class="story-meta">{% if loop.first and not filters.q and not filters.tag and not filters.page and filters.sort == 'latest' %}<span class="eyebrow">The latest entry</span>{% endif %}<span>{{ story.minutes }} {{ 'min read'|t }}</span></div>
+            <h2><a href="{{ story.url }}">{{ story.title }}</a></h2>
+            <p>{{ story.summary }}</p>
+            <div class="topic-list">{% for tag in story.tags %}<a class="topic-pill" href="{{ tag.url }}">{{ tag.label }}</a>{% endfor %}</div>
+            <div class="story-bottom"><time datetime="{{ story.date }}">{{ story.dateLabel }}</time><a class="text-link" href="{{ story.url }}">{{ 'Read story'|t }} <span aria-hidden="true">↗</span></a></div>
+          </div>
+        </article>
+      {% else %}<div class="empty-state"><span class="eyebrow">A little room for discovery</span><h2>{{ 'No articles here yet.'|t }}</h2><p>{{ 'Try another search, or come back for the next field note.'|t }}</p><a href="{{ path('antalos_blog.journal') }}">{{ 'Browse the journal'|t }} →</a></div>{% endfor %}
+    </div>
+    <nav class="pagination" aria-label="{{ 'Article pages'|t }}">{% if previous %}<a class="button button--quiet" href="{{ previous }}">← {{ 'Previous'|t }}</a>{% endif %}{% if next %}<a class="button button--quiet" href="{{ next }}">{{ 'Next page'|t }} →</a>{% endif %}</nav>
+  </div>
+</section>
+<section class="journal-endnote"><div class="endnote-symbol" aria-hidden="true">✳</div><div><span class="eyebrow">The joy is in figuring it out</span><h2>A place for the process.</h2><p>The experiments, the useful detours, and the things worth writing down. Pull up a chair.</p></div><a class="text-link" href="{{ path('view.frontpage.feed_1') }}">{{ 'Follow via RSS'|t }} ↗</a></section>

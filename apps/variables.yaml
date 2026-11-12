@@ -688,7 +688,15 @@ variables:
   DRUPAL_BASE_IMAGE_TAG: 11.4.12-php8.4-apache-bookworm
   DRUPAL_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-drupal
   # renovate: datasource=docker depName=ghcr.io/antblu/antalos-drupal
-  DRUPAL_IMAGE_TAG: 11.4.11-oidc1
+  DRUPAL_IMAGE_TAG: 11.4.12-journal1
+  # renovate: datasource=docker depName=docker.io/library/node
+  DRUPAL_NODE_IMAGE_TAG: 26.3.0-alpine3.22
+  # renovate: datasource=npm depName=react
+  DRUPAL_REACT_VERSION: 19.3.1
+  # renovate: datasource=npm depName=react-dom
+  DRUPAL_REACT_DOM_VERSION: 19.3.1
+  # renovate: datasource=npm depName=esbuild
+  DRUPAL_ESBUILD_VERSION: 0.28.2
   # renovate: datasource=packagist depName=drupal/openid_connect
   DRUPAL_OPENID_CONNECT_VERSION: 1.6
   # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql

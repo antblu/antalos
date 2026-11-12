@@ -1,0 +1,25 @@
+<a class="skip-link" href="#main-content">{{ 'Skip to content'|t }}</a>
+<div class="journal-shell">
+  <header class="site-header">
+    <a class="site-brand" href="{{ front_page }}"><span class="brand-mark" aria-hidden="true">a<span>✳</span></span><span>{{ journal_site_name }}<small>Notes from the homelab</small></span></a>
+    <nav class="header-nav" aria-label="{{ 'Main navigation'|t }}">
+      <a class="nav-journal" href="{{ path('antalos_blog.journal') }}" {% if journal_is_index %}aria-current="page"{% endif %}>{{ 'Journal'|t }}</a>
+      <a href="{{ path('view.frontpage.feed_1') }}">RSS <span aria-hidden="true">↗</span></a>
+      <div class="header-tools" data-journal-navigation></div>
+      <a class="account-link" href="{{ path('user.page') }}">{{ logged_in ? 'Account'|t : 'Sign in'|t }} <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+  {{ page.header }}
+  {{ page.primary_menu }}
+  <main id="main-content" tabindex="-1" class="{{ journal_is_article ? 'is-article' : '' }} {{ journal_is_index ? 'is-journal' : '' }}">
+    {{ page.highlighted }}
+    {{ page.help }}
+    {{ page.content }}
+  </main>
+  <footer class="site-footer">
+    <div><a class="footer-brand" href="{{ front_page }}">{{ journal_site_name }} <span aria-hidden="true">✳</span></a><p>Built with curiosity. Shared with you.</p></div>
+    <nav aria-label="{{ 'Footer navigation'|t }}"><a href="{{ path('antalos_blog.journal') }}">{{ 'All articles'|t }}</a><a href="{{ path('view.frontpage.feed_1') }}">{{ 'RSS feed'|t }} ↗</a><a href="#main-content">{{ 'Back to top'|t }} ↑</a></nav>
+    {{ page.footer }}
+    <div class="footer-colophon"><span>© {{ journal_year }} {{ journal_site_name }}</span><span>A little corner of the open web.</span></div>
+  </footer>
+</div>

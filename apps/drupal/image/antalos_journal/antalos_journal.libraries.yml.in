@@ -1,0 +1,17 @@
+global:
+  css:
+    theme:
+      css/journal.css:
+        weight: 0
+  js:
+    js/preferences.js:
+      preprocess: false
+      weight: -20
+    dist/journal.js:
+      preprocess: false
+      attributes:
+        defer: true
+  dependencies:
+    - core/drupal
+    - core/drupalSettings
+    - core/once

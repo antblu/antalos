@@ -1,0 +1,26 @@
+{% if not page %}
+  <article{{ attributes.addClass('story-teaser') }}>
+    {{ title_prefix }}<h2{{ title_attributes }}><a href="{{ url }}">{{ label }}</a></h2>{{ title_suffix }}
+    <div class="story-meta"><time datetime="{{ journal_story.date }}">{{ journal_story.dateLabel }}</time><span>{{ journal_story.minutes }} {{ 'min read'|t }}</span></div>
+    {{ content }}
+  </article>
+{% else %}
+  <article{{ attributes.addClass('journal-article') }} data-journal-article data-article-id="{{ node.id }}" data-article-title="{{ node.label }}" data-article-url="{{ url }}" data-article-tag="{{ (journal_story.tags|first).id|default('') }}">
+    <header class="article-header">
+      <a class="back-link" href="{{ path('antalos_blog.journal') }}">← {{ 'Back to the journal'|t }}</a>
+      <div class="topic-list">{% for tag in journal_story.tags %}<a class="topic-pill" href="{{ tag.url }}">{{ tag.label }}</a>{% else %}<span class="eyebrow">From the journal</span>{% endfor %}</div>
+      {{ title_prefix }}<h1{{ title_attributes }}>{{ label }}</h1>{{ title_suffix }}
+      {% if journal_story.summary %}<p class="article-deck">{{ journal_story.summary }}</p>{% endif %}
+      <div class="article-byline"><span class="author-avatar" aria-hidden="true">✳</span><div><div class="author-name">{{ author_name }}</div><div class="story-meta"><time datetime="{{ journal_story.date }}">{{ journal_story.dateLabel }}</time><span>{{ journal_story.minutes }} {{ 'min read'|t }}</span></div></div><div class="reader-tools" data-journal-reader-tools></div></div>
+    </header>
+    {% if content.field_image %}<div class="article-cover">{{ content.field_image }}</div>{% endif %}
+    <div class="article-layout">
+      <div{{ content_attributes.addClass('article-body') }} data-journal-prose>{{ content|without('field_image', 'field_tags', 'links', 'comment') }}</div>
+      <aside class="reader-sidebar" aria-label="{{ 'Reading tools'|t }}"><div data-journal-toc></div><div class="reader-note"><span aria-hidden="true">✳</span><p>Take your time.<br>Good ideas are worth a little space.</p><a href="{{ path('view.frontpage.feed_1') }}">{{ 'Follow the journal'|t }} ↗</a></div></aside>
+    </div>
+    <div class="article-afterword"><span class="eyebrow">Thanks for reading</span><h2>Until the next discovery.</h2><a class="text-link" href="{{ path('antalos_blog.journal') }}">{{ 'Explore more field notes'|t }} →</a></div>
+    {{ content.links }}
+    {{ content.comment }}
+    <section data-journal-related aria-label="{{ 'More articles'|t }}"></section>
+  </article>
+{% endif %}

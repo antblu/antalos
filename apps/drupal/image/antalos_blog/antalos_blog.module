@@ -8,6 +8,17 @@
 use Drupal\user\UserInterface;
 
 /**
+ * Implements hook_theme().
+ */
+function antalos_blog_theme() {
+  return [
+    'antalos_journal' => [
+      'variables' => ['articles' => [], 'filters' => [], 'total' => 0, 'previous' => NULL, 'next' => NULL],
+    ],
+  ];
+}
+
+/**
  * Implements hook_openid_connect_client_info_alter().
  */
 function antalos_blog_openid_connect_client_info_alter(array &$clients) {

@@ -1,0 +1,15 @@
+antalos_blog.journal:
+  path: '/journal'
+  defaults:
+    _controller: '\Drupal\antalos_blog\Controller\JournalController::index'
+    _title: 'Journal'
+  requirements:
+    _permission: 'access content'
+antalos_blog.articles:
+  path: '/journal/articles'
+  defaults:
+    _controller: '\Drupal\antalos_blog\Controller\JournalController::articles'
+  requirements:
+    _permission: 'access content'
+  methods:
+    - GET

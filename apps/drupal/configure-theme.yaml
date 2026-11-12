@@ -1,0 +1,128 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: drupal-theme-v1
+  namespace: drupal
+  annotations:
+    argocd.argoproj.io/sync-wave: '3'
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 600
+  template:
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets:
+      - name: drupal-registry
+      securityContext:
+        runAsUser: ${DRUPAL_UID}
+        runAsGroup: ${DRUPAL_GID}
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+      - name: prepare-sites-volume
+        image: ${DRUPAL_IMAGE_REPOSITORY}:${DRUPAL_IMAGE_TAG}
+        command:
+        - /bin/sh
+        - -ec
+        - chown ${DRUPAL_UID}:${DRUPAL_GID} /sites
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+        volumeMounts:
+        - name: sites
+          mountPath: /sites
+      - name: prepare-sites
+        image: ${DRUPAL_IMAGE_REPOSITORY}:${DRUPAL_IMAGE_TAG}
+        command:
+        - /bin/sh
+        - -ec
+        - |
+          umask 0027
+          mkdir -p /data/files /data/private /data/config /sites/default
+          cp -R /opt/drupal/web/sites/. /sites/
+          cp /run/drupal/settings.php /sites/default/settings.php
+          ln -sfn /data/files /sites/default/files
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: sites
+          mountPath: /sites
+        - name: config
+          mountPath: /run/drupal
+          readOnly: true
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      containers:
+      - name: configure-theme
+        image: ${DRUPAL_IMAGE_REPOSITORY}:${DRUPAL_IMAGE_TAG}
+        command:
+        - php
+        - /usr/local/share/drupal/configure-theme.php
+        env:
+        - name: DRUPAL_HOST
+          value: ${DRUPAL_HOST}
+        - name: DRUPAL_SITE_NAME
+          value: ${DRUPAL_SITE_NAME}
+        - name: DRUPAL_ADMIN_EMAIL
+          value: ${DRUPAL_ADMIN_EMAIL}
+        - name: DRUPAL_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: drupal-db
+              key: password
+        - name: DRUPAL_HASH_SALT
+          valueFrom:
+            secretKeyRef:
+              name: drupal-app
+              key: hash-salt
+        - name: DRUPAL_OIDC_CLIENT_ID
+          value: ${DRUPAL_OIDC_CLIENT_ID}
+        - name: DRUPAL_AUTHENTIK_URL
+          value: https://${AUTHENTIK_HOST}
+        - name: DRUPAL_OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: drupal-oidc
+              key: client-secret
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: sites
+          mountPath: /opt/drupal/web/sites
+        - name: config
+          mountPath: /run/drupal
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: '1'
+            memory: 512Mi
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: drupal-data
+      - name: sites
+        emptyDir:
+          sizeLimit: 64Mi
+      - name: config
+        configMap:
+          name: drupal-config
+      restartPolicy: Never

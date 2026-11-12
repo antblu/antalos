@@ -55,12 +55,22 @@ jobs:
         run: |
           base="$(sed -n 's/^  DRUPAL_BASE_IMAGE_TAG: //p' apps/variables.yaml)"
           oidc="$(sed -n 's/^  DRUPAL_OPENID_CONNECT_VERSION: //p' apps/variables.yaml)"
+          node="$(sed -n 's/^  DRUPAL_NODE_IMAGE_TAG: //p' apps/variables.yaml)"
+          react="$(sed -n 's/^  DRUPAL_REACT_VERSION: //p' apps/variables.yaml)"
+          react_dom="$(sed -n 's/^  DRUPAL_REACT_DOM_VERSION: //p' apps/variables.yaml)"
+          esbuild="$(sed -n 's/^  DRUPAL_ESBUILD_VERSION: //p' apps/variables.yaml)"
           repository="$(sed -n 's/^  DRUPAL_IMAGE_REPOSITORY: //p' apps/variables.yaml)"
           tag="$(sed -n 's/^  DRUPAL_IMAGE_TAG: //p' apps/variables.yaml)"
           test -n "$base" && test -n "$oidc" && test -n "$repository" && test -n "$tag"
+          test -n "$node" && test -n "$react" && test -n "$react_dom" && test -n "$esbuild"
+          test "$react" = "$react_dom"
           {
             echo "base=$base"
             echo "oidc=$oidc"
+            echo "node=$node"
+            echo "react=$react"
+            echo "react_dom=$react_dom"
+            echo "esbuild=$esbuild"
             echo "image=$repository:$tag"
           } >> "$GITHUB_OUTPUT"
       - name: Set up Docker Buildx
@@ -81,5 +91,9 @@ jobs:
           build-args: |
             DRUPAL_BASE_IMAGE_TAG=${{ steps.versions.outputs.base }}
             DRUPAL_OPENID_CONNECT_VERSION=${{ steps.versions.outputs.oidc }}
+            DRUPAL_NODE_IMAGE_TAG=${{ steps.versions.outputs.node }}
+            DRUPAL_REACT_VERSION=${{ steps.versions.outputs.react }}
+            DRUPAL_REACT_DOM_VERSION=${{ steps.versions.outputs.react_dom }}
+            DRUPAL_ESBUILD_VERSION=${{ steps.versions.outputs.esbuild }}
           cache-from: type=gha,scope=drupal
           cache-to: type=gha,mode=max,scope=drupal
