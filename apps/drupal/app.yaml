@@ -36,7 +36,7 @@ spec:
     - /spec/template
   - group: batch
     kind: Job
-    name: drupal-theme-v1
+    name: drupal-theme-v2
     namespace: drupal
     jsonPointers:
     - /spec/template

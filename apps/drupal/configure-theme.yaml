@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: drupal-theme-v1
+  name: drupal-theme-v2
   namespace: drupal
   annotations:
     argocd.argoproj.io/sync-wave: '3'
