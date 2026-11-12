@@ -1,0 +1,175 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: littlelink
+  namespace: littlelink
+spec:
+  replicas: 2
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: littlelink
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: littlelink
+        app.kubernetes.io/part-of: antalos
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ${TALOS_WORKER_LEFT}
+                      - ${TALOS_WORKER_RIGHT}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: littlelink
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: littlelink
+          image: ghcr.io/timothystewart6/littlelink-server:${LITTLELINK_IMAGE_TAG}
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: HOSTNAME
+              value: '0.0.0.0'
+            - name: NAME
+              value: '${LITTLELINK_PROFILE_NAME}'
+            - name: META_TITLE
+              value: '${LITTLELINK_PROFILE_NAME}'
+            - name: META_DESCRIPTION
+              value: Portfolio and social profiles
+            - name: OG_SITE_NAME
+              value: '${LITTLELINK_PROFILE_NAME}'
+            - name: OG_URL
+              value: 'https://${LITTLELINK_HOST}'
+            - name: THEME
+              value: Dark
+            - name: AVATAR_URL
+              value: '${LITTLELINK_AVATAR_URL}'
+            - name: AVATAR_ALT
+              value: '${LITTLELINK_PROFILE_NAME}'
+            - name: BUTTON_ORDER
+              value: PORTFOLIO,GITHUB,LINKED_IN,TWITTER
+            - name: CUSTOM_BUTTON_NAME
+              value: PORTFOLIO
+            - name: CUSTOM_BUTTON_TEXT
+              value: Portfolio
+            - name: CUSTOM_BUTTON_ALT_TEXT
+              value: Visit the portfolio
+            - name: CUSTOM_BUTTON_URL
+              value: '${LITTLELINK_PORTFOLIO_URL}'
+            - name: CUSTOM_BUTTON_ICON
+              value: fas link
+            - name: CUSTOM_BUTTON_COLOR
+              value: '#1e3a5f'
+            - name: CUSTOM_BUTTON_TEXT_COLOR
+              value: '#ffffff'
+            - name: GITHUB
+              value: '${LITTLELINK_GITHUB_URL}'
+            - name: LINKED_IN
+              value: '${LITTLELINK_LINKEDIN_URL}'
+            - name: TWITTER
+              value: '${LITTLELINK_X_URL}'
+            - name: SKIP_HEALTH_CHECK_LOGS
+              value: 'true'
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          startupProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 2
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: littlelink
+  namespace: littlelink
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: littlelink
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: littlelink
+  namespace: littlelink
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: littlelink
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: littlelink
+  namespace: littlelink
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - ${LITTLELINK_HOST}
+      secretName: littlelink-tls
+  rules:
+    - host: ${LITTLELINK_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: littlelink
+                port:
+                  name: http

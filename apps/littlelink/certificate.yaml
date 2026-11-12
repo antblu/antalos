@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: littlelink-tls
+  namespace: littlelink
+spec:
+  secretName: littlelink-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - ${LITTLELINK_HOST}

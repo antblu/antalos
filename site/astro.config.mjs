@@ -95,6 +95,7 @@ export default defineConfig({
               ],
             },
             ...serviceNavigation('admin-guide'),
+            { label: 'LittleLink-Server', link: '/admin-guide/littlelink/' },
             { label: 'Invoice Ninja', link: '/admin-guide/invoiceninja/' },
             { label: 'Drupal', link: '/admin-guide/drupal/' },
             {
