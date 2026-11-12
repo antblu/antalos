@@ -70,21 +70,21 @@ spec:
             - name: AVATAR_ALT
               value: '${LITTLELINK_PROFILE_NAME}'
             - name: BUTTON_ORDER
-              value: PORTFOLIO,GITHUB,LINKED_IN,TWITTER
+              value: PORTFOLIO,EMILIANY,GITHUB,LINKED_IN,TWITTER
             - name: CUSTOM_BUTTON_NAME
-              value: PORTFOLIO
+              value: PORTFOLIO,EMILIANY
             - name: CUSTOM_BUTTON_TEXT
-              value: Portfolio
+              value: Portfolio,Emiliany Jewelry
             - name: CUSTOM_BUTTON_ALT_TEXT
-              value: Visit the portfolio
+              value: Visit the portfolio,Shop Emiliany Jewelry
             - name: CUSTOM_BUTTON_URL
-              value: '${LITTLELINK_PORTFOLIO_URL}'
+              value: '${LITTLELINK_PORTFOLIO_URL},${LITTLELINK_EMILIANY_URL}'
             - name: CUSTOM_BUTTON_ICON
-              value: fas link
+              value: fas link,fas gem
             - name: CUSTOM_BUTTON_COLOR
-              value: '#1e3a5f'
+              value: '#1e3a5f,#69334b'
             - name: CUSTOM_BUTTON_TEXT_COLOR
-              value: '#ffffff'
+              value: '#ffffff,#ffffff'
             - name: GITHUB
               value: '${LITTLELINK_GITHUB_URL}'
             - name: LINKED_IN
