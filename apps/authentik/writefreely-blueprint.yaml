@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-writefreely-blueprint
+  namespace: authentik
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+data:
+  writefreely.yaml: |
+    version: 1
+    # Reapply when the secret-backed client credential changes.
+    # Client secret revision: ${WRITEFREELY_OIDC_REVISION}
+    metadata:
+      name: antalos - WriteFreely OIDC
+    entries:
+      - model: authentik_core.group
+        id: writefreely-admins
+        identifiers:
+          name: writefreely-admins
+      - model: authentik_providers_oauth2.oauth2provider
+        id: writefreely-provider
+        identifiers:
+          name: Provider for WriteFreely
+        attrs:
+          authentication_flow: !Find
+            - authentik_flows.flow
+            - - slug
+              - normal-authentication-flow
+          authorization_flow: !Find
+            - authentik_flows.flow
+            - - slug
+              - default-provider-authorization-implicit-consent
+          invalidation_flow: !Find
+            - authentik_flows.flow
+            - - slug
+              - default-provider-invalidation-flow
+          client_type: confidential
+          client_id: ${WRITEFREELY_OIDC_CLIENT_ID}
+          client_secret: !Env WRITEFREELY_OIDC_CLIENT_SECRET
+          grant_types:
+            - authorization_code
+          issuer_mode: per_provider
+          property_mappings:
+            - !Find
+              - authentik_providers_oauth2.scopemapping
+              - - managed
+                - goauthentik.io/providers/oauth2/scope-openid
+          redirect_uris:
+            - matching_mode: strict
+              redirect_uri_type: authorization
+              url: https://${WRITEFREELY_HOST}/oauth/callback/generic
+          signing_key: !Find
+            - authentik_crypto.certificatekeypair
+            - - name
+              - authentik Self-signed Certificate
+          sub_mode: hashed_user_id
+      - model: authentik_core.application
+        id: writefreely-app
+        identifiers:
+          slug: writefreely
+        attrs:
+          name: WriteFreely
+          provider: !KeyOf writefreely-provider
+          meta_launch_url: https://${WRITEFREELY_HOST}/login
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !KeyOf writefreely-app
+          group: !KeyOf writefreely-admins
+          order: 100
+        attrs:
+          enabled: true

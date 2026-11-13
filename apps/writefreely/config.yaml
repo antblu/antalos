@@ -29,9 +29,24 @@ data:
     port = 3306
     database = writefreely
     username = writefreely
+  oidc.ini: |
+    [oauth.generic]
+    display_name = antID
+    client_id = ${WRITEFREELY_OIDC_CLIENT_ID}
+    host = https://${AUTHENTIK_HOST}
+    auth_endpoint = /application/o/authorize/
+    token_endpoint = /application/o/token/
+    inspect_endpoint = /application/o/userinfo/
+    scope = openid
+    map_user_id = sub
   configure.sh: |
     #!/bin/sh
     set -eu
     umask 077
     cat /settings/config.ini > /runtime/config.ini
     printf 'password = %s\n' "$(cat /credentials/db-password)" >> /runtime/config.ini
+    if [ -f /oidc/client-secret ]; then
+      printf '\n' >> /runtime/config.ini
+      cat /settings/oidc.ini >> /runtime/config.ini
+      printf 'client_secret = %s\n' "$(cat /oidc/client-secret)" >> /runtime/config.ini
+    fi

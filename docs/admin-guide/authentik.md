@@ -33,7 +33,7 @@ Wait for required controllers, database initialization, and migration Jobs befor
 
 ## 3. Complete identity and first access
 
-On a new database, complete the upstream initial setup flow at `/if/flow/initial-setup/` and establish an administrator. Create one application/provider pair per relying application, bind the permitted users or groups, and copy the provider metadata into that app’s settings. Use the [SSO integration guide](/admin-guide/single-sign-on/) for the exact distinction between OIDC, SAML, and forward-auth. Provider objects are post-deployment configuration unless a service declares an Authentik blueprint. Cal.diy includes a provider blueprint; other integrations still require their documented setup.
+On a new database, complete the upstream initial setup flow at `/if/flow/initial-setup/` and establish an administrator. Create one application/provider pair per relying application, bind the permitted users or groups, and copy the provider metadata into that app’s settings. Use the [SSO integration guide](/admin-guide/single-sign-on/) for the exact distinction between OIDC, SAML, and forward-auth. Provider objects are post-deployment configuration unless a service declares an Authentik blueprint. Cal.diy and [WriteFreely](/admin-guide/writefreely/#sign-in-with-antid) include provider blueprints.
 
 ## Profile pictures from Nextcloud
 
@@ -119,7 +119,7 @@ its issuer and callbacks; its canonical group prefix is `home-assistant`. Legacy
 misspelled group names remain compatibility children.
 
 Most previously unbound applications now require their users group. Medusa,
-Traefik, Homelable, UrBackup, Obsidian Live Sync, Vaultwarden administration, and
+Traefik, Homelable, UrBackup, Obsidian Live Sync, WriteFreely, Vaultwarden administration, and
 the Uptime Kuma admin proxy require their admins
 group because those integrations expose a privileged surface. Medusa customers
 use the storefront's separate customer authentication; `medusa-users` does not

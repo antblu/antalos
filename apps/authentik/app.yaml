@@ -26,6 +26,10 @@ spec:
                 mountPath: /blueprints/cal-diy.yaml
                 subPath: cal-diy.yaml
                 readOnly: true
+              - name: writefreely-blueprint
+                mountPath: /blueprints/writefreely.yaml
+                subPath: writefreely.yaml
+                readOnly: true
             volumes:
               - name: access-control
                 configMap:
@@ -36,6 +40,9 @@ spec:
               - name: cal-diy-blueprint
                 configMap:
                   name: authentik-cal-diy-blueprint
+              - name: writefreely-blueprint
+                configMap:
+                  name: authentik-writefreely-blueprint
             env:
               - name: NEXTCLOUD_AVATAR_URL
                 value: "https://${NEXTCLOUD_HOST}/index.php/avatar/%(username)s/512"
@@ -79,6 +86,13 @@ spec:
                     key: client-secret
               - name: CALDIY_OIDC_REVISION
                 value: "${AUTHENTIK_CALDIY_OIDC_REVISION}"
+              - name: WRITEFREELY_OIDC_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: authentik-writefreely-oidc
+                    key: client-secret
+              - name: WRITEFREELY_OIDC_REVISION
+                value: "${WRITEFREELY_OIDC_REVISION}"
 
           authentik:
             existingSecret:

@@ -16,6 +16,8 @@ spec:
       app.kubernetes.io/name: writefreely
   template:
     metadata:
+      annotations:
+        antalos.net/oidc-revision: "${WRITEFREELY_OIDC_REVISION}"
       labels:
         app.kubernetes.io/name: writefreely
         app.kubernetes.io/part-of: antalos
@@ -61,6 +63,9 @@ spec:
               readOnly: true
             - name: credentials
               mountPath: /credentials
+              readOnly: true
+            - name: oidc
+              mountPath: /oidc
               readOnly: true
             - name: runtime
               mountPath: /runtime
@@ -146,6 +151,13 @@ spec:
                 path: cookies_enc.aes256
               - key: csrf.aes256
                 path: csrf.aes256
+        - name: oidc
+          secret:
+            secretName: writefreely-oidc
+            defaultMode: 288
+            items:
+              - key: client-secret
+                path: client-secret
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

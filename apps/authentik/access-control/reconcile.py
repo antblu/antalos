@@ -34,7 +34,7 @@ PUBLIC = {'uptime-kuma'}
 GROUP_PREFIX = {'vaultwarden-admin': 'vaultwarden', 'home-assitant': 'home-assistant'}
 # These integrations expose only a privileged surface. Ordinary membership must
 # never imply admin privileges. Medusa customers use the separate customer flow.
-ADMIN_ONLY = {'medusa', 'uptime-kuma-admin', 'traefik', 'obsidian-live-sync', 'homelable', 'ur-backup', 'vaultwarden-admin'}
+ADMIN_ONLY = {'medusa', 'uptime-kuma-admin', 'traefik', 'obsidian-live-sync', 'homelable', 'ur-backup', 'vaultwarden-admin', 'writefreely'}
 
 
 def ensure_argocd_callback(provider, host):
@@ -80,6 +80,10 @@ def reconcile():
             name=GLOBAL_ADMINS, defaults={'is_superuser': True})
         global_admins.parents.add(global_users)
         global_admins.users.add(User.objects.get(username='antblu', is_active=True))
+        # The worker can run before Authentik discovers the WriteFreely blueprint.
+        if os.environ.get('WRITEFREELY_OIDC_REVISION'):
+            writefreely_admins, _ = Group.objects.get_or_create(name='writefreely-admins')
+            global_admins.parents.add(writefreely_admins)
         # Preserve existing operators through the new umbrella role. The reverse
         # relationship would incorrectly make application admins superusers.
         operators = Group.objects.get(name='authentik Admins')
