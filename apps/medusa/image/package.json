@@ -14,7 +14,7 @@
     "@medusajs/framework": "2.22.6",
     "@medusajs/medusa": "2.22.6",
     "nodemailer": "10.5.0",
-    "openid-client": "6.8.9"
+    "openid-client": "6.9.0"
   },
   "devDependencies": {
     "@swc/core": "1.16.22",
