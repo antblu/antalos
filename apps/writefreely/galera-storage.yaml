@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: galera-writefreely-db-0
+  namespace: writefreely
+  annotations:
+    argocd.argoproj.io/sync-wave: '-6'
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: openebs-local
+  resources:
+    requests:
+      storage: ${WRITEFREELY_GALERA_CONFIG_STORAGE_SIZE}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: galera-writefreely-db-1
+  namespace: writefreely
+  annotations:
+    argocd.argoproj.io/sync-wave: '-6'
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: openebs-local
+  resources:
+    requests:
+      storage: ${WRITEFREELY_GALERA_CONFIG_STORAGE_SIZE}

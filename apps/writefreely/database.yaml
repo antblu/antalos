@@ -18,14 +18,6 @@ spec:
   replicasAllowEvenNumber: true
   galera:
     enabled: true
-    config:
-      volumeClaimTemplate:
-        storageClassName: openebs-local
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: ${WRITEFREELY_GALERA_CONFIG_STORAGE_SIZE}
     recovery:
       enabled: true
       minClusterSize: 1
