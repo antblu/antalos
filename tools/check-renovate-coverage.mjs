@@ -2,8 +2,11 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { api as dockerVersioning } from '/usr/local/renovate/dist/modules/versioning/docker/index.js';
 import { RegExpVersioningApi } from '/usr/local/renovate/dist/modules/versioning/regex/index.js';
 import { extractPackageFile } from '/usr/local/renovate/dist/modules/manager/custom/regex/index.js';
+import { applyPackageRules } from '/usr/local/renovate/dist/util/package-rules/index.js';
+import { filterVersions } from '/usr/local/renovate/dist/workers/repository/process/lookup/filter.js';
 
 const root = process.cwd();
 const config = JSON.parse(fs.readFileSync('renovate.json', 'utf8'));
@@ -85,15 +88,31 @@ assert.equal(suitecrm.currentDigest, undefined);
 for (const [pkg, oldTag, newTag] of [
   ['ghcr.io/antblu/antalos-medusa', '2.22.0-5', '2.22.0-6'],
   ['ghcr.io/antblu/mautic', '7.2.1-1010-v3', '7.2.1-1010-v4'],
-  ['ghcr.io/zammad/zammad', '7.1.3-0006', '7.1.3-0007'],
   ['intel/pytorch', 'xpu-2.13.0-ubuntu24.04-20260907', 'xpu-2.13.0-ubuntu24.04-20260908'],
-  ['jellyfin/jellyfin', '12.0.20260908-012347', '12.0.20260908-012348'],
 ]) {
   const rule = config.packageRules.find((item) => item.matchPackageNames?.includes(pkg) && item.versioning?.startsWith('regex:'));
   assert(rule, `${pkg}: missing numeric-build versioning`);
   const versioning = new RegExpVersioningApi(rule.versioning.slice(6));
   assert(versioning.isValid(oldTag));
   assert(versioning.isGreaterThan(newTag, oldTag), `${pkg}: build updates are invisible`);
+}
+for (const pkg of ['ghcr.io/zammad/zammad', 'jellyfin/jellyfin']) {
+  const dep = extracted.find((item) => item.depName === pkg && item.datasource === 'docker');
+  assert(dep, `${pkg}: image tag is not extracted`);
+  assert.match(dep.currentValue, /^\d+\.\d+$/, `${pkg}: expected a major.minor image tag`);
+  const policy = await applyPackageRules({
+    ...dep,
+    packageName: pkg,
+    manager: 'custom.regex',
+    packageFile: dep.file,
+    packageRules: config.packageRules,
+  }, 'coverage');
+  assert.equal(policy.versioning, 'docker', `${pkg}: expected Docker versioning`);
+  const [major, minor] = dep.currentValue.split('.').map(Number);
+  const nextLine = `${major}.${minor + 1}`;
+  const releases = [nextLine, `${nextLine}.1`, `${nextLine}.1-0001`].map((version) => ({ version }));
+  const updates = filterVersions(policy, dep.currentValue, undefined, releases, dockerVersioning);
+  assert.deepEqual(updates.map(({ version }) => version), [nextLine], `${pkg}: only major.minor updates are allowed`);
 }
 if (errors.length) {
   console.error(errors.join('\n'));
