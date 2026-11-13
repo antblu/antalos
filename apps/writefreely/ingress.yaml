@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: writefreely
+  namespace: writefreely
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure,publichttps
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+    traefik.ingress.kubernetes.io/router.priority: '100'
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - ${WRITEFREELY_HOST}
+    secretName: writefreely-tls
+  rules:
+  - host: ${WRITEFREELY_HOST}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: writefreely
+            port:
+              name: http

@@ -4,7 +4,7 @@ metadata:
   name: galera-writefreely-db-0
   namespace: writefreely
   annotations:
-    argocd.argoproj.io/sync-wave: '-6'
+    argocd.argoproj.io/sync-wave: '-5'
     argocd.argoproj.io/sync-options: Prune=false,Delete=false
 spec:
   accessModes:
@@ -20,7 +20,7 @@ metadata:
   name: galera-writefreely-db-1
   namespace: writefreely
   annotations:
-    argocd.argoproj.io/sync-wave: '-6'
+    argocd.argoproj.io/sync-wave: '-5'
     argocd.argoproj.io/sync-options: Prune=false,Delete=false
 spec:
   accessModes:
