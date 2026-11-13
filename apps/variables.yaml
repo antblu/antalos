@@ -210,7 +210,7 @@ variables:
   # renovate: datasource=nextcloud depName=calendar registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_CALENDAR_VERSION: 6.6.5
   # renovate: datasource=nextcloud depName=context_chat registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_CONTEXT_CHAT_VERSION: 5.5.0
+  NEXTCLOUD_CONTEXT_CHAT_VERSION: 5.6.0
   # renovate: datasource=nextcloud depName=contacts registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_CONTACTS_VERSION: 8.10.0
   # renovate: datasource=nextcloud depName=deck registryUrl=https://apps.nextcloud.com/api/v1/apps.json
@@ -234,7 +234,7 @@ variables:
   # renovate: datasource=nextcloud depName=side_menu registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_SIDE_MENU_VERSION: 6.2.0
   # renovate: datasource=nextcloud depName=spreed registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_SPREED_VERSION: 25.0.7
+  NEXTCLOUD_SPREED_VERSION: 25.0.8
   # renovate: datasource=nextcloud depName=tasks registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_TASKS_VERSION: 0.18.1
   # renovate: datasource=nextcloud depName=user_oidc registryUrl=https://apps.nextcloud.com/api/v1/apps.json
