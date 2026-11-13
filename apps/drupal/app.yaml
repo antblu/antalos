@@ -16,8 +16,9 @@ spec:
     namespace: drupal
   syncPolicy:
     automated:
-      prune: true
-      selfHeal: true
+      enabled: false
+      prune: false
+      selfHeal: false
     syncOptions:
     - CreateNamespace=true
     - RespectIgnoreDifferences=true

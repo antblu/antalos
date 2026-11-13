@@ -3,6 +3,7 @@ kind: PersistentVolume
 metadata:
   name: drupal-data
   annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
     argocd.argoproj.io/sync-wave: '-6'
 spec:
   capacity:
@@ -30,6 +31,7 @@ metadata:
   name: drupal-data
   namespace: drupal
   annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
     argocd.argoproj.io/sync-wave: '-6'
 spec:
   accessModes:
