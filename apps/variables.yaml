@@ -186,9 +186,9 @@ variables:
   # Context Chat AppAPI protocol version is a compatibility contract, not a release.
   CONTEXT_CHAT_APPAPI_VERSION: "3.0.0"
   # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/context_chat_backend
-  CONTEXT_CHAT_BACKEND_VERSION: 5.5.0
+  CONTEXT_CHAT_BACKEND_VERSION: 5.6.0
   # renovate: datasource=docker depName=ghcr.io/nextcloud-releases/context_chat_backend
-  CONTEXT_CHAT_BACKEND_IMAGE_TAG: 5.5.0
+  CONTEXT_CHAT_BACKEND_IMAGE_TAG: 5.6.0
   CONTEXT_CHAT_BACKEND_PORT: "10034"
   CONTEXT_CHAT_BACKEND_HOST: nextcloud-context-chat-backend.nextcloud.svc.cluster.local
   CONTEXT_CHAT_COMPUTE_DEVICE: cpu
