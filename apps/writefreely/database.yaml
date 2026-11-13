@@ -18,6 +18,14 @@ spec:
   replicasAllowEvenNumber: true
   galera:
     enabled: true
+    config:
+      volumeClaimTemplate:
+        storageClassName: openebs-local
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: ${WRITEFREELY_GALERA_CONFIG_STORAGE_SIZE}
     recovery:
       enabled: true
       minClusterSize: 1
@@ -44,7 +52,6 @@ spec:
     # All clients write through the operator's primary Service.
     wsrep_auto_increment_control=OFF
     innodb_buffer_pool_size=128M
-    wsrep_provider_options=gcache.size=128M
     max_allowed_packet=64M
     character_set_server=utf8mb4
     collation_server=utf8mb4_unicode_ci
