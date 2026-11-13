@@ -3,5 +3,4 @@ kind: Namespace
 metadata:
   name: drupal
   annotations:
-    argocd.argoproj.io/sync-options: Prune=false,Delete=false
     argocd.argoproj.io/sync-wave: '-8'

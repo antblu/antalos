@@ -33,7 +33,7 @@ Wait for required controllers, database initialization, and migration Jobs befor
 
 ## 3. Complete identity and first access
 
-On a new database, complete the upstream initial setup flow at `/if/flow/initial-setup/` and establish an administrator. Create one application/provider pair per relying application, bind the permitted users or groups, and copy the provider metadata into that app’s settings. Use the [SSO integration guide](/admin-guide/single-sign-on/) for the exact distinction between OIDC, SAML, and forward-auth. Provider objects are post-deployment configuration unless a service declares an Authentik blueprint. Cal.diy and Drupal include provider blueprints; other integrations still require their documented setup.
+On a new database, complete the upstream initial setup flow at `/if/flow/initial-setup/` and establish an administrator. Create one application/provider pair per relying application, bind the permitted users or groups, and copy the provider metadata into that app’s settings. Use the [SSO integration guide](/admin-guide/single-sign-on/) for the exact distinction between OIDC, SAML, and forward-auth. Provider objects are post-deployment configuration unless a service declares an Authentik blueprint. Cal.diy includes a provider blueprint; other integrations still require their documented setup.
 
 ## Profile pictures from Nextcloud
 
@@ -141,7 +141,6 @@ configure a relying application's authorization.
 
 | Application | Standard access | Administrator mapping |
 | --- | --- | --- |
-| Drupal | Verified OIDC identity in `drupal-users` or the global users umbrella; ordinary authenticated account | Effective `drupal-admins` or `antalos-admins` grants `administrator`; removed on next login when absent; UID 1 stays local |
 | Mautic | Existing non-admin `SSO Users` role | `mautic-admins` selects an existing `isAdmin` role by lookup; guarded image patch applies on new and returning SAML logins |
 | Medusa | Separate storefront customer flow | Medusa Admin accepts only verified OIDC claims containing `medusa-admins`, before identity provisioning or login |
 | Zammad | Built-in `Customer` role | Verified OIDC userinfo `zammad-admins` selects `Admin` and `Agent`; built-ins synchronize on login and custom roles remain |
@@ -299,13 +298,3 @@ If authentication loops, compare the requested callback URI with the provider al
 - [`secrets.yaml`](https://github.com/antblu/antalos/blob/main/apps/authentik/secrets.yaml)
 
 [Official Authentik documentation](https://docs.goauthentik.io/).
-
-## Drupal provider blueprint
-
-`drupal-oidc.yaml` declares the blog application/provider, strict
-`https://<DRUPAL_HOST>/openid-connect/generic` callback, effective profile claims,
-and group bindings. `drupal-oidc-secret.yaml` supplies the confidential client
-secret through the chart's global environment. A separate sealed copy in the
-Drupal namespace supplies the relying client. Publish and reconcile both
-sides together; see the [Drupal runbook](/admin-guide/drupal/#authentik-oidc)
-for the derived image, bootstrap sequence, access rules and acceptance steps.

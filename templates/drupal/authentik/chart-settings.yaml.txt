@@ -1,0 +1,14 @@
+              - name: drupal-blueprint
+                mountPath: /blueprints/drupal.yaml
+                subPath: drupal.yaml
+                readOnly: true
+              - name: drupal-blueprint
+                configMap:
+                  name: authentik-drupal-blueprint
+              - name: DRUPAL_OIDC_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: authentik-drupal-oidc
+                    key: client-secret
+              - name: DRUPAL_OIDC_REVISION
+                value: "${AUTHENTIK_DRUPAL_OIDC_REVISION}"

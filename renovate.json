@@ -30,20 +30,6 @@
   ],
   "packageRules": [
     {
-      "description": "Keep the Drupal journal React renderer and runtime on the same release",
-      "matchFileNames": [
-        "apps/variables.yaml"
-      ],
-      "matchDatasources": [
-        "npm"
-      ],
-      "matchPackageNames": [
-        "react",
-        "react-dom"
-      ],
-      "groupName": "Drupal journal React"
-    },
-    {
       "description": "AudioMuse persistent data needs explicit PostgreSQL and Redis major migrations",
       "matchFileNames": [
         "infrastructure/ansible/leftansible/variables.yaml"

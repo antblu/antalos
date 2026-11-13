@@ -4,7 +4,6 @@ metadata:
   name: drupal-db
   namespace: drupal
   annotations:
-    argocd.argoproj.io/sync-options: Prune=false,Delete=false
     argocd.argoproj.io/sync-wave: '-3'
 spec:
   instances: 2

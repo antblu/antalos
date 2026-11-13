@@ -1,0 +1,31 @@
+variables:
+  # Drupal: replicated web tier; one CNPG primary and one standby.
+  # renovate: datasource=docker depName=docker.io/library/drupal
+  DRUPAL_BASE_IMAGE_TAG: 11.4.12-php8.4-apache-bookworm
+  DRUPAL_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-drupal
+  # renovate: datasource=docker depName=ghcr.io/antblu/antalos-drupal
+  DRUPAL_IMAGE_TAG: 11.4.12-journal2
+  # renovate: datasource=docker depName=docker.io/library/node
+  DRUPAL_NODE_IMAGE_TAG: 26.3.0-alpine3.22
+  # renovate: datasource=npm depName=react
+  DRUPAL_REACT_VERSION: 19.3.1
+  # renovate: datasource=npm depName=react-dom
+  DRUPAL_REACT_DOM_VERSION: 19.3.1
+  # renovate: datasource=npm depName=esbuild
+  DRUPAL_ESBUILD_VERSION: 0.28.2
+  # renovate: datasource=packagist depName=drupal/openid_connect
+  DRUPAL_OPENID_CONNECT_VERSION: 1.6
+  # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
+  DRUPAL_POSTGRES_IMAGE_TAG: 18.6-standard-trixie
+  DRUPAL_HOST: blog.antblu.net
+  DRUPAL_SITE_NAME: Antblu's Blog
+  DRUPAL_ADMIN_EMAIL: admin@antblu.net
+  DRUPAL_NFS_SERVER: 10.30.0.5
+  DRUPAL_NFS_SHARE: /mnt/nvme/drupal
+  DRUPAL_UID: 1011
+  DRUPAL_GID: 1011
+  DRUPAL_DATA_STORAGE_SIZE: 10Gi
+  DRUPAL_DATABASE_STORAGE_SIZE: 5Gi
+  DRUPAL_TRUSTED_PROXY_CIDR: 10.244.0.0/16
+  DRUPAL_OIDC_CLIENT_ID: antalos-drupal
+  AUTHENTIK_DRUPAL_OIDC_REVISION: "1"
