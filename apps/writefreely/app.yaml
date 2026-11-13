@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: writefreely
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/antblu/antalos.git
+    targetRevision: main
+    path: apps/writefreely
+    plugin:
+      name: yaml-envsubst
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: writefreely
+  ignoreDifferences:
+    - group: batch
+      kind: Job
+      name: writefreely-bootstrap-v1
+      namespace: writefreely
+      jsonPointers:
+        - /spec/template
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true

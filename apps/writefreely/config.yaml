@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: writefreely-config
+  namespace: writefreely
+  annotations:
+    argocd.argoproj.io/sync-wave: '-5'
+data:
+  config.ini: |
+    [server]
+    bind = 0.0.0.0
+    port = 8080
+    autocert = false
+
+    [app]
+    host = https://${WRITEFREELY_HOST}
+    site_name = ${WRITEFREELY_SITE_NAME}
+    single_user = true
+    min_username_len = 3
+    max_blogs = 1
+    open_registration = false
+    open_deletion = false
+    federation = false
+    default_visibility = public
+
+    [database]
+    type = mysql
+    host = writefreely-db-primary
+    port = 3306
+    database = writefreely
+    username = writefreely
+  configure.sh: |
+    #!/bin/sh
+    set -eu
+    umask 077
+    cat /settings/config.ini > /runtime/config.ini
+    printf 'password = %s\n' "$(cat /credentials/db-password)" >> /runtime/config.ini

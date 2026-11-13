@@ -1,0 +1,242 @@
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: writefreely-db
+  namespace: writefreely
+  annotations:
+    argocd.argoproj.io/sync-wave: '-5'
+spec:
+  image: mariadb:${WRITEFREELY_MARIADB_IMAGE_TAG}
+  imagePullPolicy: IfNotPresent
+  rootPasswordSecretKeyRef:
+    name: writefreely-db-root
+    key: root-password
+  storage:
+    storageClassName: openebs-local
+    size: ${WRITEFREELY_DATABASE_STORAGE_SIZE}
+  replicas: 2
+  replicasAllowEvenNumber: true
+  galera:
+    enabled: true
+    recovery:
+      enabled: true
+      minClusterSize: 1
+  updateStrategy:
+    type: ReplicasFirstPrimaryLast
+  service:
+    type: ClusterIP
+  primaryService:
+    type: ClusterIP
+  secondaryService:
+    type: ClusterIP
+  metrics:
+    enabled: false
+  tls:
+    enabled: false
+  timeZone: America/Denver
+  myCnf: |
+    [mariadb]
+    bind-address=*
+    default_storage_engine=InnoDB
+    binlog_format=row
+    innodb_autoinc_lock_mode=2
+    # The application identifies its administrator by user ID 1.
+    # All clients write through the operator's primary Service.
+    wsrep_auto_increment_control=OFF
+    innodb_buffer_pool_size=128M
+    wsrep_provider_options=gcache.size=128M
+    max_allowed_packet=64M
+    character_set_server=utf8mb4
+    collation_server=utf8mb4_unicode_ci
+  affinity:
+    antiAffinityEnabled: true
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - ${TALOS_WORKER_LEFT}
+            - ${TALOS_WORKER_RIGHT}
+  podDisruptionBudget:
+    minAvailable: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: '2'
+      memory: 1Gi
+  startupProbe:
+    failureThreshold: 60
+    periodSeconds: 5
+    timeoutSeconds: 5
+  readinessProbe:
+    periodSeconds: 5
+    timeoutSeconds: 5
+  livenessProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: writefreely
+  namespace: writefreely
+  annotations:
+    argocd.argoproj.io/sync-wave: '-4'
+spec:
+  mariaDbRef:
+    name: writefreely-db
+  name: writefreely
+  characterSet: utf8mb4
+  collate: utf8mb4_unicode_ci
+  cleanupPolicy: Skip
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: writefreely
+  namespace: writefreely
+  annotations:
+    argocd.argoproj.io/sync-wave: '-4'
+spec:
+  mariaDbRef:
+    name: writefreely-db
+  name: writefreely
+  passwordSecretKeyRef:
+    name: writefreely-credentials
+    key: db-password
+  host: '%'
+  maxUserConnections: 100
+  cleanupPolicy: Skip
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: writefreely
+  namespace: writefreely
+  annotations:
+    argocd.argoproj.io/sync-wave: '-3'
+spec:
+  mariaDbRef:
+    name: writefreely-db
+  privileges:
+  - ALL PRIVILEGES
+  database: writefreely
+  table: '*'
+  username: writefreely
+  host: '%'
+  grantOption: false
+  cleanupPolicy: Skip
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: writefreely-garbd
+  namespace: writefreely
+  labels:
+    app.kubernetes.io/name: writefreely-garbd
+    app.kubernetes.io/part-of: writefreely
+  annotations:
+    argocd.argoproj.io/sync-wave: '-4'
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: writefreely-garbd
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: writefreely-garbd
+        app.kubernetes.io/part-of: writefreely
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${TALOS_WORKER_RTX}
+      tolerations:
+      - key: quorum
+        operator: Exists
+        effect: NoSchedule
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: garbd
+        image: mariadb:${WRITEFREELY_GARBD_IMAGE_TAG}
+        imagePullPolicy: IfNotPresent
+        workingDir: /tmp
+        command:
+        - /bin/sh
+        - /scripts/start.sh
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - kill -0 "$(cat /tmp/garbd.pid)" && awk '/view\(/ { primary=($0 ~ /view_id\(PRIM,/)
+              } END { exit !primary }' /tmp/garbd.log
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - kill -0 "$(cat /tmp/garbd.pid)"
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+        env:
+        - name: SEEDS
+          value: writefreely-db-0.writefreely-db-internal.writefreely.svc.cluster.local writefreely-db-1.writefreely-db-internal.writefreely.svc.cluster.local
+        - name: ADDRESS
+          value: gcomm://writefreely-db-0.writefreely-db-internal.writefreely.svc.cluster.local:4567,writefreely-db-1.writefreely-db-internal.writefreely.svc.cluster.local:4567
+        - name: ARBITRATOR_NAME
+          value: writefreely-garbd
+        - name: HEALTH_USER
+          value: writefreely
+        - name: MYSQL_PWD
+          valueFrom:
+            secretKeyRef:
+              name: writefreely-credentials
+              key: db-password
+        volumeMounts:
+        - name: startup
+          mountPath: /scripts
+          readOnly: true
+      volumes:
+      - name: startup
+        configMap:
+          name: writefreely-garbd-startup
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: writefreely-garbd
+  namespace: writefreely
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: writefreely-garbd

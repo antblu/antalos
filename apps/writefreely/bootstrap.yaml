@@ -1,0 +1,124 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: writefreely-bootstrap-v1
+  namespace: writefreely
+  annotations:
+    argocd.argoproj.io/sync-wave: '-2'
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ${TALOS_WORKER_LEFT}
+                      - ${TALOS_WORKER_RIGHT}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 2
+        runAsGroup: 2
+        fsGroup: 2
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: database-state
+          image: mariadb:${WRITEFREELY_MARIADB_IMAGE_TAG}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              export MYSQL_PWD="$(cat /credentials/db-password)"
+              sql() {
+                mariadb --connect-timeout=5 --host=writefreely-db-primary --user=writefreely \
+                  --database=writefreely --batch --skip-column-names --execute="$1"
+              }
+              migrations=$(sql "SHOW TABLES LIKE 'appmigrations'")
+              if [ -n "$migrations" ]; then
+                sql 'SELECT COALESCE(MAX(version), 0) FROM appmigrations' > /runtime/schema-version
+              else
+                echo 0 > /runtime/schema-version
+              fi
+              users=$(sql "SHOW TABLES LIKE 'users'")
+              if [ -n "$users" ]; then
+                sql 'SELECT COUNT(*) FROM users WHERE id = 1' > /runtime/admin-count
+              else
+                echo 0 > /runtime/admin-count
+              fi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: credentials
+              mountPath: /credentials
+              readOnly: true
+            - name: runtime
+              mountPath: /runtime
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      containers:
+        - name: bootstrap
+          image: ghcr.io/writefreely/writefreely:${WRITEFREELY_IMAGE_TAG}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              /bin/sh /settings/configure.sh
+              wf() { /go/cmd/writefreely/writefreely -c /runtime/config.ini "$@"; }
+              if [ "$(cat /runtime/schema-version)" -eq 0 ]; then
+                wf db init
+              else
+                wf db migrate
+              fi
+              if [ "$(cat /runtime/admin-count)" -eq 0 ]; then
+                wf user create --admin "antblu:$(cat /credentials/admin-password)"
+              fi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: settings
+              mountPath: /settings
+              readOnly: true
+            - name: credentials
+              mountPath: /credentials
+              readOnly: true
+            - name: runtime
+              mountPath: /runtime
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: settings
+          configMap:
+            name: writefreely-config
+        - name: credentials
+          secret:
+            secretName: writefreely-credentials
+            defaultMode: 288
+            items:
+              - key: db-password
+                path: db-password
+              - key: admin-password
+                path: admin-password
+        - name: runtime
+          emptyDir:
+            medium: Memory
