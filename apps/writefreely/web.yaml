@@ -17,7 +17,7 @@ spec:
   template:
     metadata:
       annotations:
-        antalos.net/config-revision: "2"
+        antalos.net/config-revision: "3"
         antalos.net/oidc-revision: "${WRITEFREELY_OIDC_REVISION}"
       labels:
         app.kubernetes.io/name: writefreely
@@ -52,7 +52,12 @@ spec:
           image: ghcr.io/writefreely/writefreely:${WRITEFREELY_IMAGE_TAG}
           command:
             - /bin/sh
-            - /settings/configure.sh
+            - -ec
+            - |
+              /bin/sh /settings/configure.sh
+              # Retain the image's navigation and change only its About destination.
+              sed 's|href="/about"|href="${WRITEFREELY_PORTFOLIO_URL}"|' \
+                /go/templates/base.tmpl > /runtime/base.tmpl
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -125,6 +130,14 @@ spec:
             - name: landing
               mountPath: /go/pages/landing.tmpl
               subPath: landing.tmpl
+              readOnly: true
+            - name: landing
+              mountPath: /go/templates/include/footer.tmpl
+              subPath: footer.tmpl
+              readOnly: true
+            - name: runtime
+              mountPath: /go/templates/base.tmpl
+              subPath: base.tmpl
               readOnly: true
             - name: keys
               mountPath: /go/keys

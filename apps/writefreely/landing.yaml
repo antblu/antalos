@@ -6,6 +6,33 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '-5'
 data:
+  footer.tmpl: |
+    {{define "footer"}}
+    <footer class="contain-me">
+      <hr>
+      <div class="marketing-section">
+        <div class="clearfix blurbs">
+          <div class="half">
+            <h3><a class="home" href="/">{{.SiteName}}</a></h3>
+            <ul>
+              <li><a href="${WRITEFREELY_PORTFOLIO_URL}">about</a></li>
+              {{if and (not .SingleUser) .LocalTimeline .CanViewReader}}
+              <li><a href="/read">reader</a></li>
+              {{end}}
+              <li><a href="${WRITEFREELY_PORTFOLIO_URL}/#contact">contact</a></li>
+            </ul>
+          </div>
+          <div class="half">
+            <h3><a href="https://writefreely.org">writefreely</a></h3>
+            <ul>
+              <li><a href="https://github.com/writefreely/writefreely">source code</a></li>
+              <li style="margin-top:0.8em">{{.Version}}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </footer>
+    {{end}}
   landing.tmpl: |
     {{define "head"}}
     <title>{{.SiteName}}</title>
@@ -39,10 +66,6 @@ data:
       html body > footer.contain-me a:link,
       html body > footer.contain-me a:visited {
         color: var(--landing-link);
-      }
-
-      body > footer .blurbs h3 a[style] {
-        color: var(--landing-link) !important;
       }
 
       body > header nav.dropdown-nav ul ul {
