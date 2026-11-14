@@ -688,7 +688,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/writefreely/writefreely
   WRITEFREELY_IMAGE_TAG: v0.17.3
   # renovate: datasource=docker depName=docker.io/library/mariadb
-  WRITEFREELY_MARIADB_IMAGE_TAG: 11.8.9
+  WRITEFREELY_MARIADB_IMAGE_TAG: 13.0.2
   # renovate: datasource=docker depName=docker.io/library/mariadb
   WRITEFREELY_GARBD_IMAGE_TAG: 11.8.9-ubi9
   WRITEFREELY_DATABASE_STORAGE_SIZE: 5Gi
