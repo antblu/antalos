@@ -8,11 +8,11 @@
     "predeploy": "medusa db:migrate"
   },
   "dependencies": {
-    "@medusajs/admin-sdk": "2.22.6",
-    "@medusajs/caching-redis": "2.22.6",
-    "@medusajs/cli": "2.22.6",
-    "@medusajs/framework": "2.22.6",
-    "@medusajs/medusa": "2.22.6",
+    "@medusajs/admin-sdk": "2.22.7",
+    "@medusajs/caching-redis": "2.22.7",
+    "@medusajs/cli": "2.22.7",
+    "@medusajs/framework": "2.22.7",
+    "@medusajs/medusa": "2.22.7",
     "nodemailer": "10.5.0",
     "openid-client": "6.9.0"
   },
