@@ -25,6 +25,8 @@ To rotate the client secret or move to a different cluster, seal the same new se
 
 ## Availability and recovery
 
+Keep the MariaDB session time zone at UTC. WriteFreely sends post creation timestamps in UTC and compares them with MariaDB's current time when building public listings. A session time zone west of UTC can make a new post appear scheduled for the future. Changing the session time zone does not correct the stored publication instants of existing posts.
+
 Two web pods run on separate general workers. They use the same cookie, CSRF, and email encryption keys from Sealed Secrets. A rolling update replaces one pod at a time, and a PodDisruptionBudget keeps one pod available for voluntary disruptions. Traefik routes to ready endpoints.
 
 The MariaDB operator runs two Galera data members on separate general workers with node-local OpenEBS volumes. An arbitrator on the quorum worker provides the third vote. WriteFreely connects through the operator's primary Service. A data-member loss can interrupt requests while the operator updates the writer endpoint. Loss of quorum, ingress, or shared network paths can take the blog offline.

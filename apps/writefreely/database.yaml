@@ -36,6 +36,9 @@ spec:
   timeZone: America/Denver
   myCnf: |
     [mariadb]
+    # Override the operator's immutable spec.timeZone for this cluster.
+    # WriteFreely sends post creation timestamps in UTC.
+    default_time_zone='+00:00'
     bind-address=*
     default_storage_engine=InnoDB
     binlog_format=row
