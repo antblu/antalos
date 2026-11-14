@@ -15,7 +15,7 @@ data:
     [app]
     host = https://${WRITEFREELY_HOST}
     site_name = ${WRITEFREELY_SITE_NAME}
-    single_user = true
+    single_user = false
     min_username_len = 3
     max_blogs = 10
     open_registration = false
