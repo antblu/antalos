@@ -17,7 +17,7 @@ spec:
   template:
     metadata:
       annotations:
-        antalos.net/config-revision: "1"
+        antalos.net/config-revision: "2"
         antalos.net/oidc-revision: "${WRITEFREELY_OIDC_REVISION}"
       labels:
         app.kubernetes.io/name: writefreely
@@ -122,6 +122,10 @@ spec:
             - name: runtime
               mountPath: /runtime
               readOnly: true
+            - name: landing
+              mountPath: /go/pages/landing.tmpl
+              subPath: landing.tmpl
+              readOnly: true
             - name: keys
               mountPath: /go/keys
               readOnly: true
@@ -132,6 +136,9 @@ spec:
         - name: settings
           configMap:
             name: writefreely-config
+        - name: landing
+          configMap:
+            name: writefreely-landing
         - name: credentials
           secret:
             secretName: writefreely-credentials

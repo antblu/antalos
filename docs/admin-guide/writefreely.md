@@ -7,6 +7,8 @@ WriteFreely publishes the single-author blog at the HTTPS hostname set by `WRITE
 
 The deployment explicitly selects WriteFreely's bundled `write` theme for the homepage and login page. Keep `theme = write` in the application configuration to serve `/css/write.css`. When changing `config.ini` in the ConfigMap, increment the web Deployment's `antalos.net/config-revision` annotation so the init container can regenerate the runtime configuration on both pods.
 
+The deployment mounts `apps/writefreely/landing.yaml` over WriteFreely's landing template. It uses the bundled stylesheet with a dark palette and renders the banner and blog directory from **Admin → Pages → Home**. Increment the same rollout annotation when editing the template so both pods load the new version. Check the override against the upstream base template when upgrading WriteFreely.
+
 ## First sign-in
 
 Open `/login` and sign in as `antblu`. The installation Job reads the initial password from the `admin-password` key of the `writefreely-credentials` Secret in the `writefreely` namespace. Retrieve it through your private cluster administration session and store it in your password manager. After changing the password in WriteFreely, the live password is stored as a hash in MariaDB.

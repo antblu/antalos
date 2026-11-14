@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: writefreely-landing
+  namespace: writefreely
+  annotations:
+    argocd.argoproj.io/sync-wave: '-5'
+data:
+  landing.tmpl: |
+    {{define "head"}}
+    <title>{{.SiteName}}</title>
+    <link rel="stylesheet" href="/css/fonts.css">
+    <style>
+      :root {
+        color-scheme: dark;
+        --landing-background: #181818;
+        --landing-text: #dedbd6;
+        --landing-muted: #b8b4ad;
+        --landing-link: #b6baff;
+        --landing-border: #43413e;
+        background: var(--landing-background);
+      }
+
+      html body {
+        background: var(--landing-background);
+        color: var(--landing-text);
+      }
+
+      html body > header h2 a,
+      html body > header h2 a:hover,
+      #official-writing h2,
+      #official-writing h3 {
+        color: var(--landing-text);
+      }
+
+      body > header nav a,
+      #official-writing .landing h2 a:link,
+      #official-writing .landing h2 a:visited,
+      html body > footer.contain-me a:link,
+      html body > footer.contain-me a:visited {
+        color: var(--landing-link);
+      }
+
+      body > footer .blurbs h3 a[style] {
+        color: var(--landing-link) !important;
+      }
+
+      body > header nav.dropdown-nav ul ul {
+        background: #242424;
+        border-color: var(--landing-border);
+      }
+
+      body > header nav.dropdown-nav li:hover {
+        background: #303030;
+      }
+
+      body > header nav.dropdown-nav img {
+        filter: invert(1);
+      }
+
+      body > header a:focus-visible,
+      .landing a:focus-visible,
+      body > footer a:focus-visible {
+        outline: 2px solid var(--landing-link);
+        outline-offset: 4px;
+      }
+
+      .landing {
+        padding-block: clamp(1.5rem, 5vw, 4rem) 2rem;
+      }
+
+      .landing h1 {
+        margin-top: 0;
+      }
+
+      .landing h2 {
+        border-top: 1px solid var(--landing-border);
+        font-weight: normal;
+        margin-top: 1.5em;
+        padding-top: 1em;
+      }
+
+      .landing p,
+      body > footer .blurbs ul {
+        color: var(--landing-muted);
+      }
+
+      body > footer hr {
+        background: var(--landing-border);
+        border: 0;
+        height: 1px;
+      }
+    </style>
+    {{end}}
+
+    {{define "content"}}
+    <main class="content-container snug landing">
+      {{if .Flashes}}
+        <ul class="errors">
+          {{range .Flashes}}<li>{{.}}</li>{{end}}
+        </ul>
+      {{end}}
+      {{.Banner}}
+      {{.Content}}
+    </main>
+    {{end}}
