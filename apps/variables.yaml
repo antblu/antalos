@@ -90,11 +90,11 @@ variables:
   RENOVATE_GITHUB_APP_ID: "5033067"
   RENOVATE_GITHUB_INSTALLATION_ID: "163769372"
   # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
-  POSTGRES_IMAGE_TAG: 18.6-minimal-trixie
+  POSTGRES_IMAGE_TAG: 18.7-minimal-trixie
   # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
-  NEXTCLOUD_POSTGRES_IMAGE_TAG: 18.6-standard-trixie
+  NEXTCLOUD_POSTGRES_IMAGE_TAG: 18.7-standard-trixie
   # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
-  OPEN_WEBUI_POSTGRES_IMAGE_TAG: 18.6-standard-trixie
+  OPEN_WEBUI_POSTGRES_IMAGE_TAG: 18.7-standard-trixie
   # renovate: datasource=docker depName=ghcr.io/open-webui/open-webui
   OPEN_WEBUI_IMAGE_TAG: 0.13.3
   # renovate: datasource=docker depName=stalwartlabs/stalwart
