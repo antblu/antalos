@@ -695,6 +695,6 @@ variables:
   WRITEFREELY_GALERA_CONFIG_STORAGE_SIZE: 100Mi
   WRITEFREELY_HOST: blog.antblu.net
   WRITEFREELY_SITE_NAME: antblu's Blog
-  WRITEFREELY_SITE_DESCRIPTION: "A collection ofl blogs of topics I'm interested in."
+  WRITEFREELY_SITE_DESCRIPTION: "Personal writing about technology, LDS Theology, and politics."
   WRITEFREELY_OIDC_CLIENT_ID: writefreely
-  WRITEFREELY_OIDC_REVISION: "4"
+  WRITEFREELY_OIDC_REVISION: "5"
