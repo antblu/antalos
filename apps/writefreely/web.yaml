@@ -17,6 +17,7 @@ spec:
   template:
     metadata:
       annotations:
+        antalos.net/config-revision: "1"
         antalos.net/oidc-revision: "${WRITEFREELY_OIDC_REVISION}"
       labels:
         app.kubernetes.io/name: writefreely

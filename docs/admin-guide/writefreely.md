@@ -5,6 +5,8 @@ description: Operate the replicated WriteFreely blog and its Galera database.
 
 WriteFreely publishes the single-author blog at the HTTPS hostname set by `WRITEFREELY_HOST` in `apps/variables.yaml`. Traefik terminates TLS with a certificate from `letsencrypt-prod`. DNS must point the hostname to the public ingress. Self-registration and federation are disabled.
 
+The deployment explicitly selects WriteFreely's bundled `write` theme for the homepage and login page. Keep `theme = write` in the application configuration to serve `/css/write.css`. When changing `config.ini` in the ConfigMap, increment the web Deployment's `antalos.net/config-revision` annotation so the init container can regenerate the runtime configuration on both pods.
+
 ## First sign-in
 
 Open `/login` and sign in as `antblu`. The installation Job reads the initial password from the `admin-password` key of the `writefreely-credentials` Secret in the `writefreely` namespace. Retrieve it through your private cluster administration session and store it in your password manager. After changing the password in WriteFreely, the live password is stored as a hash in MariaDB.
