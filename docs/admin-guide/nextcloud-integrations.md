@@ -41,7 +41,7 @@ Open the same document as two permitted users, make edits, close it, and reopen 
 
 ## Whiteboard and push
 
-Whiteboard receives its external collaboration URL and JWT from the startup hook and uses Redis for shared live state. Confirm that both users see strokes in the same board and that reconnecting preserves the expected session behavior. Recording files use shared NFS, so account for them in backups rather than calling every file on the app export reconstructable.
+Whiteboard receives its external collaboration URL and JWT from the startup hook and uses Redis for shared live state. Confirm that both users see strokes in the same board and that reconnecting preserves the expected session behavior. Include recording files from shared NFS in backups.
 
 notify_push runs alongside each Nextcloud web container and is exposed under `/push`. Test through a desktop client that supports it. If file operations work but notifications lag, inspect the push route and sidecar separately from core web readiness.
 
@@ -70,7 +70,7 @@ Use [Debian application VMs](/infrastructure/virtual-machines/) for the current 
 
 Server notifications use SMTP over implicit TLS, with the host and sender settings in `apps/variables.yaml` and the authentication password in the service-owned `nextcloud-smtp` SealedSecret. Reseal the credential for your environment and ensure the authenticated account may send as the configured address. User-level Mail app accounts are configured separately. The declared Stalwart service can provide mail, but creating the mailbox and matching its credential remain administrator work.
 
-Background jobs are configured for cron, and startup also launches task-processing workers. Check job progress after enabling integrations; a successful web request does not prove indexing, notifications, or scheduled tasks are executing.
+Cron runs background jobs, and startup launches task-processing workers. After enabling integrations, check the progress of indexing, notifications, and scheduled tasks.
 
 ## Read-only status inspection
 

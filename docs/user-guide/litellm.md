@@ -1,17 +1,17 @@
 ---
 title: "LiteLLM · Use"
-description: "What LiteLLM does, how to use it in antalos, and where to find its official documentation."
+description: "Get a model alias and virtual key, then send a test request through LiteLLM."
 ---
 
 <nav class="guide-switcher" aria-label="LiteLLM guide sections"><a aria-current="page" href="/user-guide/litellm/">Use</a><a href="/infrastructure/litellm/">Architecture</a><a href="/admin-guide/litellm/">Operate</a></nav>
 
 LiteLLM is the shared API gateway for language-model providers. Applications call a consistent API while administrators choose upstream models, create scoped virtual keys, and manage access. Installing the gateway does not supply a model or a provider account; those must be configured after deployment.
 
-## Access and audience
+## Access
 
-For this installation, use [litellm.antblu.net](https://litellm.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+Open [litellm.antblu.net](https://litellm.antblu.net) or use the address your administrator gave you. Ask your administrator for access if you need an account or role.
 
-## Your first workflow
+## Send an API request
 
 1. Ask an administrator for the gateway API base URL, an allowed model alias, and a virtual key scoped to your application.
 
@@ -29,10 +29,10 @@ Include the model alias, endpoint, time, and redacted error. A rejected key, an 
 
 The API gateway and individual model providers can fail independently. Report the model and error, and check whether a failed request already produced a result before resubmitting it.
 
-Administrators can read [the architecture and recovery limits](/infrastructure/litellm/#availability-and-failure-behavior).
+See [expected failure behavior and recovery](/infrastructure/litellm/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official LiteLLM documentation](https://docs.litellm.ai/docs/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
+Use the [official LiteLLM documentation](https://docs.litellm.ai/docs/) for your installed version. Ask your administrator which optional features are enabled.
 
-For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/litellm/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/litellm/).
+See the [architecture](/infrastructure/litellm/) or [deployment guide](/admin-guide/litellm/).

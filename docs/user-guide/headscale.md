@@ -1,17 +1,17 @@
 ---
 title: "Headscale and Headplane · Use"
-description: "What Headscale and Headplane does, how to use it in antalos, and where to find its official documentation."
+description: "Connect a Tailscale client to Headscale and check private connectivity."
 ---
 
 <nav class="guide-switcher" aria-label="Headscale and Headplane guide sections"><a aria-current="page" href="/user-guide/headscale/">Use</a><a href="/infrastructure/headscale/">Architecture</a><a href="/admin-guide/headscale/">Operate</a></nav>
 
 Headscale coordinates a private network of Tailscale-compatible clients. It distributes identity and network policy; most application traffic travels between clients rather than through the Headscale server. Headplane provides the browser administration interface for machines, users, and network configuration.
 
-## Access and audience
+## Access
 
-For this installation, use [vpn.antblu.net](https://vpn.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+Open [vpn.antblu.net](https://vpn.antblu.net) or use the address your administrator gave you. Ask your administrator for access if you need an account or role.
 
-## Your first workflow
+## Enroll a device
 
 1. Install a compatible Tailscale client and set its login server to the Headscale HTTPS endpoint supplied by your administrator. On a new Linux client, use `tailscale up --login-server https://<headscale-host>`.
 
@@ -29,12 +29,12 @@ Report the affected device, whether it can reach the internet, and which private
 
 An outage can prevent device enrollment or coordination updates. Report whether an existing private connection still works; do not assume every connection fails in the same way.
 
-Administrators can read [the architecture and recovery limits](/infrastructure/headscale/#availability-and-failure-behavior).
+See [expected failure behavior and recovery](/infrastructure/headscale/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official Headscale and Headplane documentation](https://headscale.net/stable/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
+Use the [official Headscale and Headplane documentation](https://headscale.net/stable/) for your installed version. Ask your administrator which optional features are enabled.
 
-For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/headscale/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/headscale/).
+See the [architecture](/infrastructure/headscale/) or [deployment guide](/admin-guide/headscale/).
 
 The companion [Headplane documentation](https://headplane.net/) explains the browser management interface.

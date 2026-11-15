@@ -26,7 +26,7 @@ Uptime Kuma runs as one Deployment replica. Its live SQLite database is in pod-l
 
 **A recoverable singleton, without a hot serving replica.** Replacement interrupts checks and the UI while a new process restores and starts. The rollout permits the one application replica to be unavailable. A `minAvailable: 1` PDB can block voluntary eviction; it does not turn the workload into an HA monitor.
 
-If the backup is absent, the restore flags allow startup to continue. A reachable new instance therefore does not prove monitor definitions and history were recovered. Litestream protects the configured SQLite database, not automatically every non-database file written under `/app/data`.
+The restore flags allow startup without a backup. After startup, check that Kuma recovered its monitor definitions and history. Litestream covers the configured SQLite database. Back up other required files under `/app/data` yourself.
 
 The monitor is inside the same cluster it observes. Cluster, ingress, or external-storage failure can remove both the service and its monitoring view. An independent external monitor is required to observe those failures from outside this failure domain.
 

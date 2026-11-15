@@ -71,7 +71,7 @@ Follow the [application workflow](/admin-guide/deploy-an-application/). Publish 
   -n renovate get sealedsecret,cronjob,jobs,pods
 ```
 
-Verify the SealedSecret is synced, then inspect the latest Job and its logs. A CronJob existing without a completed run does not prove authentication or repository processing. The real workflow is an onboarding or dependency-update pull request from `antblu-renovate[bot]` in an eligible repository; a run can legitimately finish without opening a PR if nothing needs updating.
+Verify Argo CD synced the SealedSecret. Check the latest completed Job and its logs for authentication and repository processing. In an eligible repository that needs onboarding or a dependency update, look for a pull request from `antblu-renovate[bot]`.
 
 For an immediate run, first ensure no scheduled or manual Job is active. Manual Jobs bypass the CronJob's overlap guard. The following command can create GitHub branches, issues, and pull requests:
 

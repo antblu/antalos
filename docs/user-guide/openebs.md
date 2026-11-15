@@ -1,17 +1,17 @@
 ---
 title: "OpenEBS · Use"
-description: "What OpenEBS does, how to use it in antalos, and where to find its official documentation."
+description: "Request node-local storage and check where Kubernetes places the volume."
 ---
 
 <nav class="guide-switcher" aria-label="OpenEBS guide sections"><a aria-current="page" href="/user-guide/openebs/">Use</a><a href="/infrastructure/openebs/">Architecture</a><a href="/admin-guide/openebs/">Operate</a></nav>
 
 OpenEBS provisions the node-local persistent volumes used by antalos databases and metrics services. Each volume belongs to one worker. Database replication across separate volumes supplies availability; the local storage layer itself is not configured to replicate data.
 
-## Access and audience
+## Access
 
-For this installation, use [openebs.antblu.net](https://openebs.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+Open [openebs.antblu.net](https://openebs.antblu.net) or use the address your administrator gave you. Ask your administrator for access if you need an account or role.
 
-## Your first workflow
+## Choose a storage class
 
 1. Select `openebs-local` for a workload that understands node-local persistence. Keep requested size in the application’s shared variable.
 
@@ -25,12 +25,12 @@ Report the affected application and its storage error. Storage provisioning and 
 
 ## During an interruption
 
-An interruption can affect the applications that depend on this platform service. Ask the administrator to identify the affected service and expected recovery path.
+If a worker fails, its local volumes stay on that worker. Ask the administrator how the affected application restores access to its data.
 
-Administrators can read [the architecture and recovery limits](/infrastructure/openebs/#availability-and-failure-behavior).
+See [expected failure behavior and recovery](/infrastructure/openebs/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official OpenEBS documentation](https://openebs.io/docs/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
+Use the [official OpenEBS documentation](https://openebs.io/docs/) for your installed version. Ask your administrator which optional features are enabled.
 
-For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/openebs/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/openebs/).
+See the [architecture](/infrastructure/openebs/) or [deployment guide](/admin-guide/openebs/).

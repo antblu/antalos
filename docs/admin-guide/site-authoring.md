@@ -1,9 +1,9 @@
 ---
 title: "Write and publish documentation"
-description: "Three-part content structure, native Starlight layout, styled diagrams, and the static publishing pipeline."
+description: "Write, preview, and publish the antalos handbook with Astro Starlight."
 ---
 
-Documentation source lives in `docs/`; the Astro Starlight site, CSS, header, and container live in `site/`. The content loader reads Markdown and MDX directly from the repository-level documentation folder.
+Write pages in `docs/`. Edit the Astro Starlight site, CSS, header, and container in `site/`. The content loader reads Markdown and MDX from `docs/`.
 
 ## Content structure
 
@@ -43,7 +43,7 @@ Use task-based headings, concise introductions, and sequential steps with expect
 
 Shared reading paths and runbook links are configured in `site/astro.config.mjs`. Service groups live in `site/src/navigation.mjs`; `serviceNavigation()` adds the same service slugs to all three perspectives. Add a service to that registry once, create its three pages, and add its row to `docs/user-guide/services.md`.
 
-Section landing pages are task-based reading paths, not repeated application inventories. Keep the directory as the complete list. Each service page includes a guide-switcher labeled **Use**, **Architecture**, and **Operate**, linking to the same slug in all three folders.
+Use landing pages to direct readers to common tasks. List applications in the service directory. Each service page includes a guide-switcher labeled **Use**, **Architecture**, and **Operate**, linking to the same slug in all three folders.
 
 User pages should explain access, one useful first workflow, what to report when it fails, and official product documentation. Keep pod names, database elections, and infrastructure repair commands in the architecture or admin guide. Distinguish the product's own manual from a community plugin's documentation, as in Obsidian LiveSync.
 
@@ -102,7 +102,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-The local URL is printed by Astro. The loader watches content from `../docs`. Builds and previews are available when validation is authorized for the task:
+Open the local URL Astro prints. The loader watches content from `../docs`. Builds and previews are available when validation is authorized for the task:
 
 ```bash title="Build and preview when requested"
 cd site
@@ -116,7 +116,7 @@ The build runs `astro check` before `astro build`. Do not commit `node_modules` 
 
 `.github/workflows/docs-image.yaml` builds the repository-root Docker context using `site/Dockerfile`. GitHub Actions publishes the main-branch image and an immutable commit tag. `apps/docs/` deploys the selected image with NGINX, a Service, ingress, disruption budget, and certificate.
 
-For a manual local container build, supply the actual shared variable values rather than copying an old tag:
+For a manual container build, use the image tags from the shared variables.
 
 ```bash title="Build a local documentation image"
 DOCS_BUILD_NODE_TAG='REPLACE_WITH_DOCS_NODE_IMAGE_TAG'
@@ -130,7 +130,7 @@ docker build \
   .
 ```
 
-Deploy a published immutable tag through `DOCS_IMAGE_TAG` for repeatable releases. The checked-in rollout uses one surge pod and zero unavailable replicas, so sufficient eligible placement is required. `/healthz` reports NGINX health; it does not validate page content.
+Deploy a published immutable tag through `DOCS_IMAGE_TAG` for repeatable releases. The Deployment replaces one replica at a time with zero surge and one unavailable. Check `/healthz` for NGINX health and load the published pages to verify their content.
 
 ## Preserve old links
 

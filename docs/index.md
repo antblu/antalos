@@ -1,9 +1,9 @@
 ---
 title: antalos Documentation
-description: Use the services, understand the infrastructure, and deploy your own antalos stack.
+description: Service guides, infrastructure reference, and deployment runbooks for antalos.
 ---
 
-antalos is a reusable template for hosting your own application stack and VMs, built from a Talos Kubernetes cluster, Debian application VMs, and an edge network. This handbook explains what you can use, where it runs, and how to build and maintain it from this repository.
+Use antalos as a template for hosting applications on a Talos Kubernetes cluster and Debian VMs. An edge network connects the services to their users.
 
 <div class="guide-cards">
 <a class="guide-card" href="/user-guide/"><span class="card-number">01 / USE</span><strong>I want to use a service</strong><span>Find an application, sign in, and complete a first task. Follow official manuals for deeper product help.</span></a>
@@ -28,11 +28,11 @@ antalos is a reusable template for hosting your own application stack and VMs, b
 <figure class="architecture-diagram" aria-label="antalos deployment responsibilities">
 <div class="diagram-heading">Choose the owner before changing a service</div>
 <ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Machines</span><ul><li>Proxmox + OpenTofu</li><li>Talos and Debian guests</li><li>Home HAProxy pair</li></ul></li><li class="diagram-stage"><span class="diagram-label">Workloads</span><ul><li>Argo CD → Kubernetes apps</li><li>Ansible → Debian Compose</li><li>Cloud-init → Azure edge</li></ul></li><li class="diagram-stage"><span class="diagram-label">Dependencies</span><ul><li>Identity and public DNS</li><li>NFS and Garage objects</li><li>Credentials and backups</li></ul></li></ol>
-<figcaption>Each deployment path has its own configuration and lifecycle. A Git change reaches Kubernetes through Argo CD; VM playbooks and Azure provisioning follow separate procedures.</figcaption>
+<figcaption>Argo CD reconciles Kubernetes from Git. Run the relevant Ansible playbook for Debian workloads and use the Azure project to provision the edge.</figcaption>
 </figure>
 
 ## How to read the handbook
 
-User guides explain tasks without requiring Kubernetes knowledge. Architecture guides describe the components and state behind those tasks. Admin guides connect repository files to deployment steps and operational decisions. Every service in the [directory](/user-guide/services/) links to all three perspectives.
+Open the [service directory](/user-guide/services/) for user tasks, architecture, and deployment guides. Start with **Use** if you need to work in an application. Open **Architecture** to locate components and data, or **Operate** for deployment and recovery steps.
 
-The guides describe the checked-in design. They do not report live health. Addresses identify the antalos environment; administrators deploying a fork must supply their own. Application values belong in `apps/variables.yaml`, while VM and Azure settings belong to their respective infrastructure projects.
+The guides describe the design in Git. If you deploy a fork, replace the antalos addresses with your own. Set Kubernetes application values in `apps/variables.yaml`. Set VM and Azure values in their respective infrastructure projects.

@@ -1,11 +1,11 @@
 ---
 title: "Nextcloud · Operate"
-description: "Deploy Nextcloud with antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Nextcloud and configure storage, sign-in, and companion services."
 ---
 
 <nav class="guide-switcher" aria-label="Nextcloud guide sections"><a href="/user-guide/nextcloud/">Use</a><a href="/infrastructure/nextcloud/">Architecture</a><a aria-current="page" href="/admin-guide/nextcloud/">Operate</a></nav>
 
-This runbook deploys the service from `apps/nextcloud/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
+Use `apps/nextcloud/` with the [shared deployment workflow](/admin-guide/deploy-an-application/) to render manifests, prepare credentials, and reconcile the Application.
 
 ## 1. Prepare dependencies and inputs
 
@@ -21,7 +21,7 @@ This runbook deploys the service from `apps/nextcloud/` and completes the config
 
 Nextcloud add-on archives are selected by the release versions in `apps/variables.yaml`, without repository-pinned SHA-512 checksums. The installer records each installed version in a `.APP_ID.gitops-version` file beside the app directory and skips that version on later runs. Existing checksum markers are replaced on the first installation with this scheme, which downloads the configured releases again.
 
-Publish the reviewed manifests and shared variables to the branch tracked by your Argo CD Applications. Local edits are not deployment inputs until that branch contains them. Let the root app-of-apps discover this service and retain its declared hook order; do not apply files containing unresolved variable placeholders directly.
+Push the reviewed manifests and variables to the branch Argo CD tracks. Let the root app-of-apps discover the Application and run its hooks in order. Keep unresolved templates out of direct Kubernetes applies.
 
 From the repository root, inspect the Application and its namespace:
 
@@ -33,7 +33,7 @@ From the repository root, inspect the Application and its namespace:
   -n nextcloud get pods,svc,pvc
 ```
 
-Wait for required controllers, database initialization, and migration Jobs before testing the user workflow. Synced configuration, ready workloads, and a successful user transaction are separate milestones.
+Confirm the expected Git revision synced and the required workloads are ready. Wait for any initialization or migration Jobs to finish, then test the service.
 
 ## 3. Complete identity and first access
 
@@ -55,13 +55,13 @@ Web, office, and Context Chat use zero-surge rolling updates. Redis HAProxy also
 
 Establish Redis election and safe rejoin behavior, protect shared storage, and exercise file/office/Talk workflows during degraded operation. A warm web replica does not make the whole Nextcloud suite outage-free.
 
-Use the [component-by-component failure contract](/infrastructure/nextcloud/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+Review [failure behavior](/infrastructure/nextcloud/#availability-and-failure-behavior) before maintenance. If the service uses replication or quorum, confirm data has resynchronized and voting capacity has recovered.
 
 ## 5. Maintain and recover
 
 A recoverable Nextcloud installation needs the database, Garage objects, original secret/salt and credentials, Git configuration, and any NFS content that cannot be re-created. Pinned application code can be downloaded again, but Whiteboard recording files or manually installed extensions on shared storage need separate consideration. Redis locks and disposable pod files do not replace the data backup.
 
-Before an upgrade, read the release notes for the pinned target and record a recovery point. A previous image tag is not a database rollback after a schema migration. Use [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/) for the platform sequence.
+Read the target version’s release notes and record a recovery point before upgrading. If the release migrates a database schema, plan how to restore the database before rolling back the image. See [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/).
 
 ## Troubleshooting
 

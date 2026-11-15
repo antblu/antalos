@@ -1,17 +1,17 @@
 ---
 title: "MetalLB · Use"
-description: "What MetalLB does, how to use it in antalos, and where to find its official documentation."
+description: "Choose a LoadBalancer address and check its advertisement from the LAN."
 ---
 
 <nav class="guide-switcher" aria-label="MetalLB guide sections"><a aria-current="page" href="/user-guide/metallb/">Use</a><a href="/infrastructure/metallb/">Architecture</a><a href="/admin-guide/metallb/">Operate</a></nav>
 
 MetalLB assigns and advertises LoadBalancer addresses on the local network. It supplies the entry addresses used by Traefik and direct protocol services. It does not create public DNS records, configure the upstream router, or make a private address reachable from the Internet.
 
-## Access and audience
+## Access
 
-This is a platform service with no standalone user-facing website. Its consumers use Kubernetes resources or internal endpoints.
+Use Kubernetes resources or internal endpoints to work with this service.
 
-## Your first workflow
+## Assign a LoadBalancer address
 
 1. Choose an unused address from `METALLB_ADDRESS_POOL` when a service needs a stable LoadBalancer IP. Keep that choice in `apps/variables.yaml`.
 
@@ -25,12 +25,12 @@ Report the unreachable service and whether it fails from one network or all netw
 
 ## During an interruption
 
-An interruption can affect the applications that depend on this platform service. Ask the administrator to identify the affected service and expected recovery path.
+If a LoadBalancer address stops responding, ask the administrator to check the Service endpoints and its LAN advertisement.
 
-Administrators can read [the architecture and recovery limits](/infrastructure/metallb/#availability-and-failure-behavior).
+See [expected failure behavior and recovery](/infrastructure/metallb/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official MetalLB documentation](https://metallb.io/usage/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
+Use the [official MetalLB documentation](https://metallb.io/usage/) for your installed version. Ask your administrator which optional features are enabled.
 
-For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/metallb/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/metallb/).
+See the [architecture](/infrastructure/metallb/) or [deployment guide](/admin-guide/metallb/).

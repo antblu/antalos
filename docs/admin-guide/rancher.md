@@ -1,11 +1,11 @@
 ---
 title: "Rancher · Operate"
-description: "Deploy Rancher with antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Rancher and verify cluster management access."
 ---
 
 <nav class="guide-switcher" aria-label="Rancher guide sections"><a href="/user-guide/rancher/">Use</a><a href="/infrastructure/rancher/">Architecture</a><a aria-current="page" href="/admin-guide/rancher/">Operate</a></nav>
 
-This runbook deploys the service from `apps/rancher/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
+Use `apps/rancher/` with the [shared deployment workflow](/admin-guide/deploy-an-application/) to render manifests, prepare credentials, and reconcile the Application.
 
 ## 1. Prepare dependencies and inputs
 
@@ -15,7 +15,7 @@ This runbook deploys the service from `apps/rancher/` and completes the configur
 
 ## 2. Reconcile the application
 
-Publish the reviewed manifests and shared variables to the branch tracked by your Argo CD Applications. Local edits are not deployment inputs until that branch contains them. Let the root app-of-apps discover this service and retain its declared hook order; do not apply files containing unresolved variable placeholders directly.
+Push the reviewed manifests and variables to the branch Argo CD tracks. Let the root app-of-apps discover the Application and run its hooks in order. Keep unresolved templates out of direct Kubernetes applies.
 
 From the repository root, inspect the Application and its namespace:
 
@@ -27,7 +27,7 @@ From the repository root, inspect the Application and its namespace:
   -n cattle-system get pods,svc,pvc
 ```
 
-Wait for required controllers, database initialization, and migration Jobs before testing the user workflow. Synced configuration, ready workloads, and a successful user transaction are separate milestones.
+Confirm the expected Git revision synced and the required workloads are ready. Then test the service.
 
 ## 3. Complete identity and first access
 
@@ -49,13 +49,13 @@ The repository pins two replicas and required anti-affinity but does not explici
 
 Retain independent kubectl/Talos access, make chart-derived rollout/disruption settings explicit where needed, and measure both UI access and a real API-backed operation during one-server failure.
 
-Use the [component-by-component failure contract](/infrastructure/rancher/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+Review [failure behavior](/infrastructure/rancher/#availability-and-failure-behavior) before maintenance.
 
 ## 5. Maintain and recover
 
 Rancher management state lives in Kubernetes resources and secrets; recovery must account for that state as well as the Helm values. Preserve the platform recovery set and use upstream Rancher backup procedures where configured.
 
-Before an upgrade, read the release notes for the pinned target and record a recovery point. A previous image tag is not a database rollback after a schema migration. Use [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/) for the platform sequence.
+Read the target version’s release notes and record a recovery point before upgrading. See [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/).
 
 ## Troubleshooting
 

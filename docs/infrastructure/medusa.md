@@ -28,7 +28,7 @@ The design targets a single left/right data-worker failure while the surviving w
 
 Redis replication is asynchronous, and AOF fsync runs every second. Recent sessions, queued work, cache entries, or locks may be lost on failure. Distributed locking does not provide exactly-once business operations across a Redis failover. CNPG's preferred synchronous policy permits writes without a standby during degradation, trading durability for availability. After a Redis primary returns, startup consults Sentinel and joins the elected primary; persistent role/configuration files survive container restarts.
 
-Garage and the external ingress/DNS/network path remain shared dependencies. The third Sentinel is a voter, not a third data copy. A partitioned old writer must be fenced before manual recovery; replica count does not establish whole-host or end-to-end availability.
+Garage and the external ingress/DNS/network path remain shared dependencies. The third Sentinel votes in elections. The two Redis data members hold the data copies. A partitioned old writer must be fenced before manual recovery; replica count does not establish whole-host or end-to-end availability.
 
 `MEDUSA_S3_FILE_URL` initially points to the existing internal Garage bucket path. It is not a public media delivery endpoint. Browser retrieval requires reachable URLs and bucket read policy; public storefront media delivery is deferred with the storefront. Do not make the bucket public implicitly.
 

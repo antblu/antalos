@@ -15,7 +15,7 @@ Avoid repeated retries that produce the same error. A blocked request might come
 
 ## Access and permissions still belong to the application
 
-An allowed request does not grant an application account or role. A successful Authentik sign-in does not guarantee that every request will be accepted by other protection layers. For sign-in help, use [accounts and access](/user-guide/accounts/).
+You still need the application account or role after a request passes CrowdSec. CrowdSec and other protection layers can reject requests from signed-in users. For sign-in help, use [accounts and access](/user-guide/accounts/).
 
 ## Official documentation
 

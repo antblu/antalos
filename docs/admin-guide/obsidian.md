@@ -33,7 +33,7 @@ Generate and seal credentials in `apps/obsidian/`. The CouchDB and HAProxy secre
 
 The checked-in route protects all database requests through Authentik. Do not assume that entering the database administrator password into LiveSync bypasses that middleware. Choose and configure the Authentik-supported client access method for the intended devices, then follow the matching plugin setup procedure.
 
-Do not broaden the Authentik policy merely to make a failed connection disappear. Its accepted identities currently receive full database administration rights. A multi-user least-privilege vault design requires a deliberate role/database policy change beyond this documentation.
+Keep the existing Authentik policy while diagnosing a failed connection. The policy grants full database administration rights to accepted identities. Define per-user roles and database permissions before expanding access to a least-privilege, multi-user setup.
 
 ## Replication and recovery
 

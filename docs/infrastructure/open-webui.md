@@ -1,31 +1,30 @@
 ---
 title: "Open WebUI · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for Open WebUI in antalos."
+description: "Open WebUI, model connections, and persistent application state."
 ---
 
 <nav class="guide-switcher" aria-label="Open WebUI guide sections"><a href="/user-guide/open-webui/">Use</a><a aria-current="page" href="/infrastructure/open-webui/">Architecture</a><a href="/admin-guide/open-webui/">Operate</a></nav>
 
 Two application replicas share `open-webui-db`, a two-instance PostgreSQL cluster with vector support. Redis has two persistent data nodes and a third Sentinel voter on RTX for distributed coordination. Uploaded objects use Garage. A migration Job handles database changes. The chart is configured with `Recreate`, so upgrades can stop both application replicas even though two run during steady state.
 
-## Component boundaries
+## Components
 
 <figure class="architecture-diagram" aria-label="Open WebUI · component flow">
 <div class="diagram-heading">Open WebUI · component flow</div>
 <ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Sign-in / chats</span><ul><li>Browser → Authentik OIDC</li><li>Traefik HTTPS</li></ul></li><li class="diagram-stage"><span class="diagram-label">Chat interface</span><ul><li>2 Open WebUI replicas</li><li>Migration Job / Recreate upgrades</li></ul></li><li class="diagram-stage"><span class="diagram-label">State and inference</span><ul><li>PostgreSQL + vectors · 2 instances</li><li>Redis · 2 data / 3 Sentinels</li><li>Garage uploads / model APIs</li></ul></li></ol>
-<figcaption>Arrows show the main flow between responsibility groups. Parallel boxes are related components, not interchangeable replicas; the text below defines their individual failure and recovery behavior.</figcaption>
 </figure>
 
-## State and recovery contract
+## Data and recovery
 
 Back up PostgreSQL and the Garage bucket together. Preserve the shared `webui-secret-key` across both replicas and recovery, as well as the OIDC and provider credentials. Local application storage is not the authoritative chat or upload database.
 
 ## Availability and failure behavior
 
-**Availability classification: Partially HA: steady-state replicas exist, but Recreate upgrades and Redis/storage dependencies can interrupt all users.**
+**Partially HA: steady-state replicas exist, but Recreate upgrades and Redis/storage dependencies can interrupt all users.**
 
-This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+The expected behavior assumes healthy replicas with the intended placement and reachable dependencies. Verify it in a failure drill on your deployment.
 
-### What supplies redundancy
+### Component redundancy
 
 | Component | Declared layout | Mechanism |
 | --- | --- | --- |
@@ -34,9 +33,9 @@ This is an interpretation of the checked-in configuration, assuming the declared
 | Redis | 2 data members + 3 Sentinels | Client discovery selects a primary; the RTX member contributes a vote, not data. |
 | Objects / models | Garage uploads + external model APIs | Neither dependency gains replicas from the Open WebUI Deployment. |
 
-### How a failure is handled
+### Failover and recovery
 
-New browser requests can reach the surviving instance after routing converges. Chats and knowledge state require the database and object store; distributed coordination requires a valid Redis primary. In-progress streams can stop and must be restarted by the client rather than moving to another process.
+New browser requests can reach the surviving instance after routing converges. Chats and knowledge state require the database and object store; distributed coordination requires a valid Redis primary. If a stream stops, retry the request from the client.
 
 ### Failure scenarios
 
@@ -44,27 +43,27 @@ New browser requests can reach the surviving instance after routing converges. C
 | --- | --- |
 | One main worker | One app, one database member, one Redis data member, and two Sentinel voters can remain. Sustained inference throughput depends on the model provider and surviving app capacity. |
 | RTX worker only | Leaves both app/data workers and two data-side Sentinels. Another voter or data-worker loss is outside the intended single-failure margin. |
-| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+| A second failure before recovery | Check surviving endpoints and capacity before further maintenance. For replicated data or voting groups, check the remaining copies and quorum. |
 
-An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+Losing the RTX Proxmox host takes down both its worker and control-plane VMs, including the default external API endpoint. Factor that dependency into [whole-host failure testing](/infrastructure/availability/#physical-hosts-and-the-api-endpoint).
 
 ### Upgrades and voluntary maintenance
 
 The chart explicitly uses Recreate. A version rollout may terminate both application replicas before starting their replacements; the application PDB does not turn a controller-driven Recreate update into a rolling one.
 
-### What prevents a stronger HA claim
+### Availability limits
 
 Redis persists role changes and data-side Sentinel topology on each existing PVC. Startup consults Sentinel before rejoining; first migration of an existing dataset requires agreement from two voters. Verify promotion and former-primary rejoin before asserting automatic recovery. Sentinel listeners intentionally omit requirepass for the current client contract; data-node authentication is a separate setting. Garage or model-provider failure can make a healthy UI unusable for its main workflow.
 
-### What would improve the availability contract
+### Improving availability
 
 Document an upgrade outage unless a supported rolling/migration design is implemented. Establish Redis restart/rejoin correctness, durable backups, and a chat/upload test after failover. Keep the shared application secret identical across replicas and recovery.
 
-These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
+See [platform availability](/infrastructure/availability/) for shared dependencies and failure-test criteria.
 
 ## Configuration ownership
 
-`apps/open-webui/` owns this service’s Kubernetes resources. Hostnames, addresses, versions, node names, and volume sizes belong in `apps/variables.yaml`. Runtime settings stored in a product database need that product’s backup and administration procedure.
+Keep Kubernetes resources in `apps/open-webui/` and environment-specific inputs in `apps/variables.yaml`. Use the application’s backup procedure for any settings it stores in its database.
 
 - [`app.yaml`](https://github.com/antblu/antalos/blob/main/apps/open-webui/app.yaml)
 - [`availability.yaml`](https://github.com/antblu/antalos/blob/main/apps/open-webui/availability.yaml)
@@ -74,9 +73,10 @@ These are operational/design requirements, not changes made to the deployment by
 - [`redis.yaml`](https://github.com/antblu/antalos/blob/main/apps/open-webui/redis.yaml)
 - [`secrets.yaml`](https://github.com/antblu/antalos/blob/main/apps/open-webui/secrets.yaml)
 
-## Continue
+## Related guides
 
-Read the [deployment guide](/admin-guide/open-webui/) for dependency order, initial credentials, and integration work. The [official documentation](https://docs.openwebui.com/) explains the upstream product; the topology above describes this repository.
+- [deployment guide](/admin-guide/open-webui/) for setup and recovery
+- [official documentation](https://docs.openwebui.com/) for product configuration
 
 ## Recovery resource limits
 

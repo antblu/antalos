@@ -3,14 +3,14 @@ title: Traffic, DNS, and TLS
 description: Follow public and private traffic through Azure, home HAProxy, Kubernetes ingress, and application listeners.
 ---
 
-Traffic passes through several independently configured layers. A service's hostname, load-balancer address, and listening application process must agree before the user can connect.
+To connect users to a service, point its hostname at the intended entrypoint and route that traffic to the application listener.
 
 ## The public web path
 
 <figure class="architecture-diagram" aria-label="Public HTTPS request path">
 <div class="diagram-heading">HTTPS through the Azure edge</div>
 <ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Public entry</span><ul><li>DNS → Azure public address</li><li>Azure NSG + guest firewall</li><li>HAProxy accepts TCP 443</li></ul></li><li class="diagram-stage"><span class="diagram-label">Private transport</span><ul><li>Headscale / Tailscale</li><li>Home HAProxy pair on TCP 9443</li><li>Forward to MetalLB on TCP 9443</li></ul></li><li class="diagram-stage"><span class="diagram-label">Kubernetes</span><ul><li>Traefik terminates HTTPS on publichttps</li><li>Explicitly attached host and path routes</li><li>Service → application pod</li></ul></li></ol>
-<figcaption>This is the configured edge path, not a live DNS report. Other direct or private routes must be documented by their own entrypoint.</figcaption>
+<figcaption>Public HTTPS reaches Azure on port 443 and crosses the tailnet on port 9443.</figcaption>
 </figure>
 
 Azure's backend addresses come from `infrastructure/azure/variables.yaml` and currently identify the home proxies by their Tailscale addresses. The home pair also has an external-network Keepalived VIP declared in the HAProxy OpenTofu project. Azure's two-backend configuration and the home VIP are separate routing mechanisms.
@@ -28,7 +28,7 @@ LAN and VPN clients use private DNS and TCP 443 to reach Traefik's `websecure` e
 | `10.244.0.0/16` | Pod network | Cluster configuration |
 | `10.30.0.241` | Declared Talk TURN address | Application variables and Talk services |
 
-These are values for this environment. Match the settings at each boundary when deploying a fork; updating application variables does not rewrite the separate Azure or home-proxy projects.
+If you deploy a fork, update the application variables and the Azure and home-proxy settings to match your network.
 
 ## Web traffic and mail take different paths
 
@@ -43,7 +43,7 @@ These are values for this environment. Match the settings at each boundary when 
 
 The home HAProxy defaults include 443 and all listed mail TCP ports. Azure’s cloud-init currently creates listeners for 443, 25, 465, and 993. Its firewall allowlist also names 587 and 4190, but no HAProxy listeners for those two ports are declared in that template. An allowed port is not a forwarded service. Neither project establishes the external NSG, router, or DNS configuration. The home template's LDAPS forwarding entry is commented out; it is not an enabled public listener simply because an application can use LDAP internally.
 
-Outbound SMTP delivery has its own path from Stalwart to the recipient or relay. A successful inbound TLS connection does not establish outbound reachability. See [mail operations](/admin-guide/stalwart/).
+Test outbound SMTP from Stalwart to the recipient or relay. It uses a separate path from inbound TLS. See [mail operations](/admin-guide/stalwart/).
 
 ## DNS and certificates
 
@@ -55,7 +55,7 @@ cert-manager requests the certificates referenced by application ingress. `letse
 
 Native OIDC/SAML makes the application participate in sign-in. Forward-auth asks Authentik whether an incoming request may proceed. These methods have different callback and client requirements. A browser can complete a redirect that a database replication client or a webhook cannot.
 
-[Obsidian](/infrastructure/obsidian/) adds a signed CouchDB identity after Authentik authorization. Mail clients use their supported mail authentication. Configure each service's method rather than putting a browser challenge in front of every protocol.
+[Obsidian](/infrastructure/obsidian/) adds a signed CouchDB identity after Authentik authorization. Mail clients use their supported mail authentication. Configure authentication for the protocol each client uses.
 
 ## Where to operate each layer
 

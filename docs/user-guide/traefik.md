@@ -1,17 +1,17 @@
 ---
 title: "Traefik · Use"
-description: "What Traefik does, how to use it in antalos, and where to find its official documentation."
+description: "Find the Traefik router for a hostname or entrypoint and inspect its backends."
 ---
 
 <nav class="guide-switcher" aria-label="Traefik guide sections"><a aria-current="page" href="/user-guide/traefik/">Use</a><a href="/infrastructure/traefik/">Architecture</a><a href="/admin-guide/traefik/">Operate</a></nav>
 
 Traefik routes external requests to antalos services. HTTP routers match hostnames and paths, middleware adds behavior such as authentication, and TCP/UDP routes expose native protocols. Its dashboard helps operators see which routes and services are active.
 
-## Access and audience
+## Access
 
-For this installation, use [traefik.antblu.net](https://traefik.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+Open [traefik.antblu.net](https://traefik.antblu.net) or use the address your administrator gave you. Ask your administrator for access if you need an account or role.
 
-## Your first workflow
+## Inspect a route
 
 1. Open the protected dashboard and locate the router matching the affected hostname or entry point.
 
@@ -27,12 +27,12 @@ Report the hostname, time, and browser response. Mention whether authentication 
 
 ## During an interruption
 
-An interruption can affect the applications that depend on this platform service. Ask the administrator to identify the affected service and expected recovery path.
+If several routes stop responding, report the affected hostnames and protocols so the administrator can trace the shared ingress path.
 
-Administrators can read [the architecture and recovery limits](/infrastructure/traefik/#availability-and-failure-behavior).
+See [expected failure behavior and recovery](/infrastructure/traefik/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official Traefik documentation](https://doc.traefik.io/traefik/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
+Use the [official Traefik documentation](https://doc.traefik.io/traefik/) for your installed version. Ask your administrator which optional features are enabled.
 
-For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/traefik/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/traefik/).
+See the [architecture](/infrastructure/traefik/) or [deployment guide](/admin-guide/traefik/).

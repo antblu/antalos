@@ -1,6 +1,6 @@
 ---
 title: "SuiteCRM · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for SuiteCRM in antalos."
+description: "SuiteCRM web and job components, Galera, and shared files."
 ---
 
 <nav class="guide-switcher" aria-label="SuiteCRM guide sections"><a href="/user-guide/suitecrm/">Use</a><a aria-current="page" href="/infrastructure/suitecrm/">Architecture</a><a href="/admin-guide/suitecrm/">Operate</a></nav>
@@ -9,12 +9,11 @@ SuiteCRM is deployed as several cooperating Kubernetes workloads rather than one
 
 Persistence is deliberately split by access pattern. The application tree is shared through NFS, each database member owns a separate node-local OpenEBS volume, caches and web sessions are disposable pod-local volumes, and SuiteCRM media plus physical database backups are stored through the Garage S3 API. These layers are not interchangeable and must be recovered differently.
 
-## Component boundaries
+## Components
 
 <figure class="architecture-diagram" aria-label="SuiteCRM · component flow">
 <div class="diagram-heading">SuiteCRM · component flow</div>
 <ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Request path</span><ul><li>Browser → Traefik HTTPS</li><li>Sticky cookie → 1 of 2 web pods</li></ul></li><li class="diagram-stage"><span class="diagram-label">Application workloads</span><ul><li>Shared NFS application tree</li><li>Local cache and web sessions</li><li>Messenger + scheduler + bootstrap</li></ul></li><li class="diagram-stage"><span class="diagram-label">Durable data</span><ul><li>2 Galera data disks + RTX vote</li><li>Media and DB backups → Garage</li></ul></li></ol>
-<figcaption>Arrows show the main flow between responsibility groups. Parallel boxes are related components, not interchangeable replicas; the text below defines their individual failure and recovery behavior.</figcaption>
 </figure>
 
 ## Kubernetes deployment model
@@ -59,17 +58,17 @@ Garage is accessed over the S3 API and is not mounted as a filesystem volume. Su
 
 The same bucket also receives mariadb-operator physical backups under the `database` prefix. Co-location does not make one feature a backup of the other: the `PhysicalBackup` resource protects MariaDB only, and SuiteCRM's media objects require their own Garage durability and recovery policy. Existing legacy Document, Note, Contact, Lead, or Target files remain on NFS until the applicable SuiteCRM 8.10 **Admin → Migrations** task completes successfully.
 
-## State and recovery contract
+## Data and recovery
 
 A complete recovery point has three coordinated parts: a MariaDB physical backup, a copy or snapshot of `suitecrm-data`, and protection of the SuiteCRM Garage bucket containing media. Preserve the matching Git revision and sealed database, application, S3, SAML, and registry Secrets. The database backup does not include NFS or media objects, even though database backups and media share a bucket.
 
 ## Availability and failure behavior
 
-**Availability classification: Partially HA: replicated web and Galera data, but background workers and shared files have separate outage paths.**
+**Partially HA: replicated web and Galera data, but background workers and shared files have separate outage paths.**
 
-This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+The expected behavior assumes healthy replicas with the intended placement and reachable dependencies. Verify it in a failure drill on your deployment.
 
-### What supplies redundancy
+### Component redundancy
 
 | Component | Declared layout | Mechanism |
 | --- | --- | --- |
@@ -79,7 +78,7 @@ This is an interpretation of the checked-in configuration, assuming the declared
 | Background work | 1 messenger process + scheduled CronJob | Restart/scheduling recovery, not two concurrently available workers. |
 | Shared state / media / backups | NFS application tree + Garage media and physical backups | Neither external backend is made HA by web replicas or Galera. |
 
-### How a failure is handled
+### Failover and recovery
 
 If a main data node fails while the other node and garbd can communicate, the surviving Primary Component retains two of the original three votes. Ready database routing and the remaining web pod can serve requests after membership changes settle. garbd arbitrates membership; it cannot answer SQL or reconstruct a lost database.
 
@@ -89,27 +88,27 @@ If a main data node fails while the other node and garbd can communicate, the su
 | --- | --- |
 | One main worker | One web and one database member can remain with the arbitrator. Work owned by the single messenger may pause if that pod was on the failed worker. Remaining capacity and NFS availability still bound the user experience. |
 | RTX worker only | Both data members can continue as the surviving majority when connected. With garbd absent, another data-member loss is outside the intended one-failure design; a forced quorum bootstrap requires careful split-brain recovery. |
-| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+| A second failure before recovery | Check surviving endpoints and capacity before further maintenance. For replicated data or voting groups, check the remaining copies and quorum. |
 
-An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+Losing the RTX Proxmox host takes down both its worker and control-plane VMs, including the default external API endpoint. Factor that dependency into [whole-host failure testing](/infrastructure/availability/#physical-hosts-and-the-api-endpoint).
 
 ### Upgrades and voluntary maintenance
 
 Web updates use zero surge and one unavailable. MariaDB declares ReplicasFirstPrimaryLast. The messenger is singleton and can pause during its update. A PDB protects evictions, not every scheduled task or a database schema migration.
 
-### What prevents a stronger HA claim
+### Availability limits
 
 NFS failure affects every SuiteCRM workload that needs the shared application tree. Garage failure prevents new media access and physical-backup writes even while cached pages and database queries remain available. Daily `PhysicalBackup` covers the database, not the NFS tree or media objects. Galera membership does not guarantee that queued jobs ran exactly once or that a partitioned node can safely be forced back online.
 
-### What would improve the availability contract
+### Improving availability
 
 Protect NFS, define background-job outage expectations, and prove a database-plus-files restore. For stronger complete-service HA, assess supported messenger concurrency and capture CRM read/write behavior during membership loss and rejoin.
 
-These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
+See [platform availability](/infrastructure/availability/) for shared dependencies and failure-test criteria.
 
 ## Configuration ownership
 
-`apps/suitecrm/` owns this service’s Kubernetes resources. Hostnames, addresses, versions, node names, and volume sizes belong in `apps/variables.yaml`. Runtime settings stored in a product database need that product’s backup and administration procedure.
+Keep Kubernetes resources in `apps/suitecrm/` and environment-specific inputs in `apps/variables.yaml`. Use the application’s backup procedure for any settings it stores in its database.
 
 - [`app.yaml`](https://github.com/antblu/antalos/blob/main/apps/suitecrm/app.yaml)
 - [`backup.yaml`](https://github.com/antblu/antalos/blob/main/apps/suitecrm/backup.yaml)
@@ -119,9 +118,10 @@ These are operational/design requirements, not changes made to the deployment by
 - [`storage.yaml`](https://github.com/antblu/antalos/blob/main/apps/suitecrm/storage.yaml)
 - [`suitecrm.yaml`](https://github.com/antblu/antalos/blob/main/apps/suitecrm/suitecrm.yaml)
 
-## Continue
+## Related guides
 
-Read the [deployment guide](/admin-guide/suitecrm/) for dependency order, initial credentials, and integration work. The [official documentation](https://docs.suitecrm.com/user/) explains the upstream product; the topology above describes this repository.
+- [deployment guide](/admin-guide/suitecrm/) for setup and recovery
+- [official documentation](https://docs.suitecrm.com/user/) for product configuration
 
 ### Arbitrator recovery after pod replacement
 

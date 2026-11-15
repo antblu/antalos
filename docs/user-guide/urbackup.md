@@ -1,17 +1,17 @@
 ---
 title: "UrBackup · Use"
-description: "What UrBackup does, how to use it in antalos, and where to find its official documentation."
+description: "Enroll an UrBackup client, check backup status, and request a restore."
 ---
 
 <nav class="guide-switcher" aria-label="UrBackup guide sections"><a aria-current="page" href="/user-guide/urbackup/">Use</a><a href="/infrastructure/urbackup/">Architecture</a><a href="/admin-guide/urbackup/">Operate</a></nav>
 
-UrBackup manages file and image backups from supported client devices. Its web interface shows registered clients, backup schedules, completed backups, and restore options. A running server is only the first step: clients need a reachable transport and a backup policy before any protected data exists.
+UrBackup manages file and image backups from supported client devices. Its web interface shows registered clients, backup schedules, completed backups, and restore options. Your device needs a reachable transport and a backup policy before UrBackup can protect its data.
 
-## Access and audience
+## Access
 
-For this installation, use [backup.antblu.net](https://backup.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+Open [backup.antblu.net](https://backup.antblu.net) or use the address your administrator gave you. Ask your administrator for access if you need an account or role.
 
-## Your first workflow
+## Enroll a client and check its first backup
 
 1. Ask the administrator to enroll your device and install the matching UrBackup client. Keep the device online during its first full backup.
 
@@ -19,7 +19,7 @@ For this installation, use [backup.antblu.net](https://backup.antblu.net). If yo
 
 3. For a restore, select the client and backup time carefully, then recover to a separate location first when practical. Confirm the restored files open correctly.
 
-4. Report repeated missed backups or unexpectedly old restore points. A client being online does not mean its latest backup completed successfully.
+4. Check the latest completed backup and report missed runs or old restore points.
 
 ## Get help
 
@@ -27,12 +27,12 @@ Give the device name, backup time, and files or recovery point you need. For a r
 
 ## During an interruption
 
-Backup and restore work can pause while the server is unavailable. An old successful backup does not establish the status of the current run.
+Backup and restore jobs can pause while the server is unavailable. When it returns, check the status of the interrupted job.
 
-Administrators can read [the architecture and recovery limits](/infrastructure/urbackup/#availability-and-failure-behavior).
+See [expected failure behavior and recovery](/infrastructure/urbackup/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official UrBackup documentation](https://www.urbackup.org/administration_manual.html) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
+Use the [official UrBackup documentation](https://www.urbackup.org/administration_manual.html) for your installed version. Ask your administrator which optional features are enabled.
 
-For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/urbackup/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/urbackup/).
+See the [architecture](/infrastructure/urbackup/) or [deployment guide](/admin-guide/urbackup/).

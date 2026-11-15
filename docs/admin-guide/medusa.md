@@ -13,7 +13,7 @@ description: Build, deploy, verify, and recover the Medusa backend.
 4. Sync respects the declared waves: sealed credentials, CNPG, Redis/configuration, the Sync migration Job, then serving and worker Deployments. Migrations run once per sync before the deployments. They are not a PreSync hook. Existing processes can remain active during later migrations, so review schema compatibility and back up before upgrading.
 5. Verify Argo `Synced/Healthy`, two CNPG instances, two Redis data members, three Sentinel voters, and two Ready pods in each Medusa Deployment. Verify certificate readiness and the real HTTPS `/health` and `/app` paths. The built-in `/health` only proves the process finished startup; separately test database writes, authenticated API access, background jobs, and S3 upload/download.
 
-The expected backend hostname is `medusa.antblu.net`. DNS and edge routing must reach the shared Traefik ingress; a Certificate or Ingress alone does not prove reachability.
+Use `medusa.antblu.net` for the backend. Verify that DNS and edge forwarding bring an HTTPS request to the shared Traefik ingress.
 
 ## antID administrator login
 
@@ -46,7 +46,7 @@ On first successful Google callback, the storefront creates the Medusa customer 
 
 ### Login returns to Admin and fails with HTTP 401
 
-A successful Authentik token exchange does not mean Medusa accepted the identity. Compare both server replicas' callback logs with Authentik's token-endpoint status. The callback preserves the provider's credential-free failure message, including expired state, missing claims, and an unmet verified-email requirement.
+To see where sign-in failed, compare the callback logs from both Medusa replicas with Authentik’s token-endpoint status. The callback preserves the provider's credential-free failure message, including expired state, missing claims, and an unmet verified-email requirement.
 
 On 2026-10-22, live failed logins had a successful Authentik token exchange but `email_verified: false`. The prior provider rejected those claims. The configured trust policy above permits these Authentik-managed addresses while retaining token signature, issuer, audience, expiry, PKCE, nonce, and state checks. Changing that policy requires publishing the configured backend image and reconciling the ConfigMap; source changes alone do not repair the deployed service.
 

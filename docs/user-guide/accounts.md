@@ -3,16 +3,16 @@ title: "Accounts and access"
 description: "Sign in, understand application permissions, and get help with access problems."
 ---
 
-Authentik is the central identity service, but applications can use different sign-in methods. Follow the application’s user guide rather than assuming that every login form expects the same credentials.
+antalos uses Authentik as its central identity service. Check the application’s guide for the sign-in method it expects.
 
 ## Sign in for the first time
 
 1. Open the service URL supplied by your administrator. Use the expected HTTPS hostname.
 2. If redirected to Authentik, sign in and complete the configured multifactor step.
 3. Return to the original service and confirm your displayed identity.
-4. Request the application role or group you need. Successful login alone does not grant administrator, project, mailbox, or vault access.
+4. Request the application role or group you need for administrator, project, mailbox, or vault access.
 
-The identity portal displays application tiles based on access policy. A missing tile can indicate missing assignment; opening a known URL still requires the application’s own access checks.
+Authentik uses access policy to decide which applications appear in your portal. If a tile is missing, ask your administrator to check your assignment. The application checks your access even if you open it by URL.
 
 ## Which account does a service use?
 
@@ -33,7 +33,7 @@ The identity portal displays application tiles based on access policy. A missing
 
 ## Keep recovery available
 
-Use the account’s supported recovery options and retain multifactor recovery material independently of the cluster. A password stored only in a service that is currently unavailable cannot help restore that service.
+Set up the account’s supported recovery options. Keep recovery passwords and multifactor codes somewhere you can reach during a cluster outage.
 
 For native clients, follow the app-specific token, app-password, or device-login procedure. An identity-provider browser password may not work in a mail, DAV, Git, vault, or remote-desktop client.
 

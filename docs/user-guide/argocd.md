@@ -1,17 +1,17 @@
 ---
 title: "Argo CD · Use"
-description: "What Argo CD does, how to use it in antalos, and where to find its official documentation."
+description: "Inspect sync, health, and deployment history in Argo CD."
 ---
 
 <nav class="guide-switcher" aria-label="Argo CD guide sections"><a aria-current="page" href="/user-guide/argocd/">Use</a><a href="/infrastructure/argocd/">Architecture</a><a href="/admin-guide/argocd/">Operate</a></nav>
 
 Argo CD is the delivery controller for antalos. It compares the tracked Git revision with Kubernetes and reconciles declared resources. Its interface helps operators distinguish configuration drift from runtime health: Synced means the desired objects match, while Healthy describes resource health.
 
-## Access and audience
+## Access
 
-For this installation, use [argocd.antblu.net](https://argocd.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+Open [argocd.antblu.net](https://argocd.antblu.net) or use the address your administrator gave you. Ask your administrator for access if you need an account or role.
 
-## Your first workflow
+## Inspect an Application
 
 1. Open an Application and inspect its source revision, sync status, health, and most recent operation.
 
@@ -29,10 +29,10 @@ Include the Application name, displayed source revision, and operation message. 
 
 Application delivery can pause while already running services continue. The application’s own workflow is the clearest evidence of user impact.
 
-Administrators can read [the architecture and recovery limits](/infrastructure/argocd/#availability-and-failure-behavior).
+See [expected failure behavior and recovery](/infrastructure/argocd/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official Argo CD documentation](https://argo-cd.readthedocs.io/en/stable/user-guide/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
+Use the [official Argo CD documentation](https://argo-cd.readthedocs.io/en/stable/user-guide/) for your installed version. Ask your administrator which optional features are enabled.
 
-For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/argocd/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/argocd/).
+See the [architecture](/infrastructure/argocd/) or [deployment guide](/admin-guide/argocd/).

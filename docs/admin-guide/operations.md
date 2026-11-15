@@ -3,7 +3,7 @@ title: "Operate and maintain the platform"
 description: "Separate live health from GitOps state and plan maintenance around actual failure domains."
 ---
 
-Routine operations start with evidence from the layer that is failing. Keep three questions separate: what Git requests, what Kubernetes is running, and whether the user’s transaction works.
+Check the tracked Git revision, the running Kubernetes resources, and the user’s transaction. Use the result of each check to narrow the investigation.
 
 ## Read the platform state
 
@@ -22,7 +22,7 @@ Before planned node maintenance, run `python3 tools/check-node-failover.py`. Res
 
 ## Investigate one service
 
-Select real names from the preceding output; the values below are placeholders:
+Replace the namespace and pod placeholders with names from the platform overview.
 
 ```bash title="Narrow the investigation"
 APP_NAMESPACE='REPLACE_WITH_NAMESPACE'
@@ -53,7 +53,7 @@ Do not print complete Secret objects to diagnose a key-name mismatch. Inspect na
 
 ## Deliver a durable repair
 
-Make the narrow source change in the owning service directory or shared variables. Publish it through the repository’s review workflow and watch the tracked revision reconcile. Direct edits used during an incident must be carried back into Git or they can be reverted by self-healing.
+Fix the owning service directory or shared variables, publish the reviewed change, and watch Argo CD reconcile the revision. Record any direct incident repair in Git so self-healing preserves it.
 
 When reporting a repair, record Argo sync/health/operation, current workload readiness, a representative user transaction, and whether the change is persisted in the tracked branch. Report remaining blockers individually.
 
@@ -86,7 +86,7 @@ After Talos/hypervisor maintenance, wait for the node and data replicas to recov
   uncordon "$MAINTENANCE_NODE"
 ```
 
-Do not take the next failure domain offline until replication and quorum are restored. A pod rescheduled elsewhere does not prove that its local volume data moved with it.
+Wait for replication and quorum to recover before taking the next failure domain offline. Check the local volume and its data when a replacement pod appears on another node.
 
 ## Roll out a new documentation image
 
@@ -97,4 +97,4 @@ Prefer a published immutable `sha-<commit>` value in `DOCS_IMAGE_TAG`. If intent
   -n docs rollout restart deployment/docs
 ```
 
-The docs Deployment currently needs a spare eligible location for its surge pod. Read its [infrastructure guide](/infrastructure/docs/) before assuming a stalled rollout is an image problem.
+The docs Deployment replaces one replica at a time. If it stalls, check replacement pod placement, image pulls, and readiness. [Documentation architecture](/infrastructure/docs/).

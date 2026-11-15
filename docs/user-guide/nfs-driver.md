@@ -1,17 +1,17 @@
 ---
 title: "NFS CSI driver · Use"
-description: "What NFS CSI driver does, how to use it in antalos, and where to find its official documentation."
+description: "Declare a volume and check that an application can mount its NFS export."
 ---
 
 <nav class="guide-switcher" aria-label="NFS CSI driver guide sections"><a aria-current="page" href="/user-guide/nfs-driver/">Use</a><a href="/infrastructure/nfs-driver/">Architecture</a><a href="/admin-guide/nfs-driver/">Operate</a></nav>
 
 The NFS CSI driver lets Kubernetes pods mount an existing NFS server. antalos uses it for shared application files and Litestream backups. The driver connects storage to pods; it does not create or replicate the external NFS server.
 
-## Access and audience
+## Access
 
-For this installation, use [nfs.antblu.net](https://nfs.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+Open [nfs.antblu.net](https://nfs.antblu.net) or use the address your administrator gave you. Ask your administrator for access if you need an account or role.
 
-## Your first workflow
+## Mount an NFS export
 
 1. Keep each service’s PersistentVolume and PersistentVolumeClaim in its application directory. Match its export, access mode, mount options, and runtime user.
 
@@ -25,12 +25,12 @@ Report the application, file operation, time, and error. Avoid deleting files or
 
 ## During an interruption
 
-An interruption can affect the applications that depend on this platform service. Ask the administrator to identify the affected service and expected recovery path.
+If pods cannot mount their volumes, ask the administrator to check the mount events and the NFS export.
 
-Administrators can read [the architecture and recovery limits](/infrastructure/nfs-driver/#availability-and-failure-behavior).
+See [expected failure behavior and recovery](/infrastructure/nfs-driver/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official NFS CSI driver documentation](https://github.com/kubernetes-csi/csi-driver-nfs) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
+Use the [official NFS CSI driver documentation](https://github.com/kubernetes-csi/csi-driver-nfs) for your installed version. Ask your administrator which optional features are enabled.
 
-For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/nfs-driver/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/nfs-driver/).
+See the [architecture](/infrastructure/nfs-driver/) or [deployment guide](/admin-guide/nfs-driver/).

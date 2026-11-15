@@ -1,21 +1,21 @@
 ---
 title: "CloudNativePG · Use"
-description: "What CloudNativePG does, how to use it in antalos, and where to find its official documentation."
+description: "Find an application's PostgreSQL Cluster and use its read/write Service."
 ---
 
 <nav class="guide-switcher" aria-label="CloudNativePG guide sections"><a aria-current="page" href="/user-guide/cnpg-operator/">Use</a><a href="/infrastructure/cnpg-operator/">Architecture</a><a href="/admin-guide/cnpg-operator/">Operate</a></nav>
 
 CloudNativePG manages PostgreSQL clusters for antalos applications. Application owners declare database instances, storage, bootstrap credentials, and replication policy; the operator manages PostgreSQL members and stable service endpoints.
 
-## Access and audience
+## Access
 
-This is a platform service with no standalone user-facing website. Its consumers use Kubernetes resources or internal endpoints.
+Use Kubernetes resources or internal endpoints to work with this service.
 
-## Your first workflow
+## Connect to a PostgreSQL cluster
 
 1. Find the application’s Cluster resource in its own service directory. Keep database manifests and credentials with that application.
 
-2. Connect application writers to the operator’s read/write Service rather than a numbered pod.
+2. Connect application writers to the operator’s read/write Service so they can reach the current primary.
 
 3. Read primary, ready-instance, and replication state before planning maintenance. A second pod is useful only when it is a healthy replica.
 
@@ -25,12 +25,12 @@ Report the affected application and user-visible database error to its administr
 
 ## During an interruption
 
-An interruption can affect the applications that depend on this platform service. Ask the administrator to identify the affected service and expected recovery path.
+If an application reports a database error during an outage, ask its administrator to check the database primary and read/write Service.
 
-Administrators can read [the architecture and recovery limits](/infrastructure/cnpg-operator/#availability-and-failure-behavior).
+See [expected failure behavior and recovery](/infrastructure/cnpg-operator/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official CloudNativePG documentation](https://cloudnative-pg.io/documentation/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
+Use the [official CloudNativePG documentation](https://cloudnative-pg.io/documentation/) for your installed version. Ask your administrator which optional features are enabled.
 
-For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/cnpg-operator/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/cnpg-operator/).
+See the [architecture](/infrastructure/cnpg-operator/) or [deployment guide](/admin-guide/cnpg-operator/).

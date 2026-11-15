@@ -1,9 +1,9 @@
 ---
 title: Use the antalos services
-description: Choose a service, understand account access, and complete a useful first task.
+description: Find an application and use it with the access your administrator provides.
 ---
 
-Start with what you want to do. You do not need to understand the servers or Kubernetes to use these applications. Your administrator supplies the address and grants access; each guide explains the first steps and links to the product's official documentation.
+Ask your administrator for the service address and access. Pick a task below for the steps and a link to the product manual.
 
 ## Choose a task
 
@@ -26,12 +26,12 @@ The [service directory](/user-guide/services/) also includes administrator tools
 
 ## Before your first sign-in
 
-Read [accounts and access](/user-guide/accounts/). Some services redirect to Authentik; others use their own account, a device enrollment, or an API key. Being able to sign in does not automatically give you permission to every project, mailbox, vault, or shared folder.
+Check [accounts and access](/user-guide/accounts/) for your service’s sign-in method. You may need Authentik, an application account, device enrollment, or an API key. Request the permissions you need for the project, mailbox, vault, or folder you want to use.
 
 ## If something does not work
 
-Keep the service address, approximate time, and error message. Explain the task you were trying to complete and whether it previously worked. Send those details to your administrator without passwords or tokens. The help section of each guide explains the details that are useful for that service.
+Tell your administrator which task failed and whether it worked before. Send the service address, approximate time, and error message. Leave passwords and tokens out of the report. Check your service guide for other details to include.
 
 ## Learn more
 
-Use the **Official documentation** links in each service guide for detailed product instructions. They explain the product's features; this handbook explains the antalos installation. Features shown in upstream documentation may depend on the version or options your administrator enabled.
+Follow the official manual for the version you use. Ask your administrator which optional features are enabled.

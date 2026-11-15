@@ -13,7 +13,7 @@ Requests reach Traefik at `OBSIDIAN_HOST`. The `/outpost.goauthentik.io/` route 
 
 HAProxy removes incoming CouchDB identity headers, maps the Authentik username into CouchDB proxy-auth headers, and signs it with the shared proxy secret. CouchDB verifies that token. The current mapping assigns the `_admin` role to accepted identities, so the Authentik application access policy is an administrative database-access boundary.
 
-The proxy has a namespace-based ingress NetworkPolicy. The policy only provides isolation if the cluster networking actually enforces NetworkPolicy; the manifest alone does not establish enforcement.
+The proxy has a namespace-based ingress NetworkPolicy. Verify that your cluster network plugin enforces the policy before relying on it for isolation.
 
 ## Data and routing
 

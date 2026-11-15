@@ -37,7 +37,7 @@ Discovery
 https://<auth-host>/application/o/<application-slug>/.well-known/openid-configuration
 ```
 
-Both browser and application pods must reach the required endpoints. A successful browser login does not prove that the backend can fetch discovery metadata or exchange a code. See [Authentik’s OAuth2 provider reference](https://docs.goauthentik.io/add-secure-apps/providers/oauth2/).
+Check access from the browser and from the application pods. Test discovery metadata retrieval and code exchange from the backend. See [Authentik’s OAuth2 provider reference](https://docs.goauthentik.io/add-secure-apps/providers/oauth2/).
 
 ### Callback map
 
@@ -60,7 +60,7 @@ Explicitly assign application roles after authentication. Headplane’s default 
 
 ## SuiteCRM SAML
 
-SuiteCRM uses signed SAML assertions in this repository. Exchange metadata rather than guessing endpoints:
+SuiteCRM uses signed SAML assertions. Use the provider and application metadata to configure the endpoints.
 
 1. Read the deployed SuiteCRM service-provider metadata to obtain its entity ID, ACS URL, and supported bindings.
 2. Create the Authentik SAML provider, enter those values, and bind the authorized group.

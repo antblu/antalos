@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-Recover the platform from the bottom up. Git reconstructs desired state, but Git alone does not contain the data or private key material needed for a complete recovery.
+Restore infrastructure and credentials before bringing applications online. Use Git for the declared configuration and recover data and private keys from backups.
 
 Review [Infrastructure architecture](/infrastructure/platform/) for the physical and storage failure domains and [Service availability](/infrastructure/availability/) for the components expected to fail over versus restart or restore.
 
@@ -24,7 +24,7 @@ Keep recoverable copies of:
 | Proxmox credentials and configuration | Recreates and accesses the virtual infrastructure |
 | DNS provider credential | Restores automated certificate issuance |
 
-Store recovery material outside the cluster and test access to it periodically. Include SQLite/Litestream backups for Headscale, Headplane, and RustDesk, the RustDesk server identity, any external Talk recording data in the service-specific recovery set.
+Store recovery material outside the cluster and test that you can retrieve it. Keep SQLite and Litestream backups for Headscale, Headplane, and RustDesk. Include the RustDesk server identity and any external Talk recordings in their recovery sets.
 
 ## Recovery order
 
@@ -67,11 +67,9 @@ k get certificates -A
 k get pods -A
 ```
 
-Then test each public endpoint over HTTPS and verify application-level data, not only pod readiness.
+After the pods are ready, test each public HTTPS endpoint and verify the data in the application.
 
 ## Recovery drill
-
-At least periodically:
 
 1. Restore backups into an isolated environment.
 2. Validate that Sealed Secrets decrypt successfully.
@@ -79,5 +77,3 @@ At least periodically:
 4. Retrieve representative objects from Garage S3 and NFS.
 5. Record recovery time and any undocumented manual step.
 6. Update these runbooks and backup coverage after the drill.
-
-A backup is operationally useful only after a successful restore test.

@@ -1,17 +1,17 @@
 ---
 title: "SuiteCRM · Use"
-description: "What SuiteCRM does, how to use it in antalos, and where to find its official documentation."
+description: "Sign in to SuiteCRM and work with accounts, contacts, and leads."
 ---
 
 <nav class="guide-switcher" aria-label="SuiteCRM guide sections"><a aria-current="page" href="/user-guide/suitecrm/">Use</a><a href="/infrastructure/suitecrm/">Architecture</a><a href="/admin-guide/suitecrm/">Operate</a></nav>
 
 SuiteCRM tracks customer relationships through leads, contacts, accounts, opportunities, activities, and cases. antalos uses a custom packaged SuiteCRM image with password login and optional Authentik SAML sign-in. CRM access and record visibility are controlled by roles and security groups inside SuiteCRM.
 
-## Access and audience
+## Access
 
-For this installation, use [crm.antblu.net](https://crm.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+Open [crm.antblu.net](https://crm.antblu.net) or use the address your administrator gave you. Ask your administrator for access if you need an account or role.
 
-## Your first workflow
+## Work with a CRM record
 
 1. Enter your SuiteCRM username and password, or choose **Sign in with SSO** to use Authentik. SSO-created accounts use Authentik unless an administrator explicitly enables a local password. Then select the relevant module, such as Accounts, Contacts, or Leads.
 
@@ -29,10 +29,10 @@ Include the record type and action, such as opening a contact, saving an opportu
 
 Saving records, background tasks, and attachments may recover at different times. Check the existing record before repeating an uncertain save.
 
-Administrators can read [the architecture and recovery limits](/infrastructure/suitecrm/#availability-and-failure-behavior).
+See [expected failure behavior and recovery](/infrastructure/suitecrm/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official SuiteCRM documentation](https://docs.suitecrm.com/user/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
+Use the [official SuiteCRM documentation](https://docs.suitecrm.com/user/) for your installed version. Ask your administrator which optional features are enabled.
 
-For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/suitecrm/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/suitecrm/).
+See the [architecture](/infrastructure/suitecrm/) or [deployment guide](/admin-guide/suitecrm/).

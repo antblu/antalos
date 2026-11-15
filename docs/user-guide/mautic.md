@@ -13,8 +13,8 @@ accounts retain their assigned role. Local recovery sign-in remains available at
 
 Use contacts and segments to organize an audience, then build campaigns and email
 content. Ask the administrator to complete mail delivery configuration before
-launching a campaign. The initial deployment discards outbound email until a real
-transport is configured; a completed queue job alone does not establish delivery.
+launching a campaign. The initial deployment discards outbound email until an
+administrator sets up a mail transport. Verify delivery in the recipient’s inbox.
 
 For installation, scheduling or delivery issues, use the
 [Mautic administrator guide](/admin-guide/mautic/).

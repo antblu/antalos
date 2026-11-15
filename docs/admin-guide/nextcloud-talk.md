@@ -36,7 +36,7 @@ Internal clients and pods also need a working path to that same advertised hostn
 | TCP 443 for the signaling hostname | Traefik HTTPS ingress | Ready signaling process |
 | TCP and UDP `TURN_0_PORT` | Talk LoadBalancer, same port | Current singleton Talk pod |
 
-Use the actual `NEXTCLOUD_TALK_TURN_0_PORT` value in firewall and NAT rules. Keep the external and internal port mapping consistent with what Nextcloud advertises. Confirm any additional media requirements against the selected AIO image and your network topology rather than treating an HTTP health check as a media test.
+Use the actual `NEXTCLOUD_TALK_TURN_0_PORT` value in firewall and NAT rules. Keep the external and internal port mapping consistent with what Nextcloud advertises. Check the selected AIO image and your network for additional media requirements, then test a call.
 
 Keep NATS, peer-discovery gRPC, and internal Janus/signaling interfaces private. Permit the pod-to-pod TCP/UDP paths required by the deployed backend and its NetworkPolicies.
 
@@ -67,7 +67,7 @@ Test a call between a LAN client and a client on a separate external network. Ex
   -n nextcloud get service nextcloud-talk-turn-0
 ```
 
-A green signaling check does not prove UDP traversal. If calls connect with no media, inspect client connectivity diagnostics, TURN allocation, advertised addresses, and firewall paths.
+If signaling works and calls connect without media, check client connectivity diagnostics, TURN allocation, advertised addresses, and the UDP firewall path.
 
 ## Failure behavior
 

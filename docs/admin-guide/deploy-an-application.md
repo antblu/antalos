@@ -3,7 +3,7 @@ title: "Deploy an application from antalos"
 description: "The shared workflow for variables, sealed credentials, GitOps reconciliation, and post-deployment configuration."
 ---
 
-An antalos application is a service directory, its shared variables, and the external dependencies described in its guide. Deployment is complete when the application can perform its intended workflow and its data has a recovery path.
+Find the application’s service directory, shared variables, and external dependencies before deploying. Finish by testing the user workflow and establishing how to recover its data.
 
 ## 1. Read the service contract
 
@@ -13,7 +13,7 @@ Keep supporting manifests, database declarations, and sealed credentials inside 
 
 ## 2. Configure shared variables
 
-Edit `apps/variables.yaml` for hostnames, IPs, node names, chart versions, image tags, and volume sizes. The root plugin renders Application definitions; child plugin sources render supporting YAML. It deliberately excludes Helm `values.yaml` files.
+Edit `apps/variables.yaml` for hostnames, IPs, node names, chart versions, image tags, and volume sizes. The root plugin renders Application definitions. Child plugin sources render supporting YAML and skip Helm `values.yaml` files.
 
 Pass a shared value needed by a chart through the rendered Application, for example:
 
@@ -26,13 +26,13 @@ helm:
       value: ${EXAMPLE_HOST}
 ```
 
-Add the corresponding names beneath `variables:` in the shared file. `EXAMPLE_*` is illustrative, not an existing service. Do not send the literal placeholders to Kubernetes with a direct `kubectl apply -f apps/...`.
+Replace the sample `EXAMPLE_*` names with your application’s variables and add them beneath `variables:` in the shared file. Leave placeholder substitution and reconciliation to Argo CD.
 
 ## 3. Create credentials and external resources
 
 Follow [Sealed credentials](/admin-guide/secrets/), retaining the exact Secret names, namespaces, and key names consumed by the manifests. Match database owner credentials to the application connection. Preserve encryption keys when restoring existing application data.
 
-Prepare the referenced NFS exports, Garage buckets, DNS records, firewall/NAT routes, and registry access. A PersistentVolume does not create an NFS server, and a LoadBalancer Service does not create a public router rule.
+Set up the referenced NFS exports, Garage buckets, DNS records, firewall and NAT routes, and registry access. Create the export before binding a PersistentVolume, and configure upstream routing for each public LoadBalancer address.
 
 ## 4. Choose a rollout that fits placement
 
@@ -50,11 +50,11 @@ strategy:
 
 Use the equivalent fields supported by the selected Helm chart. Keep the hard `kubernetes.io/hostname` anti-affinity in the pod template and a `minAvailable: 1` PodDisruptionBudget. StatefulSets, single-writer databases, and recovery-based applications need their documented update strategy instead of a copied Deployment block.
 
-The existing docs service currently uses `maxSurge: 1` and `maxUnavailable: 0`; it therefore needs additional eligible placement capacity during a rollout. That is a documented configuration limit, not evidence that the site has a third serving node.
+The [documentation site](/infrastructure/docs/#availability-and-failure-behavior) uses this strategy to roll out within its two eligible worker slots.
 
 ## 5. Publish and reconcile
 
-Use the repository’s approved review and publishing workflow to make the change available on the branch tracked by Argo CD. This guide does not make publication automatic: an uncommitted local change is not visible to the cluster.
+After review, publish the change to the branch Argo CD tracks.
 
 The root app-of-apps discovers `app.yaml` resources. Follow each service’s declared sync waves and wait for Secrets, databases, and migration hooks before expecting serving pods to become ready. Do not change a migration to PreSync when it needs resources created during Sync.
 
@@ -62,7 +62,7 @@ The root app-of-apps discovers `app.yaml` resources. Follow each service’s dec
 
 Use the service-specific guide and [SSO integration reference](/admin-guide/single-sign-on/). Create the provider, callback allowlist, client credentials, and application role mappings. Then finish mail, models, object access, runners, backup agents, or companion backends as applicable.
 
-Test with an ordinary account as well as an administrator. A successful administrator login does not prove the user workflow or access restrictions.
+Test an administrator login, then use an ordinary account to confirm that users can complete their task within the intended access restrictions.
 
 ## 7. Record operational readiness
 
@@ -74,4 +74,4 @@ Test with an ordinary account as well as an administrator. A successful administ
 | Data restore drill | Backups and credentials support recovery |
 | Controlled failure drill | The documented failover behavior works within observed timing |
 
-Keep these outcomes separate. A green Argo badge is neither a backup nor a node-loss test.
+Record each result in the application’s operational notes.

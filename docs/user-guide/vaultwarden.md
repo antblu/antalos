@@ -1,17 +1,17 @@
 ---
 title: "Vaultwarden · Use"
-description: "What Vaultwarden does, how to use it in antalos, and where to find its official documentation."
+description: "Connect a Bitwarden-compatible client to Vaultwarden and sync a test item."
 ---
 
 <nav class="guide-switcher" aria-label="Vaultwarden guide sections"><a aria-current="page" href="/user-guide/vaultwarden/">Use</a><a href="/infrastructure/vaultwarden/">Architecture</a><a href="/admin-guide/vaultwarden/">Operate</a></nav>
 
 Vaultwarden is a self-hosted server compatible with Bitwarden clients. It synchronizes encrypted vault items, attachments, and organization sharing. Your master password protects the vault; access to the server administration page is a different privilege and does not replace a user’s vault credentials.
 
-## Access and audience
+## Access
 
-For this installation, use [vault.antblu.net](https://vault.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+Open [vault.antblu.net](https://vault.antblu.net) or use the address your administrator gave you. Ask your administrator for access if you need an account or role.
 
-## Your first workflow
+## Set up a vault client
 
 1. Set the custom server URL in your Bitwarden-compatible client before signing in. Use the antalos vault HTTPS address.
 
@@ -29,12 +29,12 @@ Report whether you cannot sign in, unlock the vault, synchronize, or autofill. T
 
 The server can be unavailable during maintenance. What remains accessible offline depends on your client and its locally unlocked data; keep your recovery material separately.
 
-Administrators can read [the architecture and recovery limits](/infrastructure/vaultwarden/#availability-and-failure-behavior).
+See [expected failure behavior and recovery](/infrastructure/vaultwarden/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official Vaultwarden documentation](https://github.com/dani-garcia/vaultwarden/wiki) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
+Use the [official Vaultwarden documentation](https://github.com/dani-garcia/vaultwarden/wiki) for your installed version. Ask your administrator which optional features are enabled.
 
-For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/vaultwarden/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/vaultwarden/).
+See the [architecture](/infrastructure/vaultwarden/) or [deployment guide](/admin-guide/vaultwarden/).
 
 For everyday vault and client workflows, use the [official Bitwarden help center](https://bitwarden.com/help/), while checking Vaultwarden compatibility for the specific feature.

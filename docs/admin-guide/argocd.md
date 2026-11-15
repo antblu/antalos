@@ -1,11 +1,11 @@
 ---
 title: "Argo CD · Operate"
-description: "Deploy Argo CD with antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Argo CD, configure Authentik OIDC, and maintain reconciliation."
 ---
 
 <nav class="guide-switcher" aria-label="Argo CD guide sections"><a href="/user-guide/argocd/">Use</a><a href="/infrastructure/argocd/">Architecture</a><a aria-current="page" href="/admin-guide/argocd/">Operate</a></nav>
 
-This runbook deploys the service from `apps/argocd/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
+Use `apps/argocd/` with the [shared deployment workflow](/admin-guide/deploy-an-application/) to render manifests, prepare credentials, and reconcile the Application.
 
 ## 1. Prepare dependencies and inputs
 
@@ -15,7 +15,7 @@ This runbook deploys the service from `apps/argocd/` and completes the configura
 
 ## 2. Reconcile the application
 
-Publish the reviewed manifests and shared variables to the branch tracked by your Argo CD Applications. Local edits are not deployment inputs until that branch contains them. Let the root app-of-apps discover this service and retain its declared hook order; do not apply files containing unresolved variable placeholders directly.
+Push the reviewed manifests and variables to the branch Argo CD tracks. Let the root app-of-apps discover the Application and run its hooks in order. Keep unresolved templates out of direct Kubernetes applies.
 
 From the repository root, inspect the Application and its namespace:
 
@@ -27,7 +27,7 @@ From the repository root, inspect the Application and its namespace:
   -n argocd get pods,svc,pvc
 ```
 
-Wait for required controllers, database initialization, and migration Jobs before testing the user workflow. Synced configuration, ready workloads, and a successful user transaction are separate milestones.
+Confirm the expected Git revision synced and the required workloads are ready. Wait for any initialization or migration Jobs to finish, then test the service.
 
 ## 3. Complete identity and first access
 
@@ -60,13 +60,13 @@ The API servers retain two replicas with hard hostname anti-affinity and a one-a
 
 After deployment, confirm placement and spare CPU, memory, and pod slots before a failure drill. Test loss of each main worker separately, including the one hosting the Authentik database primary. Record a new browser login and an Argo API request after endpoint removal and any database promotion. A PDB protects voluntary eviction only. A failed in-progress request may need a retry. Dynamic controller distribution enables takeover after missed heartbeats, using the pinned chart’s upstream alpha feature. Enabling it replaces the application-controller StatefulSet with a Deployment; inspect the rendered diff, preserve independent administrator access, and confirm the old controller is retired. Then verify a harmless Git reconciliation through the surviving controller. The optional Talos API VIP addresses the separate external API endpoint dependency.
 
-Use the [component-by-component failure contract](/infrastructure/argocd/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+Review [failure behavior](/infrastructure/argocd/#availability-and-failure-behavior) before maintenance. If the service uses replication or quorum, confirm data has resynchronized and voting capacity has recovered.
 
 ## 5. Maintain and recover
 
 Git reconstructs desired state. Preserve repository credentials, Argo authentication secrets, the sealing key, and bootstrap state. Redis is control-plane support state rather than a backup of application databases.
 
-Before an upgrade, read the release notes for the pinned target and record a recovery point. A previous image tag is not a database rollback after a schema migration. Use [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/) for the platform sequence.
+Read the target version’s release notes and record a recovery point before upgrading. If the release migrates a database schema, plan how to restore the database before rolling back the image. See [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/).
 
 ## Troubleshooting
 

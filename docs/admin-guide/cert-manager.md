@@ -1,11 +1,11 @@
 ---
 title: "cert-manager · Operate"
-description: "Deploy cert-manager with antalos manifests, complete identity and integrations, and maintain its data."
+description: "Install cert-manager and configure and verify ACME DNS-01 issuance."
 ---
 
 <nav class="guide-switcher" aria-label="cert-manager guide sections"><a href="/user-guide/cert-manager/">Use</a><a href="/infrastructure/cert-manager/">Architecture</a><a aria-current="page" href="/admin-guide/cert-manager/">Operate</a></nav>
 
-This runbook deploys the service from `apps/cert-manager/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
+Use `apps/cert-manager/` with the [shared deployment workflow](/admin-guide/deploy-an-application/) to render manifests, prepare credentials, and reconcile the Application.
 
 ## 1. Prepare dependencies and inputs
 
@@ -15,7 +15,7 @@ This runbook deploys the service from `apps/cert-manager/` and completes the con
 
 ## 2. Reconcile the application
 
-Publish the reviewed manifests and shared variables to the branch tracked by your Argo CD Applications. Local edits are not deployment inputs until that branch contains them. Let the root app-of-apps discover this service and retain its declared hook order; do not apply files containing unresolved variable placeholders directly.
+Push the reviewed manifests and variables to the branch Argo CD tracks. Let the root app-of-apps discover the Application and run its hooks in order. Keep unresolved templates out of direct Kubernetes applies.
 
 From the repository root, inspect the Application and its namespace:
 
@@ -27,7 +27,7 @@ From the repository root, inspect the Application and its namespace:
   -n cert-manager get pods,svc,pvc
 ```
 
-Wait for required controllers, database initialization, and migration Jobs before testing the user workflow. Synced configuration, ready workloads, and a successful user transaction are separate milestones.
+Confirm the expected Git revision synced and the required workloads are ready. Then test the service.
 
 ## 3. Complete identity and first access
 
@@ -47,13 +47,13 @@ Webhook updates use zero surge/one unavailable. Other controller behavior is cha
 
 Set and document controller/webhook availability policies where needed, monitor renewal deadlines, and keep DNS access recoverable. Test renewal separately from continued serving of an already-issued certificate.
 
-Use the [component-by-component failure contract](/infrastructure/cert-manager/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+Review [failure behavior](/infrastructure/cert-manager/#availability-and-failure-behavior) before maintenance.
 
 ## 5. Maintain and recover
 
 Keep DNS API access recoverable and preserve the sealing keys for its Secret. Issued TLS Secrets and ACME account keys are runtime state. Reissuance also depends on DNS control and ACME availability.
 
-Before an upgrade, read the release notes for the pinned target and record a recovery point. A previous image tag is not a database rollback after a schema migration. Use [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/) for the platform sequence.
+Read the target version’s release notes and record a recovery point before upgrading. See [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/).
 
 ## Troubleshooting
 

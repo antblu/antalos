@@ -39,7 +39,7 @@ For an existing installation, restore the encrypted backup as the local, untrack
 
 For a new installation, establish a persistent Sealed Secrets controller identity using the upstream installation/key procedure, back it up, and reseal application credentials for that identity before reconciling them. The checked-in application ciphertext belongs to its original cluster; it is not a reusable set of default credentials.
 
-The Argo bootstrap deliberately refuses to continue without its key-backup file. Follow [Sealed credentials](/admin-guide/secrets/) for scope, key backup, and generated Secret contracts.
+The Argo CD bootstrap requires its key-backup file. Follow [Sealed credentials](/admin-guide/secrets/) for scope, key backup, and generated Secret contracts.
 
 ## 4. Account for the bootstrap kubeconfig paths
 

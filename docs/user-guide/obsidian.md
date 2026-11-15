@@ -9,7 +9,7 @@ Obsidian is the notes application on your device. antalos provides a CouchDB bac
 
 ## Before connecting a vault
 
-Ask your administrator for the remote address, database name, supported authentication method, and any setup or encryption material. The configured antalos address is [obsidian.antblu.net](https://obsidian.antblu.net). Opening it in a browser may show sign-in or database administration, rather than your notes.
+Ask your administrator for the remote address, database name, supported authentication method, and any setup or encryption material. The configured antalos address is [obsidian.antblu.net](https://obsidian.antblu.net). Open your notes in Obsidian. In a browser, the address may show sign-in or database administration.
 
 The endpoint uses Authentik authorization. A successful browser sign-in does not by itself prove that your device's sync client can authenticate; have the administrator confirm the native-client access path before migrating a vault.
 
@@ -27,7 +27,7 @@ The plugin's setup guide recommends avoiding another synchronization service wri
 
 Your local notes and remote synchronization are separate. Keep a local copy, record the plugin error and affected device, and contact the administrator. Avoid database resets or choosing an overwrite option to resolve an unexplained connection error.
 
-Changes and deletions can synchronize between devices. Retain separate backups and review conflicts rather than assuming that the most recently displayed copy is the one to keep.
+Changes and deletions can synchronize between devices. Keep separate backups. If copies conflict, compare their changes before choosing which to keep.
 
 ## Official documentation
 

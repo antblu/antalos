@@ -1,9 +1,9 @@
 ---
 title: Deploy and operate antalos
-description: A practical path from an empty environment to a usable, understood, and recoverable antalos installation.
+description: Prepare infrastructure, bootstrap the cluster, and set up application recovery.
 ---
 
-Use this section to deploy your own installation or operate an existing one. antalos is an environment-specific repository, so begin by understanding its owners and replacing its inputs. Applying the application tree alone does not create the machines, storage server, public DNS, or user accounts.
+Before deploying the application tree, provision the machines and storage, prepare public DNS and user access, and replace the repository’s environment-specific settings. Use the [repository map](/infrastructure/repository/) to find each setting.
 
 ## Deploy your own stack
 
@@ -14,15 +14,15 @@ Use this section to deploy your own installation or operate an existing one. ant
 | 3. Prepare external dependencies | [Storage](/infrastructure/storage/) and [networking](/infrastructure/networking/) | Required exports, buckets, DNS ownership, and routing are available |
 | 4. Bootstrap Kubernetes and GitOps | [Bootstrap the platform](/admin-guide/bootstrap/) | Talos, Kubernetes, sealing identity, and Argo CD are established |
 | 5. Configure application inputs | [Application workflow](/admin-guide/deploy-an-application/) and [sealed credentials](/admin-guide/secrets/) | Manifests use your addresses, supported versions, and credentials |
-| 6. Complete a service | Its **Operate** guide in the [directory](/user-guide/services/) | Database initialization, identity, integrations, and a useful user workflow work together |
+| 6. Complete a service | Its **Operate** guide in the [directory](/user-guide/services/) | You can complete a user task with the database, sign-in, and integrations in place |
 | 7. Add VM and edge features | [VM lifecycle](/admin-guide/virtual-machines/) and [Azure edge](/admin-guide/azure-edge/) | The selected external backends are configured through their own projects |
 | 8. Establish operations | [Routine operations](/admin-guide/operations/) and [recovery](/admin-guide/disaster-recovery/) | You know how to maintain, back up, and restore the installation |
 
-These are dependency stages. They are not a claim that the root app-of-apps automatically waits for every service to become healthy before creating the next one.
+Follow these stages in order. The root app-of-apps can create one Application while others are still starting.
 
 ## Change an existing installation
 
-Find the owning directory in the [repository map](/infrastructure/repository/). Read the service's architecture and admin guide before changing a database, image, replica count, or integration. A Kubernetes manifest change follows GitOps; a Compose edit follows the matching Ansible playbook; a cloud-init edit affects provisioning.
+Find the owning directory in the [repository map](/infrastructure/repository/). Read the service's architecture and admin guide before changing a database, image, replica count, or integration. Publish Kubernetes manifest changes through GitOps. Run the matching Ansible playbook for Compose changes. Cloud-init changes take effect during provisioning.
 
 | Change | Runbook |
 | --- | --- |

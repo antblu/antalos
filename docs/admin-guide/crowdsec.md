@@ -17,7 +17,7 @@ Start with the [official CrowdSec documentation](https://docs.crowdsec.net/docs/
 | VictoriaLogs | Log query endpoint used by the processor |
 | Traefik integration | The consumer of the intended LAPI and AppSec services |
 
-Retain matching registration and bouncer credentials across the producer and consumer. A successful Secret decryption does not establish that Traefik and LAPI use the same value.
+Keep registration and bouncer credentials consistent across the producer and consumer. After decryption, verify that Traefik and LAPI use the matching credential.
 
 ## Deploy the cluster components
 

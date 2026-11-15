@@ -1,11 +1,11 @@
 ---
 title: "antalos documentation · Operate"
-description: "Deploy antalos documentation with antalos manifests, complete identity and integrations, and maintain its data."
+description: "Build, publish, and roll back the antalos handbook."
 ---
 
 <nav class="guide-switcher" aria-label="antalos documentation guide sections"><a href="/user-guide/docs/">Use</a><a href="/infrastructure/docs/">Architecture</a><a aria-current="page" href="/admin-guide/docs/">Operate</a></nav>
 
-This runbook deploys the service from `apps/docs/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
+Use `apps/docs/` with the [shared deployment workflow](/admin-guide/deploy-an-application/) to render manifests, prepare credentials, and reconcile the Application.
 
 ## Build and publish
 
@@ -57,4 +57,4 @@ For rollback, select a retained commit tag in `DOCS_IMAGE_TAG` and publish the s
 
 ## Continue
 
-Read the [deployment guide](/admin-guide/docs/) for dependency order, initial credentials, and integration work. The [official documentation](https://starlight.astro.build/) explains the upstream product; the topology above describes this repository.
+See the [handbook authoring guide](/admin-guide/site-authoring/) for content and build instructions. Use the [official documentation](https://starlight.astro.build/) for Starlight configuration.

@@ -3,7 +3,7 @@ title: Find the failing layer
 description: Separate desired state, workload health, network access, and real application behavior during an incident.
 ---
 
-Begin with the user's failed task: signing in, loading a page, syncing a note, sending mail, or running a model. Follow that request through its dependencies. Avoid changing several layers at once.
+Start with the failed request and trace its dependencies. Change one layer at a time so you can tell which repair worked.
 
 ## Choose the first branch
 
@@ -23,7 +23,7 @@ Begin with the user's failed task: signing in, loading a page, syncing a note, s
 
 Keep the timestamp, hostname, user-visible error, and expected result. Identify the owning directory and tracked Git revision. Do not collect passwords, full callback URLs, or tokens in incident notes.
 
-Argo sync, health, and the latest operation describe different conditions. A healthy application can still have desired-state differences. An accepted synchronization can still leave a workload waiting for storage or initialization.
+Check Argo sync status for differences from Git, health for resource state, and the latest operation for pending storage or initialization.
 
 ## 2. Read the relevant workload
 
@@ -39,7 +39,7 @@ Discover the current pod before reading its logs. Use the container that handles
 
 ## 3. Check the dependency that blocks progress
 
-A TCP readiness probe shows a listening port. It does not prove successful login, writable storage, correct permissions, or message delivery. Follow the actual database, object endpoint, or external backend referenced by the consumer.
+After confirming a listening port, test the operation that failed. Follow the consumer’s configured database, object endpoint, or external backend to check sign-in, writes, permissions, or delivery.
 
 For an Argo operation that does not progress, inspect its phase, resource status, hooks, deletion/finalizer state, and any reconciliation-skip setting before retrying synchronization. For immutable StatefulSet differences, compare the specific fields and preserve data; a healthy persistent workload should not be deleted just to remove a diff.
 
@@ -60,7 +60,7 @@ If the failure is outside this repository, record the exact boundary: source, de
 | Real transaction through the user's route | The application and its dependencies work together |
 | Restored replication and voter membership | Redundancy has returned after the repair |
 
-Report any remaining gap. A message in a queue is not proof of delivery; a successful upload is not proof that its backup can be restored. Use [disaster recovery](/admin-guide/disaster-recovery/) when the task requires restoration rather than a configuration repair.
+Report any steps you could not verify. Check delivery at the recipient, and test a restore to verify the backup. Use the [disaster recovery guide](/admin-guide/disaster-recovery/) to restore data or rebuild infrastructure.
 
 
 ## RTX quorum-worker memory exhaustion

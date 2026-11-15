@@ -1,21 +1,20 @@
 ---
 title: "LiteLLM · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for LiteLLM in antalos."
+description: "LiteLLM gateway, model providers, and persistent access configuration."
 ---
 
 <nav class="guide-switcher" aria-label="LiteLLM guide sections"><a href="/user-guide/litellm/">Use</a><a aria-current="page" href="/infrastructure/litellm/">Architecture</a><a href="/admin-guide/litellm/">Operate</a></nav>
 
 Two anti-affined proxy replicas use `litellm-db`, a two-instance CloudNativePG cluster. Redis provides coordination and authentication caching through two persistent data members and three authenticated Sentinel voters, with the third voter on RTX. Clients discover the primary directly from Sentinel, avoiding a single Redis proxy endpoint. Separate CronJobs discover models from the llama.cpp and Speaches OpenAI-compatible endpoints and add missing deployments through LiteLLM's database-backed management API. Response caching is not enabled. One process runs per proxy pod.
 
-## Component boundaries
+## Components
 
 <figure class="architecture-diagram" aria-label="LiteLLM · component flow">
 <div class="diagram-heading">LiteLLM · component flow</div>
 <ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Consumers</span><ul><li>Open WebUI / API clients</li><li>Virtual key → HTTPS /v1</li></ul></li><li class="diagram-stage"><span class="diagram-label">Gateway</span><ul><li>2 proxy replicas</li><li>One schema-migration hook</li><li>Two model-discovery CronJobs</li></ul></li><li class="diagram-stage"><span class="diagram-label">Coordination / state</span><ul><li>PostgreSQL · 2 instances</li><li>Redis · 2 data / 3 Sentinels</li><li>llama.cpp and Speaches catalogs</li></ul></li></ol>
-<figcaption>Arrows show the main flow between responsibility groups. Parallel boxes are related components, not interchangeable replicas; the text below defines their individual failure and recovery behavior.</figcaption>
 </figure>
 
-## State and recovery contract
+## Data and recovery
 
 PostgreSQL stores model configuration, keys, and administration state. Preserve the original `litellm-app` salt key to decrypt stored provider credentials. Redis state is asynchronous; the configuration does not declare an off-cluster PostgreSQL backup.
 
@@ -23,11 +22,11 @@ Discovered models are additive. The controller uses the upstream ID's final path
 
 ## Availability and failure behavior
 
-**Availability classification: HA design for a single data-worker loss, conditional on healthy control-plane, Sentinel communication, and upstream providers.**
+**HA design for a single data-worker loss, conditional on healthy control-plane, Sentinel communication, and upstream providers.**
 
-This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+The expected behavior assumes healthy replicas with the intended placement and reachable dependencies. Verify it in a failure drill on your deployment.
 
-### What supplies redundancy
+### Component redundancy
 
 | Component | Declared layout | Mechanism |
 | --- | --- | --- |
@@ -37,7 +36,7 @@ This is an interpretation of the checked-in configuration, assuming the declared
 | Third voter | 1 Sentinel on RTX | Provides the third vote; the shared Sentinel PDB retains 2 voters for voluntary eviction. |
 | Client connection | Direct discovery from all 3 Sentinel endpoints | No single HAProxy pod between LiteLLM and Redis. |
 
-### How a failure is handled
+### Failover and recovery
 
 If the failed worker owns the Redis primary, the two surviving voters can authorize promotion when quorum and peer authentication are working. LiteLLM rediscovers the primary. CNPG independently promotes its surviving PostgreSQL standby if needed, and incoming requests retry against the remaining proxy. The startup scripts query reachable Sentinels and preserve data-side topology so a returned member can rejoin the elected primary.
 
@@ -47,27 +46,27 @@ If the failed worker owns the Redis primary, the two surviving voters can author
 | --- | --- |
 | One main worker | One proxy, one PostgreSQL instance, one Redis data member, and two Sentinel voters remain. Availability is reduced while promotion and client reconnection happen; replacement data members remain constrained to the two main workers. |
 | RTX worker only | The two data-side Sentinels and both proxies remain. Direct discovery avoids making the RTX-only voter the Redis access endpoint, although another voter loss would remove failover tolerance. |
-| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+| A second failure before recovery | Check surviving endpoints and capacity before further maintenance. For replicated data or voting groups, check the remaining copies and quorum. |
 
-An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+Losing the RTX Proxmox host takes down both its worker and control-plane VMs, including the default external API endpoint. Factor that dependency into [whole-host failure testing](/infrastructure/availability/#physical-hosts-and-the-api-endpoint).
 
 ### Upgrades and voluntary maintenance
 
 Proxy updates retain one pod. A single Sync hook runs the schema migration before new proxies start; migration failure intentionally blocks rollout. Backward-incompatible schema changes may still require a maintenance window.
 
-### What prevents a stronger HA claim
+### Availability limits
 
 In-flight streams do not migrate. Redis replication and AOF every-second fsync do not guarantee zero loss. Preferred synchronous PostgreSQL also allows degraded writes without a standby. No off-cluster database backup is configured. Network partitions and correlated control-plane failures require separate evidence.
 
-### What would improve the availability contract
+### Improving availability
 
 Record a real API request during primary loss, verify returned-member roles and all Sentinel peer connections, and establish a database backup with the original salt key. Provider/network availability needs its own assessment.
 
-These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
+See [platform availability](/infrastructure/availability/) for shared dependencies and failure-test criteria.
 
 ## Configuration ownership
 
-`apps/litellm/` owns this service’s Kubernetes resources. Hostnames, addresses, versions, node names, and volume sizes belong in `apps/variables.yaml`. Runtime settings stored in a product database need that product’s backup and administration procedure.
+Keep Kubernetes resources in `apps/litellm/` and environment-specific inputs in `apps/variables.yaml`. Use the application’s backup procedure for any settings it stores in its database.
 
 - [`app.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/app.yaml)
 - [`availability.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/availability.yaml)
@@ -80,6 +79,7 @@ These are operational/design requirements, not changes made to the deployment by
 - [`redis.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/redis.yaml)
 - [`secrets.yaml`](https://github.com/antblu/antalos/blob/main/apps/litellm/secrets.yaml)
 
-## Continue
+## Related guides
 
-Read the [deployment guide](/admin-guide/litellm/) for dependency order, initial credentials, and integration work. The [official documentation](https://docs.litellm.ai/docs/) explains the upstream product; the topology above describes this repository.
+- [deployment guide](/admin-guide/litellm/) for setup and recovery
+- [official documentation](https://docs.litellm.ai/docs/) for product configuration

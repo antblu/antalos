@@ -1,11 +1,11 @@
 ---
 title: "NFS CSI driver · Operate"
-description: "Deploy NFS CSI driver with antalos manifests, complete identity and integrations, and maintain its data."
+description: "Install the NFS CSI driver and check mounts, permissions, and recovery."
 ---
 
 <nav class="guide-switcher" aria-label="NFS CSI driver guide sections"><a href="/user-guide/nfs-driver/">Use</a><a href="/infrastructure/nfs-driver/">Architecture</a><a aria-current="page" href="/admin-guide/nfs-driver/">Operate</a></nav>
 
-This runbook deploys the service from `apps/nfs-driver/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
+Use `apps/nfs-driver/` with the [shared deployment workflow](/admin-guide/deploy-an-application/) to render manifests, prepare credentials, and reconcile the Application.
 
 ## 1. Prepare dependencies and inputs
 
@@ -15,7 +15,7 @@ This runbook deploys the service from `apps/nfs-driver/` and completes the confi
 
 ## 2. Reconcile the application
 
-Publish the reviewed manifests and shared variables to the branch tracked by your Argo CD Applications. Local edits are not deployment inputs until that branch contains them. Let the root app-of-apps discover this service and retain its declared hook order; do not apply files containing unresolved variable placeholders directly.
+Push the reviewed manifests and variables to the branch Argo CD tracks. Let the root app-of-apps discover the Application and run its hooks in order. Keep unresolved templates out of direct Kubernetes applies.
 
 From the repository root, inspect the Application and its namespace:
 
@@ -27,7 +27,7 @@ From the repository root, inspect the Application and its namespace:
   -n kube-system get pods,svc,pvc
 ```
 
-Wait for required controllers, database initialization, and migration Jobs before testing the user workflow. Synced configuration, ready workloads, and a successful user transaction are separate milestones.
+Confirm the expected Git revision synced and the required workloads are ready. Then test the service.
 
 ## 3. Complete identity and first access
 
@@ -47,13 +47,13 @@ Updating CSI components is different from stopping the external server. Existing
 
 Document or implement external NFS failover with correct locking/fencing, protect exports, and test both already-mounted I/O and a new pod mount during server/control-component failure.
 
-Use the [component-by-component failure contract](/infrastructure/nfs-driver/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+Review [failure behavior](/infrastructure/nfs-driver/#availability-and-failure-behavior) before maintenance.
 
 ## 5. Maintain and recover
 
 The external export contains the data. PV/PVC objects only describe access to it. Preserve export contents, server permissions, mount protocol requirements, and backup history outside the cluster.
 
-Before an upgrade, read the release notes for the pinned target and record a recovery point. A previous image tag is not a database rollback after a schema migration. Use [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/) for the platform sequence.
+Read the target version’s release notes and record a recovery point before upgrading. See [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/).
 
 ## Troubleshooting
 

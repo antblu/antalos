@@ -1,11 +1,11 @@
 ---
 title: "SuiteCRM · Operate"
-description: "Deploy SuiteCRM with antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy SuiteCRM, configure SAML, and recover its database and files."
 ---
 
 <nav class="guide-switcher" aria-label="SuiteCRM guide sections"><a href="/user-guide/suitecrm/">Use</a><a href="/infrastructure/suitecrm/">Architecture</a><a aria-current="page" href="/admin-guide/suitecrm/">Operate</a></nav>
 
-This runbook deploys the service from `apps/suitecrm/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
+Use `apps/suitecrm/` with the [shared deployment workflow](/admin-guide/deploy-an-application/) to render manifests, prepare credentials, and reconcile the Application.
 
 ## 1. Prepare dependencies and inputs
 
@@ -17,7 +17,7 @@ This runbook deploys the service from `apps/suitecrm/` and completes the configu
 
 ## 2. Reconcile the application
 
-Publish the reviewed manifests and shared variables to the branch tracked by your Argo CD Applications. Local edits are not deployment inputs until that branch contains them. Let the root app-of-apps discover this service and retain its declared hook order; do not apply files containing unresolved variable placeholders directly.
+Push the reviewed manifests and variables to the branch Argo CD tracks. Let the root app-of-apps discover the Application and run its hooks in order. Keep unresolved templates out of direct Kubernetes applies.
 
 From the repository root, inspect the Application and its namespace:
 
@@ -29,7 +29,7 @@ From the repository root, inspect the Application and its namespace:
   -n suitecrm get pods,svc,pvc
 ```
 
-Wait for required controllers, database initialization, and migration Jobs before testing the user workflow. Synced configuration, ready workloads, and a successful user transaction are separate milestones.
+Confirm the expected Git revision synced and the required workloads are ready. Wait for any initialization or migration Jobs to finish, then test the service.
 
 ### Understand the storage before first reconciliation
 
@@ -72,7 +72,7 @@ Web updates use zero surge and one unavailable. MariaDB declares ReplicasFirstPr
 
 Protect NFS, define background-job outage expectations, and prove a database-plus-files restore. For stronger complete-service HA, assess supported messenger concurrency and capture CRM read/write behavior during membership loss and rejoin.
 
-Use the [component-by-component failure contract](/infrastructure/suitecrm/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+Review [failure behavior](/infrastructure/suitecrm/#availability-and-failure-behavior) before maintenance. If the service uses replication or quorum, confirm data has resynchronized and voting capacity has recovered.
 
 ## 5. Maintain and recover
 

@@ -1,11 +1,11 @@
 ---
 title: "CloudNativePG · Operate"
-description: "Deploy CloudNativePG with antalos manifests, complete identity and integrations, and maintain its data."
+description: "Install CloudNativePG and prepare application database recovery."
 ---
 
 <nav class="guide-switcher" aria-label="CloudNativePG guide sections"><a href="/user-guide/cnpg-operator/">Use</a><a href="/infrastructure/cnpg-operator/">Architecture</a><a aria-current="page" href="/admin-guide/cnpg-operator/">Operate</a></nav>
 
-This runbook deploys the service from `apps/cnpg-operator/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
+Use `apps/cnpg-operator/` with the [shared deployment workflow](/admin-guide/deploy-an-application/) to render manifests, prepare credentials, and reconcile the Application.
 
 ## 1. Prepare dependencies and inputs
 
@@ -15,7 +15,7 @@ This runbook deploys the service from `apps/cnpg-operator/` and completes the co
 
 ## 2. Reconcile the application
 
-Publish the reviewed manifests and shared variables to the branch tracked by your Argo CD Applications. Local edits are not deployment inputs until that branch contains them. Let the root app-of-apps discover this service and retain its declared hook order; do not apply files containing unresolved variable placeholders directly.
+Push the reviewed manifests and variables to the branch Argo CD tracks. Let the root app-of-apps discover the Application and run its hooks in order. Keep unresolved templates out of direct Kubernetes applies.
 
 From the repository root, inspect the Application and its namespace:
 
@@ -27,7 +27,7 @@ From the repository root, inspect the Application and its namespace:
   -n cnpg-system get pods,svc,pvc
 ```
 
-Wait for required controllers, database initialization, and migration Jobs before testing the user workflow. Synced configuration, ready workloads, and a successful user transaction are separate milestones.
+Confirm the expected Git revision synced and the required workloads are ready. Then test the service.
 
 ## 3. Complete identity and first access
 
@@ -47,13 +47,13 @@ Operator restarts and CRD upgrades can pause management while databases keep ser
 
 Protect API access and measure primary loss with simultaneous operator leader loss. Keep backup policy per database.
 
-Use the [component-by-component failure contract](/infrastructure/cnpg-operator/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+Review [failure behavior](/infrastructure/cnpg-operator/#availability-and-failure-behavior) before maintenance.
 
 ## 5. Maintain and recover
 
 Database data and backups belong to each managed cluster. The operator chart is reconstructable from Git. Preserve database credentials, backup credentials, WAL/base backups where configured, and the sealing key.
 
-Before an upgrade, read the release notes for the pinned target and record a recovery point. A previous image tag is not a database rollback after a schema migration. Use [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/) for the platform sequence.
+Read the target version’s release notes and record a recovery point before upgrading. See [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/).
 
 ## Troubleshooting
 

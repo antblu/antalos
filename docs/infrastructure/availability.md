@@ -1,23 +1,23 @@
 ---
 title: Service availability
-description: "Which antalos services are highly available, how failover works, and where single processes, storage, quorum, or upgrades limit availability."
+description: "Service failover, shared dependencies, and maintenance limits in antalos."
 sidebar:
   order: 2
 ---
 
-antalos has **mixed availability**. Several serving tiers can use a healthy replica after one worker fails. Others must restart a single process or restore a database before serving again. Replicated applications can still lose functionality through shared storage, a singleton proxy, or an unavailable control-plane endpoint.
+After a worker fails, some antalos services can route requests to a surviving replica. Others resume after Kubernetes restarts a process or an administrator restores data. Shared storage, a singleton proxy, or an unavailable control-plane endpoint can interrupt even a replicated service.
 
-This reference describes the current repository design. It does not report live readiness, a completed node-loss test, an uptime percentage, or a measured recovery time. Follow each service link for its component counts, failure sequence, upgrade behavior, and remaining work.
+The service guides describe the failover you can expect from the manifests. Measure readiness, uptime, and recovery time on your deployment.
 
 ## Which applications are HA?
 
 - **Non-HA scheduled jobs:** [Renovate](/infrastructure/renovate/) runs one stateless pod at a time on any eligible node. Interrupted scans retry or wait for the next schedule; there is no replicated running instance or persistent local data.
 
-- **HA serving designs:** the documentation site and BentoPDF have interchangeable stateless replicas; Traefik has two serving proxies; Rancher has a replicated management web tier. These still depend on the shared network/control-plane paths. The docs rollout has a placement limitation described below.
-- **Replicated stateful designs:** LiteLLM, Grafana, and the VictoriaMetrics metrics tier include application/data redundancy and a client path to surviving members. They can have a failover interval and reduced durability/capacity during degradation. They are not guarantees against every whole-host or external-service failure.
-- **Partially HA applications:** Authentik, Nextcloud, Obsidian, Open WebUI, SuiteCRM, Stalwart, and Zammad have replicated important components but retain shared dependencies, singleton features, restart/rejoin concerns, or upgrade outages. The scope of each limitation matters more than the replica total.
-- **Not continuously HA:** Headscale, Headplane, Vaultwarden’s application, UrBackup, Uptime Kuma, CrowdSec’s singleton roles, and RustDesk rendezvous each run one primary application process. Kubernetes restart and persistent backups provide recovery, with an outage. RustDesk’s two native relays improve relay choice but do not make rendezvous HA.
-- **Not replicated log storage:** VictoriaLogs has two storage processes holding shards, not two complete copies. Grafana availability must not be used as evidence that all historical logs are available.
+- **HA serving tiers:** the documentation site and BentoPDF use interchangeable stateless replicas. Traefik has two serving proxies, and Rancher has a replicated management web tier. All four depend on shared network and control-plane paths.
+- **Replicated stateful designs:** LiteLLM, Grafana, and the VictoriaMetrics metrics tier include application/data redundancy and a client path to surviving members. They can have a failover interval and reduced durability/capacity during degradation. Check the whole-host and external dependencies for each service before planning maintenance.
+- **Partially HA applications:** Authentik, Nextcloud, Obsidian, Open WebUI, SuiteCRM, Stalwart, and Zammad have replicated important components but retain shared dependencies, singleton features, restart/rejoin concerns, or upgrade outages. Check the service guide for the workflow each component can interrupt.
+- **Not continuously HA:** Headscale, Headplane, Vaultwarden’s application, UrBackup, Uptime Kuma, CrowdSec’s singleton roles, and RustDesk rendezvous each run one primary application process. Kubernetes restart and persistent backups provide recovery, with an outage. RustDesk clients can choose between two native relays. Rendezvous still needs its own process to restart.
+- **Sharded log storage:** each VictoriaLogs storage process holds part of the history. Query the required time range to check whether the logs are complete.
 - **External or not established here:** NFS/Garage server HA, public routing/DNS resilience, and the external Talk recorder require their own architecture and evidence.
 
 ### What the labels mean
@@ -30,7 +30,7 @@ This reference describes the current repository design. It does not report live 
 | Recovery-based / not continuously HA | Service returns by restarting, rescheduling, remounting, or restoring one process/data copy; there is no hot alternative for that function. |
 | Not established by manifests | Replica/default behavior or an external dependency has not been explicitly specified sufficiently to support the claim. |
 
-No service should be described as unconditionally end-to-end HA solely because it has two pods. Define the failure being tolerated and the user transaction that must still work.
+For an end-to-end HA claim, identify the failure the service must tolerate and verify the user transaction through that failure.
 
 ## Application-by-application classification
 
@@ -38,24 +38,24 @@ No service should be described as unconditionally end-to-end HA solely because i
 | --- | --- | --- |
 | [WriteFreely](/admin-guide/writefreely/#availability-and-recovery) | Two web pods on separate workers and a replicated MariaDB writer. | Shared session keys let either web pod accept a login. Two Galera data members and an arbitrator preserve quorum after one member loss; writer promotion can interrupt requests. |
 | [Mautic](/infrastructure/mautic/) | Partially HA: two web/worker pods, two Galera members plus garbd, two Redis data pods and three Sentinels. | Shared NFS, API/operator dependencies, scheduled jobs and schema upgrades retain interruption paths; failover requires separate testing. |
-| [Authentik](/infrastructure/authentik/#availability-and-failure-behavior) | Partially HA: replicated identity processing and database; external shared media and maintenance limits remain. | 2; required anti-affinity; see the linked component table for the data, routing, and recovery path. |
-| [BentoPDF](/infrastructure/bentopdf/#availability-and-failure-behavior) | HA static serving tier; access depends on the shared identity and ingress services. | 2 stateless pods on separate nodes; see the linked component table for the data, routing, and recovery path. |
+| [Authentik](/infrastructure/authentik/#availability-and-failure-behavior) | Partially HA: replicated identity processing and database; external shared media and maintenance limits remain. | Two replicas with required anti-affinity. |
+| [BentoPDF](/infrastructure/bentopdf/#availability-and-failure-behavior) | HA static serving tier; access depends on the shared identity and ingress services. | 2 stateless pods on separate nodes. |
 | [LittleLink-Server](/admin-guide/littlelink/#availability) | HA stateless serving tier; public access depends on the shared ingress and edge. | Two ready endpoints on separate general workers, a one-at-a-time rolling update, and a disruption budget with a minimum of one available replica. |
-| [Documentation](/infrastructure/docs/#availability-and-failure-behavior) | Replicated static serving tier with placement-compatible rolling updates. | 2 stateless replicas; required host anti-affinity; see the linked component table for the data, routing, and recovery path. |
+| [Documentation](/infrastructure/docs/#availability-and-failure-behavior) | Replicated static serving tier with placement-compatible rolling updates. | 2 stateless replicas; required host anti-affinity. |
 | [Forgejo](/infrastructure/forgejo/#availability-and-recovery) | Two serving pods and redundant database/Redis members; shared NFS and Garage paths limit whole-service HA. | Two anti-affined application pods; see the linked architecture page. |
-| [Headscale / Headplane](/infrastructure/headscale/#availability-and-failure-behavior) | Not continuously HA: Headscale and Headplane each recover by restarting one process. | 1 Recreate Deployment pod with a backup-restore migration gate; see the linked component table for the data, routing, and recovery path. |
-| [LiteLLM](/infrastructure/litellm/#availability-and-failure-behavior) | HA design for a single data-worker loss, conditional on healthy control-plane, Sentinel communication, and upstream providers. | 2 anti-affined replicas on the main workers; see the linked component table for the data, routing, and recovery path. |
+| [Headscale / Headplane](/infrastructure/headscale/#availability-and-failure-behavior) | Not continuously HA: Headscale and Headplane each recover by restarting one process. | 1 Recreate Deployment pod with a backup-restore migration gate. |
+| [LiteLLM](/infrastructure/litellm/#availability-and-failure-behavior) | HA design for a single data-worker loss, conditional on healthy control-plane, Sentinel communication, and upstream providers. | 2 anti-affined replicas on the main workers. |
 | [Medusa](/infrastructure/medusa/#availability-and-recovery) | Replicated backend and worker design for one data-worker loss; shared Garage and ingress remain dependencies. | Two servers, two workers, two CNPG instances, two Redis data members and three Sentinel voters; failover can interrupt work. |
-| [Nextcloud](/infrastructure/nextcloud/#availability-and-failure-behavior) | Partially HA overall: replicated web and many companions, with shared storage, session, Redis recovery, and upgrade limits. | 2 anti-affined web-sidecar pairs; see the linked component table for the data, routing, and recovery path. |
-| [Open WebUI](/infrastructure/open-webui/#availability-and-failure-behavior) | Partially HA: steady-state replicas exist, but Recreate upgrades and Redis/storage dependencies can interrupt all users. | 2 anti-affined pods on main workers; see the linked component table for the data, routing, and recovery path. |
-| [Rancher](/infrastructure/rancher/#availability-and-failure-behavior) | HA management web tier; it is not an independent control plane for recovering this cluster. | 2 replicas with required host anti-affinity; see the linked component table for the data, routing, and recovery path. |
-| [RustDesk](/infrastructure/rustdesk/#availability-and-failure-behavior) | Not continuously HA end to end: one recoverable rendezvous server, with two independent native relays. | 1 Deployment replica; see the linked component table for the data, routing, and recovery path. |
-| [Stalwart Mail](/infrastructure/stalwart/#availability-and-failure-behavior) | Replicated mail/data tiers with two independent Redis proxies; shared storage and search allocation remain limits. | 2 anti-affined Stalwart replicas; see the linked component table for the data, routing, and recovery path. |
-| [SuiteCRM](/infrastructure/suitecrm/#availability-and-failure-behavior) | Partially HA: replicated web and Galera data, but background workers and shared files have separate outage paths. | 2 anti-affined replicas; see the linked component table for the data, routing, and recovery path. |
-| [UrBackup](/infrastructure/urbackup/#availability-and-failure-behavior) | Not HA: one backup server, restored with two external NFS exports. | 1 Deployment replica; see the linked component table for the data, routing, and recovery path. |
-| [Vaultwarden](/infrastructure/vaultwarden/#availability-and-failure-behavior) | Not HA at the application layer: one vault server; PostgreSQL alone is replicated. | 1 Recreate replica; see the linked component table for the data, routing, and recovery path. |
-| [Grafana / metrics / logs](/infrastructure/victoriametrics/#availability-and-failure-behavior) | Mixed availability: Grafana and metrics have replicated designs; the current log storage is sharded, not redundantly copied. | 2 anti-affined pods + 2 CNPG instances; see the linked component table for the data, routing, and recovery path. |
-| [Zammad](/infrastructure/zammad/#availability-and-failure-behavior) | Partially HA: paired HTTP tiers and data services, with singleton real-time/background roles and Redis/search caveats. | 2 NGINX + 2 Rails replicas; see the linked component table for the data, routing, and recovery path. |
+| [Nextcloud](/infrastructure/nextcloud/#availability-and-failure-behavior) | Partially HA overall: replicated web and many companions, with shared storage, session, Redis recovery, and upgrade limits. | 2 anti-affined web-sidecar pairs. |
+| [Open WebUI](/infrastructure/open-webui/#availability-and-failure-behavior) | Partially HA: steady-state replicas exist, but Recreate upgrades and Redis/storage dependencies can interrupt all users. | 2 anti-affined pods on main workers. |
+| [Rancher](/infrastructure/rancher/#availability-and-failure-behavior) | HA management web tier; it is not an independent control plane for recovering this cluster. | 2 replicas with required host anti-affinity. |
+| [RustDesk](/infrastructure/rustdesk/#availability-and-failure-behavior) | Not continuously HA end to end: one recoverable rendezvous server, with two independent native relays. | 1 Deployment replica. |
+| [Stalwart Mail](/infrastructure/stalwart/#availability-and-failure-behavior) | Replicated mail/data tiers with two independent Redis proxies; shared storage and search allocation remain limits. | 2 anti-affined Stalwart replicas. |
+| [SuiteCRM](/infrastructure/suitecrm/#availability-and-failure-behavior) | Partially HA: replicated web and Galera data, but background workers and shared files have separate outage paths. | 2 anti-affined replicas. |
+| [UrBackup](/infrastructure/urbackup/#availability-and-failure-behavior) | Not HA: one backup server, restored with two external NFS exports. | 1 Deployment replica. |
+| [Vaultwarden](/infrastructure/vaultwarden/#availability-and-failure-behavior) | Not HA at the application layer: one vault server; PostgreSQL alone is replicated. | 1 Recreate replica. |
+| [Grafana / metrics / logs](/infrastructure/victoriametrics/#availability-and-failure-behavior) | Mixed availability: Grafana and metrics have replicated designs; the current log storage is sharded, not redundantly copied. | 2 anti-affined pods + 2 CNPG instances. |
+| [Zammad](/infrastructure/zammad/#availability-and-failure-behavior) | Partially HA: paired HTTP tiers and data services, with singleton real-time/background roles and Redis/search caveats. | 2 NGINX + 2 Rails replicas. |
 | [Obsidian LiveSync](/infrastructure/obsidian/#availability-and-failure-behavior) | Partial availability; two independent databases with asynchronous copying. | 2 HAProxy replicas, primary/backup routing, 2 standalone CouchDB members, bidirectional vault replication. |
 | [Uptime Kuma](/infrastructure/uptime-kuma/#availability-and-failure-behavior) | Recoverable singleton with a monitoring gap during replacement. | One process, pod-local SQLite, Litestream replica on external NFS. |
 | [Node-RED](/infrastructure/node-red/#availability-and-failure-behavior) | Recoverable singleton with an automation gap during replacement. | One process, persistent `/data` on external NFS; in-memory context and in-flight messages are lost. |
@@ -69,18 +69,18 @@ Odoo has two serving replicas and two CNPG PostgreSQL instances separated across
 
 A typical stateless path is client → ingress → Service → ready application endpoint. Required pod anti-affinity separates replicas across Kubernetes node names. If a member fails, the system must detect that condition and route new traffic to a surviving ready endpoint. Probe intervals, endpoint updates, network convergence, and client retry behavior all contribute to the interruption.
 
-A readiness probe only establishes the condition it actually checks. A listening TCP port may not prove database writability or a successful object upload. New-request availability also says nothing about moving an in-flight stream, WebSocket session, mail connection, or TURN allocation between processes.
+Check what the readiness probe measures. If it checks a TCP port, test a database write or object upload to verify the application operation. Check whether clients must reconnect or retry streams, WebSockets, mail connections, or TURN allocations after failover.
 
 ### PostgreSQL promotion
 
-CNPG manages a primary and a streaming standby for each two-instance cluster. They use separate OpenEBS volumes; the second copy comes from PostgreSQL replication, not from the StorageClass. If the primary fails, the surviving standby must become the writer and the read/write Service must identify it. Clients must reconnect. The operator and Kubernetes API are part of this failover path.
+CNPG manages a primary and a streaming standby for each two-instance cluster. PostgreSQL replicates the data between separate OpenEBS volumes. If the primary fails, the surviving standby must become the writer and the read/write Service must identify it. Clients must reconnect. The operator and Kubernetes API are part of this failover path.
 
 | Application database | Explicit policy in this repository | Durability implication |
 | --- | --- | --- |
 | Authentik, Nextcloud/Context Chat, Stalwart | No synchronous stanza | Default asynchronous replication; recent primary writes may not yet be on the standby. |
 | LiteLLM, Open WebUI, Vaultwarden, Zammad, Grafana | any / 1 / preferred | Requests synchronous acknowledgement while possible, but permits degraded operation without the standby. |
 
-These settings do not promise zero loss under every failure sequence. See [CNPG replication and durability](https://cloudnative-pg.io/docs/1.28/replication/) for the mechanisms; use documentation matching the installed operator when administering it.
+Measure lost writes during failover with the replication settings you use. See [CNPG replication and durability](https://cloudnative-pg.io/docs/1.28/replication/) for the mechanisms; use documentation matching the installed operator when administering it.
 
 ### Redis election and rejoin
 
@@ -94,9 +94,9 @@ Most bespoke Redis layouts use two data members and three Sentinel voters, one v
 | Nextcloud | Two HAProxy replicas checking Redis ROLE with DNS refresh | Redis role changes and data-side Sentinel topology persist on existing data PVCs; the third voter has a stable identity and temporary state. Proxy replication does not elect or fence writers. |
 | Stalwart | Two independent HAProxy replicas checking ROLE with DNS refresh | Data-side roles and Sentinel topology persist on existing PVCs; startup consults Sentinel. The third voter remains on RTX, independent of client proxies. |
 
-The migrated scripts no longer reset existing roles by ordinal. First migration of an existing dataset requires agreement from two voters, and persisted state alone does not prove partition safety. Redis replication remains asynchronous. A useful failure drill includes the old primary’s return and confirms that all clients converge on one writer.
+The migration scripts preserve existing roles across pod restarts. The first migration of an existing dataset requires agreement from two voters. Redis replicates asynchronously. In a partition drill, restore the old primary and confirm that all clients converge on one writer.
 
-Keep data, replica, voter, and client authentication consistent. Password-only Sentinel setups use matching `requirepass` values for peer authentication; a missing separate `sentinel-pass` directive alone does not prove a defect. Redis replication is asynchronous. See [Redis Sentinel architecture and authentication](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/).
+Keep data, replica, voter, and client authentication consistent. For password-only Sentinel setups, check that peer authentication uses matching `requirepass` values. See [Redis Sentinel architecture and authentication](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/).
 
 ### Quorum is not a data copy
 
@@ -154,13 +154,12 @@ The NFS and Garage defaults reference the same external host address. Its loss c
 
 | Configuration | Effect | Current examples |
 | --- | --- | --- |
-| 2 replicas, zero surge, one unavailable | Replaces one pod without needing a third anti-affined placement; leaves reduced capacity | LiteLLM proxies, BentoPDF, Traefik, Nextcloud web and Redis HAProxy, SuiteCRM web, Grafana |
-| 2 replicas, one surge, zero unavailable, hard anti-affinity | Needs a third eligible node with capacity for a replacement pod | Documentation serving pods |
+| 2 replicas, zero surge, one unavailable | Replaces one pod without needing a third anti-affined placement; leaves reduced capacity | Documentation, LiteLLM proxies, BentoPDF, Traefik, Nextcloud web and Redis HAProxy, SuiteCRM web, Grafana |
 | Recreate application | Can stop the full application during an upgrade regardless of steady-state replicas | Open WebUI, Vaultwarden; also single Headplane and Stalwart’s Redis proxy |
 | PDB minimum 1 on a singleton | Blocks ordinary eviction; does not make a hot replacement or prevent its workload-controller update | RustDesk hbbs, UrBackup |
 | Chart defaults without explicit overrides | Requires the actual chart policy before claiming a particular maintenance guarantee | Rancher and several platform controllers |
 
-A PDB limits voluntary evictions; node failure and workload-controller rolling changes have different rules. It is not a minimum healthy-pod guarantee under every event. See [Kubernetes disruption behavior](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/).
+A PDB limits voluntary evictions. Evaluate node failure and workload-controller rollouts under their own disruption rules. See [Kubernetes disruption behavior](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/).
 
 Database migrations, reindexing, cache elections, and stateful sessions can still need a maintenance interval. Follow the application administrator guide instead of treating a rolling Deployment as a zero-downtime schema upgrade.
 
@@ -183,15 +182,15 @@ Argo CD’s controller replicas are configured with cluster sharding. They do no
 
 ## Describe recovery objectives honestly
 
-**Recovery time (RTO)** is the interruption until the required user workflow works again. **Recovery point (RPO)** describes the data that may be absent after recovery. Neither is established by a pod count, a five-second failure-detection threshold, or a one-second backup interval.
+Set a **recovery time objective (RTO)** for how long the required task can remain unavailable. Set a **recovery point objective (RPO)** for how much recent data you can afford to lose, measured in time. During a drill, record when users can resume the task and how much data you recovered.
 
 For antalos, the relevant intervals can include failure detection, voting, promotion, Service updates, rescheduling, image download, NFS locks, restore, replay, warm-up, and client reconnect. Correlated operator/API loss adds another dependency. Do not publish a numeric guarantee without measuring the complete path.
 
-Replication is also not a backup: destructive changes or corruption can reach another live member. A recovery set needs independent database, object, file, and key material. See [disaster recovery](/admin-guide/disaster-recovery/).
+Replication can carry destructive changes or corruption to another live member. Keep independent backups of databases, objects, files, and keys. See [disaster recovery](/admin-guide/disaster-recovery/).
 
 ## What would establish the claimed behavior
 
-These are the evidence an administrator should capture in an authorized drill, not checks executed while editing this guide:
+In an authorized failure drill, record the workload and user transaction through failure and recovery.
 
 1. Identify the exact failure: one pod, one worker VM, one Proxmox host, a network partition, or the external storage host.
 2. Confirm initial data copies, voter membership, physical separation, and enough surviving capacity; do not start already degraded.
@@ -218,7 +217,7 @@ Reserve the small RTX quorum worker for voters and explicitly assigned infrastru
 
 ## Roll out the node-failure improvements
 
-These changes are source configuration, not a completed live migration. No node shutdown is needed to review or render them.
+Review the proposed source changes before scheduling maintenance.
 
 1. Restore a healthy baseline before changing topology: three control-plane members, both main workers, the third voter worker, and all application data copies. Investigate NotReady nodes, cordons, disk pressure, missing voters, and failed databases first. A PDB cannot compensate for multiple unavailable failure domains. Do not remove pressure taints to force scheduling.
 2. Run `python3 tools/check-node-failover.py` from the repository root. This read-only gate reports cordons, pressure, incomplete controller/PostgreSQL replica counts, incomplete PostgreSQL primary transitions, and co-located ready replicas. It also checks requested CPU, memory and pod slots for the listed recoverable singleton replacements on each general worker, including Uptime Kuma, RustDesk rendezvous, CrowdSec, Headscale/Headplane, Talk, Context Chat, Node-RED, Vaultwarden, UrBackup, SuiteCRM messenger and Zammad's singleton roles. It accounts for init-container peaks, native sidecars and pod overhead, and treats the declared low-priority Renovate batch reservation as reclaimable. This is a lower bound: other controllers/jobs, affinity, taints, volumes, actual resource use and scheduling order still require review. It does not establish database replication or successful user transactions.

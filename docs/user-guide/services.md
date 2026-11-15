@@ -1,11 +1,9 @@
 ---
 title: Service directory
-description: Find every declared antalos application by purpose, with user, architecture, and operating guides in one place.
+description: User guides, architecture, runbooks, and upstream manuals for applications declared in Git.
 ---
 
-Use this directory to move between a service's three guides. **Use** explains the workflow, **Architecture** locates its components and data, and **Operate** explains deployment and recovery. The sidebar uses these same groups.
-
-These entries describe service definitions in Git. They do not report current deployment health or automatically grant access. Start with [accounts and access](/user-guide/accounts/) for sign-in.
+Choose **Use** for application tasks, **Architecture** for components and data, or **Operate** for deployment and recovery. The directory lists service definitions in Git. Consult [accounts and access](/user-guide/accounts/) for sign-in and role requirements.
 
 ## Files, notes, and communication
 

@@ -16,7 +16,7 @@ The Azure VM is an edge TCP proxy. It accepts selected public connections and fo
 | `infrastructure/azure/cloud-init.rendered.yaml` | Ignored, sensitive user data supplied to Azure |
 | `infrastructure/opentofu/haproxy/` | Home VM pair, Keepalived, HAProxy, and private-network enrollment |
 
-The template itself does not contain the enrollment key. Rendering combines it with the local secret file, so the rendered output must be treated as a credential. VM settings stay in these infrastructure projects rather than `apps/variables.yaml`.
+The renderer reads the enrollment key from the local secret file. Protect the rendered output as a credential. Set VM values in the owning infrastructure projects.
 
 ## Prepare the private path
 
@@ -24,7 +24,7 @@ Prepare Headscale access before enrolling the Azure node. The home HAProxy templ
 
 The current Azure variables select the two home backends by Tailscale address. Use the identities allocated in your installation; do not assume the example addresses follow a replacement VM. Check the expected Headscale enrollment and routing policy when preparing the deployment.
 
-Home HAProxy also declares a floating external-network address. Azure's two individually configured backends do not become a single VIP merely because Keepalived exists on those guests.
+Keepalived provides a floating external-network address for home HAProxy. Azure targets the two home backends at their own addresses.
 
 ## Render the Azure user data
 
@@ -96,7 +96,7 @@ Existing guests require an explicit configuration update and reload.
 5. Exercise the public protocol: HTTPS response, mailbox login, or SMTP transaction as appropriate.
 6. Record the resulting DNS, private backend identities, and recovery procedure with the private infrastructure inventory.
 
-A TCP connection to the first proxy does not prove the downstream TLS handshake or mail transaction succeeds. Outbound relay access from Stalwart is a separate path. Use [mail operations](/admin-guide/stalwart/) for that investigation.
+Test the TLS handshake and a mail transaction through the proxy chain. Outbound relay access from Stalwart is a separate path. Use [mail operations](/admin-guide/stalwart/) for that investigation.
 
 ## Maintain the two security systems separately
 

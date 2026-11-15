@@ -1,11 +1,11 @@
 ---
 title: "Open WebUI · Operate"
-description: "Deploy Open WebUI with antalos manifests, complete identity and integrations, and maintain its data."
+description: "Deploy Open WebUI and configure sign-in and model access."
 ---
 
 <nav class="guide-switcher" aria-label="Open WebUI guide sections"><a href="/user-guide/open-webui/">Use</a><a href="/infrastructure/open-webui/">Architecture</a><a aria-current="page" href="/admin-guide/open-webui/">Operate</a></nav>
 
-This runbook deploys the service from `apps/open-webui/` and completes the configuration that Kubernetes cannot supply by itself. Start with the [shared deployment workflow](/admin-guide/deploy-an-application/) for repository rendering, credentials, and Argo CD ownership.
+Use `apps/open-webui/` with the [shared deployment workflow](/admin-guide/deploy-an-application/) to render manifests, prepare credentials, and reconcile the Application.
 
 ## 1. Prepare dependencies and inputs
 
@@ -17,7 +17,7 @@ This runbook deploys the service from `apps/open-webui/` and completes the confi
 
 ## 2. Reconcile the application
 
-Publish the reviewed manifests and shared variables to the branch tracked by your Argo CD Applications. Local edits are not deployment inputs until that branch contains them. Let the root app-of-apps discover this service and retain its declared hook order; do not apply files containing unresolved variable placeholders directly.
+Push the reviewed manifests and variables to the branch Argo CD tracks. Let the root app-of-apps discover the Application and run its hooks in order. Keep unresolved templates out of direct Kubernetes applies.
 
 From the repository root, inspect the Application and its namespace:
 
@@ -29,7 +29,7 @@ From the repository root, inspect the Application and its namespace:
   -n open-webui get pods,svc,pvc
 ```
 
-Wait for required controllers, database initialization, and migration Jobs before testing the user workflow. Synced configuration, ready workloads, and a successful user transaction are separate milestones.
+Confirm the expected Git revision synced and the required workloads are ready. Wait for any initialization or migration Jobs to finish, then test the service.
 
 ## 3. Complete identity and first access
 
@@ -51,13 +51,13 @@ The chart explicitly uses Recreate. A version rollout may terminate both applica
 
 Document an upgrade outage unless a supported rolling/migration design is implemented. Establish Redis restart/rejoin correctness, durable backups, and a chat/upload test after failover. Keep the shared application secret identical across replicas and recovery.
 
-Use the [component-by-component failure contract](/infrastructure/open-webui/#availability-and-failure-behavior) before a node drain, database promotion, or upgrade. Restoring a healthy replica count must include data resynchronization and restored voting capacity, not just Running pods.
+Review [failure behavior](/infrastructure/open-webui/#availability-and-failure-behavior) before maintenance. If the service uses replication or quorum, confirm data has resynchronized and voting capacity has recovered.
 
 ## 5. Maintain and recover
 
 Back up PostgreSQL and the Garage bucket together. Preserve the shared `webui-secret-key` across both replicas and recovery, as well as the OIDC and provider credentials. Local application storage is not the authoritative chat or upload database.
 
-Before an upgrade, read the release notes for the pinned target and record a recovery point. A previous image tag is not a database rollback after a schema migration. Use [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/) for the platform sequence.
+Read the target version’s release notes and record a recovery point before upgrading. If the release migrates a database schema, plan how to restore the database before rolling back the image. See [routine operations](/admin-guide/operations/) and [disaster recovery](/admin-guide/disaster-recovery/).
 
 ## Troubleshooting
 

@@ -1,17 +1,17 @@
 ---
 title: "BentoPDF · Use"
-description: "What BentoPDF does, how to use it in antalos, and where to find its official documentation."
+description: "Merge or split PDFs in your browser and check the exported file."
 ---
 
 <nav class="guide-switcher" aria-label="BentoPDF guide sections"><a aria-current="page" href="/user-guide/bentopdf/">Use</a><a href="/infrastructure/bentopdf/">Architecture</a><a href="/admin-guide/bentopdf/">Operate</a></nav>
 
 BentoPDF provides browser-based PDF tools for merging, splitting, rotating, compressing, and converting documents. antalos serves the simple edition behind Authentik. Ordinary PDF processing happens in the browser, so performance and available memory depend on the device opening the tool.
 
-## Access and audience
+## Access
 
-For this installation, use [pdf.antblu.net](https://pdf.antblu.net). If you use another antalos installation, open the address supplied by its administrator. Ask for the account or role you need before starting.
+Open [pdf.antblu.net](https://pdf.antblu.net) or use the address your administrator gave you. Ask your administrator for access if you need an account or role.
 
-## Your first workflow
+## Process a PDF
 
 1. Open the PDF site and complete the Authentik sign-in if prompted.
 
@@ -29,10 +29,10 @@ Include the tool you used, the error, and a non-sensitive description of the fil
 
 A service or sign-in interruption can prevent opening the tool. Keep the original and download the completed result before closing your working session.
 
-Administrators can read [the architecture and recovery limits](/infrastructure/bentopdf/#availability-and-failure-behavior).
+See [expected failure behavior and recovery](/infrastructure/bentopdf/#availability-and-failure-behavior).
 
 ## Official documentation
 
-Use the [official BentoPDF documentation](https://www.bentopdf.com/docs/) for the complete feature reference. Some features depend on the installed version and options. If the manual differs from what you see, ask your administrator which version and features are enabled.
+Use the [official BentoPDF documentation](https://www.bentopdf.com/docs/) for your installed version. Ask your administrator which optional features are enabled.
 
-For antalos-specific state and availability, continue to [Infrastructure Explanation](/infrastructure/bentopdf/). For installation and integration setup, use [Deployment and Admin Guide](/admin-guide/bentopdf/).
+See the [architecture](/infrastructure/bentopdf/) or [deployment guide](/admin-guide/bentopdf/).

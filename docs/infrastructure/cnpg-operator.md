@@ -1,31 +1,30 @@
 ---
 title: "CloudNativePG · Architecture"
-description: "Backend components, persistence, placement, and failure boundaries for CloudNativePG in antalos."
+description: "CloudNativePG controllers, PostgreSQL instances, and database failover."
 ---
 
 <nav class="guide-switcher" aria-label="CloudNativePG guide sections"><a href="/user-guide/cnpg-operator/">Use</a><a aria-current="page" href="/infrastructure/cnpg-operator/">Architecture</a><a href="/admin-guide/cnpg-operator/">Operate</a></nav>
 
 The operator chart runs in `cnpg-system`, while managed clusters run in application namespaces. Most clusters here have two instances on separate workers and separate OpenEBS LocalPV volumes. PostgreSQL replication supplies redundancy; OpenEBS does not replicate those volumes.
 
-## Component boundaries
+## Components
 
 <figure class="architecture-diagram" aria-label="CloudNativePG · component flow">
 <div class="diagram-heading">CloudNativePG · component flow</div>
 <ol class="diagram-flow" role="list"><li class="diagram-stage"><span class="diagram-label">Declare</span><ul><li>Application Cluster resource</li><li>Owner Secret / storage settings</li></ul></li><li class="diagram-stage"><span class="diagram-label">Manage</span><ul><li>CNPG operator</li><li>Primary selection / repair</li></ul></li><li class="diagram-stage"><span class="diagram-label">Database</span><ul><li>Primary + standby / rw Service</li><li>Separate local PVs / app backups</li></ul></li></ol>
-<figcaption>Arrows show the main flow between responsibility groups. Parallel boxes are related components, not interchangeable replicas; the text below defines their individual failure and recovery behavior.</figcaption>
 </figure>
 
-## State and recovery contract
+## Data and recovery
 
 Database data and backups belong to each managed cluster. The operator chart is reconstructable from Git. Preserve database credentials, backup credentials, WAL/base backups where configured, and the sealing key.
 
 ## Availability and failure behavior
 
-**Availability classification: Redundant operator management with leader election; managed database availability remains service-specific.**
+**Redundant operator management with leader election; managed database availability remains service-specific.**
 
-This is an interpretation of the checked-in configuration, assuming the declared replicas are healthy, separated as intended, and their required dependencies are reachable. It is not a live-health result or a completed failure drill.
+The expected behavior assumes healthy replicas with the intended placement and reachable dependencies. Verify it in a failure drill on your deployment.
 
-### What supplies redundancy
+### Component redundancy
 
 | Component | Declared layout | Mechanism |
 | --- | --- | --- |
@@ -34,7 +33,7 @@ This is an interpretation of the checked-in configuration, assuming the declared
 | Client routing | Per-cluster read/write Service | Must be directed to the correct elected/promoted writer. |
 | Storage | Separate LocalPV volumes | The operator does not make one local volume portable or replicated. |
 
-### How a failure is handled
+### Failover and recovery
 
 If only the operator is lost, an existing primary and its standby can continue their PostgreSQL work. If a database primary is also lost, automatic promotion requires the relevant controller/API path to function. A database standby is useful but is not an independently complete failover controller.
 
@@ -44,30 +43,31 @@ If only the operator is lost, an existing primary and its standby can continue t
 | --- | --- |
 | One main worker | Database serving depends on whether the lost worker held the primary and/or operator. If the operator leader and primary are lost together, the surviving operator must acquire leadership and promote the surviving database instance. Replacement operators remain on the general workers; the surviving elected operator handles promotion. |
 | RTX worker only | No operator-specific vote is declared. Whole-host API loss is especially significant because cluster observation and Service updates depend on it. |
-| A second failure before recovery | Outside the stated single-failure envelope; assess remaining data copies, quorum, endpoints, and capacity before further maintenance. |
+| A second failure before recovery | Check surviving endpoints and capacity before further maintenance. For replicated data or voting groups, check the remaining copies and quorum. |
 
-An RTX **worker VM** failure is not the same as an RTX **Proxmox host** failure. The latter also removes its control-plane VM and the configured API address. Read the [physical failure-domain explanation](/infrastructure/availability/#physical-hosts-and-the-api-endpoint) before making a whole-host HA claim.
+Losing the RTX Proxmox host takes down both its worker and control-plane VMs, including the default external API endpoint. Factor that dependency into [whole-host failure testing](/infrastructure/availability/#physical-hosts-and-the-api-endpoint).
 
 ### Upgrades and voluntary maintenance
 
 Operator restarts and CRD upgrades can pause management while databases keep serving. Perform application database upgrades according to each cluster’s policy, not by treating the operator rollout as the database rollout.
 
-### What prevents a stronger HA claim
+### Availability limits
 
 Operator leader takeover and promotion require a reachable Kubernetes API and sufficient eligible scheduling capacity. Most databases have only one standby; after one member fails there is no second replica to absorb another loss.
 
-### What would improve the availability contract
+### Improving availability
 
 Protect API access and measure primary loss with simultaneous operator leader loss. Keep backup policy per database.
 
-These are operational/design requirements, not changes made to the deployment by this documentation. The [shared availability reference](/infrastructure/availability/) explains election, replication, durability, recovery time, and shared dependencies; the manifest links below identify this service’s source.
+See [platform availability](/infrastructure/availability/) for shared dependencies and failure-test criteria.
 
 ## Configuration ownership
 
-`apps/cnpg-operator/` owns this service’s Kubernetes resources. Hostnames, addresses, versions, node names, and volume sizes belong in `apps/variables.yaml`. Runtime settings stored in a product database need that product’s backup and administration procedure.
+Keep Kubernetes resources in `apps/cnpg-operator/` and environment-specific inputs in `apps/variables.yaml`. Use the application’s backup procedure for any settings it stores in its database.
 
 - [`app.yaml`](https://github.com/antblu/antalos/blob/main/apps/cnpg-operator/app.yaml)
 
-## Continue
+## Related guides
 
-Read the [deployment guide](/admin-guide/cnpg-operator/) for dependency order, initial credentials, and integration work. The [official documentation](https://cloudnative-pg.io/documentation/) explains the upstream product; the topology above describes this repository.
+- [deployment guide](/admin-guide/cnpg-operator/) for setup and recovery
+- [official documentation](https://cloudnative-pg.io/documentation/) for product configuration

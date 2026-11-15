@@ -17,7 +17,7 @@ A persistent volume tells Kubernetes where to keep data. It does not automatical
 
 ## Local does not mean replicated
 
-`openebs-local` provisions local storage. Mayastor replication is not enabled by the OpenEBS application. A lost node cannot simply attach that node's LocalPV to another worker.
+The OpenEBS application uses `openebs-local` without Mayastor replication. Each LocalPV stays on its original worker when that worker fails.
 
 The Talos configuration for `talos-worker-left` and `talos-worker-right` places the 96 GiB `EPHEMERAL` volume on a dedicated 100 GB virtual disk. OpenEBS local data stays on the original system disk. Changing this declaration does not move an already provisioned `EPHEMERAL` volume; that migration requires a worker maintenance operation and a verified backup. The RTX worker is not part of this disk layout.
 

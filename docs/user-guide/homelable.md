@@ -21,7 +21,7 @@ Devices can appear on multiple canvases while sharing one inventory identity. Lo
 
 Open a device's documentation to follow linked architecture and runbooks. The Documentation library contains imported Architecture, Operations and User Guides, plus network, Proxmox, Kubernetes, authentication, storage, recovery and service-catalog overviews.
 
-Imported handbook content describes repository design and records its source path. A green HTTP/HTTPS indicator means the endpoint answered according to Homelable's check; it does not prove database correctness, successful login or all application dependencies. Use the existing monitoring systems and service transaction checks for that evidence.
+Imported handbook content describes repository design and records its source path. A green HTTP or HTTPS indicator means the endpoint passed Homelable’s check. Use service monitoring and a test transaction to verify sign-in, database behavior, and other dependencies.
 
 Unknown discovered hosts stay in the pending inventory until their identity is established. Routed VLANs normally have no scanner MAC addresses. Review new findings instead of approving every entry or treating a missing MAC as a failure.
 
