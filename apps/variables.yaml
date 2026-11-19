@@ -103,7 +103,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/antblu/suitecrm depType=coordinated
   SUITECRM_IMAGE_TAG: 8.10.2
   # renovate-image: depName=php
-  SUITECRM_PHP_BASE_IMAGE: php:8.5-apache-bookworm
+  SUITECRM_PHP_BASE_IMAGE: php:8.6-apache-bookworm
   SUITECRM_RELEASE_SHA256: ac4693d10ea2d6cd20b3256098781d134599d88878fb24e8dc127038d624f5a8
   # renovate: datasource=docker depName=mariadb
   SUITECRM_MARIADB_IMAGE_TAG: 11.8.9
