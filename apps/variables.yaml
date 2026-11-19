@@ -208,7 +208,7 @@ variables:
   # renovate: datasource=nextcloud depName=assistant registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_ASSISTANT_VERSION: 4.1.0
   # renovate: datasource=nextcloud depName=calendar registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_CALENDAR_VERSION: 6.6.5
+  NEXTCLOUD_CALENDAR_VERSION: 6.7.0
   # renovate: datasource=nextcloud depName=context_chat registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_CONTEXT_CHAT_VERSION: 5.6.0
   # renovate: datasource=nextcloud depName=contacts registryUrl=https://apps.nextcloud.com/api/v1/apps.json
