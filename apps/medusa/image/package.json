@@ -13,7 +13,7 @@
     "@medusajs/cli": "2.23.0",
     "@medusajs/framework": "2.23.0",
     "@medusajs/medusa": "2.23.0",
-    "nodemailer": "10.6.0",
+    "nodemailer": "10.6.1",
     "openid-client": "6.9.1"
   },
   "devDependencies": {
