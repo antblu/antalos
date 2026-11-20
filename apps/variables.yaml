@@ -147,7 +147,7 @@ variables:
   # renovate: datasource=docker depName=nodered/node-red
   NODE_RED_IMAGE_TAG: 5.0.10-24
   # renovate: datasource=docker depName=ghcr.io/alam00000/bentopdf-simple
-  BENTOPDF_IMAGE_TAG: 2.8.11
+  BENTOPDF_IMAGE_TAG: 2.8.12
   # renovate: datasource=docker depName=ghcr.io/timothystewart6/littlelink-server depType=floating
   LITTLELINK_IMAGE_TAG: latest
   # renovate: datasource=docker depName=couchdb
