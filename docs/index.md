@@ -11,6 +11,15 @@ Use antalos as a template for hosting applications on a Talos Kubernetes cluster
 <a class="guide-card" href="/admin-guide/"><span class="card-number">03 / OPERATE</span><strong>I want to deploy or administer it</strong><span>Prepare dependencies, choose the right configuration files, and follow deployment and recovery runbooks.</span></a>
 </div>
 
+## I’ll set up your apps and show you how to run them
+
+<ul class="service-conversation" role="list" aria-label="Example conversation about app setup and training">
+<li class="service-question"><strong>You</strong><p>I want to host my own apps. Can you set up everything my team needs?</p></li>
+<li><strong>Antalos</strong><p>Yes. Tell me how your team works and what you need the apps to do. We’ll choose the apps together, and I’ll install and configure them for you.</p></li>
+<li class="service-question"><strong>You</strong><p>What happens when an app needs an update or something stops working?</p></li>
+<li><strong>Antalos</strong><p>We’ll work through a few real tasks on your setup. I’ll show you how to use AI to understand an error, plan an update, and check that your backups are working. You’ll practice those steps with me so you can repeat them on your own.</p></li>
+</ul>
+
 ## Find what you need
 
 | Your task | Start here |

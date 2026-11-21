@@ -384,30 +384,44 @@ h1 {
   outline-offset: 4px;
 }
 .sl-markdown-content .guide-switcher {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-block: 0 2rem;
-  padding: 0.4rem;
   border: 1px solid var(--sl-color-hairline);
   border-radius: var(--antalos-radius);
   background: var(--sl-color-bg-sidebar);
+  overflow: hidden;
 }
 .sl-markdown-content .guide-switcher a {
-  flex: 1 1 10rem;
+  display: grid;
+  place-items: center;
+  min-block-size: 2.75rem;
   margin: 0;
-  padding: 0.65rem 0.8rem;
-  border-radius: var(--antalos-radius-sm);
+  padding: 0.55rem 0.45rem;
   color: var(--sl-color-gray-2);
   font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.45;
+  overflow-wrap: anywhere;
+  text-align: center;
   text-decoration: none;
 }
-.sl-markdown-content .guide-switcher a[aria-current='page'],
+.sl-markdown-content .guide-switcher a + a {
+  border-inline-start: 1px solid var(--sl-color-hairline);
+}
 .sl-markdown-content .guide-switcher a:hover {
+  background: var(--antalos-blue-soft);
+  color: var(--sl-color-white);
+}
+.sl-markdown-content .guide-switcher a[aria-current='page'] {
   background: var(--sl-color-accent-low);
   color: var(--sl-color-accent-high);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+}
+.sl-markdown-content .guide-switcher a:focus-visible {
+  outline-offset: -4px;
 }
 .sl-markdown-content .architecture-diagram {
   margin: 1.75rem 0;
@@ -477,6 +491,45 @@ h1 {
   font-size: 0.8rem;
   line-height: 1.6;
 }
+.sl-markdown-content .service-conversation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: clamp(0.75rem, 3vw, 1.5rem);
+  list-style: none;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: var(--antalos-radius-lg);
+  background: var(--sl-color-bg-sidebar);
+}
+
+.sl-markdown-content .service-conversation > li {
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 88%;
+  margin: 0;
+  padding: 0.625rem 0.875rem;
+  border-radius: 1.125rem 1.125rem 1.125rem 0.375rem;
+  background: var(--sl-color-gray-6);
+  color: var(--sl-color-white);
+}
+
+.sl-markdown-content .service-conversation > .service-question {
+  align-self: flex-end;
+  border-radius: 1.125rem 1.125rem 0.375rem 1.125rem;
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-accent-high);
+}
+
+.sl-markdown-content .service-conversation strong {
+  color: inherit;
+  font-size: 0.8125rem;
+}
+
+.sl-markdown-content .service-conversation p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .sl-markdown-content .guide-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));

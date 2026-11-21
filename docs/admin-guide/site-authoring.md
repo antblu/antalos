@@ -43,7 +43,7 @@ Use task-based headings, concise introductions, and sequential steps with expect
 
 Shared reading paths and runbook links are configured in `site/astro.config.mjs`. Service groups live in `site/src/navigation.mjs`; `serviceNavigation()` adds the same service slugs to all three perspectives. Add a service to that registry once, create its three pages, and add its row to `docs/user-guide/services.md`.
 
-Use landing pages to direct readers to common tasks. List applications in the service directory. Each service page includes a guide-switcher labeled **Use**, **Architecture**, and **Operate**, linking to the same slug in all three folders.
+Use landing pages to direct readers to common tasks. List applications in the service directory. Each service page includes a connected **Use**, **Architecture**, and **Operate** button group linking to the same slug in all three folders. Use a labeled `<nav class="guide-switcher">` with native links and mark the current link with `aria-current="page"`.
 
 User pages should explain access, one useful first workflow, what to report when it fails, and official product documentation. Keep pod names, database elections, and infrastructure repair commands in the architecture or admin guide. Distinguish the product's own manual from a community plugin's documentation, as in Obsidian LiveSync.
 
