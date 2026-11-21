@@ -13,6 +13,8 @@ Use `apps/rancher/` with the [shared deployment workflow](/admin-guide/deploy-an
 
 2. Reconcile both `rancher` and `rancher-config`, since the chart and certificate have separate Application resources.
 
+   The `rancher-config` Application supplies the public Let's Encrypt ISRG Root X1 certificate in `tls-ca`. Reconcile it before the `rancher` chart when introducing or changing agent trust. Rancher reads the bundle at startup and publishes it for agents using strict TLS verification. If you change certificate issuers, verify the new ingress chain against the bundle before reconciling.
+
 ## 2. Reconcile the application
 
 Push the reviewed manifests and variables to the branch Argo CD tracks. Let the root app-of-apps discover the Application and run its hooks in order. Keep unresolved templates out of direct Kubernetes applies.
@@ -40,6 +42,8 @@ The checked-in chart does not define an external authentication provider. Comple
 2. Inspect the local cluster and confirm that its agents and API connection are healthy.
 
 3. Add a management-state backup and recovery procedure if Rancher-created resources are part of your operational recovery set.
+
+4. When registering an existing cluster, verify that its pods can resolve and reach the Rancher hostname. Use the registration manifest Rancher generates after publishing the CA bundle, then check that Rancher reports the cluster connected and that its UI can list the downstream nodes.
 
 ## Availability before maintenance
 

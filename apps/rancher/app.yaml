@@ -18,6 +18,7 @@ spec:
         replicas: 2
         antiAffinity: required
         topologyKey: kubernetes.io/hostname
+        privateCA: true
         ingress:
           enabled: true
           ingressClassName: traefik
