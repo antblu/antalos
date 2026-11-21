@@ -96,6 +96,38 @@ format. Renovate does not propose their major upgrades in the Left project.
 Plan a migration and restore test before changing these major versions; a
 PostgreSQL image-tag change does not upgrade an existing database directory.
 
+## Recover the RTX runtime after a driver upgrade
+
+If Compose reports a missing `/run/nvidia-persistenced/socket`, run
+`nvidia-smi` on the guest. If it reports a driver/library version mismatch,
+compare `cat /proc/driver/nvidia/version` with `modinfo -F version nvidia`.
+A package upgrade can install new NVIDIA libraries and kernel modules while
+the guest still runs the previous module.
+
+When the matching module is installed for the running kernel and no workloads
+are using the GPU, reload it from a root shell on the guest:
+
+```bash
+modprobe -r nvidia_uvm nvidia_drm nvidia_modeset nvidia &&
+  modprobe -a nvidia nvidia_modeset nvidia_drm nvidia_uvm &&
+  nvidia-smi -L
+```
+
+If the module is busy, stop and arrange a maintenance window before retrying
+or rebooting. Once the GPU is visible, start the persistence daemon, reset
+any CDI start-limit failures, and regenerate the device specification using
+the [NVIDIA CDI refresh service](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/cdi-support.html):
+
+```bash
+systemctl start nvidia-persistenced.service &&
+  test -S /run/nvidia-persistenced/socket &&
+  systemctl reset-failed nvidia-cdi-refresh.path nvidia-cdi-refresh.service &&
+  systemctl start nvidia-cdi-refresh.path &&
+  systemctl restart nvidia-cdi-refresh.service &&
+  cd /opt/compose &&
+  docker compose up -d --wait
+```
+
 ## Inspect without changing the VM
 
 Use SSH aliases from the workstation configuration:
