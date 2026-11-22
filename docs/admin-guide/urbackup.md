@@ -33,7 +33,7 @@ Confirm the expected Git revision synced and the required workloads are ready. W
 
 ## 3. Complete identity and first access
 
-The UI ingress references Authentik forward-auth. Create a proxy provider for the exact UrBackup origin, assign it to the embedded outpost, and add the callback route on that hostname. The existing shared outpost route only covers the Traefik dashboard hostname. Configure UrBackup’s own administrator permissions after the proxy login; passing the ingress check does not replace UrBackup’s application authorization.
+The UI ingress references Authentik forward-auth. Create a proxy provider for the exact UrBackup origin and assign it to the embedded outpost. The UrBackup IngressRoute sends `/outpost.goauthentik.io/` requests to the embedded outpost. After reconciliation, request `/outpost.goauthentik.io/ping` on the UrBackup hostname and expect HTTP 204. Then sign in and confirm you return to UrBackup. Configure UrBackup’s own administrator permissions after the proxy login; passing the ingress check does not replace UrBackup’s application authorization.
 
 ## 4. Connect and operate the service
 

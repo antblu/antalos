@@ -60,8 +60,8 @@ models:
       --spec-draft-n-max 4
       --ctx-size 16384
       --parallel 1
-      --cache-ram 2048
-      --ctx-checkpoints 12
+      --cache-ram 0
+      --ctx-checkpoints 0
       --flash-attn off
       --n-gpu-layers all
     ttl: 0

@@ -25,6 +25,8 @@ llama-swap exposes the model API on the VM's port 8080 under `/v1`. Its configur
 
 LiteLLM can discover the model and speech endpoints, while Open WebUI and other clients use the gateway. A replicated Kubernetes gateway does not supply a second GPU backend when this VM is unavailable.
 
+The baseline Gemma 4 E4B model disables the RAM prompt cache and context checkpoints to reduce memory pressure while it shares the RTX VM with the embedding and reranking models. This can increase prompt processing time.
+
 The configured large-model group includes Torchcast Decision 12B in Q5_K_M
 quantization, served with a 16384-token context and one parallel request slot.
 Its GGUF is acquired from Hugging Face on first use. It follows the group's
