@@ -66,6 +66,11 @@ variables:
   ANTBLU_IMAGE_TAG: main
   # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
   ANTBLU_NGINX_IMAGE_TAG: 1.31.7-alpine
+  # renovate: datasource=docker depName=python
+  ANTBLU_CHAT_PYTHON_IMAGE_TAG: 3.15.2-alpine3.24
+  ANTBLU_CHAT_OPEN_WEBUI_URL: https://ai.antblu.net
+  ANTBLU_CHAT_LITELLM_URL: https://litellm.antblu.net
+  ANTBLU_CHAT_MODEL: gemma-4-E4B-it-GGUF:UD-Q4_K_XL
 
   # Emiliany storefront; its source and image build live in antblu/emiliany.
   EMILIANY_HOST: emiliany.com
