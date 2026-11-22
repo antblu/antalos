@@ -78,18 +78,24 @@ data:
         result = post(LITELLM + "/v1/chat/completions", {
             "model": os.environ["LITELLM_MODEL"],
             "messages": [
-                {"role": "system", "content": PROMPT + "\nThe website displays source links separately. Keep the response concise and in plain text."},
+                {"role": "system", "content": PROMPT + "\nUse plain text without Markdown or URLs. The website displays source and project brief links. Keep the answer under 160 words."},
                 {"role": "user", "content": json.dumps({
                     "previous_visitor_questions": questions[:-1],
                     "current_visitor_question": questions[-1],
                     "retrieved_evidence": documents,
                 })},
             ],
-            "max_tokens": 650,
+            "max_tokens": 500,
+            "reasoning_effort": "none",
+            "chat_template_kwargs": {"enable_thinking": False},
             "temperature": 0.2,
             "stream": False,
         }, os.environ["LITELLM_API_KEY"], timeout=45)
-        response = result["choices"][0]["message"]["content"]
+        choice = result["choices"][0]
+        if choice.get("finish_reason") == "length":
+            return {"answer": "I could not finish that answer. You can ask a shorter question or send Anthony a project brief.",
+                    "sources": [PUBLIC_ORIGIN + "/contact#quote"]}
+        response = choice["message"]["content"]
         if not isinstance(response, str) or not response.strip():
             raise ValueError("Empty completion")
         sources = []

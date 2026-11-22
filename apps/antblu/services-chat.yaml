@@ -15,6 +15,8 @@ spec:
       app.kubernetes.io/name: antblu-services-chat
   template:
     metadata:
+      annotations:
+        antblu.net/services-chat-config-checksum: "c0f25fb27c8854bef438a24fb35752f7834466b24919b886502609e8091bf43a"
       labels:
         app.kubernetes.io/name: antblu-services-chat
     spec:
