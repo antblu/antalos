@@ -483,7 +483,7 @@ variables:
   # renovate: datasource=docker depName=vaultwarden/server
   VAULTWARDEN_IMAGE_TAG: 1.37.5-alpine
   # renovate: datasource=docker depName=nginx
-  VAULTWARDEN_GATEWAY_NGINX_IMAGE_TAG: 1.31.9-alpine
+  VAULTWARDEN_GATEWAY_NGINX_IMAGE_TAG: 1.31.10-alpine
   VAULTWARDEN_HOST: vault.antblu.net
   VAULTWARDEN_DATABASE_HOST: vaultwarden-db-rw.vaultwarden.svc.cluster.local
   VAULTWARDEN_NFS_SHARE: /mnt/nvme/vaultwarden
