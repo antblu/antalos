@@ -227,7 +227,7 @@ variables:
   # renovate: datasource=nextcloud depName=forms registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_FORMS_VERSION: 5.4.3
   # renovate: datasource=nextcloud depName=groupfolders registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_GROUPFOLDERS_VERSION: 23.0.1
+  NEXTCLOUD_GROUPFOLDERS_VERSION: 23.0.2
   # renovate: datasource=nextcloud depName=integration_openai registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_INTEGRATION_OPENAI_VERSION: 5.0.0
   # renovate: datasource=nextcloud depName=mail registryUrl=https://apps.nextcloud.com/api/v1/apps.json
