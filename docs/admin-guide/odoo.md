@@ -84,6 +84,8 @@ The `odoo-backup` CronJob runs daily at **09:00 UTC** (03:00 Denver daylight tim
 
 The database snapshot precedes the object listing/copy. This relies on normal OCA attachment writes creating immutable versioned objects before committing their database references, and on retaining old objects. Extra objects copied after the snapshot are harmless. Enabling garbage collection or custom in-place edits invalidates this consistency assumption and requires a different backup design.
 
+The backup CronJob uses the image pinned by `ODOO_BACKUP_IMAGE` in `apps/variables.yaml`. Before a PostgreSQL major upgrade, verify that this image's `pg_dump` supports the target server version. A serving Odoo image can connect successfully while its bundled `pg_dump` is too old for the server.
+
 Only directories containing `COMPLETE.json` are completed backups. Failed copies may leave partial objects. No backup retention deletion or bucket lifecycle policy is installed. Active data and backups share Garage's failure domain; maintain an independent backup destination for loss of that service.
 
 ## Maintenance and recovery

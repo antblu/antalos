@@ -45,7 +45,7 @@ export default defineMiddlewares({ routes: [
       return res.setHeader("Cache-Control", "no-store").json({ token: await emailSignInToken(scope, identity, context.mfa_challenge_completed_at) })
     },
   ] },
-  { matcher: "/store/*", middlewares: [readCustomerBearer, async (request, res, next) => {
+  { matcher: /^\/store\/.*/i, middlewares: [readCustomerBearer, async (request, res, next) => {
     const req = request as unknown as AuthenticatedMedusaRequest
     const contexts = [req.auth_context, req.session?.auth_context]
     for (const context of contexts) {

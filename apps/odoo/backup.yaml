@@ -74,7 +74,7 @@ spec:
                   mountPath: /mnt/extra-addons
           containers:
             - name: backup
-              image: docker.io/library/odoo:${ODOO_IMAGE_TAG}
+              image: ${ODOO_BACKUP_IMAGE}
               command:
                 - python3
                 - -u
