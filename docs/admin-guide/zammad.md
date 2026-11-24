@@ -46,6 +46,11 @@ The deployment mounts an OIDC authorization adapter that maps verified `zammad-u
 Zammad’s built-in form channel creates customer tickets without distributing an
 agent API token. Enable it under Channels → Form and select the receiving group.
 These settings live in the Zammad database and must be preserved in backups.
+For a website that assigns form tickets to a specific agent, use a dedicated
+receiving group and grant the agent full access to that group. Create a trigger
+that runs on ticket creation for customer web articles in that group and sets
+Owner to the agent. Submit a form entry and check its ticket number, group, and
+owner in Zammad.
 Keep the honeypot and per-IP/global submission limits enabled. Browser clients
 request `/api/v1/form_config` with a fingerprint, then submit its token and the
 same fingerprint to `/api/v1/form_submit`. They must handle validation errors
@@ -60,9 +65,18 @@ its Nginx template; publish that image together with the deployment input.
 The proxy preserves Zammad’s honeypot and submission limits and forwards the
 client address. It grants no access to authenticated ticket administration.
 
-Ticket creation and delivery of an email reply are separate operations. Configure
-and verify the receiving group’s outbound email channel for replies. See the
-[official form channel guide](https://admin-docs.zammad.org/en/latest/channels/form.html).
+To acknowledge a form submission by email, give the receiving group an
+authenticated outbound address. Add a trigger for new customer web articles in
+that group and select the ticket customer as the recipient. Exclude the group
+from any overlapping auto-reply rules so customers receive one acknowledgement.
+For owner alerts, enable email for new tickets owned by the agent in their
+notification preferences. Check the acknowledgement delivery status and the
+agent notification in the history of a test ticket.
+
+An outbound-only channel can send acknowledgements. To add emailed follow-ups
+to tickets, connect the reply mailbox through an inbound channel or forwarding.
+See the [form channel guide](https://admin-docs.zammad.org/en/latest/channels/form.html)
+and [trigger guide](https://admin-docs.zammad.org/en/latest/manage/trigger.html).
 
 ## Availability before maintenance
 
