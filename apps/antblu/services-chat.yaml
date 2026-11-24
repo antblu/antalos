@@ -16,7 +16,7 @@ spec:
   template:
     metadata:
       annotations:
-        antblu.net/services-chat-config-checksum: "c9a0fee15a0ad2bb2cddcb60de95426c8b9c90bca2bcc4222a897d447eee7181"
+        antblu.net/services-chat-config-checksum: "6e06d583027ba26dcf4e815b87db1b492d5548a626c1ef70f595fcdad951fe1a"
       labels:
         app.kubernetes.io/name: antblu-services-chat
     spec:
@@ -56,16 +56,6 @@ spec:
                 secretKeyRef:
                   name: antblu-services-chat-runtime
                   key: redis-password
-            - name: TURNSTILE_SITE_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: antblu-services-chat-runtime
-                  key: turnstile-site-key
-            - name: TURNSTILE_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: antblu-services-chat-runtime
-                  key: turnstile-secret-key
             - name: OPEN_WEBUI_EMAIL
               valueFrom:
                 secretKeyRef:

@@ -24,18 +24,17 @@ The importer prompts for a password, or you can set `OPEN_WEBUI_API_KEY` for an 
 
 ### Prepare the release
 
-1. Create a Cloudflare Turnstile widget restricted to the website hostname configured in `ANTBLU_HOST`. The chat uses the action `services_chat`. [Cloudflare widget setup](https://developers.cloudflare.com/turnstile/get-started/)
-2. Seal a Secret named `antblu-services-chat-runtime` in namespace `antblu` with keys `turnstile-site-key`, `turnstile-secret-key`, and `redis-password`. Use the widget keys from Cloudflare and a Redis password generated with `openssl rand -hex 32`. Use the `sealed-secrets-controller` in namespace `sealed-secrets` and save the SealedSecret under `apps/antblu/`.
-3. Publish the Antalos manifests and the portfolio image in the same release window. The old browser sends a `questions` array. The new browser reads chat configuration before it can obtain a session. Chat can be unavailable between rollouts.
-4. Open the public Services page in a fresh browser and submit a pricing question. Confirm that text appears incrementally and that source links appear at the end. Ask a follow-up in the same session, confirm that requests without a verified session are rejected, and check the project brief fallback.
+1. Seal a Secret named `antblu-services-chat-runtime` in namespace `antblu` with a `redis-password` key generated with `openssl rand -hex 32`. Use the `sealed-secrets-controller` in namespace `sealed-secrets` and save the SealedSecret under `apps/antblu/`.
+2. Publish the Antalos manifests first and wait for Argo CD to report the API and Redis healthy. Then publish the portfolio image. The API starts a browser session on the first question.
+3. Open the public Services page in a fresh browser and submit a pricing question. Confirm that text appears incrementally and that source links appear at the end. Ask a follow-up in the same session and check the project brief fallback.
 
 After editing the system prompt, update the copy in `apps/antblu/services-chat-config.yaml` and refresh the `services-chat-config-checksum` annotation in `apps/antblu/services-chat.yaml` so Argo CD rolls the API pods.
 
 ### Session limits and availability
 
-Both API replicas share one password-protected Redis instance. Each visitor starts a one-hour session after the server verifies the Turnstile token, hostname, and action. Redis stores up to three earlier successful questions for follow-up context. A Secure, HttpOnly cookie carries the session ID. Limits apply per verified browser session because the public TCP proxy path does not preserve the visitor IP. Each session allows one in-flight request and 10 answer attempts per 10 minutes. Both replicas share limits of 60 answer attempts and 120 verification attempts per minute.
+Both API replicas share one password-protected Redis instance. The API starts a one-hour session when it admits the first question and sends the session ID in a Secure, HttpOnly cookie. Redis stores up to three earlier successful questions for follow-up context. The public TCP proxy path does not preserve the visitor IP, so the API allows one in-flight question and 10 answer attempts per browser session per 10 minutes. Both replicas share a limit of 60 answer attempts per minute.
 
-Redis stores sessions and counters in memory. Restarting or replacing the Redis pod resets both and requires browsers to verify again. Redis is a single point of failure for this chat. The project brief remains available during a chat outage.
+Redis stores sessions and counters in memory. Restarting or replacing the Redis pod resets both and starts a new session with the next question. Redis is a single point of failure for this chat. The project brief remains available during a chat outage.
 
 ## Use the existing llama.cpp models directly
 
