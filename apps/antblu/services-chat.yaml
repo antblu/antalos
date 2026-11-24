@@ -16,7 +16,7 @@ spec:
   template:
     metadata:
       annotations:
-        antblu.net/services-chat-config-checksum: "c0f25fb27c8854bef438a24fb35752f7834466b24919b886502609e8091bf43a"
+        antblu.net/services-chat-config-checksum: "c9a0fee15a0ad2bb2cddcb60de95426c8b9c90bca2bcc4222a897d447eee7181"
       labels:
         app.kubernetes.io/name: antblu-services-chat
     spec:
@@ -49,6 +49,23 @@ spec:
               value: ${ANTBLU_CHAT_LITELLM_URL}
             - name: LITELLM_MODEL
               value: ${ANTBLU_CHAT_MODEL}
+            - name: REDIS_HOST
+              value: antblu-services-chat-redis
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: antblu-services-chat-runtime
+                  key: redis-password
+            - name: TURNSTILE_SITE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: antblu-services-chat-runtime
+                  key: turnstile-site-key
+            - name: TURNSTILE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: antblu-services-chat-runtime
+                  key: turnstile-secret-key
             - name: OPEN_WEBUI_EMAIL
               valueFrom:
                 secretKeyRef:
@@ -74,8 +91,9 @@ spec:
               containerPort: 8080
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /readyz
               port: http
+            timeoutSeconds: 3
           livenessProbe:
             httpGet:
               path: /healthz

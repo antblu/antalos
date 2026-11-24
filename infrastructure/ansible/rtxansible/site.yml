@@ -312,6 +312,8 @@
         mode: "u+rwX"
 
     - name: Copy the repository Compose definitions
+      tags:
+        - llama-swap
       ansible.builtin.copy:
         src: "{{ playbook_dir }}/compose/"
         dest: "{{ rtx_compose_root }}/"
@@ -320,6 +322,8 @@
         mode: preserve
 
     - name: Write the protected Compose environment
+      tags:
+        - llama-swap
       ansible.builtin.template:
         src: compose.env.j2
         dest: "{{ rtx_compose_root }}/.env"
@@ -327,6 +331,47 @@
         group: root
         mode: "0600"
       no_log: true
+
+    - name: Pull missing images for the targeted llama-swap update
+      tags:
+        - never
+        - llama-swap
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - compose
+          - --project-directory
+          - "{{ rtx_compose_root }}"
+          - --file
+          - "{{ rtx_compose_root }}/compose.yaml"
+          - pull
+          - --policy
+          - missing
+          - llama-swap
+          - baseline-restorer
+      register: llama_swap_image_pull
+      changed_when: "'Pulled' in llama_swap_image_pull.stderr or 'Pulled' in llama_swap_image_pull.stdout"
+
+    - name: Apply llama-swap changes on an existing RTX guest
+      tags:
+        - never
+        - llama-swap
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/docker
+          - compose
+          - --project-directory
+          - "{{ rtx_compose_root }}"
+          - --file
+          - "{{ rtx_compose_root }}/compose.yaml"
+          - up
+          - --detach
+          - --no-deps
+          - --pull
+          - never
+          - llama-swap
+          - baseline-restorer
+      changed_when: true
 
     - name: Pull the pinned Compose images
       ansible.builtin.command:

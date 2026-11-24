@@ -32,8 +32,14 @@ models:
       --hf-file Qwen3-Embedding-0.6B-Q8_0.gguf
       --embedding
       --pooling last
-      --ctx-size 8192
+      --ctx-size 2048
+      --parallel 1
+      --batch-size 2048
+      --ubatch-size 2048
+      --cache-ram 0
+      --ctx-checkpoints 0
       --n-gpu-layers all
+    concurrencyLimit: 1
     ttl: 0
 
   "Qwen/Qwen3-Reranker-0.6B:Q8_0":
@@ -45,8 +51,14 @@ models:
       --hf-file qwen3-reranker-0.6b-q8_0.gguf
       --reranking
       --pooling rank
-      --ctx-size 8192
+      --ctx-size 2048
+      --parallel 1
+      --batch-size 2048
+      --ubatch-size 2048
+      --cache-ram 0
+      --ctx-checkpoints 0
       --n-gpu-layers all
+    concurrencyLimit: 1
     ttl: 0
 
   "unsloth/gemma-4-E4B-it-GGUF:UD-Q4_K_XL":
@@ -56,14 +68,17 @@ models:
       --port ${PORT}
       --hf-repo unsloth/gemma-4-E4B-it-GGUF
       --hf-file gemma-4-E4B-it-UD-Q4_K_XL.gguf
-      --spec-type draft-mtp
-      --spec-draft-n-max 4
-      --ctx-size 16384
+      --spec-type none
+      --no-mmproj
+      --ctx-size 8192
       --parallel 1
+      --batch-size 512
+      --ubatch-size 128
       --cache-ram 0
       --ctx-checkpoints 0
       --flash-attn off
       --n-gpu-layers all
+    concurrencyLimit: 1
     ttl: 0
 
 
@@ -235,7 +250,7 @@ routing:
         # ttl:600 on each model:
         #   After 10 minutes without use the active large model
         #   automatically unloads. The baseline-restorer
-        #   container then reloads all three baseline models.
+        #   container then reloads the three baseline models.
         # ======================================================
 
         large:

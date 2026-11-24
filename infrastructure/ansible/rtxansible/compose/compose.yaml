@@ -6,6 +6,8 @@ services:
     container_name: llama-swap
     restart: unless-stopped
     user: "0:0"
+    labels:
+      antblu.net/llama-swap-config-sha256: "${LLAMA_SWAP_CONFIG_SHA256:-unmanaged}"
 
     environment:
       LLAMA_SWAP_CONFIG: /etc/llama-swap/config/config.yaml

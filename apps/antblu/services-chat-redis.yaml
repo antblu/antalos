@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: antblu-services-chat-redis
+  namespace: antblu
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: antblu-services-chat-redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: antblu-services-chat-redis
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: redis
+          image: redis:${REDIS_IMAGE_TAG}
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              case "$REDIS_PASSWORD" in
+                ""|*[!a-f0-9]*) exit 1 ;;
+              esac
+              printf 'requirepass %s\n' "$REDIS_PASSWORD" | redis-server - \
+                --bind 0.0.0.0 --save "" --appendonly no \
+                --maxmemory 64mb --maxmemory-policy noeviction
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: antblu-services-chat-runtime
+                  key: redis-password
+          ports:
+            - name: redis
+              containerPort: 6379
+          readinessProbe:
+            tcpSocket:
+              port: redis
+          livenessProbe:
+            tcpSocket:
+              port: redis
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: antblu-services-chat-redis
+  namespace: antblu
+spec:
+  selector:
+    app.kubernetes.io/name: antblu-services-chat-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: antblu-services-chat-redis
+  namespace: antblu
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: antblu-services-chat-redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: antblu-services-chat
+      ports:
+        - port: 6379
+          protocol: TCP

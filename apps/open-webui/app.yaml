@@ -127,6 +127,10 @@ spec:
               value: path
             - name: RAG_EMBEDDING_ENGINE
               value: openai
+            - name: RAG_EMBEDDING_BATCH_SIZE
+              value: "1"
+            - name: RAG_EMBEDDING_CONCURRENT_REQUESTS
+              value: "1"
             - name: AUDIO_STT_ENGINE
               value: openai
             - name: AUDIO_TTS_ENGINE

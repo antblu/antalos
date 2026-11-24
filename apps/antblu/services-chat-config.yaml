@@ -8,22 +8,67 @@ data:
     import json
     import os
     import re
+    import secrets
+    import socket
     import threading
+    import time
+    from http.cookies import CookieError, SimpleCookie
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    from pathlib import Path
     from urllib.error import HTTPError
     from urllib.parse import urlsplit
     from urllib.request import HTTPRedirectHandler, Request, build_opener
 
+
     PATH = "/api/services-chat"
-    MAX_BODY = 32768
+    MAX_BODY = 16384
+    PUBLIC_ORIGIN = os.environ["PUBLIC_ORIGIN"]
     WEBUI = os.environ["OPEN_WEBUI_URL"]
     LITELLM = os.environ["LITELLM_URL"]
-    PUBLIC_ORIGIN = os.environ["PUBLIC_ORIGIN"]
     COLLECTION = os.environ["OPEN_WEBUI_KNOWLEDGE_ID"]
-    PROMPT = open("/app/system-prompt.txt", encoding="utf-8").read()
+    PROMPT = Path(__file__).with_name("system-prompt.txt").read_text(encoding="utf-8")
+    TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY")
+    TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY")
+    TURNSTILE_ACTION = "services_chat"
+    COOKIE = "__Host-services-chat"
+    SESSION_SECONDS = 3600
+    REDIS_HOST = os.environ["REDIS_HOST"]
+    REDIS_PASSWORD = os.environ["REDIS_PASSWORD"]
     SLOTS = threading.BoundedSemaphore(3)
-    SESSION_LOCK = threading.Lock()
-    session_token = None
+    WEBUI_TOKEN_LOCK = threading.Lock()
+    webui_session_token = None
+
+    UNAVAILABLE = "Chat is unavailable. You can still send a project brief."
+    BUSY = "Chat is busy. Try again shortly."
+
+    # Redis runs the quota and in-flight checks together across both API pods.
+    TAKE_TURN = """
+    local history = redis.call('GET', KEYS[1])
+    if not history then return 0 end
+    if redis.call('EXISTS', KEYS[2]) == 1 then return 1 end
+    if tonumber(redis.call('GET', KEYS[3]) or '0') >= 10 then return 2 end
+    if tonumber(redis.call('GET', KEYS[4]) or '0') >= 60 then return 3 end
+    redis.call('SET', KEYS[2], ARGV[1], 'EX', 120)
+    if redis.call('INCR', KEYS[3]) == 1 then redis.call('EXPIRE', KEYS[3], 600) end
+    if redis.call('INCR', KEYS[4]) == 1 then redis.call('EXPIRE', KEYS[4], 60) end
+    return history
+    """
+
+    FINISH_TURN = """
+    if redis.call('GET', KEYS[2]) == ARGV[1] then
+        if ARGV[2] ~= '' then
+            redis.call('SET', KEYS[1], ARGV[2], 'XX', 'KEEPTTL')
+        end
+        redis.call('DEL', KEYS[2])
+    end
+    return 1
+    """
+
+    COUNT_VERIFICATION = """
+    local count = redis.call('INCR', KEYS[1])
+    if count == 1 then redis.call('EXPIRE', KEYS[1], 60) end
+    return count
+    """
 
 
     class NoRedirect(HTTPRedirectHandler):
@@ -34,26 +79,68 @@ data:
     HTTP = build_opener(NoRedirect())
 
 
-    def post(url, payload, token=None, timeout=12):
+    def redis_command(*args):
+        parts = [str(arg).encode() for arg in args]
+        command = f"*{len(parts)}\r\n".encode()
+        return command + b"".join(f"${len(part)}\r\n".encode() + part + b"\r\n" for part in parts)
+
+
+    def redis(*args):
+        # The ConfigMap uses RESP2 with scalar replies and needs no startup dependencies.
+        with socket.create_connection((REDIS_HOST, 6379), timeout=2) as connection:
+            connection.sendall(redis_command("AUTH", REDIS_PASSWORD))
+            with connection.makefile("rb") as reader:
+                if reader.readline(256) != b"+OK\r\n":
+                    raise OSError("Redis authentication failed")
+                connection.sendall(redis_command(*args))
+                line = reader.readline(256)
+                if line.startswith(b":") and line.endswith(b"\r\n"):
+                    return int(line[1:-2])
+                if line in {b"+OK\r\n", b"+PONG\r\n"}:
+                    return True
+                if line == b"$-1\r\n":
+                    return None
+                if line.startswith(b"$") and line.endswith(b"\r\n"):
+                    length = int(line[1:-2])
+                    if 0 <= length <= 65536:
+                        data = reader.read(length + 2)
+                        if len(data) == length + 2 and data.endswith(b"\r\n"):
+                            return data[:-2]
+                raise OSError("Unexpected Redis reply")
+
+
+    def post_request(url, payload, token=None):
         headers = {"Content-Type": "application/json"}
         if token:
             headers["Authorization"] = f"Bearer {token}"
-        request = Request(url, data=json.dumps(payload).encode(), headers=headers)
-        with HTTP.open(request, timeout=timeout) as response:
+        return Request(url, data=json.dumps(payload).encode(), headers=headers)
+
+
+    def post(url, payload, token=None, timeout=12):
+        with HTTP.open(post_request(url, payload, token), timeout=timeout) as response:
             return json.loads(response.read(262145))
 
 
+    def verify_turnstile(token):
+        result = post("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+            "secret": TURNSTILE_SECRET_KEY, "response": token,
+        }, timeout=8)
+        return (result.get("success") is True
+                and result.get("hostname") == urlsplit(PUBLIC_ORIGIN).hostname
+                and result.get("action") == TURNSTILE_ACTION)
+
+
     def webui_token(previous=None):
-        global session_token
-        with SESSION_LOCK:
-            if session_token and session_token != previous:
-                return session_token
+        global webui_session_token
+        with WEBUI_TOKEN_LOCK:
+            if webui_session_token and webui_session_token != previous:
+                return webui_session_token
             result = post(WEBUI + "/api/v1/auths/signin", {
                 "email": os.environ["OPEN_WEBUI_EMAIL"],
                 "password": os.environ["OPEN_WEBUI_PASSWORD"],
             })
-            session_token = result["token"]
-            return session_token
+            webui_session_token = result["token"]
+            return webui_session_token
 
 
     def retrieve(query):
@@ -70,12 +157,8 @@ data:
         return [document[:2400] for document in documents[:5] if isinstance(document, str)]
 
 
-    def answer(questions):
-        documents = retrieve("\n".join(questions[-2:])[-2200:])
-        if not documents:
-            return {"answer": "Anthony can confirm that. Include your question in a project brief.",
-                    "sources": [PUBLIC_ORIGIN + "/contact#quote"]}
-        result = post(LITELLM + "/v1/chat/completions", {
+    def completion_request(questions, documents):
+        return post_request(LITELLM + "/v1/chat/completions", {
             "model": os.environ["LITELLM_MODEL"],
             "messages": [
                 {"role": "system", "content": PROMPT + "\nUse plain text without Markdown or URLs. The website displays source and project brief links. Keep the answer under 160 words."},
@@ -89,21 +172,61 @@ data:
             "reasoning_effort": "none",
             "chat_template_kwargs": {"enable_thinking": False},
             "temperature": 0.2,
-            "stream": False,
-        }, os.environ["LITELLM_API_KEY"], timeout=45)
-        choice = result["choices"][0]
-        if choice.get("finish_reason") == "length":
-            return {"answer": "I could not finish that answer. You can ask a shorter question or send Anthony a project brief.",
-                    "sources": [PUBLIC_ORIGIN + "/contact#quote"]}
-        response = choice["message"]["content"]
-        if not isinstance(response, str) or not response.strip():
-            raise ValueError("Empty completion")
-        sources = []
-        for document in documents:
-            for url in re.findall(r"^https://[^\s]+$", document, re.MULTILINE):
-                if urlsplit(url).netloc in {"antblu.net", "docs.antblu.net"} and url not in sources:
-                    sources.append(url)
-        return {"answer": response.strip(), "sources": sources[:8]}
+            "stream": True,
+        }, os.environ["LITELLM_API_KEY"])
+
+
+    def public_sources(documents):
+        return list(dict.fromkeys(
+            url for document in documents
+            for url in re.findall(r"^https://[^\s]+$", document, re.MULTILINE)
+            if urlsplit(url).netloc in {"antblu.net", "docs.antblu.net"}
+        ))[:8]
+
+
+    def completion_events(response, deadline):
+        data = []
+        while line := response.readline(65537):
+            if time.monotonic() > deadline or len(line) > 65536:
+                raise ValueError("Completion stream exceeded its bounds")
+            line = line.rstrip(b"\r\n")
+            if not line and data:
+                yield b"\n".join(data)
+                data.clear()
+            elif line.startswith(b"data:"):
+                if len(data) >= 16:
+                    raise ValueError("Completion event exceeded its bounds")
+                data.append(line[5:].lstrip(b" "))
+
+
+    def answer(questions, emit, deadline):
+        documents = retrieve("\n".join(questions[-2:])[-2200:])
+        if not documents:
+            emit("delta", {"text": "Anthony can confirm that. Include your question in a project brief."})
+            return [PUBLIC_ORIGIN + "/contact#quote"]
+
+        has_content = False
+        finish_reason = None
+        with HTTP.open(completion_request(questions, documents), timeout=20) as response:
+            if response.headers.get_content_type() != "text/event-stream":
+                raise ValueError("Expected a LiteLLM event stream")
+            for event in completion_events(response, deadline):
+                if event == b"[DONE]":
+                    if has_content and finish_reason == "stop":
+                        return public_sources(documents)
+                    break
+                chunk = json.loads(event)
+                if chunk.get("error"):
+                    raise ValueError("LiteLLM stream error")
+                for choice in chunk.get("choices", []):
+                    text = choice.get("delta", {}).get("content")
+                    if isinstance(text, str) and text:
+                        has_content = has_content or bool(text.strip())
+                        emit("delta", {"text": text})
+                    finish_reason = choice.get("finish_reason") or finish_reason
+        if finish_reason == "length":
+            raise ValueError("Completion reached the token limit")
+        raise ValueError("Incomplete completion stream")
 
 
     class ChatHandler(BaseHTTPRequestHandler):
@@ -114,57 +237,149 @@ data:
             super().setup()
             self.connection.settimeout(10)
 
-        def respond(self, status, payload):
+        def respond(self, status, payload, cookie=None):
             content = json.dumps(payload).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(content)))
             self.send_header("Cache-Control", "no-store")
+            if cookie:
+                self.send_header("Set-Cookie", cookie)
             self.end_headers()
             self.wfile.write(content)
+
+        def session_key(self):
+            cookies = SimpleCookie()
+            try:
+                cookies.load(self.headers.get("Cookie", ""))
+            except CookieError:
+                return None
+            session = cookies.get(COOKIE)
+            if session and re.fullmatch(r"[A-Za-z0-9_-]{43}", session.value):
+                return "session:" + session.value
+            return None
 
         def do_GET(self):
             if self.path == "/healthz":
                 return self.respond(200, {"status": "ok"})
-            self.respond(405 if self.path == PATH else 404, {"error": "Use POST to ask a question."})
+            if self.path == "/readyz":
+                try:
+                    if TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY and redis("PING"):
+                        return self.respond(200, {"status": "ok"})
+                except OSError:
+                    pass
+                return self.respond(503, {"error": UNAVAILABLE})
+            if self.path != PATH:
+                return self.respond(404, {"error": "Unknown route."})
+            if not (TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY):
+                return self.respond(503, {"error": UNAVAILABLE})
+            try:
+                key = self.session_key()
+                verified = bool(key and redis("EXISTS", key))
+            except OSError:
+                return self.respond(503, {"error": UNAVAILABLE})
+            self.respond(200, {"siteKey": TURNSTILE_SITE_KEY, "verified": verified})
 
         def do_POST(self):
             if self.path != PATH:
                 return self.respond(404, {"error": "Unknown route."})
-            if self.headers.get("Origin") not in {None, PUBLIC_ORIGIN}:
+            if self.headers.get("Origin") != PUBLIC_ORIGIN:
                 return self.respond(403, {"error": "This chat is available on antblu.net."})
             if self.headers.get_content_type() != "application/json":
                 return self.respond(415, {"error": "Send JSON."})
             length = self.headers.get("Content-Length", "")
-            if not length.isdecimal() or len(length) > 5 or not 0 < int(length) <= MAX_BODY:
+            if not length.isascii() or not length.isdecimal() or len(length) > 5 or not 0 < int(length) <= MAX_BODY:
                 return self.respond(413, {"error": "The request is too large."})
             try:
                 payload = json.loads(self.rfile.read(int(length)))
-                questions = payload["questions"]
-                if type(questions) is not list or not 1 <= len(questions) <= 4 or not all(
-                    isinstance(question, str) and 0 < len(question.strip()) <= 1200 for question in questions
-                ):
-                    raise ValueError("Invalid questions")
-            except (KeyError, TypeError, ValueError):
-                return self.respond(400, {"error": "Enter a question of up to 1,200 characters."})
+                if not isinstance(payload, dict):
+                    raise ValueError("Expected an object")
+            except (ValueError, TimeoutError):
+                return self.respond(400, {"error": "Send a valid chat request."})
+
+            if not (TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY):
+                return self.respond(503, {"error": UNAVAILABLE})
             if not SLOTS.acquire(blocking=False):
-                return self.respond(429, {"error": "Chat is busy. Try again shortly."})
+                return self.respond(429, {"error": BUSY})
             try:
-                result = answer([question.strip() for question in questions])
-            except HTTPError as error:
-                if error.code == 429:
-                    return self.respond(429, {"error": "Chat is busy. Try again shortly."})
-                print(f"Services chat upstream HTTP {error.code}", flush=True)
-                return self.respond(503, {"error": "Chat is unavailable. You can still send a project brief."})
-            except (OSError, KeyError, TypeError, ValueError, IndexError) as error:
-                print(f"Services chat failed: {type(error).__name__}", flush=True)
-                return self.respond(503, {"error": "Chat is unavailable. You can still send a project brief."})
+                if "token" in payload:
+                    self.start_session(payload["token"])
+                else:
+                    self.ask(payload.get("question"))
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+            except (OSError, KeyError, TypeError, ValueError, AttributeError) as error:
+                print(f"Services chat request failed: {type(error).__name__}", flush=True)
+                self.respond(503, {"error": UNAVAILABLE})
             finally:
                 SLOTS.release()
-            self.respond(200, result)
+
+        def start_session(self, token):
+            key = self.session_key()
+            if key and redis("EXISTS", key):
+                return self.respond(200, {"verified": True})
+            if not isinstance(token, str) or not 0 < len(token) <= 2048:
+                return self.respond(400, {"error": "Complete verification to start chatting."})
+            if redis("EVAL", COUNT_VERIFICATION, 1, "verification-rate") > 120:
+                return self.respond(429, {"error": BUSY})
+            if not verify_turnstile(token):
+                return self.respond(403, {"error": "Verification failed. Please try again."})
+            session = secrets.token_urlsafe(32)
+            redis("SET", "session:" + session, "[]", "EX", SESSION_SECONDS)
+            cookie = f"{COOKIE}={session}; Path=/; Max-Age={SESSION_SECONDS}; Secure; HttpOnly; SameSite=Strict"
+            self.respond(200, {"verified": True}, cookie)
+
+        def ask(self, question):
+            if not isinstance(question, str) or not 0 < len(question.strip()) <= 1200:
+                return self.respond(400, {"error": "Enter a question of up to 1,200 characters."})
+            key = self.session_key()
+            if not key:
+                return self.respond(401, {"error": "Complete verification to start chatting."})
+
+            lock = key + ":active"
+            request_id = secrets.token_urlsafe(16)
+            state = redis("EVAL", TAKE_TURN, 4, key, lock, key + ":rate", "chat-rate", request_id)
+            if state == 0:
+                return self.respond(401, {"error": "Your chat session expired. Verify again to continue."})
+            if state == 2:
+                return self.respond(429, {"error": "You’ve reached the chat limit. Try again in a few minutes."})
+            if state in {1, 3}:
+                return self.respond(429, {"error": BUSY})
+
+            try:
+                questions = (json.loads(state) + [question.strip()])[-4:]
+                self.send_response(200)
+                self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+                self.send_header("Cache-Control", "no-store, no-transform")
+                self.end_headers()
+                try:
+                    self.emit("ready", {})
+                    sources = answer(questions, self.emit, time.monotonic() + 65)
+                    committed_history = json.dumps(questions[-3:])
+                    redis("EVAL", FINISH_TURN, 2, key, lock, request_id, committed_history)
+                    self.emit("done", {"sources": sources})
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
+                except (OSError, KeyError, TypeError, ValueError, AttributeError) as error:
+                    print(f"Services chat stream failed: {type(error).__name__}", flush=True)
+                    try:
+                        self.emit("error", {"message": BUSY if isinstance(error, HTTPError) and error.code == 429 else UNAVAILABLE})
+                    except OSError:
+                        pass
+            finally:
+                # If a request fails or disconnects, release only its own lock.
+                try:
+                    redis("EVAL", FINISH_TURN, 2, key, lock, request_id, "")
+                except OSError:
+                    pass
+
+        def emit(self, name, payload):
+            self.wfile.write(f"event: {name}\ndata: {json.dumps(payload)}\n\n".encode())
+            self.wfile.flush()
 
 
-    ThreadingHTTPServer(("0.0.0.0", 8080), ChatHandler).serve_forever()
+    if __name__ == "__main__":
+        ThreadingHTTPServer(("0.0.0.0", 8080), ChatHandler).serve_forever()
   system-prompt.txt: |
     You are the AI assistant on Anthony Bluemel’s Services page at antblu.net. Help prospective clients assess Anthony’s infrastructure, SaaS replacement, web development, and e-commerce services and prepare a project brief. Refer to Anthony in the third person.
 

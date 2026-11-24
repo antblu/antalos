@@ -12,7 +12,7 @@ Use the published Services pages and site terms for package scope, pricing, and 
 
 ## Use Open WebUI for the website chat
 
-The Services page calls `POST /api/services-chat` with a JSON `questions` array containing up to four visitor questions. The server returns an answer and public source URLs. It queries the private Antblu Services knowledge base through Open WebUI and sends the retrieved text to the Gemma model through LiteLLM. The website uses vector retrieval through the collection API. The Services page keeps its project brief link available when chat is offline.
+The Services chat queries the private Antblu Services knowledge base through Open WebUI’s collection API. It sends the retrieved passages to the Gemma model through LiteLLM and streams answer text to the browser. Source links arrive when the answer finishes. Visitors can use the project brief if chat is unavailable.
 
 Run the importer from this directory with an Open WebUI account that can create and write knowledge bases:
 
@@ -22,13 +22,24 @@ python3 import-open-webui.py --email YOUR_OPEN_WEBUI_EMAIL
 
 The importer prompts for a password, or you can set `OPEN_WEBUI_API_KEY` for an account with API keys enabled. It exports upload-ready text files with `--export DIRECTORY`. The corpus uses one file per record. Keep the knowledge base private and give the website's dedicated Open WebUI account read access to that collection. The endpoint signs in as that account and renews its session as needed.
 
-The Antalos `apps/antblu/` manifests define the endpoint and its sealed credentials. The portfolio repository contains the Services page chat interface. Publish both through their normal GitOps and website image workflows. When the system prompt changes, update the copy in `apps/antblu/services-chat-config.yaml` and restart the chat Deployment after reconciliation so its Python processes load the new text.
+### Prepare the release
 
-After rollout, submit a website pricing question through the public endpoint and confirm it gives the published starting prices and source links. Test a follow-up question and the project brief fallback.
+1. Create a Cloudflare Turnstile widget restricted to the website hostname configured in `ANTBLU_HOST`. The chat uses the action `services_chat`. [Cloudflare widget setup](https://developers.cloudflare.com/turnstile/get-started/)
+2. Seal a Secret named `antblu-services-chat-runtime` in namespace `antblu` with keys `turnstile-site-key`, `turnstile-secret-key`, and `redis-password`. Use the widget keys from Cloudflare and a Redis password generated with `openssl rand -hex 32`. Use the `sealed-secrets-controller` in namespace `sealed-secrets` and save the SealedSecret under `apps/antblu/`.
+3. Publish the Antalos manifests and the portfolio image in the same release window. The old browser sends a `questions` array. The new browser reads chat configuration before it can obtain a session. Chat can be unavailable between rollouts.
+4. Open the public Services page in a fresh browser and submit a pricing question. Confirm that text appears incrementally and that source links appear at the end. Ask a follow-up in the same session, confirm that requests without a verified session are rejected, and check the project brief fallback.
+
+After editing the system prompt, update the copy in `apps/antblu/services-chat-config.yaml` and refresh the `services-chat-config-checksum` annotation in `apps/antblu/services-chat.yaml` so Argo CD rolls the API pods.
+
+### Session limits and availability
+
+Both API replicas share one password-protected Redis instance. Each visitor starts a one-hour session after the server verifies the Turnstile token, hostname, and action. Redis stores up to three earlier successful questions for follow-up context. A Secure, HttpOnly cookie carries the session ID. Limits apply per verified browser session because the public TCP proxy path does not preserve the visitor IP. Each session allows one in-flight request and 10 answer attempts per 10 minutes. Both replicas share limits of 60 answer attempts and 120 verification attempts per minute.
+
+Redis stores sessions and counters in memory. Restarting or replacing the Redis pod resets both and requires browsers to verify again. Redis is a single point of failure for this chat. The project brief remains available during a chat outage.
 
 ## Use the existing llama.cpp models directly
 
-Use the three baseline model IDs from the checked-in llama-swap configuration when calling that router directly. If you use a gateway, map these roles to its configured model IDs and confirm that it forwards rerank requests.
+Use the three baseline model IDs from the checked-in llama-swap configuration when calling that router directly. If you use a gateway, use its configured model IDs.
 
 | Role | Configured llama-swap model ID | Route |
 | --- | --- | --- |
@@ -39,8 +50,8 @@ Use the three baseline model IDs from the checked-in llama-swap configuration wh
 Routes above are relative to the server origin. A client configured with a base URL ending in `/v1` should append only the remaining route. Use the model IDs your endpoint exposes. [llama.cpp server API](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md) · [llama-swap routes](https://github.com/mostlygeek/llama-swap)
 
 1. **Index.** Parse one record per line and embed its title, example questions, and answer as one text block. Send these through the embeddings route as `input` with the embedding `model`. Store the vector with the complete record and keep source URLs as metadata. Rebuild the vectors if the embedding model or input format changes.
-2. **Retrieve.** Embed the visitor’s question using the same model and apply any query formatting that model requires. For a short follow-up like “What about HA?”, include enough conversation context to make the query stand on its own. Start with up to 10 vector matches.
-3. **Rerank.** Send the question as `query`, candidates as an ordered `documents` array, and the reranker ID as `model`. Use the returned result indices to look up the original records and their citations. Start by passing up to four relevant records to chat.
+2. **Retrieve.** Embed the visitor’s question using the same model and apply any query formatting that model requires. For a short follow-up like “What about HA?”, include enough conversation context to make the query stand on its own. Start by passing up to four relevant vector matches and their source URLs to chat.
+3. **Rerank (optional).** Send the retrieved candidates to the reranker with the visitor's query. Use the returned indices to select the original records and their source URLs.
 4. **Answer.** Send the supplied system prompt, the visitor question, and the retrieved evidence with its source URLs to the chat model. Keep the evidence in a delimited data block outside the system instructions. When retrieval returns no relevant evidence, let the assistant direct the visitor to the project brief for confirmation.
 
 The Services browser can call a site backend that holds the inference credentials, runs retrieval, and returns the answer. Keep that backend restricted to this corpus and keep client runbooks, credentials, and infrastructure configuration outside the public index.
