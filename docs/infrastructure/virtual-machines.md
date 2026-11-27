@@ -21,11 +21,11 @@ inventory before making claims about their current runtime state.
 
 The RTX playbook copies Compose and llama-swap configuration to `/opt/compose`. Model storage is `/srv/llama-models`. Locally referenced GGUF files must be supplied separately; definitions using upstream model acquisition use that directory as their cache.
 
-llama-swap exposes the model API on the VM's port 8080 under `/v1`. Its configuration groups the baseline embedding, reranking, and small chat models, and swaps that group for a selected larger model. Speaches runs independently on port 8000 and can consume GPU memory at the same time. The model list and scheduling policy belong to `rtxansible/compose/config.yaml`; do not duplicate its model filenames or version pins in application variables.
+llama-swap exposes the model API on the VM's port 8080 under `/v1`. Its configuration groups the baseline embedding and small chat models, and swaps that group for a selected larger model. Speaches runs independently on port 8000 and can consume GPU memory at the same time. The model list and scheduling policy belong to `rtxansible/compose/config.yaml`; do not duplicate its model filenames or version pins in application variables.
 
 LiteLLM can discover the model and speech endpoints, while Open WebUI and other clients use the gateway. A replicated Kubernetes gateway does not supply a second GPU backend when this VM is unavailable.
 
-The 6 GiB RTX guest preloads Qwen3 Embedding 0.6B, Qwen3 Reranker 0.6B, and text-only Gemma 4 E4B. llama-swap accepts one active request per model. The two Qwen models use a 2,048-token context each, and Gemma uses an 8,192-token context. All three disable the RAM prompt cache and context checkpoints. Gemma disables speculative decoding and the multimodal projector. Confirm the three-model workload stays within guest memory with concurrent indexing and chat before relying on it.
+The 6 GiB RTX guest preloads Qwen3 Embedding 0.6B and Gemma 4 E4B. llama-swap accepts one active request per model. Qwen uses a 2,048-token context, and Gemma uses an 8,192-token context. Both disable the RAM prompt cache and context checkpoints. Gemma disables speculative decoding and loads its multimodal projector from Hugging Face for image input through `/v1/chat/completions`. Confirm the baseline workload stays within guest memory with concurrent indexing and chat before relying on it.
 
 The configured large-model group includes Torchcast Decision 12B in Q5_K_M
 quantization, served with a 16384-token context and one parallel request slot.

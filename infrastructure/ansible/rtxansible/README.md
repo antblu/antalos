@@ -5,13 +5,12 @@ This Ansible project provisions llama-swap and Speaches on `debian-rtx`
 repository to `/opt/compose` on every playbook run. Model files remain under
 `/srv/llama-models`; the playbook does not download the local GGUF files.
 
-llama-swap keeps the Qwen embedding model, Qwen reranker, and Gemma 4 E4B
-loaded together at startup. A request for any of the other configured
-models unloads that baseline group. Only one of those other models runs at a
-time. Each has a 600-second idle TTL. The baseline-restorer container watches
-for the last large model to stop and loads the three baseline models again.
-A baseline request while a large model is active also swaps the large model
-out. The local Gemma, Qwen, and MTP files in `config.yaml` must already exist
+llama-swap preloads Qwen3 Embedding and Gemma 4 E4B together. Requesting
+a larger model unloads both baseline models. Larger models unload after 600
+seconds idle.
+The baseline-restorer restores both baseline models when the on-demand model
+unloads. Requests for a baseline model can also swap out the active on-demand
+model before its idle timeout. The local Gemma, Qwen, and MTP files in `config.yaml` must already exist
 under `/srv/llama-models`. The Hugging Face model definitions use llama.cpp's
 `--hf-repo` acquisition and cache under that same directory.
 
