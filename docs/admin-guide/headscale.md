@@ -7,6 +7,8 @@ description: "Deploy Headscale and Headplane, enroll devices, and recover networ
 
 Use `apps/headscale/` with the [shared deployment workflow](/admin-guide/deploy-an-application/) to render manifests, prepare credentials, and reconcile the Application.
 
+Renovate waits until both Headscale and Headplane have an eligible routine image update, then opens one pull request. Review the two release notes for API compatibility before merging. Vulnerability fixes can open a separate pull request.
+
 ## 1. Prepare dependencies and inputs
 
 1. Set the `HEADSCALE_*` and `HEADPLANE_*` variables, including DNS, issuer, allowed email domains, and storage. `HEADSCALE_OIDC_ALLOWED_DOMAIN` and `HEADSCALE_OIDC_ADDITIONAL_ALLOWED_DOMAIN` supply the enrollment domain allowlist. Both require verified email addresses. The pod template records these domains so changing either input restarts Headscale to load the updated configuration.

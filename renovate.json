@@ -4,6 +4,12 @@
     "config:recommended"
   ],
   "prConcurrentLimit": 25,
+  "lockFileMaintenance": {
+    "enabled": false
+  },
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
   "customManagers": [
     {
       "customType": "regex",
@@ -196,6 +202,43 @@
       ],
       "pinDigests": false,
       "allowedVersions": "/^19\\.0$/"
+    },
+    {
+      "description": "Review Headscale and Headplane image upgrades together",
+      "matchFileNames": [
+        "apps/variables.yaml"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/juanfont/headscale",
+        "ghcr.io/tale/headplane"
+      ],
+      "matchJsonata": [
+        "$not(isVulnerabilityAlert = true)"
+      ],
+      "groupName": "Headscale and Headplane",
+      "minimumGroupSize": 2,
+      "separateMajorMinor": false
+    },
+    {
+      "description": "Limit routine dependency update pull requests to major and minor releases",
+      "matchJsonata": [
+        "$not(isVulnerabilityAlert = true)"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "pin",
+        "pinDigest",
+        "digest",
+        "lockFileMaintenance",
+        "lockfileUpdate",
+        "rollback",
+        "bump",
+        "replacement"
+      ],
+      "enabled": false
     }
   ],
   "kubernetes": {

@@ -583,7 +583,7 @@ variables:
   # renovate: datasource=docker depName=odoo
   ODOO_IMAGE_TAG: "19.0"
   # renovate-image: depName=docker.io/library/odoo
-  ODOO_BACKUP_IMAGE: docker.io/library/odoo:19.0@sha256:c30b26d599d06c2fe9ce5c215725f034ad7636326b4f9ce2469eabb5e59ea1a3
+  ODOO_BACKUP_IMAGE: docker.io/library/odoo:19.0
   ODOO_MEDUSA_FULFILLMENT_URL: https://medusa.antblu.net/hooks/commerce/fulfillment
   ODOO_HOST: odoo.antblu.net
   ODOO_CAL_DIY_SYNC_ENABLED: "true"
