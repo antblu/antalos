@@ -38,20 +38,18 @@ Redis stores sessions and counters in memory. Restarting or replacing the Redis 
 
 ## Use the existing llama.cpp models directly
 
-Use the three baseline model IDs from the checked-in llama-swap configuration when calling that router directly. If you use a gateway, use its configured model IDs.
+Use the model IDs from the checked-in llama-swap configuration when calling that router directly. If you use a gateway, use its configured model IDs.
 
 | Role | Configured llama-swap model ID | Route |
 | --- | --- | --- |
 | Embedding | `Qwen/Qwen3-Embedding-0.6B:Q8_0` | `POST /v1/embeddings` |
-| Reranking | `Qwen/Qwen3-Reranker-0.6B:Q8_0` | `POST /v1/rerank` |
 | Chat | `unsloth/gemma-4-E4B-it-GGUF:UD-Q4_K_XL` | `POST /v1/chat/completions` |
 
 Routes above are relative to the server origin. A client configured with a base URL ending in `/v1` should append only the remaining route. Use the model IDs your endpoint exposes. [llama.cpp server API](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md) · [llama-swap routes](https://github.com/mostlygeek/llama-swap)
 
 1. **Index.** Parse one record per line and embed its title, example questions, and answer as one text block. Send these through the embeddings route as `input` with the embedding `model`. Store the vector with the complete record and keep source URLs as metadata. Rebuild the vectors if the embedding model or input format changes.
 2. **Retrieve.** Embed the visitor’s question using the same model and apply any query formatting that model requires. For a short follow-up like “What about HA?”, include enough conversation context to make the query stand on its own. Start by passing up to four relevant vector matches and their source URLs to chat.
-3. **Rerank (optional).** Send the retrieved candidates to the reranker with the visitor's query. Use the returned indices to select the original records and their source URLs.
-4. **Answer.** Send the supplied system prompt, the visitor question, and the retrieved evidence with its source URLs to the chat model. Keep the evidence in a delimited data block outside the system instructions. When retrieval returns no relevant evidence, let the assistant direct the visitor to the project brief for confirmation.
+3. **Answer.** Send the supplied system prompt, the visitor question, and the retrieved evidence with its source URLs to the chat model. Keep the evidence in a delimited data block outside the system instructions. When retrieval returns no relevant evidence, let the assistant direct the visitor to the project brief for confirmation.
 
 The Services browser can call a site backend that holds the inference credentials, runs retrieval, and returns the answer. Keep that backend restricted to this corpus and keep client runbooks, credentials, and infrastructure configuration outside the public index.
 

@@ -19,7 +19,6 @@ models:
   # BASELINE MODELS
   # These always operate as one group:
   #   - Qwen Embedding
-  #   - Qwen Reranker
   #   - Gemma E4B
   # ============================================================
 
@@ -42,25 +41,6 @@ models:
     concurrencyLimit: 1
     ttl: 0
 
-  "Qwen/Qwen3-Reranker-0.6B:Q8_0":
-    cmd: >-
-      llama-server
-      --host 127.0.0.1
-      --port ${PORT}
-      --hf-repo ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
-      --hf-file qwen3-reranker-0.6b-q8_0.gguf
-      --reranking
-      --pooling rank
-      --ctx-size 2048
-      --parallel 1
-      --batch-size 2048
-      --ubatch-size 2048
-      --cache-ram 0
-      --ctx-checkpoints 0
-      --n-gpu-layers all
-    concurrencyLimit: 1
-    ttl: 0
-
   "unsloth/gemma-4-E4B-it-GGUF:UD-Q4_K_XL":
     cmd: >-
       llama-server
@@ -69,7 +49,6 @@ models:
       --hf-repo unsloth/gemma-4-E4B-it-GGUF
       --hf-file gemma-4-E4B-it-UD-Q4_K_XL.gguf
       --spec-type none
-      --no-mmproj
       --ctx-size 8192
       --parallel 1
       --batch-size 512
@@ -182,7 +161,7 @@ models:
 # ==============================================================
 # STARTUP
 #
-# Loading all three members of the baseline group at startup.
+# Loading both members of the baseline group at startup.
 # Because baseline has swap:false, they remain loaded together.
 # ==============================================================
 
@@ -190,7 +169,6 @@ hooks:
   on_startup:
     preload:
       - "Qwen/Qwen3-Embedding-0.6B:Q8_0"
-      - "Qwen/Qwen3-Reranker-0.6B:Q8_0"
       - "unsloth/gemma-4-E4B-it-GGUF:UD-Q4_K_XL"
 
 
@@ -213,50 +191,31 @@ routing:
         #   Requesting any baseline member keeps the other
         #   baseline members loaded as well.
         #
-        # exclusive:false:
-        #   Baseline requests cannot evict a protected large
-        #   model before its TTL expires.
-        #
-        # persistent:false:
-        #   A large model is allowed to unload the entire
-        #   baseline group.
+        #   A baseline request can swap out an on-demand model.
+        #   An on-demand request unloads both baseline models.
         # ======================================================
 
         baseline:
           swap: false
-          exclusive: false
+          exclusive: true
           persistent: false
 
           members:
             - "Qwen/Qwen3-Embedding-0.6B:Q8_0"
-            - "Qwen/Qwen3-Reranker-0.6B:Q8_0"
             - "unsloth/gemma-4-E4B-it-GGUF:UD-Q4_K_XL"
 
 
         # ======================================================
-        # LARGE GROUP
+        # ON-DEMAND GROUP
         #
-        # swap:true:
-        #   Only one large model may run at once.
-        #
-        # exclusive:true:
-        #   Loading a large model unloads the entire baseline
-        #   group.
-        #
-        # persistent:true:
-        #   Baseline requests cannot evict the currently loaded
-        #   large model.
-        #
-        # ttl:600 on each model:
-        #   After 10 minutes without use the active large model
-        #   automatically unloads. The baseline-restorer
-        #   container then reloads the three baseline models.
+        # Runs one model at a time and unloads the baseline pair.
+        # The restorer reloads the pair after the active model unloads.
         # ======================================================
 
-        large:
+        on-demand:
           swap: true
           exclusive: true
-          persistent: true
+          persistent: false
 
           members:
             - "unsloth/gemma-4-12B-it-qat-GGUF:UD-Q4_K_XL"

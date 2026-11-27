@@ -98,8 +98,12 @@ Existing guests require an explicit configuration update and reload.
 
 Test the TLS handshake and a mail transaction through the proxy chain. Outbound relay access from Stalwart is a separate path. Use [mail operations](/admin-guide/stalwart/) for that investigation.
 
-## Maintain the two security systems separately
+## Keep CrowdSec instances separate
 
 Azure's CrowdSec engine processes guest events and its nftables bouncer applies decisions at the guest firewall. The [Kubernetes CrowdSec installation](/admin-guide/crowdsec/) uses its own LAPI, log source, and Traefik integration. Updating one does not configure the other.
+
+On installations using OPNsense with CrowdSec, check the router's LAPI and packet filter if Azure reaches both home proxies but neither proxy can complete TLS to the Traefik VIP. A CrowdSec ban on the VIP can drop outbound packets even when the VLAN ingress rule permits TCP 9443. On the router, check the exact address with `cscli decisions list --ip <traefik-vip>` and `pfctl -t crowdsec_blocklists -T test <traefik-vip>`.
+
+The reference deployment uses the OPNsense LAPI allowlist `traefik-ingress-vip` for its private Traefik VIP alone. The allowlist prevents CrowdSec bans against that address on the router. The inter-VLAN firewall rules still control which clients can reach the VIP and on which ports. After a router or LAPI restore, verify the entry with `cscli allowlists inspect traefik-ingress-vip` and test HTTPS through each home proxy and the public hostname. See the [CrowdSec allowlist documentation](https://docs.crowdsec.net/docs/local_api/centralized_allowlists/).
 
 Keep VM recreation, reboots, storage changes, and disruptive network changes within the repository's approval requirements. Preserve enrollment credentials and private provisioning state in the external recovery set.

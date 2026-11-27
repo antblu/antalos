@@ -4,17 +4,17 @@
 # application manifests at render time. Do not add Kubernetes resources here.
 variables:
   # renovate: datasource=docker depName=registry.k8s.io/kubectl
-  AUTHORIZATION_KUBECTL_IMAGE_TAG: v1.37.2
+  AUTHORIZATION_KUBECTL_IMAGE_TAG: v1.37.3
   # Bump when changing the yaml-envsubst plugin; its subPath mount needs new pods.
   ARGOCD_PLUGIN_CONFIG_REVISION: "3"
   # renovate: datasource=docker depName=mikefarah/yq
   ARGOCD_YQ_IMAGE_TAG: 4.54.3
   # renovate: datasource=docker depName=quay.io/argoproj/argocd
-  ARGOCD_CMP_IMAGE_TAG: v3.6.2
+  ARGOCD_CMP_IMAGE_TAG: v3.6.3
   # renovate: datasource=helm depName=argo-cd registryUrl=https://argoproj.github.io/argo-helm
-  ARGOCD_CHART_VERSION: 10.18.3
+  ARGOCD_CHART_VERSION: 10.20.0
   # renovate: datasource=helm depName=authentik registryUrl=https://charts.goauthentik.io
-  AUTHENTIK_CHART_VERSION: 2026.8.6
+  AUTHENTIK_CHART_VERSION: 2026.8.7
   # renovate: datasource=helm depName=cert-manager registryUrl=https://charts.jetstack.io
   CERT_MANAGER_CHART_VERSION: v1.21.3
   CERT_MANAGER_DNS01_RECURSIVE_NAMESERVER: https://1.1.1.1/dns-query
@@ -29,7 +29,7 @@ variables:
   # renovate: datasource=helm depName=metrics-server registryUrl=https://kubernetes-sigs.github.io/metrics-server/
   METRICS_SERVER_CHART_VERSION: 3.14.0
   # renovate: datasource=helm depName=nextcloud registryUrl=https://nextcloud.github.io/helm/
-  NEXTCLOUD_CHART_VERSION: 9.4.5
+  NEXTCLOUD_CHART_VERSION: 9.4.6
   # renovate: datasource=helm depName=open-webui registryUrl=https://helm.openwebui.com
   OPEN_WEBUI_CHART_VERSION: 18.4.0
   # renovate: datasource=helm depName=openebs registryUrl=https://openebs.github.io/openebs
@@ -46,7 +46,7 @@ variables:
   CROWDSEC_BOUNCER_PLUGIN_VERSION: v1.8.2
   CROWDSEC_TRUSTED_HEADSCALE_CLIENT_IP: 100.64.0.8/32
   # renovate: datasource=helm depName=victoria-metrics-k8s-stack registryUrl=https://victoriametrics.github.io/helm-charts/
-  VICTORIAMETRICS_CHART_VERSION: 0.99.0
+  VICTORIAMETRICS_CHART_VERSION: 0.99.1
   # renovate: datasource=helm depName=zammad registryUrl=https://zammad.github.io/zammad-helm
   ZAMMAD_CHART_VERSION: 20.0.2
 
@@ -90,7 +90,7 @@ variables:
   EMILIANY_GOOGLE_CUSTOMER_LOGIN_ENABLED: 'true'
   EMILIANY_MEDUSA_PUBLISHABLE_KEY: pk_0684e91ed6aeb470968a07d413fc0ebc2fdb04a6e9fc46f4f75fe60bcbf04ddf
   # renovate: datasource=docker depName=ghcr.io/renovatebot/renovate
-  RENOVATE_IMAGE_TAG: 44
+  RENOVATE_IMAGE_TAG: 45
   RENOVATE_SCHEDULE: "17 * * * *"
   RENOVATE_GITHUB_APP_ID: "5033067"
   RENOVATE_GITHUB_INSTALLATION_ID: "163769372"
@@ -101,7 +101,7 @@ variables:
   # renovate: datasource=docker depName=ghcr.io/cloudnative-pg/postgresql
   OPEN_WEBUI_POSTGRES_IMAGE_TAG: 19.0-standard-trixie
   # renovate: datasource=docker depName=ghcr.io/open-webui/open-webui
-  OPEN_WEBUI_IMAGE_TAG: 0.13.4
+  OPEN_WEBUI_IMAGE_TAG: 0.13.5
   # renovate: datasource=docker depName=stalwartlabs/stalwart
   STALWART_IMAGE_TAG: v0.16.27
   SUITECRM_IMAGE_REPOSITORY: ghcr.io/antblu/suitecrm
@@ -124,9 +124,9 @@ variables:
   # renovate: datasource=docker depName=haproxy
   HAPROXY_IMAGE_TAG: 3.4.8-alpine
   # renovate: datasource=docker depName=ghcr.io/zammad/zammad
-  ZAMMAD_IMAGE_TAG: 7.2
+  ZAMMAD_IMAGE_TAG: 7.3
   # renovate: datasource=docker depName=invoiceninja/invoiceninja-debian
-  INVOICENINJA_IMAGE_TAG: 5.13.56
+  INVOICENINJA_IMAGE_TAG: 5.14.0
   # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
   INVOICENINJA_NGINX_IMAGE_TAG: 1.31.7-alpine
   # renovate: datasource=docker depName=busybox
@@ -144,7 +144,7 @@ variables:
   # renovate: datasource=docker depName=curlimages/curl
   CALDIY_CURL_IMAGE_TAG: 8.23.0
   # renovate: datasource=docker depName=ghcr.io/juanfont/headscale
-  HEADSCALE_IMAGE_TAG: v0.29.7
+  HEADSCALE_IMAGE_TAG: v0.29.8
   # renovate: datasource=docker depName=ghcr.io/tale/headplane
   HEADPLANE_IMAGE_TAG: 0.8.2
   # renovate: datasource=docker depName=louislam/uptime-kuma
@@ -211,7 +211,7 @@ variables:
   # renovate: datasource=nextcloud depName=announcementcenter registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_ANNOUNCEMENTCENTER_VERSION: 7.5.1
   # renovate: datasource=nextcloud depName=assistant registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_ASSISTANT_VERSION: 4.1.0
+  NEXTCLOUD_ASSISTANT_VERSION: 4.2.0
   # renovate: datasource=nextcloud depName=calendar registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_CALENDAR_VERSION: 6.7.0
   # renovate: datasource=nextcloud depName=context_chat registryUrl=https://apps.nextcloud.com/api/v1/apps.json
@@ -225,13 +225,13 @@ variables:
   # renovate: datasource=nextcloud depName=external registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_EXTERNAL_VERSION: 10.0.0
   # renovate: datasource=nextcloud depName=forms registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_FORMS_VERSION: 5.4.3
+  NEXTCLOUD_FORMS_VERSION: 5.4.5
   # renovate: datasource=nextcloud depName=groupfolders registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_GROUPFOLDERS_VERSION: 23.0.2
   # renovate: datasource=nextcloud depName=integration_openai registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_INTEGRATION_OPENAI_VERSION: 5.0.0
   # renovate: datasource=nextcloud depName=mail registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_MAIL_VERSION: 5.13.3
+  NEXTCLOUD_MAIL_VERSION: 5.13.4
   # renovate: datasource=nextcloud depName=notes registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_NOTES_VERSION: 6.1.1
   # renovate: datasource=nextcloud depName=notify_push registryUrl=https://apps.nextcloud.com/api/v1/apps.json
@@ -511,7 +511,7 @@ variables:
 
   # LiteLLM: two proxy and CNPG instances; Redis has a third Sentinel on RTX.
   # renovate: datasource=docker depName=ghcr.io/berriai/litellm
-  LITELLM_IMAGE_TAG: 1.110.3
+  LITELLM_IMAGE_TAG: 1.111.0
   LITELLM_HOST: litellm.antblu.net
   LITELLM_DATABASE_HOST: litellm-db-rw.litellm.svc.cluster.local
   LITELLM_DATABASE_STORAGE_SIZE: 10Gi
@@ -583,7 +583,7 @@ variables:
   # renovate: datasource=docker depName=odoo
   ODOO_IMAGE_TAG: "19.0"
   # renovate-image: depName=docker.io/library/odoo
-  ODOO_BACKUP_IMAGE: docker.io/library/odoo:19.0@sha256:03a47921f9eef2c225ded1167fe7828465d2b3177883f30d173bb1c3c792949b
+  ODOO_BACKUP_IMAGE: docker.io/library/odoo:19.0
   ODOO_MEDUSA_FULFILLMENT_URL: https://medusa.antblu.net/hooks/commerce/fulfillment
   ODOO_HOST: odoo.antblu.net
   ODOO_CAL_DIY_SYNC_ENABLED: "true"
@@ -623,7 +623,7 @@ variables:
 
   # Medusa backend and Admin only; storefront is deployed separately.
   # renovate: datasource=npm depName=@medusajs/medusa depType=coordinated
-  MEDUSA_VERSION: 2.23.0
+  MEDUSA_VERSION: 2.23.1
   # renovate: datasource=docker depName=node
   MEDUSA_NODE_IMAGE_TAG: 26-bookworm-slim
   MEDUSA_IMAGE_REPOSITORY: ghcr.io/antblu/antalos-medusa
@@ -668,7 +668,7 @@ variables:
 
   # Mautic: application image adds non-root UID/GID 1010 and Redis sessions.
   # renovate: datasource=docker depName=mautic/mautic
-  MAUTIC_BASE_IMAGE_TAG: 7.2.2-apache
+  MAUTIC_BASE_IMAGE_TAG: 7.2.3-apache
   MAUTIC_IMAGE_REPOSITORY: ghcr.io/antblu/mautic
   # renovate: datasource=docker depName=ghcr.io/antblu/mautic
   MAUTIC_IMAGE_TAG: 7.2.1-1010-v4

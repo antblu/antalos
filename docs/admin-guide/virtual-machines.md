@@ -44,7 +44,7 @@ cd infrastructure/ansible/rtxansible
 ansible-playbook site.yml --tags llama-swap --ask-vault-pass
 ~~~
 
-Before the tagged run, open **Admin Panel > Settings > Documents** in Open WebUI. Set the embedding batch size and concurrent requests to **1**. To use the reranker, enable **Hybrid Search** and select the Qwen3 reranker through the existing LiteLLM connection. The deployment manifest supplies these defaults for new installs. Save the values in the UI on an existing install because Open WebUI persists them. In LiteLLM, set `max_parallel_requests` to 1 on the dedicated embedding key. Keep chat on its separate key. The guest also enforces one active request per model across all callers.
+Before the tagged run, open **Admin Panel > Settings > Documents** in Open WebUI. Set the embedding batch size and concurrent requests to **1**. The deployment manifest supplies the embedding defaults for new installs. Save the values in the UI on an existing install because Open WebUI persists them. In LiteLLM, set `max_parallel_requests` to 1 on the dedicated embedding key. Keep chat on its separate key. The guest also enforces one active request per model across all callers.
 
 Arc uses the same command from `arcansible/`. Left runs `ansible-playbook site.yml` from `leftansible/`, mounts the shared media export, and copies the Caddy and media Compose projects without starting the stacks. It also applies declared connections to an existing
 Seerr container, restarting only Seerr when its settings change.
