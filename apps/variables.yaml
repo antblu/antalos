@@ -211,7 +211,7 @@ variables:
   # renovate: datasource=nextcloud depName=announcementcenter registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_ANNOUNCEMENTCENTER_VERSION: 7.5.1
   # renovate: datasource=nextcloud depName=assistant registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_ASSISTANT_VERSION: 4.1.0
+  NEXTCLOUD_ASSISTANT_VERSION: 4.2.0
   # renovate: datasource=nextcloud depName=calendar registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_CALENDAR_VERSION: 6.7.0
   # renovate: datasource=nextcloud depName=context_chat registryUrl=https://apps.nextcloud.com/api/v1/apps.json
@@ -225,13 +225,13 @@ variables:
   # renovate: datasource=nextcloud depName=external registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_EXTERNAL_VERSION: 10.0.0
   # renovate: datasource=nextcloud depName=forms registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_FORMS_VERSION: 5.4.3
+  NEXTCLOUD_FORMS_VERSION: 5.4.5
   # renovate: datasource=nextcloud depName=groupfolders registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_GROUPFOLDERS_VERSION: 23.0.2
   # renovate: datasource=nextcloud depName=integration_openai registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_INTEGRATION_OPENAI_VERSION: 5.0.0
   # renovate: datasource=nextcloud depName=mail registryUrl=https://apps.nextcloud.com/api/v1/apps.json
-  NEXTCLOUD_MAIL_VERSION: 5.13.3
+  NEXTCLOUD_MAIL_VERSION: 5.13.4
   # renovate: datasource=nextcloud depName=notes registryUrl=https://apps.nextcloud.com/api/v1/apps.json
   NEXTCLOUD_NOTES_VERSION: 6.1.1
   # renovate: datasource=nextcloud depName=notify_push registryUrl=https://apps.nextcloud.com/api/v1/apps.json
