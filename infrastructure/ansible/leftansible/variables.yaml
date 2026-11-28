@@ -14,7 +14,7 @@ media_lscr_io_linuxserver_qbittorrent_image: lscr.io/linuxserver/qbittorrent:lat
 # renovate-image: depName=qmcgaw/gluetun
 media_qmcgaw_gluetun_image: qmcgaw/gluetun:latest
 # renovate-image: depName=ghcr.io/recyclarr/recyclarr
-media_ghcr_io_recyclarr_recyclarr_image: ghcr.io/recyclarr/recyclarr:8
+media_ghcr_io_recyclarr_recyclarr_image: ghcr.io/recyclarr/recyclarr:9
 # renovate-image: depName=lscr.io/linuxserver/bazarr
 media_lscr_io_linuxserver_bazarr_image: lscr.io/linuxserver/bazarr:latest
 # renovate-image: depName=mccloud/subgen
